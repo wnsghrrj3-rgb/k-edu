@@ -25,6 +25,13 @@ export const MIX = {
   GULL: { every: [14, 24], land: 7 },   // 갈매기: 몇 초마다 날아오고 · 내려앉기까지(그동안 누르면 쫓음)
   STREAK_MAX: 4 };
 
+/** 낚싯대(N 뒤 더한 것): 장터에서 번 동전으로 산다. line = 줄이 날아가는 시간 배수 · sun = 해가 지기까지 배수 · big = 큰 물고기를 당기는 횟수 */
+export const RODS = [ { price: 0, line: 1, sun: 1, big: 3 }, { price: 15, line: .9, sun: 1.1, big: 3 }, { price: 30, line: .8, sun: 1.2, big: 3 }, { price: 50, line: .72, sun: 1.3, big: 2 }, { price: 80, line: .64, sun: 1.45, big: 2 } ];
+export const rod = lv => RODS[Math.max(0, Math.min(RODS.length - 1, lv | 0))];
+export const nextRod = lv => RODS[(lv | 0) + 1] || null;
+/** 낚싯대를 산다 → { ok, coins, level } (동전이 모자라거나 끝 단계면 그대로) */
+export function buyRod(lv, coins){ const n = nextRod(lv); return n && coins >= n.price ? { ok: true, coins: coins - n.price, level: (lv | 0) + 1 } : { ok: false, coins, level: lv | 0 }; }
+
 const R = (rnd, a, b) => a + Math.floor(rnd() * (b - a + 1));
 const shuffle = (a, rnd) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 export const stepOf = trips => { let s = 0; STEPS.forEach((x, i) => { if (trips >= x.at) s = i; }); return s; };

@@ -8,7 +8,10 @@ import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
 export { THREE };
 
 const Q = new URLSearchParams(location.search);
-export const LITE = Q.has('lite'), CALM = Q.has('calm');
+/* 가벼운 판: ?lite 로 켜거나, 처음 몇 초가 느리면 스스로 켠다(이 창이 열려 있는 동안은 다른 섬도 가볍게 시작 — sessionStorage `kedu_mathplay_lite`, 기기에 남기지 않음). ?hq = 스스로 켜지 않음 */
+const LITE_KEY = 'kedu_mathplay_lite', remembered = (() => { try { return sessionStorage.getItem(LITE_KEY) === '1'; } catch (_) { return false; } })();
+export const LITE = Q.has('lite') || (remembered && !Q.has('hq')), CALM = Q.has('calm');
+export const AUTO = { FROM: 1.2, SPAN: 3, FPS: 22 };   // 불러온 뒤 1.2초부터 3초 동안의 평균이 초당 22장보다 느리면 가볍게
 /** 기본 빛깔(다리 길에서 정한 것 — 네 곳이 같은 바다) */
 export const LOOK = { SKY: ['#5fb8ea', '#bfe6f5', '#e8f6fb'], SEA: 0x2b9fd2, DEEP: 0x0f6a9c, FOG: 0xbfe6f5, HEMI: [0xeaf6ff, 0x7aa37a, 1.25], SUN: [0xfff1d8, 2.4] };
 
@@ -65,8 +68,10 @@ export function createStage(opt){
   /** 누른 자리에서 나가는 빛줄기(끌기용). */
   const pointerRay = e => { const b = canvas.getBoundingClientRect(); ndc.set((e.clientX - b.left) / b.width * 2 - 1, -(e.clientY - b.top) / b.height * 2 + 1); ray.setFromCamera(ndc, camera); return ray; };
   let onResize = null; function resize(){ renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; if (onResize) onResize(innerWidth, innerHeight); camera.updateProjectionMatrix(); } addEventListener('resize', resize);
-  const st = { t: 0, waves: !LITE };
-  let last = performance.now(); function loop(now){ requestAnimationFrame(loop); const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now; st.t += dt; const t = st.t;
+  const st = { t: 0, waves: !LITE, lite: LITE, frames: 0, t0: 0 };
+  function goLite(){ if (st.lite) return; st.lite = true; st.waves = false; renderer.shadowMap.enabled = false; sun.castShadow = false; renderer.setPixelRatio(.7); scene.traverse(m => { if (m.material) m.material.needsUpdate = true; }); try { sessionStorage.setItem(LITE_KEY, '1'); } catch (_) {} }
+  let last = performance.now(); function loop(now){ requestAnimationFrame(loop); const raw = (now - last) / 1000, dt = Math.max(0, Math.min(.05, raw)); last = now; st.t += dt; const t = st.t;
+    if (!st.lite && !Q.has('hq') && !st.judged) { st.real = (st.real || 0) + Math.min(raw, 1); if (st.real > AUTO.FROM) { st.frames++; st.t0 = st.t0 || st.real; if (st.real - st.t0 >= AUTO.SPAN) { st.judged = true; if (st.frames / (st.real - st.t0) < AUTO.FPS) goLite(); } } }
     const sp = seaG.attributes.position; if (st.waves) { for (let i = 0; i < sp.count; i++) { const x = seaBase[i * 3], z = seaBase[i * 3 + 2]; sp.array[i * 3 + 1] = Math.sin(x * .45 + t * 1.2) * .05 + Math.cos(z * .5 + t * .9) * .05; } sp.needsUpdate = true; }
     for (const f of frames) f(dt, t);
     for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i]; w.t += dt * 1000; const k = Math.min(1, w.t / w.ms), e = w.ease(k); for (const key in w.to) setPath(w.o, key, w.from[key] + (w.to[key] - w.from[key]) * e); if (k >= 1) { tweens.splice(i, 1); w.res(); } }

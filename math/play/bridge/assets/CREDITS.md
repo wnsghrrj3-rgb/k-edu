@@ -23,3 +23,5 @@
 - `Fish_Clownfish · BlueTang · YellowTang · Koi · Tetra · ButterflyFish · CardinalFish · RoyalGramma · Betta · Tang`(보통) · `Fish_Goldfish`(황금 물고기, 빛깔 입힘) · `Fish_Puffer`(복어) · `Fish_Shark` · `Fish_Anglerfish`(큰 물고기) · `Prop_FishingRod`(앤의 낚싯대).
 - 양동이 조각 물고기는 모형을 못 불러올 때만 씀.
 - 다리 길의 상어 사건도 `Fish_Shark`(Cute Fish Pack)를 씀 — 앞바다를 돌다 물에 떨어진 판자를 물고, 낱 판자를 노림.
+- 낚싯대 다섯 단계 `Prop_FishingRod`·`Prop_FishingRod2~5`(Cute Fish Pack 의 FishingRod_Lvl1~5) — 낚시 섬에서 동전으로 삼. 단추 그림 `math/play/art/rod.1~5.png` 는 이 모형을 찍은 것.
+- `Env2_Dock_Long`·`Env2_Dock_Wide`·`Env2_Dock_Stairs`·`Prop_Rowboat`(같은 꾸러미의 선착장·배) — 광장에 더 지을 것에 씀.

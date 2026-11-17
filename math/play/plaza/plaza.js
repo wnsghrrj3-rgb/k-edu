@@ -3,12 +3,12 @@
  * 넘치게 놓으면 남는 판자는 더미로 튀어 돌아간다(잃지 않는다). 지은 뒤 「나무가 몇 장 남았지?」 — 맞는 수를 누르면 더미 팻말이 그 수로 바뀐다.
  * 주민 하나가 다음에 지을 것에 드는 나무를 말풍선 그림으로 부탁한다. 시계 없음(쉬는 곳). 지도 조각 넷이면 먼 바다에 새 섬.
  * 무대 ../common/stage3d.js · 팻말·띠·끝의 셈 ../common/ask.js · 규칙 ./rules.js · 모형은 다리 길과 같은 꾸러미(../bridge/assets, Quaternius Pirate Kit CC0). */
-import { createStage, THREE, sleep } from '../common/stage3d.js?v=1';
+import { createStage, THREE, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=1';
-import { wallet, audio, tone, art } from '../common/kit.js?v=6';
+import { wallet, audio, tone, art } from '../common/kit.js?v=7';
 import * as L from '../common/loop.js?v=1';
-import * as H from '../common/hint.js?v=1';   /* 손 그림 길잡이(글 없음) */   /* N04 나루터: 배 셋 · 팻말(동전·생선·나무) · 주민 부탁 */
+import * as H from '../common/hint.js?v=2';   /* 손 그림 길잡이(글 없음) */   /* N04 나루터: 배 셋 · 팻말(동전·생선·나무) · 주민 부탁 */
 
 // ── 내가 정한 수치
 const T = { RAFT_X: [-2.6, -1.3, .6], RAFT_Y: .2, RAFT_Z: 2.5, DECK: 1.0, PLANK_W: 1.3, PILE_MAX: 14, HOME_MAX: 6, WANDER: [3, 7], WALK: 1.2, PICK_PX: 80, DROP_PX: 150, PLANK_MS: 220, RISE_MS: 900,

@@ -6,12 +6,12 @@
  *   빠른 떼 · 황금 물고기(남은 만큼 딱) · 복어(+1 부풂) · 게(모형이 오면) · 큰 물고기(세 번 당김) · 불꽃(넘침 없이 연달아 닫으면 줄이 빨라지고 음이 오름).
  * 늦으면(해가 지면) 다 찬 통만 싣고 떠난다 — 표시·벌 없이 새 판. 다 실은 판 수로만 걸음이 오른다.
  * 그림은 기성 3D 재료만(Quaternius Pirate Kit, CC0 — ../bridge/assets). 물고기는 고른 꾸러미가 오기 전까지 「물고기 양동이」 모형의 물고기 조각을 떼어 쓴다. */
-import { createStage, THREE, LOOK, CALM, sleep } from '../common/stage3d.js?v=1';
+import { createStage, THREE, LOOK, CALM, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=1';
-import * as R from './rules.js?v=1';
-import { wallet, audio, tone } from '../common/kit.js?v=6';
+import * as R from './rules.js?v=2';
+import { wallet, audio, tone, art } from '../common/kit.js?v=7';
 import * as L from '../common/loop.js?v=1';
-import * as H from '../common/hint.js?v=1';   /* 첫 판 한 줄 안내 · 손 그림 */   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
+import * as H from '../common/hint.js?v=2';   /* 첫 판 한 줄 안내 · 손 그림 */   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, TUB_X: [-2.7, -1.65, -.6], TUB_Z: 1.9, TUB_S: 1.3, BOAT: [2.35, 0, 1.25], BOAT_S: .48, ANNE: [.55, 1.7],
@@ -19,13 +19,13 @@ const T = { DECK: .45, TUB_X: [-2.7, -1.65, -.6], TUB_Z: 1.9, TUB_S: 1.3, BOAT: 
   DUSK: { SUNSET: ['#f08a5d', '#f6b98b', '#ffe0b0'], NIGHT: ['#283057', '#6a4f7d', '#c9806c'], SEA_DUSK: 0x1e5c86 },
   SWIM_Y: -.04, BEAT: .72, SCATTER: 1.8, THIEF_SPEED: .9, LINE_FAST: .1 };
 const $ = id => document.getElementById(id);
-const SAVE = wallet.island('fishing'); SAVE.trips = Math.max(0, SAVE.trips | 0); SAVE.tubs = Math.max(0, SAVE.tubs | 0);
+const SAVE = wallet.island('fishing'); SAVE.trips = Math.max(0, SAVE.trips | 0); SAVE.tubs = Math.max(0, SAVE.tubs | 0); SAVE.rod = Math.max(0, Math.min(R.RODS.length - 1, SAVE.rod | 0));
 const S = { ready: false, busy: true, intro: false, missing: false, trip: null, ti: 0, left: 0, fill: [[], [], []], loaded: [], fish: [], tubs: [], tubFish: [[], [], []], clock: 0, streak: 0, overInTub: false, log: [], ask: null, thief: null, thiefIn: 0, schoolIn: 0, t: 0, beat: 0, scatter: 0, signs: [], id: 0 };
 
 const stage = createStage({ canvas: $('c'), seaX: 0, seaW: 160, fog: [16, 60], shadow: { left: -8, right: 8, top: 6, bottom: -6 }, assets: '../bridge/assets/' }), { scene, camera, sea, sun, hemi } = stage;
 const K = {};
 const NAMES = ['Environment_Dock', 'Prop_Bucket_Fishes', 'Ship_Small', 'Characters_Anne', 'Environment_Cliff1', 'Environment_Cliff4', 'Environment_PalmTree_1', 'Environment_PalmTree_3', 'Environment_Rock_1', 'Environment_Rock_4', 'Environment_Dock_Pole'];
-const OPT = ['Characters_Crab'];
+const OPT = ['Characters_Crab'], ROD_MODELS = ['Prop_FishingRod', 'Prop_FishingRod2', 'Prop_FishingRod3', 'Prop_FishingRod4', 'Prop_FishingRod5'];
 /* 물고기(준호가 올린 Quaternius Cute Fish, CC0 — 헤엄·물 밖 파닥임 움직임): 보통 열 종 · 황금 = 금붕어 · 복어 · 큰 물고기 = 상어·아귀 · 앤의 낚싯대 */
 const FISH = ['Clownfish', 'BlueTang', 'YellowTang', 'Koi', 'Tetra', 'ButterflyFish', 'CardinalFish', 'RoyalGramma', 'Betta', 'Tang'], SPECIAL = { gold: 'Goldfish', puffer: 'Puffer', big: ['Shark', 'Anglerfish'] };   /* 있으면 쓰는 모형(게) — 없으면 게 사건은 건너뜀 */
 
@@ -43,7 +43,7 @@ const tint = (o, color, glow = 0) => { o.traverse(m => { if (m.isMesh) { const c
 
 // ── 무대 꾸리기
 async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await stage.load(n); })); await Promise.all(OPT.map(async n => { try { K[n] = await stage.load(n); } catch (_) { K[n] = null; } }));
-  const fishNames = [...FISH, SPECIAL.gold, SPECIAL.puffer, ...SPECIAL.big]; await Promise.all(fishNames.map(async n => { try { K['Fish_' + n] = await stage.load('Fish_' + n); } catch (_) { K['Fish_' + n] = null; } })); try { K.Prop_FishingRod = await stage.load('Prop_FishingRod'); } catch (_) { K.Prop_FishingRod = null; }
+  const fishNames = [...FISH, SPECIAL.gold, SPECIAL.puffer, ...SPECIAL.big]; await Promise.all(fishNames.map(async n => { try { K['Fish_' + n] = await stage.load('Fish_' + n); } catch (_) { K['Fish_' + n] = null; } })); for (const n of ROD_MODELS) { try { K[n] = await stage.load(n); } catch (_) { K[n] = null; } }
   KIT = bucketKit(K.Prop_Bucket_Fishes); const dk = stage.dockKit(K.Environment_Dock), step = Math.abs(dk.plankAt[1].x - dk.plankAt[0].x) || .36;
   // 선착장(판자 조각) · 기둥
   let i = 0; for (let x = -7.5; x <= 3.4; x += step, i++) { const m = new THREE.Mesh(dk.planks[i % dk.planks.length], dk.mat); m.position.set(x, T.DECK - dk.plankH / 2, T.TUB_Z); scene.add(stage.shadows(m)); }
@@ -51,11 +51,20 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   stage.put(K.Environment_Cliff1, -11, 0, -4, 1.1, .5); stage.put(K.Environment_Cliff4, 12, 0, -9, 1.0, -.6); stage.put(K.Environment_PalmTree_3, -9.2, 1.4, -3.4, 1.0, .3); stage.put(K.Environment_PalmTree_1, 10.5, 1.0, -6.5, 1.0, 2); stage.put(K.Environment_Rock_4, 6.5, -.2, -8.5, 1.2, 1); stage.put(K.Environment_Rock_1, -6, -.2, -7.8, 1.1);
   S.boat = stage.put(K.Ship_Small, T.BOAT[0], T.BOAT[1], T.BOAT[2], T.BOAT_S, Math.PI / 2);
   S.anne = stage.person(K.Characters_Anne); S.anne.obj.position.set(T.ANNE[0], T.DECK + .02, T.ANNE[1]); S.anne.obj.rotation.y = Math.PI; stage.play(S.anne, 'Idle');
-  /* 낚싯대: 앤 손(무기 자리)에 쥐여 준다 */ let slot = null; S.anne.obj.traverse(m => { if (/^Weapon_/.test(m.name) && !slot) slot = m; }); if (slot && K.Prop_FishingRod) { const rod = K.Prop_FishingRod.scene.clone(); rod.position.copy(slot.position); rod.quaternion.copy(slot.quaternion); const ws = new THREE.Vector3(); slot.parent.getWorldScale(ws); rod.scale.setScalar(.62 / ws.x); slot.parent.add(stage.shadows(rod)); S.rod = rod; }
+  /* 낚싯대: 앤 손(무기 자리)에 쥐여 준다 */ setRod(); rodDraw();
   stage.onResize = aim; stage.resize();
   if (!wallet.persists()) { const n = document.createElement('div'); n.id = 'note'; n.textContent = '지금은 구경 중이에요 · 화면을 나가면 처음으로 돌아가요'; document.body.appendChild(n); }
   S.signs = A.signs(3 + 18); S.signs.forEach((e, k) => { if (k >= 3) e.classList.add('fs'); });
   newTrip(); $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500); S.ready = true; intro(); }
+
+// ── 낚싯대: 앤 손(무기 자리)에 쥐여 준다 · 동전으로 다음 낚싯대를 산다(왼쪽 아래 단추 — 다음 낚싯대 그림과 값)
+function setRod(){ let slot = null; S.anne.obj.traverse(m => { if (/^Weapon_/.test(m.name) && !slot) slot = m; }); const rig = K[ROD_MODELS[SAVE.rod]] || K.Prop_FishingRod; if (!slot || !rig) return; if (S.rod) S.rod.parent.remove(S.rod);
+  const rod = rig.scene.clone(); rod.position.copy(slot.position); rod.quaternion.copy(slot.quaternion); const ws = new THREE.Vector3(); slot.parent.getWorldScale(ws); rod.scale.setScalar(.62 / ws.x); slot.parent.add(stage.shadows(rod)); S.rod = rod; }
+function rodDraw(){ let b = $('rod'); if (!b) { b = document.createElement('button'); b.id = 'rod'; document.body.appendChild(b); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); rodBuy(); }); wallet.onChange(() => rodDraw()); }
+  let c = $('coins'); if (!c) { c = document.createElement('div'); c.id = 'coins'; document.body.appendChild(c); } const cv = `${art('coin')}<b>${wallet.coins()}</b>`; if (c.dataset.v !== cv) { c.dataset.v = cv; c.innerHTML = cv; }   /* 가진 동전(오른쪽 위) */
+  const n = R.nextRod(SAVE.rod); if (!n) { b.hidden = true; return; } b.hidden = false; const can = wallet.coins() >= n.price, v = `<span class="pic">${art('rod.' + (SAVE.rod + 2))}</span><span class="pr">${art('coin')}<b>${n.price}</b></span>`; if (b.dataset.v !== v) { b.dataset.v = v; b.innerHTML = v; } b.classList.toggle('can', can); }
+function rodBuy(){ audio(); const o = R.buyRod(SAVE.rod, wallet.coins()); if (!o.ok) { tone(200, .15, 'sine', .07); H.tell('rodpoor', '동전이 모자라요. 장터에서 벌어 오면 살 수 있어요!', { times: 3 }); S.log.push({ rod: 'poor' }); return; }
+  wallet.spend(wallet.coins() - o.coins); SAVE.rod = o.level; wallet.save(); setRod(); rodDraw(); [523, 659, 784, 1047].forEach((f, i) => tone(f, .16, 'triangle', .12, i * .09)); stage.play(S.anne, 'Yes', true); S.log.push({ rod: o.level }); }
 
 // ── 카메라: 선착장(통 셋·배)이 화면 폭에 들어오고, 위로 앞바다가 보이게
 function aim(w, h){ const tall = h > w, asp = w / h; S.fk = tall ? 1.25 : 1;   /* 세로 화면은 물고기를 크게 */ camera.fov = tall ? 50 : 42; const half = Math.atan(Math.tan(camera.fov * Math.PI / 360) * asp), dist = Math.max(7.5, (tall ? 3.6 : 4.4) / Math.tan(half));
@@ -101,10 +110,10 @@ canvas.addEventListener('pointerdown', e => { if (!S.ready) return; audio(); if 
 
 function lineTo(f){ const a = stage.screenOf(new THREE.Vector3(T.ANNE[0] - .15, T.DECK + 1.3, T.ANNE[1] - .2)), b = stage.screenOf(f.obj), l = $('line'), len = Math.hypot(b.x - a.x, b.y - a.y);
   Object.assign(l.style, { left: a.x + 'px', top: a.y + 'px', height: len + 'px', transform: `rotate(${Math.atan2(a.x - b.x, b.y - a.y)}rad)`, opacity: 1 }); clearTimeout(lineTo.t); lineTo.t = setTimeout(() => l.style.opacity = 0, 420); }
-const flyMs = () => T.FLY_MS * (1 - T.LINE_FAST * Math.min(S.streak, R.MIX.STREAK_MAX));
+const flyMs = () => T.FLY_MS * R.rod(SAVE.rod).line * (1 - T.LINE_FAST * Math.min(S.streak, R.MIX.STREAK_MAX));
 async function hook(f){ if (S.hooking) return; S.hooking = true; try { await hook1(f); } finally { S.hooking = false; } }
 async function hook1(f){ S.busy = true; lineTo(f); stage.play(S.anne, 'Sword', true); tone(520 + S.streak * 60, .1, 'sine', .1, 0, 1040);
-  if (f.kind === 'big' && ++f.pulls < R.MIX.BIG_TAPS) { const k = f.pulls / R.MIX.BIG_TAPS; await stage.tween(f.obj.position, { z: f.z + (T.SEA.z[1] - f.z) * k * .6 }, 260); f.z = f.obj.position.z; tone(300 + f.pulls * 80, .12, 'square', .06); S.log.push({ pull: f.pulls }); S.busy = false; return; }
+  if (f.kind === 'big' && ++f.pulls < R.rod(SAVE.rod).big) { const k = f.pulls / R.rod(SAVE.rod).big; await stage.tween(f.obj.position, { z: f.z + (T.SEA.z[1] - f.z) * k * .6 }, 260); f.z = f.obj.position.z; tone(300 + f.pulls * 80, .12, 'square', .06); S.log.push({ pull: f.pulls }); S.busy = false; return; }
   const o = R.land(S.left, f), tub = S.tubs[S.ti], at = tub.position.clone(); at.y += .9; f.caught = true; flap(f.obj); S.log.push({ fish: f.v, kind: f.kind, out: o.kind, left: S.left });
   await stage.tween(f.obj.position, { x: at.x, y: at.y + 1.2, z: at.z }, flyMs() * .65, t => t * (2 - t)); await stage.tween(f.obj.position, { y: at.y }, flyMs() * .35, t => t * t);
   if (o.kind === 'over') { S.overInTub = true; S.streak = 0; A.flames(0); wobble(tub); tone(220, .25, 'sine', .1, 0, 140); S.scatter = T.SCATTER;
@@ -165,7 +174,7 @@ function signsDraw(){ const sg = S.signs; S.tubs.forEach((t, k) => { const e = s
 // ── 한 장면의 일
 stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
   const thinking = !S.intro && !S.missing && (!S.busy || S.ask);
-  if (thinking && !CALM && !S.ask) { S.clock = Math.min(1, S.clock + dt / S.trip.budget); dusk(S.clock); if (S.clock >= 1) miss();
+  if (thinking && !CALM && !S.ask) { S.clock = Math.min(1, S.clock + dt / (S.trip.budget * R.rod(SAVE.rod).sun)); dusk(S.clock); if (S.clock >= 1) miss();
     if (S.clock > T.BEAT && t - S.beat > .25 + (1 - S.clock) * 2.4) { S.beat = t; tone(96, .09, 'sine', .16); tone(72, .12, 'sine', .12, .09); } }
   // 물고기가 헤엄친다(넘친 뒤엔 잠깐 흩어짐)
   S.scatter = Math.max(0, S.scatter - dt); const boost = 1 + S.scatter;
@@ -181,6 +190,6 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
   signsDraw();
   /* 첫 판: 가만히 있으면 손이 통에 들어갈 물고기를 짚는다 */ if (SAVE.trips < 1 && !S.busy && !S.ask && !S.missing && H.idle(4500)) { const live = S.fish.filter(f => !f.caught && !f.fast && f.kind !== 'crab'), f = live.find(x => R.worth(x, S.left) === S.left) || live.find(x => R.worth(x, S.left) < S.left); if (f) { const q = stage.screenOf(f.obj); H.show(q.x, q.y + 14); } } else if (S.busy && H.shown()) H.hide(); });
 
-window.__fishing = { S, R, T, SAVE, stage, screenOf: stage.screenOf, hook: f => hook(f), shoo, thiefCome, addFish,
+window.__fishing = { rodBuy, wallet, S, R, T, SAVE, stage, screenOf: stage.screenOf, hook: f => hook(f), shoo, thiefCome, addFish,
   restart: trips => { SAVE.trips = trips; S.introId = (S.introId | 0) + 1; stage.tweens.length = 0; newTrip(); S.busy = false; S.intro = false; } };
 build().catch(e => { $('loading').textContent = '불러오지 못했어요'; console.error(e); });

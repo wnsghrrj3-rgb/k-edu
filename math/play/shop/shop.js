@@ -5,7 +5,7 @@
  *     과일 상자를 셋 다 사면 값이 붙고(손님이 올려놓은 돈을 보고 「받기」·「더 줘야지?」), 값을 받은 손님이 열이 되면 거스름.
  *     다 꾸미면 옆에 빵집(식빵 10 · 크루아상 5). 규칙은 ./rules.js.
  * 틀(위쪽 띠·동전·알림·효과음·「커졌어!」)은 ../common/kit.js, 그림은 ../common/art.js. 산 것·하트·단골·오늘 장사는 지갑의 가게 칸에 남는다. */
-import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx, toast } from '../common/kit.js?v=6';
+import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx, toast } from '../common/kit.js?v=7';
 import * as R from './rules.js?v=2';
 import * as A from '../common/ask.js?v=1';
 import * as M5 from '../market/rules.js?v=3';

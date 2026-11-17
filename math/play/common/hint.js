@@ -1,6 +1,6 @@
 /* 수학 놀이터 손 그림(글 없는 길잡이) — 가만히 있으면 지금 누를 곳을 손이 짚어 준다. 누르면 사라진다.
  * 광장(어느 배로 갈지 · 나무 묶음 끌기) · 장터(첫 손님) · 낚시 섬(첫 판) · 다리 길 화물 싣기(첫 화물)가 같이 쓴다. 화면 위 표시(물체 아님). */
-import { art } from './art.js?v=5';
+import { art } from './art.js?v=6';
 import * as wallet from './wallet.js?v=1';
 const CSS = `#handhint{position:fixed;z-index:9;font-size:2.8rem;line-height:1;margin:6px 0 0 -.5em;pointer-events:none;opacity:0;transition:opacity .3s,left .9s ease-in-out,top .9s ease-in-out;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
 #handhint.on{opacity:1}#handhint span{display:block;animation:handbob .9s ease-in-out infinite}@keyframes handbob{50%{transform:translateY(-12px)}}#handhint img.art{height:1em;width:auto}`;

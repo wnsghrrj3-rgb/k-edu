@@ -9,6 +9,7 @@ const ART = {
   'bake.bread': '🍞', 'bake.croissant': '🥐', 'shop.cart': '🛒', 'shop.till': '💰', 'shop.safe': '🏦', 'shop.door': '🚪', 'shop.memo': '📝', 'day.morning': '🌅', 'day.evening': '🌇',
   // 항구 장터·광장(N05 검수): 물건은 Pirate Kit 모형을 찍은 그림(/math/play/art/, CC0 재료에서 만듦)
   'market.wood': { src: '/math/play/art/market.wood.png?v=2' }, 'market.stone': { src: '/math/play/art/market.stone.png?v=2' }, 'market.barrel': { src: '/math/play/art/market.barrel.png?v=2' }, 'market.fish': { src: '/math/play/art/market.fish.png?v=2' },
+  'rod.1': { src: '/math/play/art/rod.1.png?v=2' }, 'rod.2': { src: '/math/play/art/rod.2.png?v=2' }, 'rod.3': { src: '/math/play/art/rod.3.png?v=2' }, 'rod.4': { src: '/math/play/art/rod.4.png?v=2' }, 'rod.5': { src: '/math/play/art/rod.5.png?v=2' },
   'plaza.wood': { src: '/math/play/art/plaza.wood.png?v=2' }, 'map.piece': '🧩', 'hint.hand': '👆',
   'shop.heart': '❤️', 'shop.heart.empty': '🤍', 'guest.mark.hurry': '💦', 'guest.mark.regular': '💛',
   'guest.bear': '🐻', 'guest.rabbit': '🐰', 'guest.cat': '🐱', 'guest.dog': '🐶', 'guest.fox': '🦊', 'guest.panda': '🐼', 'guest.frog': '🐸', 'guest.monkey': '🐵',

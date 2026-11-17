@@ -7,12 +7,12 @@
  * 들어갈 뗏목이 없으면 낱 판자가 한 장씩 떠내려온다(막히지 않는다). 아껴 쓰고 남은 뗏목은 우리 선착장 나무 더미가 되어 광장으로 간다.
  * 가위표·정답 표시·점수·설명 글 없음. 무대는 ../common/stage3d.js, 팻말·띠·끝의 셈은 ../common/ask.js, 규칙은 ./rules.js.
  * 화면은 기성 3D 재료(Quaternius Pirate Kit, CC0)만 — 판자·받침·기둥은 선착장 모형을 조각으로 나눠 그대로 쓴다(assets/CREDITS.md). */
-import { createStage, THREE, LITE, CALM, sleep } from '../common/stage3d.js?v=1';
+import { createStage, THREE, LITE, CALM, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=6';
-import { wallet, audio, tone, art } from '../common/kit.js?v=6';
+import { wallet, audio, tone, art } from '../common/kit.js?v=7';
 import * as LP from '../common/loop.js?v=1';
-import * as H from '../common/hint.js?v=1';   /* 첫 판 한 줄 안내 · 손 그림 */
+import * as H from '../common/hint.js?v=2';   /* 첫 판 한 줄 안내 · 손 그림 */
 const CARGO = !new URLSearchParams(location.search).has('free');   /* ?free = 화물 싣기 없이(옛 방식, 하네스용) */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
@@ -20,7 +20,8 @@ const T = { PICK_PX: 70, DECK: 1.0, SLOT: 0.4, PLANK_W: 1.3, RAFT_GAP: .36, RAFT
   SEG: 8,      // 틈과 틈 사이(다리 4 + 땅 4) · 쌍둥이 틈은 가운데 땅이 없어 4
   WALK: 1.5, RUN: 4.4, STREAK_RUN: .14, STREAK_MAX: 4, TIDE: .9, HURRY: .6, BEAT: .7, DRIFT: .45, DRIFT_HZ: .8, SHIP_Z: -4.2, SHIP_S: 1.0, SHIP_RY: Math.PI,
   PLANK_MS: 240, RAFT_Z: 3.1, RAFT_Y: .2, DROP_X: [-0.7, 4.7], DROP_Z: 1.9, START_X: -1.25, END_X: 5.3,
-  INTRO_HOLD: [1500, 700], INTRO_MS: [3400, 2200], SINGLE_MS: 1700, HINT_MS: 5000, HOME_MAX: 6, PILE_MAX: 12, GHOST: .5, LAND: '#a59a92',
+  INTRO_HOLD: [1500, 700], INTRO_MS: [3400, 2200], SINGLE_MS: 1700, HINT_MS: 5000, LEARN: 2, LEARN_HINT_MS: 2200,   // 처음 두 주민을 데려올 때까지: 빈 칸·뗏목 장 수를 보여 주고 손이 빨리 뜬다
+  HOME_MAX: 6, PILE_MAX: 12, GHOST: .5, LAND: '#a59a92',
   NIGHT: { HEMI: .32, SUN: .25, SKY: ['#0d1630', '#24345c', '#3b4f7a'], FOG: 0x1c2a48, GLOW: .55, LIGHT: 6 },   // 밤 다리: 빛의 세기 · 하늘 · 놓인 판자의 빛 · 등불 빛
   FALL_FROM: -6.5, TWIN_ZOOM: 1.32, BIG_ZOOM: 1.0, LONG_ZOOM: 1.5, PILLAR: .5,   // 스무 칸 다리: 카메라를 물리는 정도 · 가운데 돌기둥 자리(판자 칸 사이 너비)
                     // 무너지는 다리가 시작하는 곳 · 쌍둥이 틈일 때 카메라를 물리는 정도
@@ -107,7 +108,7 @@ function newVoyage(){ for (const b of S.bridge) for (const p of b) if (p) scene.
   const nN = S.ev.night; S.nightGaps = new Set(nN ? (SAVE.saved === R.MIX.FIRST.night ? [1] : S.voy.gaps.map((_, i) => i).sort(() => Math.random() - .5).slice(0, nN)) : []);
   buildCourse();
   S.voy.gaps.forEach((g, k) => { const N = slotsOf(k), b = Array(N).fill(null), gh = Array(N).fill(null);
-    for (let i = 0; i < N; i++) { if (i < g.have) { b[i] = plank(i + k * 3); b[i].position.set(slotX(k, i), plankY(), 0); } else if (T.SLOTS_SHOWN) { gh[i] = plank(i, S.ghostMat); gh[i].position.set(slotX(k, i), plankY() - .01, 0); } } S.bridge.push(b); S.ghosts.push(gh); });
+    for (let i = 0; i < N; i++) { if (i < g.have) { b[i] = plank(i + k * 3); b[i].position.set(slotX(k, i), plankY(), 0); } else if (T.SLOTS_SHOWN || SAVE.saved < T.LEARN) { gh[i] = plank(i, S.ghostMat);   /* 처음 두 길은 빈 칸을 흐린 판자로 보여 준다 */ gh[i].position.set(slotX(k, i), plankY() - .01, 0); } } S.bridge.push(b); S.ghosts.push(gh); });
   S.fill = S.voy.gaps.map(g => g.have); S.filled = S.fill[0]; /* N04 화물 싣기: 데려온 주민이 둘이 되면 떠나기 전에 동전으로 판자를 싣는다(그 전 두 길은 뗏목을 선물로) */
   S.loading = CARGO && LP.cargoOn(); if (S.loading) S.voy.cargo = []; const help = LP.takeHelp(); if (help) { S.voy.cargo.push(help); S.log.push({ help }); }
   S.voy.cargo.forEach((n, j) => raft(n, j)); S.loaded = S.voy.cargo.reduce((a, b) => a + b, 0); S.placed = 0; S.lost = 0; layout(0);
@@ -117,12 +118,14 @@ function newVoyage(){ for (const b of S.bridge) for (const p of b) if (p) scene.
   S.dropsV = 0;
   if (S.shark) { S.shark.mode = 'idle'; S.shark.target = null; S.shark.cool = false; }
   S.clock = 0; S.rise = 0; S.front = -99; S.missing = false; S.chaser.visible = S.ev.kind === 'ship' && !CALM; A.flames(S.streak);
-  S.signs = A.signs(S.voy.gaps.reduce((a, g) => a + (g.slots > R.SLOTS ? 2 : 1), 0)); A.trayClear(); S.ask = null; S.qkind = R.askKind(S.voyages);
+  const nG = S.voy.gaps.reduce((a, g) => a + (g.slots > R.SLOTS ? 2 : 1), 0); S.signs = A.signs(nG + (SAVE.saved < T.LEARN ? 8 : 0)); S.raftSigns = S.signs.slice(nG); S.raftSigns.forEach(e => e.classList.add('rs')); S.signs = S.signs.slice(0, nG); A.trayClear(); S.ask = null; S.qkind = R.askKind(S.voyages);
   S.log.push({ voyage: S.voy.gaps.map(g => g.have), cargo: S.voy.cargo.slice(), ev: S.ev.kind + (S.ev.drift ? '+drift' : '') + (S.ev.night ? '+night' + S.ev.night : '') + (S.ev.twin ? '+twin' : '') + (S.ev.shark ? '+shark' : '') + (S.ev.big ? '+big' : '') + (S.voy.long != null ? '+long' : ''), night: [...S.nightGaps] }); }
 
 // ── 수 팻말(틈마다 빈 칸 수, 놓을수록 준다) · 밤 다리는 팻말이 꺼지고 놓인 판자 쪽 기둥에 「놓인 수」만
 const roomOf = k => slotsOf(k) - S.fill[k];
-function signsDraw(){ if (!S.signs) return; let si = 0; S.voy.gaps.forEach((g, k) => { const e = S.signs[si++], room = roomOf(k), have = S.fill[k], done = k < S.gi && !active().includes(k);
+function signsDraw(){ if (!S.signs) return;
+  /* 처음 두 길: 뗏목 위에 장 수(끌고 있는 뗏목도) */ if (S.raftSigns && S.raftSigns.length) { const rs = live(); S.raftSigns.forEach((e, i) => { const r = rs[i]; if (!r || S.ask || S.intro) { A.signDraw(e, null); return; } const q = stage.screenOf(r.group); A.signDraw(e, { x: q.x, y: q.y - 26 }, r.n); }); }
+  let si = 0; S.voy.gaps.forEach((g, k) => { const e = S.signs[si++], room = roomOf(k), have = S.fill[k], done = k < S.gi && !active().includes(k);
   if (slotsOf(k) > R.SLOTS) { const e2 = S.signs[si++], [a, b] = R.tens(have, slotsOf(k)), y = T.DECK + .95, inS = v => { const q = stage.screenOf(v); q.x = Math.max(70, Math.min(innerWidth - 70, q.x)); return q; };   /* 팻말은 화면 안으로 당김 */   /* 스무 칸: 「10까지 3」 · 「그다음 10」 */
     if (done || !room) { A.signDraw(e, null); A.signDraw(e2, null); return; }
     A.signDraw(e, a ? inS(new THREE.Vector3((slotX(k, have) + slotX(k, R.SLOTS - 1)) / 2, y, 0)) : null, a, '', '10까지');
@@ -217,7 +220,7 @@ async function arrive(){ const g = S.guest; await finalAsk(); if (S.missing) ret
 
 // ── 손 그림자: 맨 처음 길 첫 틈에서 손이 없으면, 뗏목에서 틈으로 한 번 지나간다(글 없음)
 let hintEl = null; function hintOff(){ if (hintEl) { hintEl.remove(); hintEl = null; } }
-function hint(){ if (hintEl || S.busy || S.drag || S.loading || SAVE.saved >= 2 || S.dropsV > 0 ||   /* 처음 두 주민을 데려올 때까지: 길마다 첫 뗏목을 놓기 전에 손이 한 번 지나간다 */ S.t - (S.idle || 0) < T.HINT_MS / 1000) return; const r = live().find(x => x.n === roomOf(S.gi)); if (!r) return;
+function hint(){ if (hintEl || S.busy || S.drag || S.loading || SAVE.saved >= 2 || S.dropsV > 0 ||   /* 처음 두 주민을 데려올 때까지: 길마다 첫 뗏목을 놓기 전에 손이 한 번 지나간다 */ S.t - (S.idle || 0) < (SAVE.saved < T.LEARN ? T.LEARN_HINT_MS : T.HINT_MS) / 1000) return; const r = live().find(x => x.n === roomOf(S.gi)); if (!r) return;
   const a = stage.screenOf(r.group), b = stage.screenOf(window.__bridge.gap()); hintEl = document.createElement('div'); hintEl.id = 'hint'; hintEl.innerHTML = art('hint.hand'); hintEl.style.left = a.x + 'px'; hintEl.style.top = a.y + 'px'; document.body.appendChild(hintEl);
   requestAnimationFrame(() => { if (!hintEl) return; hintEl.style.opacity = 1; setTimeout(() => { if (hintEl) hintEl.style.transform = `translate(${b.x - a.x}px,${b.y - a.y}px)`; }, 350); }); setTimeout(() => { hintOff(); S.idle = S.t; }, 2600); }
 
