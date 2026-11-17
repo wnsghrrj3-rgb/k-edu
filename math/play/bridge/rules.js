@@ -11,9 +11,9 @@ export const TUNE = { GAPS: 3, NEED: [1, 2, 3, 4, 5], SPARE: [1, 2], FIRST_NEED:
 const shuffle = (a, rnd) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 /** 한 번의 길: { gaps:[{ have, need }×3], cargo:[뗏목 넷, 순서 섞임], spare }. opt.first = 맨 처음 길(첫 틈이 둘) · opt.prev = 바로 앞 길(같은 길이 연달아 안 나오게). */
 export function voyage(rnd = Math.random, opt = {}){
-  let needs, tries = 0;
-  do { needs = shuffle(TUNE.NEED.slice(), rnd).slice(0, TUNE.GAPS);
-    if (opt.first) { needs = needs.filter(n => n !== TUNE.FIRST_NEED).slice(0, TUNE.GAPS - 1); needs.unshift(TUNE.FIRST_NEED); }
+  let needs, tries = 0; const G = opt.gaps || TUNE.GAPS;
+  do { needs = shuffle(TUNE.NEED.slice(), rnd).slice(0, G);
+    if (opt.first) { needs = needs.filter(n => n !== TUNE.FIRST_NEED).slice(0, G - 1); needs.unshift(TUNE.FIRST_NEED); }
   } while (opt.prev && ++tries < 8 && needs.join() === opt.prev.gaps.map(g => g.need).join());
   const spare = TUNE.SPARE[Math.floor(rnd() * TUNE.SPARE.length)];
   return { gaps: needs.map(need => ({ have: SLOTS - need, need })), cargo: shuffle([...needs, spare], rnd), spare };
@@ -36,6 +36,21 @@ export function total(v, rnd = Math.random){ const sum = v.gaps.reduce((a, g) =>
 //   tide = 밀물(물이 차올라 건너편 주민의 발밑까지) · ship = 해적선(먼저 닿으면 주민을 태워 감) · drift = 물살(뗏목이 흔들려 떠다님)
 export const PRESS = { BUDGET: [80, 60, 50, 42, 36, 32], BACK: .05, RAFT_P: .6, RAFT_N: [1, 2, 3] };   // 생각할 수 있는 시간(초, 데려온 주민 수에 따라) · 딱 맞추면 시계가 되감기는 몫 · 통에서 뗏목이 나올 확률 · 그 뗏목의 크기
 /** 이번 길의 사건. saved = 지금까지 데려온 주민 수(놓쳐도 어려워지지 않는다). */
-export function event(saved, rnd = Math.random){ const kind = saved === 0 ? 'tide' : saved === 1 ? 'ship' : rnd() < .5 ? 'tide' : 'ship', drift = saved === 2 || (saved > 2 && rnd() < .5); return { kind, drift, budget: PRESS.BUDGET[Math.min(saved, PRESS.BUDGET.length - 1)] }; }
+/* N02(2026-11-18): 섞을 것을 넓힌다 — 시계(밀물·해적선·무너지는 다리) × 손(물살·상어) × 수(밤 다리·쌍둥이 틈) · 큰 길(틈 다섯).
+ *   처음에는 데려온 주민 수에 따라 정해진 차례로 하나씩 처음 보여 준다(MIX.FIRST): 0 밀물 · 1 해적선 · 2 물살 · 3 밤 다리 · 4 무너지는 다리 · 5 쌍둥이 틈 · 6 상어 · 7 큰 길.
+ *   그 뒤에는 섞는다. 상어는 모형이 있을 때만(opt.shark). */
+export const MIX = { FIRST: { drift: 2, night: 3, fall: 4, twin: 5, shark: 6, big: 7 }, P: { drift: .4, night: .35, twin: .3, shark: .35, big: .3, fall: .34 }, NIGHT: [[0, 1], [8, 2], [10, 3]], BIG_GAPS: 5, BIG_BUDGET: 1.6 };
+export function event(saved, rnd = Math.random, opt = {}){ const F = MIX.FIRST, P = MIX.P, first = k => saved === F[k], later = k => saved > F[k] && rnd() < P[k];
+  let kind = saved === 0 ? 'tide' : saved === 1 ? 'ship' : first('fall') ? 'fall' : saved > F.fall && rnd() < P.fall ? 'fall' : rnd() < .5 ? 'tide' : 'ship';
+  const drift = first('drift') || (saved > F.drift && !first('night') && !first('fall') && !first('twin') && !first('shark') && !first('big') && rnd() < P.drift);
+  const nightOn = first('night') || (later('night') && !first('fall') && !first('twin') && !first('shark') && !first('big')), night = nightOn ? MIX.NIGHT.filter(([s]) => saved >= s).pop()[1] : 0;
+  const twin = first('twin') || (later('twin') && !first('shark') && !first('big')), shark = !!opt.shark && (first('shark') || (later('shark') && !first('big'))), big = first('big') || later('big');
+  const gaps = big ? MIX.BIG_GAPS : TUNE.GAPS, budget = PRESS.BUDGET[Math.min(saved, PRESS.BUDGET.length - 1)] * (big ? MIX.BIG_BUDGET : 1);
+  return { kind, drift, budget, night, twin, shark, big, gaps }; }
+/** 길 끝 물음의 종류: 첫 길은 합(「모두 몇 장 놓았지?」), 그 뒤로는 합과 「남은 나무는 몇 장?」 가운데 하나. */
+export const askKind = (n, rnd = Math.random) => n <= 1 ? 'sum' : rnd() < .5 ? 'sum' : 'left';
+/** 남은 나무: 실은 판자 − 놓은 판자 − 물에 빠진 판자. */
+export const leftover = (loaded, placed, lost) => loaded - placed - lost;
 /** 쉬어 가는 땅의 통을 열면: 덤 뗏목 또는 물고기 양동이. */
-export function barrel(rnd = Math.random){ return rnd() < PRESS.RAFT_P ? { kind: 'raft', n: PRESS.RAFT_N[Math.floor(rnd() * PRESS.RAFT_N.length)] } : { kind: 'fish' }; }
+export const MAP = { P: .25, MAX: 4 };   // 통에서 지도 조각이 나올 확률(조각이 아직 모자랄 때) · 넷이면 광장에 새 섬
+export function barrel(rnd = Math.random, opt = {}){ if (opt.map && rnd() < MAP.P) return { kind: 'map' }; return rnd() < PRESS.RAFT_P ? { kind: 'raft', n: PRESS.RAFT_N[Math.floor(rnd() * PRESS.RAFT_N.length)] } : { kind: 'fish' }; }
