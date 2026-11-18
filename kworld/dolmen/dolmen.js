@@ -4,8 +4,8 @@
    굴림대: 돌 밑에 둘 이상 있어야 움직인다. 지나온 것은 주워서 돌 앞 길에 놓는다(아이 하나도 천천히 돕는다).
    좌표: x 동쪽(+), z 남쪽(+). 길은 z=24 를 따라 서쪽 채석장 → 동쪽 무덤 언덕. 마을은 남쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
-await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, scatter as strew } from '../scene/kit.js?v=3';
+await loadArt('people', 'nature', 'props', 'dolmen');   /* 블렌더로 만든 모델(사람·자연·소품 + 이 장면만의 묶음 dolmen.glb = tools/blender/make_dolmen.py) */
 
 const W = 92, H = 58, BX = [4, 88], BZ = [8, 52];
 const ROAD_Z = 24, S0 = 17, GOAL = 73, MOUND = [73, 24], DAY = 320;
@@ -27,36 +27,64 @@ const { occl, group } = occluders(scene);
 const { person, walkAnim } = people(scene);
 const { ring, update: ringsUpdate } = ringsFx(scene);
 
+/* 꾸밈(2026-11-17 블렌더 모델 — tools/blender/make_dolmen.py → dolmen.glb). 꾸밈에는 rndA 만 쓴다: 놀이 난수 rnd 는 예전 자리에서 예전과 같은 수만큼만 쓴다(자동 확인 숫자가 그대로) */
+const rndA = rng(1119);
+const put = (n, x, z, ry = 0, s = 1, y = 0, o) => { const m = art(n, { wall: 0xc8a070, c: 0x8aa848 }, o); m.position.set(x, y, z); m.rotation.y = ry; if (Array.isArray(s)) m.scale.set(s[0], s[1], s[2]); else m.scale.setScalar(s); scene.add(m); return m; };
+const lay = (n, x, z, ry = 0, s = 1, y = 0) => { const m = put(n, x, z, ry, s, y); m.castShadow = false; return m; };   /* 땅에 깔린 것: 그림자를 드리우지 않는다 */
+const face = (x, z, tx, tz) => Math.atan2(tx - x, tz - z);   /* 모델 앞(+z)이 (tx, tz)를 보게 */
+
 /* 땅 · 길 · 언덕 · 논 · 마을 */
 flat(-60, -30, W + 60, H + 30, 0x7cbf58, 0);
-flat(9, ROAD_Z - 2.2, 66, ROAD_Z + 2.2, 0xc8a878, 0.03);           /* 통나무 길 */
-for (let i = 0; i < 26; i++) { const t = box(0.5 + rnd() * 0.8, 0.08, 0.4 + rnd() * 0.5, 0xb09060); t.castShadow = false; at(t, 10 + rnd() * 55, 0.07, ROAD_Z - 2 + rnd() * 4); scene.add(t); }
-{ const g = new THREE.CylinderGeometry(4.2, 11.5, 2.2, 14); const m = new THREE.Mesh(g, M(0x8fae5a)); m.position.set(MOUND[0], 1.1, MOUND[1]); m.receiveShadow = true; scene.add(m); }
-for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) { const x0 = 11 + c * 7.2, z0 = 36 + r * 5.2; flat(x0, z0, x0 + 6.6, z0 + 4.6, 0x7ab0c8, 0.04); for (let k = 0; k < 12; k++) { const s = box(0.08, 0.6, 0.08, 0x8ac060); s.castShadow = false; at(s, x0 + 0.4 + (k % 6) * 1.15, 0.3, z0 + 1 + Math.floor(k / 6) * 2.4); scene.add(s); } }
-/* 채석 벼랑 */
-{ const cols = [0xa08a70, 0x8f7a62, 0xb09a7c]; for (let k = 0; k < 3; k++) { const b = box(9 - k * 0.8, 2.1, 32 - k * 0.8, cols[k]); at(b, 4.5 + (k % 2 ? 0.3 : -0.2), 1.05 + k * 2.05, 24); scene.add(b); } const top = box(7.4, 0.3, 30, 0x6f9a48); at(top, 4.5, 6.3, 24); scene.add(top);
-  for (let k = 0; k < 6; k++) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6 + rnd() * 0.5, 0), M(0x9a948a)); at(r, 10 + rnd() * 2, 0.4, 12 + k * 4.5); r.castShadow = true; scene.add(r); } }
-/* 목책 마을 · 망루 */
-{ const P = []; for (let k = 0; k < 40; k++) { const a = (k / 40) * 6.28, x = 44 + Math.cos(a) * 8.5, z = 45 + Math.sin(a) * 5.6; if (k > 27 && k < 32) continue; /* 북쪽에 어귀 */ const p = cyl(0.14, 0.16, 2.2, 0x7a5230, 5); p.position.set(x, 1.1, z); P.push(p); } group([35, 39, 53, 51], P); }
-for (const [x, z] of [[40.5, 44], [47.5, 44.5], [44, 48]]) { const P = [at(cyl(2.0, 2.2, 1.2, 0xc8a070, 10), x, 0.6, z)], r = new THREE.Mesh(new THREE.ConeGeometry(2.6, 2.4, 10), M(0xd9a84a)); r.position.set(x, 2.4, z); r.castShadow = true; P.push(r); group([x - 2, z - 2, x + 2, z + 2], P); }
-const tower = new THREE.Group(); for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) tower.add(at(cyl(0.12, 0.14, 5.2, 0x7a5230, 5), dx, 2.6, dz)); tower.add(at(box(2.8, 0.2, 2.8, 0x8a6a40), 0, 5.2, 0), at(box(2.8, 0.9, 0.1, 0x8a6a40), 0, 5.7, 1.4), at(box(2.8, 0.9, 0.1, 0x8a6a40), 0, 5.7, -1.4)); tower.position.set(TOWER[0], 0, TOWER[1]); tower.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(tower);
-const smoke = []; for (let k = 0; k < 8; k++) { const s = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0x5a5a60, transparent: true, opacity: 0, flatShading: true, depthWrite: false })); s.userData.k = k / 8; scene.add(s); smoke.push(s); }
+flat(9, ROAD_Z - 2.2, 66, ROAD_Z + 2.2, 0xc8a878, 0.03);           /* 끌길 */
+{ const P = []; for (let i = 0; i < 26; i++) { const w = 0.5 + rnd() * 0.8, d = 0.4 + rnd() * 0.5, x = 10 + rnd() * 55, z = ROAD_Z - 2 + rnd() * 4; P.push([x, -0.032, z, [w * 0.8, 1, d * 0.9], rndA() * 6.28]); } artInst(scene, 'dpatch', P, { c: 0xb39466 }, { shadow: false }); }   /* 밟혀 다진 흙 얼룩(예전 널조각 자리) */
+lay('mound', MOUND[0], MOUND[1]);   /* 무덤 언덕(groundH 와 같은 꼴) + 서쪽 비탈 끌길 */
+{ const K = ['paddy_gold', 'paddy_cut', 'paddy_gold', 'paddy_gold', 'paddy_gold', 'paddy_cut', 'paddy_cut', 'paddy_gold', 'paddy_green'], L = {}; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) (L[K[r * 3 + c]] = L[K[r * 3 + c]] || []).push([11 + c * 7.2 + 3.3, 0, 36 + r * 5.2 + 2.3, 1, 0]); for (const k in L) artInst(scene, k, L[k], {}, { shadow: false }); }   /* 논 아홉: 익은 논 · 벤 논 · 늦은 논 */
+/* 채석 벼랑(SOLID cliff 네모에 맞춘 한 덩이 — 덮개돌을 떼어 낸 자리가 길 끝에 있다) · 뒤로 이어진 벼랑 */
+scene.add(art('quarry')); put('quarry_back', 0, 0, 0, 1, 0, { shadow: false });
+{ const P = []; for (let k = 0; k < 6; k++) { const r = 0.6 + rnd() * 0.5, x = 10 + rnd() * 2; P.push([x, 0, 12 + k * 4.5, r * 0.95, rndA() * 6.28]); } P.push([56.8, 0, 15.6, [0.8, 0.45, 0.8], 1], [87.5, 0, 18, [1, 0.5, 1], 2], [62, 0, 44, [0.9, 0.45, 0.9], 3]); artInst(scene, 'rock_b', P); }   /* 채석장 앞 돌 여섯(예전 자리) + 들판의 납작한 돌 */
+put('rope_coil', 10.6, 19.2, 0.8); put('menhir', 9.8, 29.4, 0.3, 0.55);
+/* 목책 마을: 도랑 · 목책(북쪽 어귀) · 둥근 집 둘과 긴 집 · 다락 곳간 · 화덕 · 토기 · 볏단 걸이 · 솟대 */
+lay('dpatch', 44, 45, 0.2, [8.0, 1, 5.2], -0.03);
+lay('ditch', 44, 45);
+{ const m = artOwn('palisade_ring'); m.position.set(44, 0, 45); group([35, 39, 53, 51], [m]); }
+for (const [x, z, n, ry, sc] of [[40.5, 44, 'bhut', Math.PI - 0.5, 0.85], [48, 44, 'bhut_long', Math.PI + 0.25, 0.8], [44, 48, 'bhut', Math.PI + 0.35, 0.8]]) { const m = artOwn(n, { wall: 0xc8a070 }); m.position.set(x, 0, z); m.rotation.y = ry; m.scale.setScalar(sc); group([x - 2, z - 2, x + 2, z + 2], [m]); }
+put('granary_raised', 49.4, 48.3, -0.4, 0.74); put('hearth', 44.2, 42.1, 0.3, 0.9); put('pots_set', 40.3, 47.7, 0.5, 0.9); put('drying_rack', 47.6, 41.2, 0.1, 0.9);
+artInst(scene, 'sotdae', [[39.3, 0, 38.7, 1, 0.3], [47.5, 0, 38.4, 0.9, -0.2], [86.5, 0, 26.5, 0.95, 2.4]]);
+const tower = put('watchtower', TOWER[0], TOWER[1]);   /* 망루(불 바구니에서 연기가 오른다) */
+const smokeGeo = artGeo('dpuff'), smoke = []; for (let k = 0; k < 8; k++) { const s = new THREE.Mesh(smokeGeo, new THREE.MeshStandardMaterial({ color: 0x5a5a60, vertexColors: true, transparent: true, opacity: 0, flatShading: true, depthWrite: false })); s.userData.k = k / 8; scene.add(s); smoke.push(s); }
 /* 족장 집 · 제단(껴묻거리) */
-{ const P = [at(box(5, 2, 4.5, 0xc8a070), 82, 1, 29.8)], r = new THREE.Mesh(new THREE.ConeGeometry(3.8, 2.2, 4), M(0xc89a48)); r.rotation.y = Math.PI / 4; r.position.set(82, 3.1, 29.8); P.push(r); group([79.5, 27.5, 84.5, 32], P); }
-const goods = new THREE.Group(); goods.add(at(box(0.12, 0.08, 0.9, 0xd8b04a, { emissive: 0x3a2a00, metalness: 0.5, roughness: 0.4 }), -0.25, 0.95, 0), at(cyl(0.3, 0.3, 0.05, 0xe0c060, 14, { emissive: 0x4a3a00, metalness: 0.6, roughness: 0.3 }), 0.25, 0.95, 0)); goods.children[1].rotation.x = Math.PI / 2; goods.add(at(box(1.2, 0.8, 0.8, 0x8a6a40), 0, 0.4, 0)); goods.position.set(ALTAR[0], 0, ALTAR[1] + 2.9); goods.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(goods);
+{ const m = artOwn('chief_house', { wall: 0xc8a070 }); m.position.set(82, 0, 29.8); group([79.5, 27.5, 84.5, 32], [m]); }
+put('pots_set', 86.2, 31.6, -0.6, 0.8);
+const goods = new THREE.Group(); goods.add(art('altar'), at(art('bronze_set'), 0, 0.76, 0)); goods.children[1].scale.setScalar(0.85); goods.position.set(ALTAR[0], 0, ALTAR[1] + 2.9); scene.add(goods);
 const goodsGlow = glowSprite(scene, 'rgba(255,230,140,.9)', 'rgba(255,190,60,0)', 2.6); goodsGlow.position.set(ALTAR[0], 1.3, ALTAR[1] + 2.9);
 /* 흙더미 · 새참 */
-const dirt = new THREE.Mesh(new THREE.DodecahedronGeometry(1.4, 0), M(0x9a7a50)); dirt.scale.set(1.5, 0.6, 1.2); at(dirt, DIRT[0], 0.4, DIRT[1]); dirt.castShadow = true; scene.add(dirt);
-const meal = new THREE.Group(); meal.add(at(cyl(0.5, 0.36, 0.4, 0x8a5a2b, 10), 0, 0.2, 0), at(cyl(0.46, 0.46, 0.1, 0xfff6e0, 10, { emissive: 0x333322 }), 0, 0.42, 0)); meal.position.set(45.2, 0.5, 35.4); scene.add(meal); /* 목책 밖 어귀에 내놓은 새참 */
-scene.add(at(box(1.6, 0.5, 1.0, 0x8a6a40), 45.2, 0.25, 35.4));
+const dirt = put('dirt_pile', DIRT[0], DIRT[1], 0.2, 0.9);
+const meal = new THREE.Group(); meal.add(art('meal_bowl')); meal.position.set(45.2, 0.5, 35.4); scene.add(meal); /* 목책 밖 어귀에 내놓은 새참(밥 함지) */
+put('meal_table', 45.2, 35.4);
+/* 둘레: 조밭 · 선돌 · 나무 · 덤불 · 풀꽃 · 땅 얼룩 · 먼 산 */
+artInst(scene, 'field_dry', [[27.5, 0, 12.6, 1, 0], [35.3, 0, 12.6, 1, 0], [40, 0, 55.4, 1, 0], [48, 0, 55.4, 1, 0]], { c: 0x8aa848 }, { shadow: false });
+put('menhir', 53, 14.6, 0.4); put('menhir', 55.4, 13.2, 2.1, 0.8);
+{ const near = [], far = [], isFree = (x, z) => !(inRect(x, z, [24, 9.5, 39, 15.8]) || inRect(x, z, [51, 11.5, 57.5, 16.5]) || Math.abs(z - ROAD_Z) < 5 || dist(x, z, MOUND[0], MOUND[1]) < 13);
+  const T = ['tree_a', 'pine_a', 'tree_b'];
+  for (let t = 0; t < 400 && near.length < 30; t++) { const x = 14 + rndA() * 76, z = 1 + rndA() * 16.5; if (!isFree(x, z) || near.some((p) => dist(x, z, p[0], p[2]) < 3.2)) continue; near.push([x, 0, z, 0.85 + rndA() * 0.45, rndA() * 6.28]); }
+  for (let t = 0; t < 400 && far.length < 34; t++) { const a = rndA(), x = a < 0.6 ? -8 + rndA() * 112 : (a < 0.8 ? 90 + rndA() * 14 : 10 + rndA() * 80), z = a < 0.6 ? -14 + rndA() * 14 : (a < 0.8 ? -10 + rndA() * 72 : 59 + rndA() * 10); if (far.some((p) => dist(x, z, p[0], p[2]) < 4) || (x < 16 && z > -2)) continue; far.push([x, 0, z, 1 + rndA() * 0.6, rndA() * 6.28]); }
+  T.forEach((n, k) => { artInst(scene, n, near.filter((_, i) => i % 3 === k), { leaf: 0x5a9a48 }); artInst(scene, n, far.filter((_, i) => i % 3 === k), { leaf: 0x5a9a48 }, { shadow: false }); });
+  artInst(scene, 'bush', [[60.5, 0, 12.5, 1, 0.3], [20, 0, 18, 0.9, 2], [88, 0, 34, 1.1, 1], [58.5, 0, 46, 1, 4], [33.5, 0, 53, 0.9, 1.4], [86, 0, 44, 1, 2.6], [70, 0, 41, 0.9, 0.8]], { leaf: 0x5a9a48 });
+  const busy = (x, z) => Math.abs(z - ROAD_Z) < 2.8 || inRect(x, z, [10.4, 35.6, 32.6, 51.4]) || inRect(x, z, [34.5, 38, 53.5, 52]) || SOLID.some((r) => inRect(x, z, r, 0.6)) || inRect(x, z, [24, 9.5, 39, 15.8]) || dist(x, z, DIRT[0], DIRT[1]) < 3.4 || dist(x, z, 45.2, 35.4) < 2.4 || dist(x, z, MOUND[0], MOUND[1]) < 5 || dist(x, z, ALTAR[0], ALTAR[1] + 2.9) < 2;
+  strew(scene, rndA, { area: [9, 8, 90, 54], n: 150, names: ['grass_a', 'grass_b', 'flower_y'], avoid: busy, scale: [0.8, 1.3], y: (x, z) => groundH(x, z), shadow: false });
+  const P = [[], []], put2 = []; for (let t = 0; t < 600 && put2.length < 46; t++) { const x = 6 + rndA() * 84, z = 4 + rndA() * 52, r = 1.0 + rndA() * 1.2; if (busy(x, z) || dist(x, z, MOUND[0], MOUND[1]) < 12 || put2.some((p) => dist(x, z, p[0], p[1]) < r + p[2])) continue; put2.push([x, z, r]); P[0].push([x, -0.058 + (put2.length % 2) * 0.012, z, [r, 1, r * (0.6 + rndA() * 0.5)], rndA() * 6.28]); }
+  artInst(scene, 'dpatch', P[0], { c: 0x68a648 }, { shadow: false });
+  artInst(scene, 'dhill', [[-30, 0, -40, [40, 12, 18], 0.2], [20, 0, -48, [36, 14, 16], 1], [70, 0, -44, [40, 11, 16], 2], [150, 0, -30, [26, 13, 30], 0.6], [156, 0, 30, [20, 9, 30], 1.4], [148, 0, 84, [30, 8, 20], 2.2], [40, 0, 96, [44, 9, 18], 0.4], [-34, 0, 84, [30, 8, 20], 3]], { c: 0x6f9c4c }, { shadow: false }); }
 /* 받침돌 둘 · 흙 비탈 · 덮개돌 · 굴림대 */
 const supH = 1.7;
-const supports = [-1.5, 1.5].map((dz) => { const m = box(2.6, supH, 0.7, 0x9a948a); at(m, MOUND[0], 2.2 + supH / 2, MOUND[1] + dz); scene.add(m); return m; });
-const ramp = new THREE.Mesh(new THREE.BoxGeometry(5, 1, 2.4), M(0x9a7a50)); ramp.geometry.translate(0, 0.5, 0); ramp.position.set(MOUND[0] - 1.2, 2.2, MOUND[1]); ramp.scale.y = 0.001; ramp.castShadow = ramp.receiveShadow = true; scene.add(ramp);
-const capstone = new THREE.Group(); { const a = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 0), M(0x8d877c)); a.scale.set(2.6, 0.75, 1.9); a.castShadow = a.receiveShadow = true; capstone.add(a); const b = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 0), M(0xa6a094)); b.scale.set(1.6, 0.45, 1.2); b.position.set(0.3, 0.5, -0.2); b.castShadow = true; capstone.add(b); } scene.add(capstone);
-const rollGeo = new THREE.CylinderGeometry(0.28, 0.28, 3.6, 8); rollGeo.rotateX(Math.PI / 2);
-const rollers = Array.from({ length: NROLL }, () => { const m = new THREE.Mesh(rollGeo, M(0x8a5a2b)); m.castShadow = true; scene.add(m); const glow = glowSprite(scene, 'rgba(255,230,140,.9)', 'rgba(255,200,80,0)', 2.6); glow.visible = false; return { m, glow, x: 0, z: ROAD_Z, side: false }; });
-const ropeMat = M(0xd8c090), ropeSegs = Array.from({ length: 10 }, () => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 0.08, 0.08), ropeMat); scene.add(m); return m; });
+const supports = put('supports', MOUND[0], MOUND[1], 0, 1, 2.2);   /* 받침돌 둘(z ±1.5) */
+const ramp = art('ramp'); ramp.position.set(MOUND[0] - 1.2, 2.2, MOUND[1]); ramp.scale.y = 0.001; scene.add(ramp);
+const capRopes = art('cap_ropes'), capstone = new THREE.Group(); capstone.add(art('capstone'), capRopes); scene.add(capstone);   /* 납작한 너럭바위 + 묶은 줄(앞 매듭에 끄는 줄 · 남쪽 매듭에 잡는 줄) */
+const rollGeo = artGeo('roller');   /* 껍질이 군데군데 벗겨진 통나무 — 구르는 것이 보인다 */
+const rollers = Array.from({ length: NROLL }, () => { const m = new THREE.Mesh(rollGeo, artMat); m.castShadow = m.receiveShadow = true; scene.add(m); const glow = glowSprite(scene, 'rgba(255,230,140,.9)', 'rgba(255,200,80,0)', 2.6); glow.visible = false; return { m, glow, x: 0, z: ROAD_Z, side: false }; });
+const ropeGeo = artGeo('rope_seg').clone(); ropeGeo.translate(-0.5, 0, 0);
+const ropeSegs = Array.from({ length: 10 }, () => { const m = new THREE.Mesh(ropeGeo, artMat); scene.add(m); return m; });
+const tailSegs = Array.from({ length: 3 }, () => { const m = new THREE.Mesh(ropeGeo, artMat); scene.add(m); return m; });   /* 남쪽 매듭에서 늘어진 잡는 줄(빛 기둥 자리로) */
 const goalPos = new THREE.Vector3(MOUND[0], 3.4, MOUND[1]);
 /* 「무엇을 어떻게」 보이기(11-17 준호 「어떻게 하라는 건지 모르겠다」): 줄 잡는 자리 빛 기둥 · 주울 굴림대 빛 · 내려놓을 자리 고리 · 머리 위 그림 */
 const pillarTex = canvasTex(8, 128, (g) => { const r = g.createLinearGradient(0, 0, 0, 128); r.addColorStop(0, 'rgba(255,230,140,0)'); r.addColorStop(1, 'rgba(255,220,120,.85)'); g.fillStyle = r; g.fillRect(0, 0, 8, 128); });
@@ -69,11 +97,13 @@ const goalGlow = glowSprite(scene, 'rgba(255,236,170,.75)', 'rgba(255,200,90,0)'
 const SKIN = 0xf0c48e;
 const pMesh = person({ shirt: 0xc8b08a, pants: 0x7a5a3a, hat: 'top', skin: SKIN });
 const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
-const carryM = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.5), M(0x9a7a50)); carryM.visible = false; scene.add(carryM);
+const carryM = new THREE.Group(); carryM.add(art('basket_earth'), at(art('meal_bowl'), 0, 0.02, 0), at(art('bronze_set'), 0, 0.02, 0)); carryM.children[1].scale.setScalar(0.62); carryM.children[2].scale.setScalar(0.62); carryM.visible = false; scene.add(carryM);   /* 머리에 인 것: 흙 바구니 · 밥 함지 · 청동 검과 거울 */
 const haulers = Array.from({ length: CREW0 }, (_, i) => ({ i, m: person({ shirt: [0xb89a70, 0xa88a60, 0xc0a07a, 0x9a8a68][i % 4], pants: 0x6a5034, hat: 'top', skin: SKIN }), x: 0, z: 0, away: false, hurt: false, ph: rnd() * 6 }));
 const helper = { m: person({ shirt: 0xd0b890, pants: 0x7a6040, hat: 'top', skin: SKIN }), x: 30, z: 27, carry: -1, t: 0 }; helper.m.scale.setScalar(0.78);
-const chief = person({ shirt: 0x8a3a2a, pants: 0x4a2a1a, hat: 'gat', mood: 'stern', skin: SKIN }); chief.add(at(cyl(0.22, 0.22, 0.04, 0xe0c060, 12, { emissive: 0x4a3a00, metalness: 0.6, roughness: 0.3 }), 0, 1.05, 0.23)); chief.children[chief.children.length - 1].rotation.x = Math.PI / 2;
+const chief = person({ shirt: 0x8a3a2a, pants: 0x4a2a1a, hat: 'hair', mood: 'stern', skin: SKIN }); chief.add(art('chief_gear'));   /* 깃 머리띠 · 가슴의 청동 거울 · 허리의 청동 검 · 털 망토 · 방울 지팡이 */
 chief.position.set(MOUND[0] + 4.2, groundH(MOUND[0] + 4.2, MOUND[1] - 1.5), MOUND[1] - 1.5); chief.rotation.y = -Math.PI / 2;
+/* 구경하는 마을 사람(움직이지 않는다 — 놀이와 상관없음) */
+for (const [x, z, shirt, pants, hat, chima, sc, tx, tz] of [[61.6, 37.6, 0xd8c8a8, 0x8a5a3a, 'bun', true, 1, MOUND[0], MOUND[1]], [63.4, 38.4, 0xc8a070, 0x6a5034, 'braid', false, 0.72, MOUND[0], MOUND[1]], [42.4, 41.9, 0xd8c8a8, 0x7a5a3a, 'bun', true, 1, 44.2, 42.1]]) { const o = person({ shirt, pants, hat, chima, skin: SKIN }); o.scale.setScalar(sc); o.position.set(x, groundH(x, z), z); o.rotation.y = face(x, z, tx, tz); }
 const guardsLeft = [];
 
 /* ───── 소리 ───── */
@@ -119,7 +149,7 @@ function hud() {
   const hc = $('hCarry'); const cc = S.carry >= 0 ? '🪵 굴림대' : S.earth ? '🧺 흙' : S.mealCarry ? '🍚 새참' : S.goods === 'carry' ? '🗡 껴묻거리' : ''; hc.style.display = cc ? '' : 'none'; hc.textContent = cc + ' 들었음';
   $('tRamp').className = S.ramp >= 4 ? 'on' : ''; $('tRamp').textContent = '⛰ 받침돌 사이 흙 비탈 ' + S.ramp + '/4';
   $('tMeal').className = S.meal ? 'on' : ''; $('tGoods').className = S.goods === 'in' ? 'on' : '';
-  carryM.visible = S.earth || S.mealCarry || S.goods === 'carry'; if (carryM.visible) carryM.material.color.set(S.earth ? 0x9a7a50 : S.mealCarry ? 0xfff0d0 : 0xe0c060);
+  carryM.visible = S.earth || S.mealCarry || S.goods === 'carry'; carryM.children[0].visible = S.earth; carryM.children[1].visible = !S.earth && S.mealCarry; carryM.children[2].visible = !S.earth && !S.mealCarry && S.goods === 'carry';
 }
 function placeRollersAround(s) { rollers.forEach((r, i) => { r.x = s - 2.4 + i * 2.2; r.z = ROAD_Z; r.side = false; }); }
 function resetDay(keep) {
@@ -128,7 +158,7 @@ function resetDay(keep) {
   if (S.goods === 'carry') S.goods = 'altar';
   S.px = S.s + 6; S.pz = ROAD_Z + 3.5; S.pdir = -Math.PI / 2;
   haulers.forEach((h) => { h.away = false; h.hurt = h.i >= CREW0 - S.hurt; h.m.visible = !h.hurt; });
-  rollers.forEach((r) => (r.m.visible = true));
+  rollers.forEach((r) => (r.m.visible = true)); capRopes.visible = true;
   helper.carry = -1; helper.x = S.s - 4; helper.z = ROAD_Z + 3; helper.t = 0;
   meal.visible = true; goods.visible = S.goods === 'altar'; goodsGlow.visible = S.goods === 'altar'; $('fade').style.opacity = 0;
   lightFor(0); hud();
@@ -200,7 +230,7 @@ function update(dt) {
     S.endT += dt;
     if (S.mode === 'win') { const k = clamp(S.endT / 2.4, 0, 1); capstone.position.set(lerp(capstone.position.x, GOAL, dt * 2), lerp(capstone.position.y, 2.2 + supH + 0.55, dt * 1.6), ROAD_Z); ramp.scale.y = Math.max(0.001, (S.ramp / 4) * 1.6 * (1 - clamp((S.endT - 2.6) / 2, 0, 1))); S.sun = Math.min(0.95, S.sun + dt * 0.05); lightFor(S.sun); }
     else { S.sun = Math.min(1.1, S.sun + dt * 0.04); lightFor(S.sun); }
-    placeAll(dt); if (S.mode === 'win' && S.endT > 2.5) rollers.forEach((r) => (r.m.visible = false)); /* 굴림대는 치운다 */
+    placeAll(dt); if (S.mode === 'win' && S.endT > 2.5) { rollers.forEach((r) => (r.m.visible = false)); capRopes.visible = false; } /* 굴림대와 묶은 줄은 치운다 */
     if (S.endT > 5.5 && !S.shown) { S.shown = true; endScreen(); }
     return;
   }
@@ -295,6 +325,9 @@ function placeAll(dt) {
     h.m.position.set(h.x, groundH(h.x, h.z), h.z); h.m.rotation.y = l > 0.3 ? -Math.atan2(dz, dx) + Math.PI / 2 : -Math.PI / 2; h.m.rotation.x = 0; h.m.rotation.z = lean; walkAnim(h.m, S.t * 10 + h.i, l > 0.3); if (!isAway) k++; });
   /* 줄 */
   const x0 = S.s + 2.3, x1 = S.s + 6 + Math.floor((c - 1) / 2) * 1.6 + 0.6; ropeSegs.forEach((m, i) => { const a = x0 + (x1 - x0) * (i / ropeSegs.length), b = x0 + (x1 - x0) * ((i + 1) / ropeSegs.length); m.position.set((a + b) / 2, groundH((a + b) / 2, ROAD_Z) + 1.0, ROAD_Z); m.scale.x = b - a; m.visible = S.mode !== 'win'; });
+  { const ky = capstone.position.y, kz = ROAD_Z + 2.05, gy = groundH(S.s + 0.5, ROAD_Z + 3), P = S.holding ? [[S.s, ky, kz], [lerp(S.s, S.px, 0.5), lerp(ky, gy + 1.0, 0.6) - 0.08, lerp(kz, S.pz, 0.5)], [S.px - 0.1, gy + 1.0, S.pz - 0.32], [S.px - 0.1, gy + 0.98, S.pz - 0.3]] : [[S.s, ky, kz], [S.s + 0.3, gy + 0.72, ROAD_Z + 2.72], [S.s + 0.72, gy + 0.07, ROAD_Z + 3.2], [S.s + 1.45, gy + 0.07, ROAD_Z + 3.32]];
+    tailSegs.forEach((m, i) => { segTo(m, P[i], P[i + 1]); m.visible = S.mode !== 'win'; }); }
+  ramp.visible = ramp.scale.y > 0.01;   /* 흙을 붓기 전에는 비탈이 없다 */
   /* 나 */
   pMesh.position.set(S.px, groundH(S.px, S.pz), S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; pMesh.rotation.z = S.holding ? Math.max(0, 0.4 - (S.t - S.lastOk) * 0.8) : 0; walkAnim(pMesh, S.t * (S.running ? 16 : 10), S.moving);
   pRing.position.set(S.px, groundH(S.px, S.pz) + 0.11, S.pz); pRing.material.color.set(S.holding ? 0xffcf4d : 0xffffff);
@@ -310,6 +343,8 @@ function placeAll(dt) {
   showTag('drop', '⬇ 여기 내려놓기', dropRing.visible, S.s + 3.2, 1.4, ROAD_Z);
 }
 const tv = new THREE.Vector3();
+const sA = new THREE.Vector3(), sB = new THREE.Vector3(), sX = new THREE.Vector3(1, 0, 0);
+function segTo(m, a, b) { sA.set(a[0], a[1], a[2]); sB.set(b[0], b[1], b[2]); const l = sA.distanceTo(sB) || 0.001; m.position.copy(sA).add(sB).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(sX, sB.sub(sA).divideScalar(l)); m.scale.set(l, 1, 1); }
 function showTag(k, html, on, x, y, z) { const e = tagEl(k, html); if (!on) { e.style.display = 'none'; return; } const q = tv.set(x, y + groundH(x, z), z).project(cam); if (q.z > 1) { e.style.display = 'none'; return; } e.style.display = 'block'; e.style.left = ((q.x + 1) / 2) * innerWidth + 'px'; e.style.top = clamp(((1 - q.y) / 2) * innerHeight, 120, innerHeight - 30) + 'px'; }
 const v3 = new THREE.Vector3();
 function view() {
