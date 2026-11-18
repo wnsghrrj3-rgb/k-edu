@@ -395,7 +395,7 @@ const MIS_CSS = `#mis{position:fixed;left:14px;top:60px;width:min(330px,calc(100
 #marr{position:fixed;width:0;height:0;pointer-events:none;display:none}#marr b{position:absolute;left:-19px;top:-19px;width:38px;height:38px;border-radius:50%;background:#ffcf4d;box-shadow:0 3px 0 rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#3a2a00;font-weight:900}
 #mpop{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);background:#3fb46a;color:#fff;font-weight:900;font-size:28px;border-radius:20px;padding:14px 28px;box-shadow:0 6px 0 #23824a;pointer-events:none;opacity:0;transition:all .3s cubic-bezier(.3,1.6,.5,1);text-align:center;white-space:nowrap}
 #mpop small{display:block;font-size:16px;font-weight:800;opacity:.92;margin-top:3px}#mpop.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
-@media (max-width:640px){#mis .mt{font-size:16px}#mis .mk{font-size:12.5px}#mpop{font-size:22px}}`;
+@media (max-width:640px){#mis .mt{font-size:16px}#mis .mk{font-size:12.5px}#mpop{font-size:22px;top:52%}}`;
 export function missions(scene, cam, list, o = {}) {
   const isTouch = o.isTouch || (() => document.body.classList.contains('touch')), gy = o.groundY || (() => 0);
   if (!document.getElementById('misCss')) { const st = document.createElement('style'); st.id = 'misCss'; st.textContent = MIS_CSS; document.head.appendChild(st); }
@@ -436,7 +436,7 @@ export function missions(scene, cam, list, o = {}) {
     const x = p[0], z = p.length === 3 ? p[2] : p[1], y = p.length === 3 ? p[1] : gy(x, z), pulse = 0.5 + 0.5 * Math.sin(t * 4);
     beam.position.set(x, y + 5, z); beam.material.opacity = 0.5 + pulse * 0.35; ring.position.set(x, y + 0.08, z); ring.scale.setScalar(0.9 + pulse * 0.3);
     const q = v.set(x, y + (m.tagY || 2.4), z).project(cam), off = q.z > 1 || Math.abs(q.x) > 0.95 || Math.abs(q.y) > 0.9;
-    const tg = typeof m.tag === 'function' ? m.tag() : m.tag; if (!off) { if (tg !== '') { tag.textContent = tg || '여기!'; tag.style.display = 'block'; tag.style.left = ((q.x + 1) / 2) * innerWidth + 'px'; tag.style.top = clamp(((1 - q.y) / 2) * innerHeight, 150, innerHeight - 20) + 'px'; } }
+    const tg = typeof m.tag === 'function' ? m.tag() : m.tag; if (!off) { if (tg !== '') { tag.textContent = tg || '여기!'; tag.style.display = 'block'; const hw = tag.offsetWidth / 2 + 6; tag.style.left = clamp(((q.x + 1) / 2) * innerWidth, hw, innerWidth - hw) + 'px'; tag.style.top = clamp(((1 - q.y) / 2) * innerHeight, 150, innerHeight - 20) + 'px'; } }
     else { const gx = q.z > 1 ? -q.x : q.x, gyy = q.z > 1 ? -Math.abs(q.y) - 0.5 : q.y, k = 0.86 / Math.max(Math.abs(gx), Math.abs(gyy), 0.001); arr.style.display = 'block'; arr.style.left = ((gx * k + 1) / 2) * innerWidth + 'px'; arr.style.top = ((1 - gyy * k) / 2) * innerHeight + 'px'; arr.firstElementChild.style.transform = `rotate(${Math.atan2(-gyy, gx)}rad)`; }
   }
   function reset() { idx = 0; ok.fill(false); shownKey = ''; popT = 0; pop.classList.remove('on'); }

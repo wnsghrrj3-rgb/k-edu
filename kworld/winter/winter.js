@@ -4,7 +4,7 @@
    조여 오는 것: 철(잎 색·하늘, 끝에 첫눈) · 멧돼지(밭을 파헤침) · 비(덮지 않으면 널어 둔 이삭이 썩음) · 새 떼(널어 둔 이삭을 쪼아 먹음).
    좌표: x 동쪽(+), z 남쪽(+). 강은 남쪽(z 52~), 밭은 동쪽, 숲은 북쪽·동쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, box, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat } from '../scene/kit.js?v=3';
+import { $, clamp, lerp, dist, rng, stage, sunLight, box, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat, missions } from '../scene/kit.js?v=4';
 await loadArt('people', 'nature', 'winter');   /* 블렌더로 만든 모델 — winter = 이 장면에만 쓰는 것(움집·나무·조·토기·건조대·갈판·강가 살림·개·멧돼지·새 …, tools/blender/make_winter.py) */
 
 const W = 80, H = 60;
@@ -246,6 +246,7 @@ const S = { mode: 'title', year: 1, view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: -
   carry: [], rack: [], covered: false, potsFilled: 0, extra: 'none', strokes: 0, fireT: 0, dog: 'wild', dogX: DOG0[0], dogZ: DOG0[1], dogDir: 0, dogPh: 0, dogTX: 0, dogTZ: 0,
   net: 'none', netT: 0, fish: 0, boar: 'off', bx: BOAR0[0], bz: BOAR0[1], bDir: Math.PI, bT: 0, bPh: 0, bTarget: -1, bDig: 0, ruined: 0, bird: 'off', birdT: 0, birdX: 0, birdZ: 0, birdEat: 0, birdsEaten: 0,
   rain: 'none', rainT: 0, wetT: 0, rotted: 0, workT: 0, workKey: '', kPhase: 0, kTick: false, shoutCD: 0, beatT: 0, stepT: 0, matLock: false, endT: 0, shown: false, introT: 0, eaten: 0, harvested: 0, lostBoar: 0 };
+let mis = null;   /* 미션 카드(아래에서 만든다) */
 const { say, tick: sayTick } = sayLine(S);
 const ctl = controls(S, say), keys = ctl.keys;
 if (ctl.isTouch) $('keys').textContent = '왼쪽 동그라미로 걷기 · 가만히 서면 베고·캐고·덮는다 · 「소리」(갈판·빚는 자리에서는 「치기」) · 땅을 누르면 개를 보낸다 · 「시점」 ⟲⟳';
@@ -384,7 +385,7 @@ function endScreen() {
     overlay(`<h1>겨울 채비</h1><p>토기마다 곡식이 가득하다. 눈 내리는 밤, 움집 안 화덕이 따뜻하다.</p><p>${S.fish ? '그물로 건진 물고기도 말려 두었다.' : ''} ${S.dog === 'tame' ? '개가 문가에 웅크려 밤을 지킨다.' : ''}</p>${marks}${lost ? `<p class="keys">${lost}</p>` : ''}
       <p class="keys">이제 사람들은 떠나지 않는다. 봄에 다시 씨를 뿌릴 것이다.</p>
       <div class="fact">📜 <b>농사의 시작</b> — 조·피·수수 같은 잡곡을 기르기 시작했다. 사냥과 고기잡이도 여전히 중요했다.<br>📜 <b>간석기</b> — 돌을 갈아 만든 도구를 썼다. 갈돌과 갈판으로 곡식을 갈았다.<br>📜 <b>빗살무늬토기</b> — 흙으로 빚어 구운 그릇에 먹을 것을 담아 두고 익혔다.<br>📜 <b>머물러 사는 삶</b> — 강가나 바닷가에 움집을 짓고 마을을 이뤘다. 개와 돼지를 길렀다.</div>`,
-      '한 번 더', () => { S.year = 1; S.extra = 'none'; S.dog = 'wild'; resetYear(); S.mode = 'play'; });
+      '한 번 더', () => { S.year = 1; S.extra = 'none'; S.dog = 'wild'; misClear(); resetYear(); S.mode = 'play'; });
   } else {
     const ny = S.year + 1;
     overlay(`<h1>첫눈</h1><p>토기를 다 채우지 못했다. 겨울은 났지만 <b>봄에 뿌릴 씨가 모자라다.</b></p>${lost ? `<p>${lost}.</p>` : ''}${marks}
@@ -525,12 +526,53 @@ function view() {
   doorLit.material.opacity = doorGlow.material.opacity; doorLit.visible = doorLit.material.opacity > 0.01; for (const p of pots) p.stand.visible = p.m.visible;   /* 움집에 들인 토기는 받침도 함께 치운다 */
   edgeGoal($('goal'), cam, goalPos, S.mode === 'play', 0.8);
   const kn = $('knap'), kc = S.mode === 'play' && context(); if (kc) { const p = kc === 'grind' ? GRIND : POTTER, q = v3.set(p[0], 0.5, p[1]).project(cam); kn.style.display = 'block'; kn.style.left = ((q.x + 1) / 2) * innerWidth + 'px'; kn.style.top = ((1 - q.y) / 2) * innerHeight - 70 + 'px'; const r = Math.max(8, 84 - 62 * S.kPhase), i = kn.querySelector('i'); i.style.width = i.style.height = r + 'px'; i.style.borderColor = Math.abs(S.kPhase - 0.9) < 0.14 ? '#ffcf4d' : '#fff'; } else kn.style.display = 'none';
+  guide(kc);
 }
+
+/* ───── 처음 하는 일 꼬리표(11-18, 고인돌처럼 — 보이기만 하고 놀이 숫자는 건드리지 않는다) ───── */
+const tagEls = {}; function tagEl(k) { if (!tagEls[k]) { const e = document.createElement('div'); e.className = 'tag'; document.body.appendChild(e); tagEls[k] = e; } return tagEls[k]; }
+const tv = new THREE.Vector3();
+function showTag(k, html, on, x, y, z, dy = 0) { const e = tagEl(k); if (!on) { e.style.display = 'none'; return; } const q = tv.set(x, y, z).project(cam); if (q.z > 1 || Math.abs(q.x) > 1 || Math.abs(q.y) > 1) { e.style.display = 'none'; return; } if (e.innerHTML !== html) e.innerHTML = html; e.style.display = 'block'; const hw = e.offsetWidth / 2 + 6; e.style.left = clamp(((q.x + 1) / 2) * innerWidth, hw, innerWidth - hw) + 'px'; e.style.top = clamp(((1 - q.y) / 2) * innerHeight + dy, 150, innerHeight - 30) + 'px'; }
+function guide(kc) {
+  const play = S.mode === 'play', key = (t) => (ctl.isTouch ? `「${t}」` : '<b>스페이스</b>'), boarOn = S.boar === 'come' || S.boar === 'dig';
+  showTag('boar', `🐗 다가가 ${key('소리')}로 쫓기`, play && boarOn && S.dog !== 'tame', S.bx, 2.2, S.bz);
+  showTag('bird', `🐦 건조대로 가서 쫓기`, play && S.bird === 'eat', RACK[0], 3.4, RACK[1]);
+  const wet = (S.rain === 'warn' || S.rain === 'rain') && S.rack.length && !S.covered, dryAgain = S.rain === 'none' && S.covered && S.rack.length;
+  showTag('mat', wet ? '🟫 여기 서서 거적 덮기' : '🟫 여기 서서 거적 걷기', play && (wet || dryAgain) && !S.matLock, MAT[0], 1.6, MAT[1]);
+  showTag('net', S.net === 'weights' ? '🕸 여기 서서 그물 치기' : '🐟 여기 서서 그물 걷기', play && (S.net === 'weights' || S.net === 'full'), NET[0], 1.8, NET[1]);
+  showTag('clay', '🏺 여기 서서 빗금 긋기', play && S.carry.includes('clay') && S.extra === 'none' && !kc, POTTER[0], 1.6, POTTER[1]);
+  showTag('dog', '🐕 곁에 가만히 서서 나눠 주기', play && S.dog === 'wild' && S.carry.some((c) => c === 'ear' || c === 'dry') && dist(S.px, S.pz, S.dogX, S.dogZ) < 10, S.dogX, 1.6, S.dogZ);
+  /* 박자 고리: 처음 몇 번은 고리 아래에 키를 보여 준다 */
+  const first = kc === 'grind' ? misGrinds < 2 : kc === 'shape', p = kc === 'grind' ? GRIND : POTTER, inWin = Math.abs(S.kPhase - 0.9) < 0.14;
+  showTag('knap', inWin ? `지금! ${key(kc === 'grind' ? '갈기' : '긋기')}` : `흰 고리가 노란 고리에 닿을 때 ${key(kc === 'grind' ? '갈기' : '긋기')}`, play && !!kc && first, p[0], 0.5, p[1], -122);
+}
+
+/* ───── 미션(11-18): 지금 할 일 하나 — 무엇을·어떻게·어디서. 밭·건조대·갈판·토기에는 표시가 없어서 빛기둥을 세운다 ───── */
+let misWet = 0, misG = 0, misHung = false, misDry = false, misGrain = false, misGrinds = 0;
+function misClear() { if (mis) mis.reset(); misWet = misG = 0; misHung = misDry = misGrain = false; misGrinds = 0; }
+const nearRipe = () => { let best = null, bd = 1e9; for (const p of patches) if (p.used && p.st === 'ripe') { const d = dist(p.x, p.z, S.px, S.pz); if (d < bd) { bd = d; best = p; } } return best; };
+const inRipe = () => patches.some((p) => p.used && p.st === 'ripe' && inRect(S.px, S.pz, [p.x0, p.z0, p.x0 + PW, p.z0 + PH]));
+const toField = () => { const p = nearRipe(); return p && !inRipe() && S.carry.length < 3 ? [p.x, p.z] : null; };
+const filled = () => pots.slice(0, 3).reduce((a, p) => a + Math.min(3, p.n), 0);
+mis = missions(scene, cam, [
+  { t: '밭에서 조 이삭 베기', how: '동쪽 밭(익은 조) 안에 들어가 가만히 서 있으면 벤다', done: () => S.harvested >= 1, at: toField, tag: '🌾 들어가서 가만히 서기' },
+  { t: '건조대에 이삭 널기', how: '이삭을 들고 건조대 곁으로 걸어가면 저절로 넌다', done: () => misHung,
+    at: () => (S.covered ? [MAT[0], MAT[1]] : S.carry.includes('ear') ? [RACK[0], RACK[1] + 1.2] : toField()), tag: () => (S.covered ? '🟫 서서 거적 걷기' : S.carry.includes('ear') ? '🌾 곁으로 가면 널린다' : '🌾 이삭 베기') },
+  { t: '마른 이삭 챙기기', how: '널어 둔 이삭이 노랗게 마르면 건조대 곁에 가서 챙긴다 · 마르는 동안 밭에서 더 베어 오자', done: () => misDry,
+    at: () => (S.rack.some((b) => b.dry >= 1) ? [RACK[0], RACK[1] + 1.2] : toField() || [RACK[0], RACK[1] + 1.2]), tag: () => (S.rack.some((b) => b.dry >= 1) ? '🌾 마른 이삭 챙기기' : toField() ? '⏳ 마르는 동안 더 베기' : '⏳ 마르는 중') },
+  { t: '갈판에서 곡식 갈기', how: (tc) => `마른 이삭을 들고 갈판 곁에 서서 흰 고리가 작아져 노란 고리에 닿을 때 ${tc ? '「갈기」' : '<kbd>스페이스</kbd>'} — 두 번에 한 줌`, done: () => misGrain,
+    at: () => (S.carry.includes('dry') && context() !== 'grind' ? [GRIND[0], GRIND[1]] : null), tag: '🪨 여기 서서 갈기' },
+  { t: '토기에 곡식 붓기', how: '곡식을 들고 움집 앞 토기 곁으로 걸어가면 붓는다', done: () => pots.some((p) => p.n > 0),
+    at: () => (S.carry.includes('grain') ? [goalPos.x, goalPos.z] : null), tag: '🏺 곁으로 가면 붓는다' },
+  { t: '첫눈 전에 토기 셋 가득', how: '베기 → 널기 → 마르면 챙기기 → 갈기 → 붓기를 되풀이 · 멧돼지·비·새 떼는 다가가서 막기', n: () => [filled(), 9], done: () => filled() >= 9 },
+], { allText: '🎉 토기 셋이 가득 찼다!' });
+function misWatch() { if (S.mode !== 'play') return; const w = S.rack.filter((b) => b.dry < 1).length; if (w > misWet) misHung = true; misWet = w;
+  if (S.carry.includes('dry')) misDry = true; const g = S.carry.filter((c) => c === 'grain').length; if (g > misG) { misGrain = true; misGrinds++; } misG = g; }
 
 resetYear(); stepDog(0.01);
 pMesh.position.set(S.px, 0, S.pz); pRing.position.set(S.px, 0.11, S.pz);
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; SFX.chirp(); };
-runLoop(update, view, () => renderer.render(scene, cam));
+runLoop((dt) => { update(dt); misWatch(); mis.update(dt, S.mode === 'play' || (S.mode === 'win' && S.endT < 2.4)); }, view, () => renderer.render(scene, cam));
 window.__scene = { S, patches, pots, update, keys, ctl, act, strike, context,
   go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },

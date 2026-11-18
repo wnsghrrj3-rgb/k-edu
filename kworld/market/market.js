@@ -5,7 +5,7 @@
    관아에 갈 때마다 궤가 커진다(죽은 사람 몫·갓난아이 몫). 탈춤 날(사흘째) 우리 장 마당에서 구경하면 그날 값이 좋아진다.
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 집과 논 → 가운데 우리 장(북쪽 관아) → 동쪽 고개 → 이웃 장. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, at, flatMaker, groundTex, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, scatter } from '../scene/kit.js?v=3';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, at, flatMaker, groundTex, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, scatter, missions } from '../scene/kit.js?v=4';
 await loadArt('people', 'nature', 'build', 'props', 'market');   /* 블렌더로 만든 모델(사람·자연·집·소품 + 이 장면만의 묶음 market.glb = tools/blender/make_market.py) */
 
 const W = 96, H = 60, BX = [3, 93], BZ = [4, 56], DAYLEN = 40, DAYS = 5, FOOD = 5;
@@ -152,7 +152,7 @@ const PKG = { rice: artGeo('pk_rice'), cloth: artGeo('pk_cloth'), tob: artGeo('p
 const packs = [0, 1, 2, 3].map(() => { const m = new THREE.Mesh(PKG.rice, artMat); m.castShadow = true; m.visible = false; scene.add(m); return m; });
 const jige = art('jige'); jige.scale.setScalar(0.9); jige.visible = false; scene.add(jige);
 const tagBox = $('tags'); const mkTag = () => { const d = document.createElement('div'); d.className = 'tag'; tagBox.appendChild(d); return d; };
-const mktTags = MKT.map(mkTag), stallTags = MKT.map(() => [0, 1, 2].map(mkTag)), tagGov = mkTag(), tagJar = mkTag(), tagMask = mkTag();
+const mktTags = MKT.map(mkTag), stallTags = MKT.map(() => [0, 1, 2].map(mkTag)), tagGov = mkTag(), tagJar = mkTag(), tagMask = mkTag(), tagTob = mkTag();
 
 /* ───── 소리 ───── */
 const SFX = {
@@ -175,6 +175,7 @@ const SFX = {
 const S = { mode: 'title', round: 1, view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: -Math.PI / 2, t: 0, day: 1, px: 14, pz: 46, pdir: -Math.PI / 2, moving: false, running: false, said: {}, sayT: 0,
   cow: true, beats: 0, hits: 0, bPh: 0.3, pressed: 0, plantT: 0, tob: false, harvest: 0, jar: 0, money: 0, carry: [], need: 14, paid: 0, visits: 0, inGov: false, outGovT: 99, coinDone: false, maskSeen: false, maskDay: 3,
   prices: null, lock: '', workT: 0, workKey: '', endT: 0, shown: false, introT: 0, beatT: 0, stepT: 0, sold: { A: 0, B: 0 } };
+let mis = null;   /* 미션 카드(아래에서 만든다) */
 const { say, tick: sayTick } = sayLine(S);
 const ctl = controls(S, say), keys = ctl.keys;
 if (ctl.isTouch) $('keys').textContent = '먼저 모내기 — 「심자!」에 맞춰 「심기」 · 왼쪽 동그라미로 걷기 · 가만히 서면 꺼내고·팔고·사고·낸다 · 쌀을 지면 느리다 · 「시점」 ⟲⟳';
@@ -233,7 +234,7 @@ function endScreen() {
   const marks = `<div class="marks"><span class="ok">🌾 걷은 쌀 ${S.harvest}섬</span><span class="${S.coinDone ? 'ok' : ''}">🪙 ${S.coinDone ? '엽전으로 바꿈' : '엽전 안 씀'}</span><span class="${S.tob ? 'ok' : ''}">🚬 ${S.tob ? '담배밭' : '담배 없음'}</span><span class="${S.maskSeen ? 'ok' : ''}">🎭 ${S.maskSeen ? '탈춤 구경' : '탈춤 못 봄'}</span></div>`;
   const extra = `<p class="keys">관아에 ${S.visits}번 갔고, 갈 때마다 궤가 커졌다(16 → ${S.need}냥).</p>`;
   const facts = `<div class="fact">📜 <b>모내기</b> — 모를 길러 옮겨 심는 방법이 퍼져 일손은 줄고 거두는 것은 늘었다. 넓게 짓는 사람과 땅을 잃는 사람이 갈렸다.<br>📜 <b>장과 돈</b> — 닷새마다 서는 장이 온 나라에 생기고, 상평통보라는 돈이 널리 쓰였다.<br>📜 <b>팔려고 짓는 농사</b> — 담배·인삼·목화처럼 팔기 위한 작물을 길렀다.<br>📜 <b>무거운 세금</b> — 세금이 제멋대로 얹혀 살기 어려워진 농민들이 여러 곳에서 들고일어났다.</div>`;
-  if (r !== 'cow') overlay(`<h1>${head}</h1><p>${story}</p>${marks}${extra}<p class="keys">같은 마을에서도 누구는 땅을 늘리고, 누구는 땅을 잃었다.</p>${facts}`, '이듬해 한 번 더', () => { resetRound(false); S.mode = 'title'; begin(); });
+  if (r !== 'cow') overlay(`<h1>${head}</h1><p>${story}</p>${marks}${extra}<p class="keys">같은 마을에서도 누구는 땅을 늘리고, 누구는 땅을 잃었다.</p>${facts}`, '이듬해 한 번 더', () => { misClear(); resetRound(false); S.mode = 'title'; begin(); });
   else overlay(`<h1>${head}</h1><p>${story}</p>${marks}${extra}<p>이듬해 — <b>소가 없어</b> 모내기 박자가 빡빡하다.</p>`, '이듬해 모내기', () => { S.round++; S.cow = false; resetRound(false); begin(); });
 }
 
@@ -326,6 +327,7 @@ function place() {
   showTag(tagGov, GOV[0], 3.2, GOV[1] - 1.4, play && dist(S.px, S.pz, GOV[0], GOV[1]) < 12 ? `🧰 ${Math.floor(S.paid)}/${S.need}냥 <small>(쌀은 한 섬 ${GOV_RICE}냥)</small>` : null);
   showTag(tagJar, JAR[0], 2.4, JAR[1], play && dist(S.px, S.pz, JAR[0], JAR[1]) < 9 ? `🟡⬆꺼내기 · 🏺 <b>${S.jar}</b>섬 · 붓기⬇🔵` : null);
   showTag(tagMask, MASK[0], 3.4, MASK[1] - 1.8, play && S.day === S.maskDay && !S.maskSeen && dist(S.px, S.pz, MASK[0], MASK[1]) < 14 ? '🎭 구경' : null);
+  showTag(tagTob, TOB[0], 1.6, TOB[1], S.mode === 'plant' && S.beats >= 8 && !S.tob ? '🚬 여기 가만히 서면 담배 심기' : null);   /* 처음 보는 자리(11-18) — 모내기 뒤 몇 초만 */
 }
 function view() {
   if (S.mode === 'title' || S.mode === 'intro') { cam.position.set(30, 18, 64); cam.lookAt(28, 0, 36); if (cam.fov !== 44) { cam.fov = 44; cam.updateProjectionMatrix(); } }
@@ -337,9 +339,33 @@ function view() {
 }
 function begin() { S.mode = 'intro'; S.introT = 0; }
 
+/* ───── 미션(11-18): 지금 할 일 하나 — 무엇을·어떻게·어디서. 쌀독 자리·좌판·궤에는 장면의 꼬리표가 가까이 가면 뜨니, 빛기둥은 멀리 있을 때만 ───── */
+let misTook = false, misTrade = false, misJar = 0, misRice = 0, misCnt = {}, misBought = {};
+function misClear() { if (mis) mis.reset(); misTook = misTrade = false; misJar = misRice = 0; misCnt = {}; misBought = {}; }
+const stallAt = (mk, g) => { const m = MKT.find((q) => q.k === mk); return [m.x - 4 + GKEYS.indexOf(g) * 4, m.z + 0.6]; };
+const nearMkt = (k, r = 12) => MKT.some((m) => (!k || m.k === k) && dist(S.px, S.pz, m.x, m.z) < r);
+const KEY = (tc, t) => (tc ? `「${t}」` : '<kbd>스페이스</kbd>');
+mis = missions(scene, cam, [
+  { t: '「심자!」에 맞춰 모 심기', how: (tc) => `흰 점이 노란 칸 한가운데 올 때 ${KEY(tc, '심기')} — 맞춘 만큼 가을걷이가 는다`, n: () => [S.hits, 3], done: () => S.hits >= 3 || S.beats >= 8 },
+  { t: '쌀독에서 쌀 지기', how: '쌀독 왼쪽 노란 자리에 가만히 서면 한 섬씩 진다(넷까지) · 지면 느리다', done: () => misTook },
+  { t: '장에서 팔기', how: '진 것을 들고 장터 좌판 앞에 가만히 서면 판다 — 좌판 위 그림이 값', done: () => S.sold.A + S.sold.B > 0,
+    at: () => { const g = S.carry[0]; return g && !nearMkt() ? stallAt('A', g) : null; }, tag: () => (S.carry[0] ? `${GOODS[S.carry[0]].i} 우리 장 좌판 앞에 서기` : '') },
+  { t: '관아 궤에 세금 내기', how: '엽전이나 쌀을 지고 관아(북쪽 홍살문 안) 궤 앞에 가만히 서면 낸다', done: () => S.paid > 0,
+    at: () => ((S.money > 0 || nRice()) && dist(S.px, S.pz, GOV[0], GOV[1]) > 12 ? [GOV[0], GOV[1] + 0.5] : null), tag: '🧰 궤 앞에 서기' },
+  { t: '고개 너머 이웃 장에서 팔기', how: '동쪽 고개를 넘어 이웃 장 좌판에 서기 — 쌀은 대개 이웃 장이 비싸다 · 쌀을 지면 고개가 느리다', done: () => S.sold.B > 0,
+    at: () => (!nearMkt('B', 14) ? [MKT[1].x, MKT[1].z + 1] : null), tag: '⛰ 고개 너머 이웃 장' },
+  { t: '싼 장에서 사서 비싼 장에 팔기', how: '엽전을 들고 좌판에 서면 산다 — 두 장의 값을 견주어 싼 데서 사서 비싼 데서 팔기', done: () => misTrade,
+    at: () => { const g = S.carry.find((c) => misBought[c]); if (!g) return null; const k = misBought[g] === 'A' ? 'B' : 'A'; return nearMkt(k) ? null : stallAt(k, g); }, tag: () => { const g = S.carry.find((c) => misBought[c]); return g ? `${GOODS[g].i} ${misBought[g] === 'A' ? '이웃 장' : '우리 장'}에서 팔기` : ''; } },
+  { t: '북이 울리기 전에 궤 채우기', how: '닷새째 저녁까지 궤를 다 채우기 · 관아에 갈 때마다 궤가 커지니 모아서 한 번에', n: () => [Math.floor(S.paid), S.need], done: () => S.paid >= S.need },
+], { allText: '🎉 궤를 채웠다!', allHow: '이제 쌀독을 식구 몫(5섬) 넘게 지키자' });
+function misWatch() { if (S.mode !== 'play') return; const r = nRice(); if (r > misRice && S.jar < misJar) misTook = true; misRice = r; misJar = S.jar;
+  const cnt = {}; for (const c of S.carry) cnt[c] = (cnt[c] || 0) + 1;
+  for (const g of GKEYS) { const a = misCnt[g] || 0, b = cnt[g] || 0, at = S.stallKey && S.stallKey.slice(1) === g ? S.stallKey[0] : null; if (at && b > a) misBought[g] = at; if (at && b < a && misBought[g] && misBought[g] !== at) misTrade = true; if (!b) delete misBought[g]; }
+  misCnt = cnt; }
+
 resetRound(true); place();
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; begin(); SFX.song(); };
-runLoop(update, view, () => renderer.render(scene, cam));
+runLoop((dt) => { update(dt); misWatch(); mis.update(dt, (S.mode === 'plant' && S.beats < 8) || S.mode === 'play' || (S.mode === 'end' && S.endT < 2)); }, view, () => renderer.render(scene, cam));
 window.__scene = { S, update, keys, ctl, act, sellP, buyP, nRice,
   go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },

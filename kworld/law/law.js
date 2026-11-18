@@ -5,7 +5,7 @@
    고인돌에서 「어떻게 하라는지 모르겠다」를 들었으므로: 따라갈 것은 늘 빛나고, 할 일은 「곁에 서기·가만히 서기·데려가기」 셋뿐이다.
    좌표: x 동쪽(+), z 남쪽(+). 흙성 안. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat, scatter } from '../scene/kit.js?v=3';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=4';
 await loadArt('people', 'nature', 'props', 'law');   /* 블렌더로 만든 모델(사람·자연·소품 + 이 장면만의 것: tools/blender/make_law.py → law.glb) */
 
 const W = 80, H = 60, BX = [7, 73], BZ = [7, 53], TRIAL = 240;
@@ -136,7 +136,7 @@ const family = HOMES.map(([x, z]) => { const g = new THREE.Group(); const kid = 
 const pMesh = person({ shirt: 0xd8c8a0, pants: 0x7a6040, hat: 'top', skin: SKIN });
 const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
 const tagBox = $('tags'); function mkTag() { const d = document.createElement('div'); d.className = 'tag'; tagBox.appendChild(d); return d; }
-sus.forEach((s) => (s.tag = mkTag())); witnesses.forEach((w) => (w.tag = mkTag())); const tagInj = mkTag(), tagSmith = mkTag(), tagHome = mkTag();
+sus.forEach((s) => (s.tag = mkTag())); witnesses.forEach((w) => (w.tag = mkTag())); const tagInj = mkTag(), tagSmith = mkTag(), tagHome = mkTag(), tagTrail = mkTag(); tagTrail.classList.add('hint');
 
 /* ───── 소리 ───── */
 const SFX = {
@@ -155,6 +155,7 @@ const SFX = {
 /* ───── 상태 ───── */
 const S = { mode: 'title', round: 1, view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: -Math.PI / 2, t: 0, k: 0, px: DOOR[0], pz: DOOR[1] + 2.4, pdir: -Math.PI / 2, moving: false, running: false, said: {}, sayT: 0,
   thief: 0, ev: [null, null, null], hints: 4, rain: 'none', rainT: 0, rained: false, moved: false, sackAt: [0, 0], sackOld: [0, 0], why: false, hurtSeen: false, hurtDone: false, drums: 0, workT: 0, workKey: '', endT: 0, shown: false, introT: 0, beatT: 0, stepT: 0, verdict: null, by: 'you' };
+let mis = null;   /* 미션 카드(아래에서 만든다) */
 const { say, tick: sayTick } = sayLine(S);
 const ctl = controls(S, say), keys = ctl.keys;
 if (ctl.isTouch) $('keys').textContent = '왼쪽 동그라미로 걷기 · 빛나는 발자국·낟알을 따라간다 · 가만히 서면 살핀다 · 사람 곁에서 「데려가기」 · 「시점」 ⟲⟳';
@@ -228,7 +229,7 @@ function endScreen() {
     : v === 'pay' ? `${who}이 훔쳤다. 집에는 굶는 식구가 있었다. 족장은 <b>곡식으로 갚게 하고</b> 풀어 주었다.` : `${who}이 훔쳤다. 법대로 <b>곳간 주인 집의 종</b>이 되었다.`;
   const marks = `<div class="marks"><span class="${evN === 3 ? 'ok' : ''}">👣 증거 ${evN}/3</span><span class="${right && mine ? 'ok' : ''}">⚖ ${right && mine ? '바로 가림' : mine ? '잘못 가림' : '족장이 가림'}</span><span class="${v === 'pay' ? 'ok' : ''}">🌾 ${v === 'pay' ? '갚게 함' : '갚을 길 없음'}</span><span class="${S.hurtDone ? 'ok' : ''}">🤝 ${S.hurtDone ? '다친 일 가림' : '다친 일 남음'}</span></div>`;
   const facts = `<div class="fact">📜 <b>고조선</b> — 우리 역사의 첫 나라다. 단군왕검이 세웠다고 전한다.<br>📜 <b>여덟 가지 법</b> — 여덟 조항 가운데 셋이 전한다. 사람을 죽이면 죽음으로, 다치게 하면 곡식으로 갚는다.<br>📜 <b>훔치면 종</b> — 남의 것을 훔치면 그 집 종이 된다. 큰 값을 치르면 면할 수 있었다.<br>📜 <b>법이 말해 주는 것</b> — 사람 목숨과 일할 힘을 귀하게 여겼고, 제 것과 남의 것, 종과 주인이 나뉜 사회였다.</div>`;
-  if (right && mine) overlay(`<h1>${head}</h1><p>${story}</p>${marks}<p class="keys">법이 있다는 것은 지킬 것이 있다는 뜻이다.</p>${facts}`, '다른 날 한 번 더', () => { S.round++; resetRound(false); S.mode = 'play'; });
+  if (right && mine) overlay(`<h1>${head}</h1><p>${story}</p>${marks}<p class="keys">법이 있다는 것은 지킬 것이 있다는 뜻이다.</p>${facts}`, '다른 날 한 번 더', () => { misClear(); S.round++; resetRound(false); S.mode = 'play'; });
   else { const nh = Math.max(1, S.hints - 2);
     overlay(`<h1>${head}</h1><p>${story}</p>${marks}<p>다음 일 — 마을 사람들이 <b>입을 닫는다</b>. 그림으로 알려 주는 사람이 ${S.hints}명에서 ${nh}명으로 준다.</p><p class="keys">${S.round + 1}번째 일 · 북은 다시 기다린다.</p>`, '다시 가린다', () => { S.round++; S.hints = nh; resetRound(false); S.mode = 'play'; say('마을 사람들이 입을 닫았다 — 증거를 직접 모으자', null, 3); }); }
 }
@@ -318,14 +319,14 @@ function placeAll(dt) {
   for (const s of sus) { const d = dist(S.px, S.pz, s.x, s.z); let html = null;
     if (play && d < 4.2) { const foot = `<span style="font-size:${s.big ? 26 : 16}px">👣</span>`, chk = (ok) => (ok == null ? '' : ok ? '<span class="ok">✔</span>' : '<span class="no">✘</span>');
       const m0 = S.ev[0] ? (s.big ? 'big' : 'small') === S.ev[0] : null, m1 = S.ev[1] != null ? s.i === S.ev[1] : null, m2 = S.ev[2] != null ? s.cord === S.ev[2] : null;
-      html = `${foot}${chk(m0)} 🏠${DOTS[s.i]}${chk(m1)} 🪢${CORDS[s.cord].i}${chk(m2)}`; if (s.carrying && s.got) html = '🌾💦'; }
+      html = `${foot}${chk(m0)} 🏠${DOTS[s.i]}${chk(m1)} 🪢${CORDS[s.cord].i}${chk(m2)}`; if (!misFollow && !sus.some((q) => q.follow)) html += `<br><small>${ctl.isTouch ? '「데려가기」' : '스페이스'} = 데려가기</small>`; if (s.carrying && s.got) html = '🌾💦'; }
     showTag(s.tag, s.x, 2.7, s.z, html); s.m.userData.belt.scale.setScalar(d < 4.2 ? 1.15 : 1); }
   witnesses.forEach((w, i) => { const d = dist(S.px, S.pz, w.x, w.z); let html = null;
     if (play && d < 4) { const talk = i < S.hints; const T = sus[S.thief];
       html = !talk ? '🤐' : w.kind === 'keeper' ? `🌙 🧍🌾 ${arrowTo(DOOR, HOMES[S.thief])}` : w.kind === 'foot' ? `🌙 <span style="font-size:${T.big ? 28 : 16}px">👣</span>` : w.kind === 'cord' ? `🌙 🪢${CORDS[T.cord].i}` : '🌧️ ➡ 👣❌'; }
     showTag(w.tag, w.x, 2.6, w.z, html); });
   showTag(tagInj, INJURED[0], 2.2, INJURED[1], play && dist(S.px, S.pz, INJURED[0], INJURED[1]) < 4 ? (S.hurtDone ? '🌾🙂' : '🤕 ⬅ 🔨') : null);
-  showTag(tagSmith, smith.position.x, 2.6, smith.position.z, play && S.hurtSeen && !S.hurtDone && dist(S.px, S.pz, smith.position.x, smith.position.z) < 4 ? '🔨😓' : null);
+  showTag(tagSmith, smith.position.x, 2.6, smith.position.z, play && S.hurtSeen && !S.hurtDone && dist(S.px, S.pz, smith.position.x, smith.position.z) < 4 ? `🔨😓<br><small>곁에서 ${ctl.isTouch ? '「갚게 하기」' : '스페이스'} = 갚게 하기</small>` : null);
   let hh = null; for (let i = 0; i < 3; i++) if (play && dist(S.px, S.pz, HOMES[i][0], HOMES[i][1] + 3.4) < 3) hh = i;
   showTag(tagHome, hh == null ? 0 : HOMES[hh][0], 2.4, hh == null ? 0 : HOMES[hh][1] + 3.4, hh == null ? null : (hh === S.thief ? '🍲❌ 👶😢' : '🍲🙂'));
   if (S.hurtDone) { smith.position.x = lerp(smith.position.x, INJURED[0] + 1.2, (dt || 0) * 0.8); smith.position.z = lerp(smith.position.z, INJURED[1] + 0.6, (dt || 0) * 0.8); walkAnim(smith, S.t * 9, dist(smith.position.x, smith.position.z, INJURED[0] + 1.2, INJURED[1] + 0.6) > 0.3); }
@@ -347,11 +348,29 @@ function view() {
   gateG.visible = Math.abs(cam.position.z - 55) > 4.5 || Math.abs(cam.position.x - 40) > 6.5;
   edgeGoal($('goal'), cam, new THREE.Vector3(DRUM[0], 2.2, DRUM[1]), S.mode === 'play', 0.8);
   if (S.mode !== 'play') { for (const s of sus) s.tag.style.display = 'none'; for (const w of witnesses) w.tag.style.display = 'none'; tagInj.style.display = tagSmith.style.display = tagHome.style.display = 'none'; }
+  /* 처음 하는 일 꼬리표(11-18): 빛나는 자취 위에 무엇을 하는 곳인지 — 발자국 → 낟알 → 자루 */
+  { const near = sack.visible && S.ev[2] == null && !sus[S.thief].carrying && dist(S.px, S.pz, sack.position.x, sack.position.z) < 7, ok = S.mode === 'play' && lamp.visible;
+    showTag(tagTrail, near ? sack.position.x : lamp.position.x, near ? 2.2 : 3.8, near ? sack.position.z : lamp.position.z, !ok && !near ? null : near ? '🪢 자루 곁에 가만히 서기' : S.ev[0] == null && !S.rained ? '👣 발자국 위에 가만히 서기' : '🌾 낟알을 따라가기'); if (S.mode !== 'play') tagTrail.style.display = 'none'; else if (tagTrail.style.display === 'block') { const hw = tagTrail.offsetWidth / 2 + 6; tagTrail.style.left = clamp(parseFloat(tagTrail.style.left), hw, innerWidth - hw) + 'px'; } }
 }
+
+/* ───── 미션(11-18): 지금 할 일 하나 — 무엇을·어떻게·어디서. 자취는 장면이 이미 빛으로 따라가게 하니 빛기둥은 사람·북에만. 누가 훔쳤는지는 미션이 알려 주지 않는다 ───── */
+const misSeen = new Set(); let misFollow = false;
+function misClear() { if (mis) mis.reset(); misSeen.clear(); misFollow = false; }
+const misNext = () => sus.filter((s) => !misSeen.has(s.i)).sort((a, b) => dist(S.px, S.pz, a.x, a.z) - dist(S.px, S.pz, b.x, b.z))[0];
+mis = missions(scene, cam, [
+  { t: '발자국 본뜨기', how: '곳간 문 앞 빛나는 발자국 위에 가만히 서 있으면 본뜬다 — 비가 오면 지워진다', done: () => S.ev[0] != null || S.rained },
+  { t: '낟알 길 따라가 자루 찾기', how: '흘린 낟알을 따라가다 자루 곁에 가만히 서면 살핀다 — 끈 색과 지나온 집을 안다', done: () => S.ev[2] != null },
+  { t: '세 사람 곁에 서서 맞대 보기', how: '빨강·파랑·초록 옷 사람 곁에 서면 머리 위에 증거가 ✔ ✘ 로 뜬다', n: () => [misSeen.size, 3], done: () => misSeen.size >= 3 || misFollow,
+    at: () => { const s = misNext(); return s && dist(S.px, S.pz, s.x, s.z) > 4.2 ? [s.x, s.z] : null; }, tag: '🧍 곁에 가서 ✔✘ 보기' },
+  { t: '훔친 것 같은 사람 데려가기', how: (tc) => `✔ 가 가장 많은 사람 곁에서 ${tc ? '「데려가기」' : '<kbd>스페이스</kbd>'} — 한 번 더 누르면 놓아준다`, done: () => misFollow },
+  { t: '재판 마당 큰 북 앞에 세우기', how: '데려가는 사람과 함께 남쪽 재판 마당의 큰 북 곁까지 걷기 — 셋째 북이 울리기 전에', done: () => S.mode === 'trial' && S.by === 'you',
+    at: () => (sus.some((s) => s.follow) && dist(S.px, S.pz, DRUM[0], DRUM[1]) > 8 ? [DRUM[0], DRUM[1] + 2.2] : null), tag: '🥁 데려와서 북 곁에 서기' },
+], { allText: '⚖ 재판이 열린다!' });
+function misWatch() { if (S.mode !== 'play') return; for (const s of sus) if (dist(S.px, S.pz, s.x, s.z) < 4.2) misSeen.add(s.i); if (sus.some((s) => s.follow)) misFollow = true; }
 
 resetRound(true); placeAll(0.016);
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; SFX.drum(); };
-runLoop(update, view, () => renderer.render(scene, cam));
+runLoop((dt) => { update(dt); misWatch(); mis.update(dt, S.mode === 'play' || (S.mode === 'trial' && S.endT < 2.4)); }, view, () => renderer.render(scene, cam));
 window.__scene = { S, sus, update, keys, ctl, act, matchOf, get prints() { return prints; }, get grains() { return grains; }, sack,
   go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
