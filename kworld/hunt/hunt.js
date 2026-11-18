@@ -179,6 +179,45 @@ const pMesh = person({ shirt: 0xb57a45, pants: 0x7a5230, ...PALEO });
 const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
 const comps = [0, 1].map((i) => ({ i, mesh: person({ shirt: i ? 0x8e6a44 : 0xa36e3a, pants: 0x6a4a2a, ...PALEO, spear: true, hairC: i ? 0x4a3020 : 0x2b2118 }), x: 0, z: 0, tx: 0, tz: 0, state: 'follow', dir: 0, slow: false, moving: false }));
 const torchmen = TORCHMEN.map(([x, z], i) => { const m = person({ shirt: 0x9a6a3e, pants: 0x6a4a2a, ...PALEO, torch: true }); m.position.set(x, 0, z); m.rotation.y = i ? -0.5 : 0.5; return { mesh: m, x, z, hx: x, hz: z }; });
+/* ───── 무리(2026-11-19 준호: 「각기 다른 사람들이 움직이고 자기 일을 하게」) — 야영지의 여섯. 저마다 제 일을 하고, 그 일이 내 사냥과 이어진다.
+   불지기 할머니(내가 한 번 넣은 불을 이어 지킨다) · 돌 깨는 이(돌멩이를 건넨다) · 열매 따는 둘(한낮에 먹을 것 하나) · 가죽 다듬는 이 · 아이 둘(배웅) ───── */
+const mk = (o, sc) => { const m = person({ pants: 0x6a4a2a, ...PALEO, ...o }); m.rotation.order = 'YXZ'; if (sc) m.scale.setScalar(sc); return m; };
+const band = [
+  { k: 'keeper', mesh: mk({ shirt: 0x8a6240, hairC: 0xc9c4bc }), sp: 1.5, route: [[25.9, 131.3, 6, 1], [21.6, 126.8, 1.6, 0]] },
+  { k: 'knap', mesh: mk({ shirt: 0x9a6c3c, hairC: 0x2b2118 }), sp: 0, route: [[15.7, 138.9, 99, 1]], face: [ANVIL[0], ANVIL[1]] },
+  { k: 'gather', mesh: mk({ shirt: 0xa87a4a, hairC: 0x3a2618 }), sp: 2.1, route: [[27.6, 132.4, 2, 0], [12.5, 113, 4.5, 1]] },
+  { k: 'gather', mesh: mk({ shirt: 0x94683c, hairC: 0x4a3020 }), sp: 2.0, route: [[30.4, 132.2, 2.6, 0], [41, 123.5, 4.2, 1], [48, 128, 3, 1]] },
+  { k: 'scrape', mesh: mk({ shirt: 0xb0804c, hairC: 0x2b2118 }), sp: 0, route: [[33.9, 135.3, 99, 1]], face: [32.75, 134] },
+  { k: 'kid', mesh: mk({ shirt: 0xb98a52, hairC: 0x2b2118 }, 0.6), ph: 0 },
+  { k: 'kid', mesh: mk({ shirt: 0xa5743e, hairC: 0x4a3020 }, 0.56), ph: -0.9 },
+];
+function bandReset() { for (const b of band) { b.i = 0; b.wait = 0; b.trips = 0; if (b.route) { b.x = b.route[0][0]; b.z = b.route[0][1]; } else { b.x = FIRE[0] + 4; b.z = FIRE[1] - 2; } b.mesh.visible = true; b.mesh.rotation.x = 0; b.mesh.scale.y = b.mesh.scale.x; b.mesh.position.set(b.x, 0, b.z); } S.gift = false; S.bandFood = false; S.seenOff = false; S.kidA = 0; }
+function bandUpdate(dt) {
+  if (S.mode === 'camp') return;
+  const play = S.mode === 'play', wolfOn = wolves.some((w) => w.state === 'come' || w.state === 'harass'), pd = dist(S.px, S.pz, FIRE[0], FIRE[1]);
+  for (const b of band) { const m = b.mesh; let moving = false, work = false;
+    if (b.k === 'kid') { /* 모닥불 둘레에서 잡기 놀이 → 내가 떠날 때 따라 나와 배웅 */
+      let tx, tz; const follow = play && !S.seenOff && S.t > 1 && S.pz > 118 && pd < 34;
+      if (follow) { tx = S.px + (b.ph ? 1.6 : -1.4); tz = S.pz + 2.2 + (b.ph ? 0.8 : 0); }
+      else { S.kidA += dt * 0.55; const a = S.kidA + b.ph; tx = FIRE[0] + Math.cos(a) * 5.6; tz = FIRE[1] - 1.2 + Math.sin(a) * 3.3; }
+      const d = dist(b.x, b.z, tx, tz); if (d > 0.3) { const sp = Math.min(follow ? 4.4 : 3.6, d * 3); b.x += (tx - b.x) / d * sp * dt; b.z += (tz - b.z) / d * sp * dt; m.rotation.y = -Math.atan2(tz - b.z, tx - b.x) + Math.PI / 2; moving = true; }
+      m.position.set(b.x, moving ? Math.abs(Math.sin(S.t * 9 + b.ph)) * 0.12 : 0, b.z); walkAnim(m, S.t * 15 + b.ph * 3, moving); continue; }
+    const r = b.route[b.i], d = dist(b.x, b.z, r[0], r[1]), scared = wolfOn && b.k === 'gather';
+    if (scared) { m.scale.y = m.scale.x * 0.82; }
+    else { m.scale.y = m.scale.x;
+      if (d > 0.25 && b.sp) { b.x += (r[0] - b.x) / d * b.sp * dt; b.z += (r[1] - b.z) / d * b.sp * dt; m.rotation.y = -Math.atan2(r[1] - b.z, r[0] - b.x) + Math.PI / 2; moving = true; }
+      else { b.wait += dt; work = !!r[3]; if (b.face) m.rotation.y = -Math.atan2(b.face[1] - b.z, b.face[0] - b.x) + Math.PI / 2;
+        if (b.wait > r[2]) { b.wait = 0; if (b.k === 'gather' && r[3]) b.trips++; b.i = (b.i + 1) % b.route.length;
+          if (b.k === 'keeper' && b.i === 1 && play && S.fed && S.fuel > 0 && S.fuel < 0.6) { S.fuel = Math.min(1, S.fuel + 0.25); if (pd < 40) { ring(FIRE[0], FIRE[1], 3, 0xffb040); say('할머니가 불에 나무를 넣는다 — 불은 무리가 이어 지킨다', 'keeper', 3); } } } } }
+    m.rotation.x = work ? 0.22 + Math.sin(S.t * (b.k === 'knap' ? 7 : 4.5) + b.x) * 0.2 : 0;
+    m.position.set(b.x, 0, b.z); walkAnim(m, S.t * 9 + b.x, moving);
+    if (b.k === 'knap' && play && pd < 16 && Math.sin(S.t * 7 + b.x) > 0.985) SFX.clack(); }
+  if (!play) return;
+  /* 이어짐: 돌멩이 건네기 · 배웅 · 무리가 모은 먹을 것 */
+  const kn = band[1]; if (!S.gift && !S.axe && S.stones < 2 && dist(S.px, S.pz, kn.x, kn.z) < 2.8) { S.gift = true; S.stones = 2; hud(); SFX.pick(); ring(kn.x, kn.z, 2.2, 0xffcf4d); say('돌 깨는 이가 돌멩이를 건넨다 — 모루돌 앞에 서서 깨 보자', null, 3.2); }
+  if (!S.seenOff && S.t > 2 && (S.pz < 118 || pd > 34)) { S.seenOff = true; if (S.t < 60) say('아이들이 손을 흔든다 — 「많이 몰아 와!」', null, 2.6); }
+  if (!S.bandFood && S.sun > 0.42 && band[2].trips + band[3].trips >= 3) { S.bandFood = true; S.food++; hud(); say('무리가 열매와 뿌리를 모아 왔다 — 먹을 것 하나', null, 3); }
+}
 const tmark = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 28), new THREE.MeshBasicMaterial({ color: 0xffcf4d, transparent: true, opacity: 0.8, depthWrite: false })); tmark.rotation.x = -Math.PI / 2; tmark.visible = false; scene.add(tmark);
 
 /* 사슴 · 늑대 — 블렌더 모델을 조각(몸통 · 목 · 다리 넷)으로 받아 예전처럼 다리를 흔들고 목을 숙인다.
@@ -278,7 +317,7 @@ function resetDay() {
   S.ground = (S.axe ? STONES0.slice(0, 4) : STONES0).map(([x, z]) => { const m = new THREE.Mesh(stoneGeo, stoneMat); m.position.set(x, 0.2, z); m.rotation.y = x * 7; m.castShadow = true; scene.add(m); stoneMeshes.push(m); return { x, z, m, on: true }; });
   S.sticksOn = STICKS0.map(([x, z], i) => { const m = new THREE.Mesh(stickGeo, stickMat); m.position.set(x, 0.07, z); m.rotation.y = i * 1.3; m.castShadow = true; scene.add(m); stickMeshes.push(m); return { x, z, m, on: true }; });
   bushes.forEach((b) => { b.on = true; b.b.visible = true; }); roots.forEach((r) => { r.on = true; r.g.visible = true; });
-  layPrints(hx);
+  layPrints(hx); bandReset();
   core.scale.setScalar(1); core.visible = !S.axe; tmark.visible = false; $('fade').style.opacity = 0;
   fire.visible = true; hud();
 }
@@ -477,7 +516,8 @@ function campScene() {
   S.mode = 'camp'; S.endT = 0; S.sun = 1.05; lightFor(1.05);
   for (const d of deer) d.mesh.visible = false; for (const w of wolves) w.mesh.visible = false;
   const seat = (m, a) => { m.position.set(FIRE[0] + Math.cos(a) * 2.4, 0, FIRE[1] + Math.sin(a) * 2.4); m.rotation.y = -Math.atan2(FIRE[1] - m.position.z, FIRE[0] - m.position.x) + Math.PI / 2; walkAnim(m, 0, false); };
-  seat(pMesh, 2.2); seat(comps[0].mesh, 3.3); seat(comps[1].mesh, 4.4); seat(torchmen[0].mesh, 5.4); seat(torchmen[1].mesh, 6.2); /* 카메라 쪽(0.9)은 비워 둔다 */
+  seat(pMesh, 2.2); seat(comps[0].mesh, 3.3); seat(comps[1].mesh, 4.4); seat(torchmen[0].mesh, 5.4); seat(torchmen[1].mesh, 6.2);
+  { const A = [2.75, 3.85, 4.9, 5.85, 0.25, 1.75, 2.05], Rr = [3.9, 3.9, 3.9, 3.9, 3.7, 3.5, 3.6]; band.forEach((b, i) => { const m = b.mesh; m.visible = true; m.rotation.x = 0; m.scale.y = m.scale.x; m.position.set(FIRE[0] + Math.cos(A[i]) * Rr[i], 0, FIRE[1] + Math.sin(A[i]) * Rr[i]); m.rotation.y = -Math.atan2(FIRE[1] - m.position.z, FIRE[0] - m.position.x) + Math.PI / 2; walkAnim(m, 0, false); }); } /* 카메라 쪽(0.9)은 비워 둔다 */
   eyes.visible = !(S.fuel > 0);
   fire.visible = S.fuel > 0; fireL.intensity = S.fuel > 0 ? 26 : 0; fireGlow.visible = S.fuel > 0; torchGlows.forEach((g) => (g.visible = false));
   $('fade').style.opacity = 0;
@@ -491,13 +531,13 @@ function endScreen() {
   const win = S.endWin, marks = `<div class="marks"><span class="${win ? 'ok' : ''}">🦌 몬 사슴 ${S.inside}마리</span><span class="${S.axe ? 'ok' : ''}">🪨 ${S.axe ? '주먹도끼' : '도끼 없음'}</span><span class="${S.fireAlive ? 'ok' : ''}">🔥 ${S.fireAlive ? '불을 지켰다' : S.fireOut ? '불이 꺼졌다' : '불을 돌보지 않았다'}</span><span class="${S.food3 ? 'ok' : ''}">🫐 열매 ${S.food3 ? '넉넉' : Math.min(3, S.food) + '/3'}</span></div>`;
   const fireLine = S.fireAlive ? '불이 밤새 타올라 짐승이 야영지에 오지 못했다.' : '불이 꺼져, 어둠 속에서 짐승 눈이 번득였다.';
   if (win) {
-    overlay(`<h1>몰았다</h1><p>사슴 떼가 골짜기로 쏟아져 들어갔고, 횃불이 어귀를 막았다.</p><p>${S.axe ? '주먹도끼로 가죽까지 벗겨 냈다 — 오늘 밤은 따뜻하다.' : '도끼가 없어 고기만 겨우 떼어 왔다. 가죽은 버려야 했다.'} ${fireLine}</p>${marks}
+    overlay(`<h1>몰았다 — 이겼다</h1><p>사슴 떼가 골짜기로 쏟아져 들어갔고, 횃불이 어귀를 막았다. 무리 열두 사람이 모닥불 곁에서 배불리 먹는다.</p><p style="text-align:left;font-size:14px;line-height:1.6;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 12px"><b>이긴 까닭</b><br>· ${S.scatters ? `떼를 ${S.scatters}번 흩뜨렸지만 다시 모아 몰았다.` : '한 번도 흩뜨리지 않고 조용히 몰았다.'}<br>· ${S.lostN ? `${S.lostN}마리는 숲으로 놓쳤다.` : '한 마리도 놓치지 않았다.'}${S.bandFood ? '<br>· 무리가 모아 온 열매와 뿌리가 먹을 것에 보태졌다.' : ''}</p><p>${S.axe ? '주먹도끼로 가죽까지 벗겨 냈다 — 오늘 밤은 따뜻하다.' : '도끼가 없어 고기만 겨우 떼어 왔다. 가죽은 버려야 했다.'} ${fireLine}</p>${marks}
       <p class="keys">먹을 것이 떨어지자 무리는 강을 따라 떠났다.</p>
       <div class="fact">📜 <b>뗀석기</b> — 돌을 깨뜨려 떼어 낸 도구를 썼다. 주먹도끼 하나로 찍고 자르고 팠다.<br>📜 <b>불</b> — 불로 추위와 짐승을 막고 먹을 것을 익혔다.<br>📜 <b>사냥과 채집</b> — 사냥만으로는 살 수 없었다. 열매와 뿌리가 더 큰 몫이었다.<br>📜 <b>옮겨 다니는 삶</b> — 먹을 것을 따라 무리 지어 옮겨 다니며 동굴이나 막집에서 지냈다.</div>`,
       '한 번 더', () => { S.day = 1; S.axe = false; resetDay(); restorePeople(); S.mode = 'play'; misClear(); });
   } else {
     const nd = S.day + 1;
-    overlay(`<h1>해가 졌다</h1><p>빈손으로 돌아왔다. ${S.food3 ? '<b>그래도 오늘은 굶지 않았다</b> — 주워 둔 열매와 뿌리가 있었다.' : '주린 배로 잠들었다.'}</p><p>${fireLine}</p>${marks}
+    overlay(`<h1>해가 졌다 — 졌다</h1><p style="text-align:left;font-size:14px;line-height:1.6;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 12px"><b>진 까닭</b><br>· ${S.inside ? `골짜기에 ${S.inside}마리만 들어갔다 — 여섯은 되어야 무리가 먹는다.` : '떼를 골짜기까지 데려가지 못했다.'}${S.scatters >= 2 ? `<br>· 떼를 ${S.scatters}번 흩뜨렸다 — 바람을 안고, 걸어서 다가가야 한다.` : ''}${S.lostN ? `<br>· ${S.lostN}마리를 숲으로 놓쳤다.` : ''}</p><p>빈손으로 돌아왔다. ${S.food3 ? '<b>그래도 오늘은 굶지 않았다</b> — 주워 둔 열매와 뿌리가 있었다.' : '주린 배로 잠들었다.'}</p><p>${fireLine}</p>${marks}
       <p>다음 날 — <b>동료 하나가 기운이 없어 느리다.</b> 떼는 <b>더 멀리</b> 옮겨 갔고 바람도 바뀌었다.${nd >= 3 ? ' <b>늑대가 한 마리 더</b> 어슬렁거린다.' : ''}</p>
       <p class="keys">${nd}번째 날 · 횃불은 아직 골짜기 어귀에서 기다린다.</p>`,
       '다음 날 나선다', () => { S.day = nd; resetDay(); restorePeople(); S.mode = 'play'; say('바람이 바뀌었다 — 풀이 눕는 쪽을 보자', null, 3); });
@@ -533,6 +573,7 @@ function update(dt) {
   for (const s of smoke) { const k = (s.userData.k + S.t * 0.09) % 1; s.position.set(FIRE[0] + Math.sin(k * 7 + s.userData.k * 9) * 0.6 * k + S.wind[0] * k * 3, 1.2 + k * 9, FIRE[1] + S.wind[1] * k * 3); s.scale.setScalar(0.5 + k * 1.6); s.material.opacity = (1 - k) * 0.5 * clamp(S.fuel * 3, 0, 1); s.rotation.y = k * 3; }
   for (const t of torchmen) { const fl = t.mesh.userData.flame; if (fl) { fl.scale.setScalar(0.9 + Math.sin(S.t * 15 + t.hx) * 0.12); fl.rotation.y = S.t * 3; } }
   torchGlows.forEach((g, i) => { g.material.opacity = 0.75 + Math.sin(S.t * 3 + i) * 0.2; g.position.set(torchmen[i].mesh.position.x + 0.5, 2.9, torchmen[i].mesh.position.z + 0.25); });
+  bandUpdate(dt);
   for (const c of chips) if (c.t < 1.5) { c.t += dt; c.vy -= 9 * dt; c.m.position.x += c.vx * dt; c.m.position.y = Math.max(0.05, c.m.position.y + c.vy * dt); c.m.position.z += c.vz * dt; c.m.rotation.x += dt * 8; if (c.t >= 1.5) c.m.visible = false; }
 
   if (S.mode === 'intro') { S.introT += dt; if (S.introT > 4.4) { S.mode = 'play'; say('발자국이 숲 쪽으로 나 있다 — 따라가서 사슴 떼를 찾자', null, 3.6); } stepDeer(dt); return; }
