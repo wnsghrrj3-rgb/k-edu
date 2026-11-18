@@ -5,11 +5,11 @@
  * 시계 = 해적선(생각하는 동안에만 먼바다에서 다가온다 · 닿으면 이번 보물은 해적 차지 — 표시·벌 없이 새 판). ?calm = 해적선 없음.
  * 그림은 기성 3D 재료만(Quaternius Pirate Kit, CC0 — ../bridge/assets). 화면 위 표시(쪽지·팻말·띠)만 코드로. */
 import { createStage, THREE, CALM, sleep } from '../common/stage3d.js?v=2';
-import * as A from '../common/ask.js?v=1';
+import * as A from '../common/ask.js?v=2';
 import * as R from './rules.js?v=1';
 import { wallet, audio, tone, art } from '../common/kit.js?v=8';
 import * as L from '../common/loop.js?v=2';
-import * as H from '../common/hint.js?v=3';
+import * as H from '../common/hint.js?v=4';
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, CELL: .56, PZ: 1.2, PLANK_Z: .62, STEP_MS: 330, BACK_MS: 150, PICK_PX: 46, PICK_Y: 120,

@@ -4,10 +4,10 @@
  * 시계 = 배가 부두에서 떠밀려 간다(생각하는 동안에만 · 다 멀어지면 이번 배는 그냥 떠남 — 표시·벌 없이 새 배). ?calm = 떠밀리지 않음.
  * 그림은 기성 3D 재료만(Quaternius Pirate Kit, CC0 — ../bridge/assets). 화면 위 표시(팻말·띠)만 코드로. */
 import { createStage, THREE, CALM, sleep } from '../common/stage3d.js?v=2';
-import * as A from '../common/ask.js?v=1';
+import * as A from '../common/ask.js?v=2';
 import * as R from './rules.js?v=1';
 import { wallet, audio, tone, art } from '../common/kit.js?v=8';
-import * as H from '../common/hint.js?v=3';
+import * as H from '../common/hint.js?v=4';
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, PZ: 1.2, PAL_X: [-5.0, -2.85], ONES_X: -.85, MAN_X: .55, SHIP: { x: 2.75, z: 1.35, s: .5, drift: 2.6 }, BAR_S: .34, BAR_D: .37, ONE_S: .4, ONE_D: .47,

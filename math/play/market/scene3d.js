@@ -5,7 +5,7 @@
 import { createStage, THREE, sleep, CALM } from '../common/stage3d.js?v=2';
 import { toast, tone, audio } from '../common/kit.js?v=8';
 import * as M5 from './rules.js?v=3';
-import * as H from '../common/hint.js?v=3';   /* 첫 판 한 줄 안내 · 손 그림 */
+import * as H from '../common/hint.js?v=4';   /* 첫 판 한 줄 안내 · 손 그림 */
 
 // ── 내가 정한 수치
 const M = {

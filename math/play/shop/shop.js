@@ -7,7 +7,7 @@
  * 틀(위쪽 띠·동전·알림·효과음·「커졌어!」)은 ../common/kit.js, 그림은 ../common/art.js. 산 것·하트·단골·오늘 장사는 지갑의 가게 칸에 남는다. */
 import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx, toast } from '../common/kit.js?v=8';
 import * as R from './rules.js?v=2';
-import * as A from '../common/ask.js?v=1';
+import * as A from '../common/ask.js?v=2';
 import * as M5 from '../market/rules.js?v=3';
 import * as L from '../common/loop.js?v=2';   /* N04 고리: 장터의 「물고기 통」은 낚시에서 가져온 생선만큼 */
 const $ = id => document.getElementById(id), one = a => a[Math.floor(Math.random() * a.length)], wait = ms => new Promise(r => setTimeout(r, ms));

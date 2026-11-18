@@ -4,11 +4,11 @@
  * 주민 하나가 다음에 지을 것에 드는 나무를 말풍선 그림으로 부탁한다. 시계 없음(쉬는 곳). 지도 조각 넷이면 먼 바다에 새 섬.
  * 무대 ../common/stage3d.js · 팻말·띠·끝의 셈 ../common/ask.js · 규칙 ./rules.js · 모형은 다리 길과 같은 꾸러미(../bridge/assets, Quaternius Pirate Kit CC0). */
 import { createStage, THREE, sleep } from '../common/stage3d.js?v=2';
-import * as A from '../common/ask.js?v=1';
+import * as A from '../common/ask.js?v=2';
 import * as R from './rules.js?v=2';
 import { wallet, audio, tone, art } from '../common/kit.js?v=8';
 import * as L from '../common/loop.js?v=2';
-import * as H from '../common/hint.js?v=3';   /* 손 그림 길잡이(글 없음) */   /* N04 나루터: 배 셋 · 팻말(동전·생선·나무) · 주민 부탁 */
+import * as H from '../common/hint.js?v=4';   /* 손 그림 길잡이(글 없음) */   /* N04 나루터: 배 셋 · 팻말(동전·생선·나무) · 주민 부탁 */
 
 // ── 내가 정한 수치
 const T = { RAFT_X: [-2.6, -1.3, .6], RAFT_Y: .2, RAFT_Z: 2.5, DECK: 1.0, PLANK_W: 1.3, PILE_MAX: 14, HOME_MAX: 6, WANDER: [3, 7], WALK: 1.2, PICK_PX: 80, DROP_PX: 150, PLANK_MS: 220, RISE_MS: 900,
@@ -100,6 +100,21 @@ async function drop(b){ S.busy = true; audio(); const left = S.cur.need - S.cur.
 function mapDraw(){ const box = $('map'); box.hidden = !PL.map; box.innerHTML = Array.from({ length: 4 }, (_, i) => `<u class="${i < PL.map ? 'on' : ''}"></u>`).join(''); }
 
 // ── 팻말: 지을 자리(드는 나무 남은 수) · 나무 더미(장 수) · 주민의 부탁 말풍선
+// ── 배 이름표(준호 2026-11-18 「고르는 건지 모를 것 같아 — 배 안에 간단히 적어 줘」): 배마다 어디로 가서 무엇을 하는지 · 이름표를 눌러도 그 배를 탄다
+const TAGS = [
+  { id: 'B', name: '다리 길', what: '친구 데리러', obj: () => S.boat, on: () => true, go: () => goBridge() },
+  { id: 'F', name: '낚시 섬', what: '물고기 잡으러', obj: () => S.boatF, on: () => S.boatF && S.boatF.visible, go: () => sail(S.boatF, '/math/play/fishing/') },
+  { id: 'M', name: '항구 장터', what: '동전 벌러', obj: () => S.boatM, on: () => S.boatM && S.boatM.visible, go: () => sail(S.boatM, '/math/play/market/') },
+  { id: 'R', name: '나룻배 나루', what: '묶어 세러', obj: () => S.built.rowboat, on: () => !!S.built.rowboat, go: () => goIsle('/math/play/rowboats/'), dy: .55 },
+  { id: 'S', name: '통 부두', what: '통 실으러', obj: () => S.built.store, on: () => !!S.built.store, go: () => goIsle('/math/play/barrels/'), dy: 1.05 },
+  { id: 'I', name: '보물 길', what: '보물 찾으러', obj: () => S.island, on: () => !!S.island, go: () => goIsle(), at: () => new THREE.Vector3(11, 3.1, -17) } ];
+function tagsDraw(){ let n = 0;
+  for (const t of TAGS) { let e = $('tag' + t.id); if (!e) { e = document.createElement('button'); e.id = 'tag' + t.id; e.className = 'btag'; e.innerHTML = `<b>${t.name}</b><small>${t.what}</small>`; document.body.appendChild(e); e.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); if (!S.ready || S.busy || S.ask) return; audio(); S.log.push({ tag: t.id }); t.go(); }); }
+    const o = t.obj(); if (!t.on() || !o || S.busy && S.log.some(x => x.sail)) { e.hidden = true; continue; } const q = stage.screenOf(t.at ? t.at() : new THREE.Vector3(o.position.x, o.position.y + (t.dy != null ? t.dy : .42), o.position.z));
+    if (q.x < -60 || q.x > innerWidth + 60) { e.hidden = true; continue; } e.hidden = false; n++; e.style.left = Math.max(56, Math.min(innerWidth - 56, q.x)) + 'px'; e.style.top = q.y + 'px'; e.classList.toggle('next', o === S.next); }
+  const busyTell = (document.getElementById('tell') || {}).classList?.contains('on');   /* 다른 안내(새 섬 등)가 떠 있으면 그 뒤에 */
+  if (n >= 2 && !S.toldPick && S.t > 1.2 && !busyTell && !S.isleNew) { S.toldPick = true; if (H.tell('pickboat', '가고 싶은 곳의 배를 골라 눌러요!')) S.log.push({ told: 'pickboat' }); } }
+
 function signsDraw(){ if (!S.signs) return; const [sp, pl] = S.signs;
   const blank = BR.saved === 0 && BR.wood === 0 && !(S.cur && S.cur.put);   /* 아무것도 없는 첫 화면에서는 팻말을 띄우지 않는다(배 하나와 손만) */
   if (S.cur && S.spot && !blank) A.signDraw(sp, stage.screenOf(new THREE.Vector3(S.spot.x, T.DECK + 1.5, S.spot.z)), S.cur.need - S.cur.put); else A.signDraw(sp, null);
@@ -152,7 +167,7 @@ stage.frame((dt, t) => { S.t = t; if (!S.cam) return; camera.position.set(.6, S.
   for (const b of S.bundles) if ((!S.drag || S.drag.b !== b) && !stage.tweens.some(w => w.o === b.group)) { b.group.position.y = b.home.y + Math.sin(t * 1.6 + b.ph) * .05; b.group.rotation.z = Math.sin(t * 1.1 + b.ph) * .03; }
   // 주민이 선착장 위를 거닌다(놀이가 아니라 살아 있는 느낌)
   for (const p of S.people) if (!S.busy && !S.ask && t > p.next && !stage.tweens.some(w => w.o === p.obj)) { p.next = t + T.WANDER[0] + Math.random() * (T.WANDER[1] - T.WANDER[0]); const x = -2.8 + Math.random() * (PL.built.includes('dock') ? 6 : PL.built.includes('fix') ? 4 : 3.4); stage.go(p, x, T.WALK).then(() => stage.play(p, Math.random() < .3 ? 'Wave' : 'Idle')); }
-  if (S.ready) { signsDraw(); guide(); } });
+  if (S.ready) { signsDraw(); tagsDraw(); guide(); } });
 /** 손 길잡이: 가만히 있으면(4초) — 나무 묶음이 있고 아직 처음 짓는 중이면 묶음에서 지을 자리로, 아니면 갈 배를 짚는다. 주민 다섯부터는 안 띄운다 */
 function guide(){ if (!S.told && S.t > .8) { S.told = true; if (S.isleNew) { S.isleNew = false; H.tell('isle', '먼바다에 새 섬이 솟았어요! 눌러서 가 봐요', { times: 9999 }); L.boatCatch(); return; } const got = L.boatCatch(); if (got) { H.tell('boatfish', `주민이 작은 배로 물고기 ${got}마리를 잡아 왔어요!`, { times: 9999 }); S.log.push({ boatCatch: got }); [523, 784].forEach((f, i) => tone(f, .14, 'triangle', .1, i * .1)); return; } const st = L.stock(); if (st.people === 0 && st.wood === 0) H.tell('plaza', '배를 타고 친구를 데리러 가요!'); else if (S.bundles.length && S.cur && !PL.built.length) H.tell('build', '나무를 끌어다 선착장을 고쳐요!'); else if (S.boatF && S.boatF.visible && st.fish < 1) H.tell('gofish', '물고기를 잡아 장터에 팔아요!'); else if (S.boatM && S.boatM.visible && st.coins < 5) H.tell('gomarket', '장터에서 동전을 벌어 와요!'); }
   if (S.busy || S.ask || S.drag || BR.saved >= 5 || !H.idle(4000)) { if (S.drag || S.busy) H.hide(); return; }

@@ -5,10 +5,10 @@
  * 시계 = 밀물(큰 배가 부두에서 떠밀려 감 · 생각하는 동안에만). ?calm = 떠밀리지 않음.
  * 그림은 기성 3D 재료만(Quaternius Pirate Kit · Cute Fish Pack, CC0 — ../bridge/assets). 화면 위 표시(팻말·띠)만 코드로. */
 import { createStage, THREE, CALM, sleep } from '../common/stage3d.js?v=2';
-import * as A from '../common/ask.js?v=1';
+import * as A from '../common/ask.js?v=2';
 import * as R from './rules.js?v=1';
 import { wallet, audio, tone, art } from '../common/kit.js?v=8';
-import * as H from '../common/hint.js?v=3';
+import * as H from '../common/hint.js?v=4';
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, PZ: .9, ROW_Z: 2.55, ROW_X: [-6.0, 1.6], BOAT_LEN: 1.25, BAR_S: .31, BAR_D: .23, MAN_X: 1.05,

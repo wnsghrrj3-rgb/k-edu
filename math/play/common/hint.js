@@ -23,5 +23,5 @@ export const TELL = { TIMES: 2, MS: 8000 };
 /** key 곳의 한 줄 안내를 띄운다(이미 TIMES 번 봤으면 안 띄움). → 띄웠는가 */
 export function tell(key, text, opt = {}){ const o = wallet.island('loop'); o.told = o.told || {}; if ((o.told[key] | 0) >= (opt.times || TELL.TIMES)) return false; o.told[key] = (o.told[key] | 0) + 1; wallet.save();
   if (!tellEl) { const s = document.createElement('style'); s.textContent = TELL_CSS; document.head.appendChild(s); tellEl = document.createElement('div'); tellEl.id = 'tell'; document.body.appendChild(tellEl); }
-  tellEl.textContent = text; tellEl.classList.add('on'); clearTimeout(tellT); tellT = setTimeout(() => tellEl.classList.remove('on'), opt.ms || TELL.MS); const t0 = performance.now();
+  tellEl.textContent = text; const tr = document.getElementById('tray'); tellEl.style.top = tr && tr.classList.contains('on') ? (tr.getBoundingClientRect().bottom + 14) + 'px' : '';   /* 덧셈 띠가 떠 있으면 그 아래에 */ tellEl.classList.add('on'); clearTimeout(tellT); tellT = setTimeout(() => tellEl.classList.remove('on'), opt.ms || TELL.MS); const t0 = performance.now();
   const off = () => { if (performance.now() - t0 < 1500) return; tellEl.classList.remove('on'); removeEventListener('pointerdown', off, true); }; addEventListener('pointerdown', off, true); return true; }

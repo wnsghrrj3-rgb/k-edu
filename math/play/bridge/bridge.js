@@ -8,11 +8,11 @@
  * 가위표·정답 표시·점수·설명 글 없음. 무대는 ../common/stage3d.js, 팻말·띠·끝의 셈은 ../common/ask.js, 규칙은 ./rules.js.
  * 화면은 기성 3D 재료(Quaternius Pirate Kit, CC0)만 — 판자·받침·기둥은 선착장 모형을 조각으로 나눠 그대로 쓴다(assets/CREDITS.md). */
 import { createStage, THREE, LITE, CALM, sleep } from '../common/stage3d.js?v=2';
-import * as A from '../common/ask.js?v=1';
+import * as A from '../common/ask.js?v=2';
 import * as R from './rules.js?v=6';
 import { wallet, audio, tone, art } from '../common/kit.js?v=8';
 import * as LP from '../common/loop.js?v=2';
-import * as H from '../common/hint.js?v=3';   /* 첫 판 한 줄 안내 · 손 그림 */
+import * as H from '../common/hint.js?v=4';   /* 첫 판 한 줄 안내 · 손 그림 */
 const CARGO = !new URLSearchParams(location.search).has('free');   /* ?free = 화물 싣기 없이(옛 방식, 하네스용) */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
