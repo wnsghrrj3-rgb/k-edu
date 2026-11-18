@@ -95,7 +95,7 @@ export function ringsFx(scene) {
    읽을 때 물체마다 조각을 한 덩이로 합치고(그리기 한 번), 재질 이름으로 색을 굽는다: tint_* 는 부르는 쪽이 정하고 나머지는 모델의 색.
    glow_* 재질은 스스로 빛나는 조각(창 불빛)으로 따로 둔다. 음영은 꼭짓점 색에 들어 있다. */
 export const ART = {};
-export const ARTV = 1;
+export const ARTV = 2;
 export const artMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0, side: THREE.DoubleSide });
 export const artGlowMat = new THREE.MeshBasicMaterial({ vertexColors: true });
 const artLoaded = {}, _c = new THREE.Color();
@@ -149,11 +149,11 @@ export const faceTex = (skin, mood) => canvasTex(64, 64, (g) => { g.fillStyle = 
 export function people(scene) {
   /* hat: 'guard'(전립) · 'gat'(갓) · 'satgat'(삿갓) · 'hair'(헝클어진 긴 머리) · 그 밖(상투). lantern: 오른손 초롱 · torch: 오른손 횃불 · spear: 왼손 창 */
   /* 블렌더 사람: 머리(얼굴·머리칼·쓰개) · 몸통(저고리·자락) · 팔 둘 · 다리 둘 = 그리기 여섯 번. 옷 색은 꼭짓점 색에 굽는다.
-     hat 에 더 쓸 수 있는 것: 'scarf'(머릿수건) · 'paeraengi'(패랭이) · 'braid'(댕기 머리) · 'bun'(쪽머리) · 'wild'(헝클어진 머리) · 'cap'(챙 모자, pants 색) · 'fedora'(중절모, pants 색).
+     hat 에 더 쓸 수 있는 것: 'scarf'(머릿수건) · 'paeraengi'(패랭이) · 'braid'(댕기 머리) · 'bun'(쪽머리) · 'wild'(헝클어진 머리) · 'cap'(챙 모자, pants 색) · 'fedora'(중절모, pants 색) · 'boktu'(복두 — 신라·고려 벼슬아치) · 'band'(상투에 머리띠, pants 색 — 고조선·삼국 우두머리) · 'crop'(짧은 머리 — 근현대).
      chima: true 면 긴 치마(pants 색). style: 'hide' 면 선사 시대 가죽옷(깃 없음 · 맨팔 · 맨다리 · 가죽신), 'coat' 면 근대 단추 옷(제복·교복). */
   function personArt({ shirt, pants, hat, mood = 'soft', lantern = false, torch = false, spear = false, skin: skinC = 0xffd9a8, hairC = 0x2b2118, chima = false, style = null }) {
     const g = new THREE.Group(), tm = { skin: skinC, shirt, pants, hair: hairC }, hide = style === 'hide';
-    const HAT = { guard: ['hair_base', 'hat_guard'], gat: ['hair_base', 'hat_gat'], satgat: ['hair_base', 'hat_satgat'], hair: ['hair_base', 'hair_fall'], scarf: ['hair_base', 'hat_scarf'], paeraengi: ['hair_base', 'hat_paeraengi'], braid: ['hair_base', 'hair_braid'], bun: ['hair_base', 'hair_bun'], wild: ['hair_wild'], cap: ['hair_base', 'hat_cap'], fedora: ['hair_base', 'hat_fedora'] };
+    const HAT = { guard: ['hair_base', 'hat_guard'], gat: ['hair_base', 'hat_gat'], satgat: ['hair_base', 'hat_satgat'], hair: ['hair_base', 'hair_fall'], scarf: ['hair_base', 'hat_scarf'], paeraengi: ['hair_base', 'hat_paeraengi'], braid: ['hair_base', 'hair_braid'], bun: ['hair_base', 'hair_bun'], wild: ['hair_wild'], cap: ['hair_base', 'hat_cap'], fedora: ['hair_base', 'hat_fedora'], boktu: ['hair_base', 'hat_boktu'], band: ['hair_base', 'hair_knot', 'hat_band'], crop: ['hair_base'] };
     const headN = ['head', ...(HAT[hat] || (hide ? ['hair_wild'] : ['hair_base', 'hair_knot'])), ...(mood === 'stern' ? ['brow_stern'] : [])], bodyN = hide ? ['torso_hide', 'skirt_hide'] : [style === 'coat' ? 'torso_coat' : 'torso', chima ? 'chima' : 'skirt'], sfx = hide ? '_bare' : '';
     const mk = (names) => { const m = new THREE.Mesh(artGeo(names, tm), artMat); m.castShadow = true; m.receiveShadow = true; return m; };
     const head = mk(headN), body = mk(bodyN), limbs = {};
@@ -375,4 +375,70 @@ export function runLoop(update, view, render) {
   let last = performance.now();
   function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); view(); render(); requestAnimationFrame(loop); }
   requestAnimationFrame(loop);
+}
+
+/* ───── 미션(11-18 준호 「어떻게 뭘 하는지 · 미션이 있으면 좋겠다」) ─────
+   지금 할 일 하나를 「미션 2/5」 로 크게: 무엇을(t) · 어떻게(how — 키, 터치면 다른 글) · 어디서(at → 빛기둥·꼬리표·화면 밖이면 가장자리 화살표).
+   done() 이 참이 되면 「미션 완료!」 가 터지고 다음 미션으로. 뒤 미션을 먼저 해 두었으면 그 미션에 왔을 때 곧바로 지나간다.
+   목표·흔적 줄(#todo)은 그대로 두고 카드 아래로 내린다. 놀이 규칙은 건드리지 않는다(S 를 읽기만 한다).
+   list = [{ t: '굴림대를 돌 앞에', how: (touch) => touch ? '「들기」 누르기' : '<kbd>E</kbd> 들기', done: () => bool, at: () => [x, z] 또는 [x, y, z] 또는 null, n: () => [지금, 다] 또는 null, tag: '🪵 이것을 들어', tagY: 2.4 }] */
+const MIS_CSS = `#mis{position:fixed;left:14px;top:60px;width:min(330px,calc(100vw - 28px));box-sizing:border-box;background:rgba(255,248,226,.96);color:#2a2410;border-radius:16px;padding:9px 14px 11px;box-shadow:0 4px 0 rgba(0,0,0,.28);pointer-events:none;border:3px solid #ffcf4d;transition:transform .25s}
+#mis .mh{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:900;color:#a0700a;letter-spacing:.02em}
+#mis .mh i{display:inline-block;width:9px;height:9px;border-radius:50%;background:#e6d9b0}#mis .mh i:first-of-type{margin-left:4px}#mis .mh i.ok{background:#3fb46a}#mis .mh i.now{background:#ffb020;box-shadow:0 0 0 3px rgba(255,176,32,.35)}
+#mis .mt{font-size:19px;font-weight:900;margin:3px 0 2px;line-height:1.25}
+#mis .mk{font-size:14px;font-weight:700;color:#5a4a20;line-height:1.4}
+#mis .mk kbd{display:inline-block;background:#2a2410;color:#fff;border-radius:6px;padding:0 6px;font-family:inherit;font-size:13px;margin:0 1px;line-height:1.5}
+#mis .mp{height:8px;border-radius:5px;background:#eadfbf;overflow:hidden;margin-top:6px;display:none}#mis .mp b{display:block;height:100%;width:0;background:#3fb46a;transition:width .3s}
+#mis.bump{transform:scale(1.06)}#mis.all{border-color:#3fb46a;background:rgba(232,252,236,.96)}
+.mtag{position:fixed;transform:translate(-50%,-100%);background:#ffcf4d;color:#3a2a00;font-weight:900;font-size:15px;border-radius:12px;padding:5px 10px;pointer-events:none;white-space:nowrap;box-shadow:0 3px 0 rgba(0,0,0,.3);display:none}
+.mtag:after{content:'';position:absolute;left:50%;bottom:-7px;margin-left:-7px;border:7px solid transparent;border-bottom:0;border-top-color:#ffcf4d}
+#marr{position:fixed;width:0;height:0;pointer-events:none;display:none}#marr b{position:absolute;left:-19px;top:-19px;width:38px;height:38px;border-radius:50%;background:#ffcf4d;box-shadow:0 3px 0 rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#3a2a00;font-weight:900}
+#mpop{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);background:#3fb46a;color:#fff;font-weight:900;font-size:28px;border-radius:20px;padding:14px 28px;box-shadow:0 6px 0 #23824a;pointer-events:none;opacity:0;transition:all .3s cubic-bezier(.3,1.6,.5,1);text-align:center;white-space:nowrap}
+#mpop small{display:block;font-size:16px;font-weight:800;opacity:.92;margin-top:3px}#mpop.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@media (max-width:640px){#mis .mt{font-size:16px}#mis .mk{font-size:12.5px}#mpop{font-size:22px}}`;
+export function missions(scene, cam, list, o = {}) {
+  const isTouch = o.isTouch || (() => document.body.classList.contains('touch')), gy = o.groundY || (() => 0);
+  if (!document.getElementById('misCss')) { const st = document.createElement('style'); st.id = 'misCss'; st.textContent = MIS_CSS; document.head.appendChild(st); }
+  const mk = (tg, id, cls) => { const e = document.createElement(tg); if (id) e.id = id; if (cls) e.className = cls; document.body.appendChild(e); return e; };
+  const card = mk('div', 'mis'), tag = mk('div', null, 'mtag'), arr = mk('div', 'marr'), pop = mk('div', 'mpop');
+  card.innerHTML = '<div class="mh"></div><div class="mt"></div><div class="mk"></div><div class="mp"><b></b></div>'; arr.innerHTML = '<b>➜</b>';
+  const [hEl, tEl, kEl, pEl] = card.children, todo = document.getElementById('todo');
+  /* 빛기둥 + 땅 고리(더하기 섞기 — 밤 장면에서도 보인다) */
+  const ptex = canvasTex(8, 128, (g) => { const r = g.createLinearGradient(0, 0, 0, 128); r.addColorStop(0, 'rgba(255,230,140,0)'); r.addColorStop(1, 'rgba(255,220,120,.9)'); g.fillStyle = r; g.fillRect(0, 0, 8, 128); });
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 10, 16, 1, true), new THREE.MeshBasicMaterial({ map: ptex, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.35, 32), new THREE.MeshBasicMaterial({ color: 0xffcf4d, transparent: true, opacity: 0.85, depthWrite: false })); ring.rotation.x = -Math.PI / 2;
+  beam.visible = ring.visible = false; beam.renderOrder = ring.renderOrder = 5; scene.add(beam, ring);
+  let idx = 0, t = 0, popT = 0, bumpT = 0, shownKey = '', lastTop = -1;
+  const ok = list.map(() => false), v = new THREE.Vector3();
+  const howOf = (m) => (typeof m.how === 'function' ? m.how(isTouch()) : m.how || '');
+  function paint() {
+    const all = idx >= list.length, m = list[Math.min(idx, list.length - 1)], n = !all && m.n ? m.n() : null, key = idx + '|' + (n ? n.join('/') : '') + '|' + isTouch() + '|' + (all ? '' : howOf(m));
+    if (key !== shownKey) { shownKey = key;
+      hEl.innerHTML = (all ? '미션 모두 끝!' : `미션 ${idx + 1}/${list.length}`) + list.map((_, i) => `<i class="${ok[i] ? 'ok' : i === idx ? 'now' : ''}"></i>`).join('');
+      tEl.textContent = all ? (o.allText || '🎉 이제 목표까지 가 보자') : m.t + (n ? ` ${Math.min(n[0], n[1])}/${n[1]}` : '');
+      kEl.innerHTML = all ? (o.allHow || '') : howOf(m); kEl.style.display = kEl.innerHTML ? '' : 'none';
+      pEl.style.display = n ? 'block' : 'none'; if (n) pEl.firstElementChild.style.width = clamp(n[0] / n[1], 0, 1) * 100 + '%';
+      card.classList.toggle('all', all); }
+    if (todo) { const top = card.style.display === 'none' ? 60 : card.offsetTop + card.offsetHeight + 8; if (top !== lastTop) { lastTop = top; todo.style.top = top + 'px'; } }
+  }
+  function finish(i) { ok[i] = true; pop.innerHTML = `✅ 미션 완료!<small>${list[i].t}</small>`; pop.classList.add('on'); popT = 1.8; bumpT = 0.25; card.classList.add('bump');
+    if (o.sound !== false) { tone(660, 660, 0.12, 'triangle', 0.12); tone(880, 880, 0.12, 'triangle', 0.12, 0.11); tone(1320, 1320, 0.22, 'triangle', 0.1, 0.22); } }
+  function update(dt, active = true) {
+    t += dt;
+    card.style.display = active || popT > 0 ? '' : 'none';
+    if (active) while (idx < list.length && list[idx].done()) { finish(idx); idx++; }
+    paint();
+    if (popT > 0) { popT -= dt; if (popT <= 0) pop.classList.remove('on'); }
+    if (bumpT > 0) { bumpT -= dt; if (bumpT <= 0) card.classList.remove('bump'); }
+    const m = list[idx], p = active && m && m.at ? m.at() : null;
+    beam.visible = ring.visible = !!p; tag.style.display = 'none'; arr.style.display = 'none';
+    if (!p) return;
+    const x = p[0], z = p.length === 3 ? p[2] : p[1], y = p.length === 3 ? p[1] : gy(x, z), pulse = 0.5 + 0.5 * Math.sin(t * 4);
+    beam.position.set(x, y + 5, z); beam.material.opacity = 0.5 + pulse * 0.35; ring.position.set(x, y + 0.08, z); ring.scale.setScalar(0.9 + pulse * 0.3);
+    const q = v.set(x, y + (m.tagY || 2.4), z).project(cam), off = q.z > 1 || Math.abs(q.x) > 0.95 || Math.abs(q.y) > 0.9;
+    const tg = typeof m.tag === 'function' ? m.tag() : m.tag; if (!off) { if (tg !== '') { tag.textContent = tg || '여기!'; tag.style.display = 'block'; tag.style.left = ((q.x + 1) / 2) * innerWidth + 'px'; tag.style.top = clamp(((1 - q.y) / 2) * innerHeight, 150, innerHeight - 20) + 'px'; } }
+    else { const gx = q.z > 1 ? -q.x : q.x, gyy = q.z > 1 ? -Math.abs(q.y) - 0.5 : q.y, k = 0.86 / Math.max(Math.abs(gx), Math.abs(gyy), 0.001); arr.style.display = 'block'; arr.style.left = ((gx * k + 1) / 2) * innerWidth + 'px'; arr.style.top = ((1 - gyy * k) / 2) * innerHeight + 'px'; arr.firstElementChild.style.transform = `rotate(${Math.atan2(-gyy, gx)}rad)`; }
+  }
+  function reset() { idx = 0; ok.fill(false); shownKey = ''; popT = 0; pop.classList.remove('on'); }
+  return { update, reset, get idx() { return idx; }, get count() { return list.length; }, get all() { return idx >= list.length; }, ok, card };
 }

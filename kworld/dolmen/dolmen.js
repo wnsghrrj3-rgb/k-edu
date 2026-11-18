@@ -4,7 +4,7 @@
    굴림대: 돌 밑에 둘 이상 있어야 움직인다. 지나온 것은 주워서 돌 앞 길에 놓는다(아이 하나도 천천히 돕는다).
    좌표: x 동쪽(+), z 남쪽(+). 길은 z=24 를 따라 서쪽 채석장 → 동쪽 무덤 언덕. 마을은 남쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, scatter as strew } from '../scene/kit.js?v=3';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, scatter as strew , missions } from '../scene/kit.js?v=4';
 await loadArt('people', 'nature', 'props', 'dolmen');   /* 블렌더로 만든 모델(사람·자연·소품 + 이 장면만의 묶음 dolmen.glb = tools/blender/make_dolmen.py) */
 
 const W = 92, H = 58, BX = [4, 88], BZ = [8, 52];
@@ -127,6 +127,7 @@ const SFX = {
 const S = { mode: 'title', day: 1, view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: -Math.PI / 2, t: 0, sun: 0, px: 24, pz: 27.5, pdir: -Math.PI / 2, moving: false, running: false, said: {}, sayT: 0,
   s: S0, sv: 0, holding: false, bPh: 0.3, pressed: 0, lastOk: -9, pulls: 0, misses: 0, slips: 0, stuck: 0, hurt: 0, tired: false, meal: false, mealCarry: false, ramp: 0, earth: false, goods: 'altar', carry: -1,
   away: 0, smokeT: -1, workT: 0, workKey: '', beatT: 0, stepT: 0, endT: 0, shown: false, introT: 0, chiefSaid: 0, crewMax: CREW0, tut: 0 };
+let mis = null;   /* 미션 카드(아래에서 만든다) */
 const TUT = 3;   /* 처음 세 박자는 따라 하기: 박자가 느리고 폭이 넓고, 맞으면 돌이 크게 움직이고, 어긋나도 굴림대가 안 빠진다 */
 const { say, tick: sayTick } = sayLine(S);
 const ctl = controls(S, say), keys = ctl.keys;
@@ -153,7 +154,7 @@ function hud() {
 }
 function placeRollersAround(s) { rollers.forEach((r, i) => { r.x = s - 2.4 + i * 2.2; r.z = ROAD_Z; r.side = false; }); }
 function resetDay(keep) {
-  if (!keep) { S.s = S0; placeRollersAround(S0); S.hurt = 0; S.ramp = 0; S.goods = 'altar'; S.day = 1; S.tired = false; }
+  if (!keep) { if (mis) mis.reset(); misHeld = misLaid = false; S.s = S0; placeRollersAround(S0); S.hurt = 0; S.ramp = 0; S.goods = 'altar'; S.day = 1; S.tired = false; }
   Object.assign(S, { t: 0, sun: 0, sv: 0, holding: false, bPh: 0.3, pressed: 0, lastOk: -9, pulls: 0, misses: 0, slips: 0, stuck: 0, meal: false, mealCarry: false, earth: false, carry: -1, away: 0, smokeT: -1, workT: 0, endT: 0, shown: false, chiefSaid: 0 });
   if (S.goods === 'carry') S.goods = 'altar';
   S.px = S.s + 6; S.pz = ROAD_Z + 3.5; S.pdir = -Math.PI / 2;
@@ -356,10 +357,23 @@ function view() {
   edgeGoal($('goal'), cam, goalPos, S.mode === 'play', 0.8);
 }
 
+/* ───── 미션(11-18): 지금 할 일 하나 — 무엇을·어떻게·어디서. 이 장면은 줄·굴림대 자리를 이미 빛으로 보여 주니 빛기둥은 흙 비탈 미션에만 ───── */
+let misHeld = false, misLaid = false, misCarry = -1;
+mis = missions(scene, cam, [
+  { t: '줄 잡기', how: '빛기둥 자리(줄 끝)에 가서 서면 저절로 잡는다', done: () => misHeld },
+  { t: '「차!」에 맞춰 당기기', how: (tc) => `흰 점이 노란 칸에 들어올 때 ${tc ? '「당기기」' : '<kbd>스페이스</kbd>'}`, n: () => [S.tut, TUT], done: () => S.tut >= TUT },
+  { t: '지나온 굴림대를 돌 앞에 깔기', how: '빛나는 굴림대 곁에 서면 든다 → 돌 앞 노란 고리로 걸어가면 내려놓는다', done: () => misLaid },
+  { t: '돌을 언덕 비탈까지', how: (tc) => `줄을 잡고 「차!」마다 ${tc ? '「당기기」' : '<kbd>스페이스</kbd>'} · 굴림대가 모자라면 앞으로 옮기기`, n: () => [Math.max(0, Math.round(S.s - S0)), SLOPE0 - S0], done: () => S.s >= SLOPE0 },
+  { t: '받침돌 사이 흙 비탈 쌓기', how: '흙더미 곁에 가만히 서면 바구니에 담는다 → 받침돌 사이에 가서 붓는다', n: () => [S.ramp, 4], done: () => S.ramp >= 4,
+    at: () => (S.earth ? [CHAMBER[0] - 1.2, CHAMBER[1]] : [DIRT[0], DIRT[1]]), tag: () => (S.earth ? '⬇ 받침돌 사이에 붓기' : '🧺 가만히 서서 흙 담기') },
+  { t: '덮개돌을 받침돌 위로', how: (tc) => `다시 줄을 잡고 끝까지 ${tc ? '「당기기」' : '<kbd>스페이스</kbd>'} — 비탈에서는 손을 놓지 말기`, done: () => S.mode === 'win' },
+], { groundY: groundH, allText: '🎉 고인돌이 섰다!' });
+function misWatch() { if (S.mode !== 'play') return; if (S.holding) misHeld = true; if (misCarry >= 0 && S.carry < 0 && !S.earth) misLaid = true; misCarry = S.carry; }
+
 resetDay(false); placeStone(); placeAll(0.016);
 haulers.forEach((h, k) => { h.x = S.s + 6 + Math.floor(k / 2) * 1.6; h.z = ROAD_Z + (k % 2 ? 1 : -1); });
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; SFX.horn(); };
-runLoop(update, view, () => renderer.render(scene, cam));
+runLoop((dt) => { update(dt); misWatch(); mis.update(dt, S.mode === 'play' || (S.mode === 'win' && S.endT < 2.4)); }, view, () => renderer.render(scene, cam));
 window.__scene = { S, rollers, pillar, dropRing, pickable, helper, update, keys, ctl, press, under, period, windowW, grab,
   go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
