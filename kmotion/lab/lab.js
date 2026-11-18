@@ -46,7 +46,7 @@ async function start(mode){
     hiT = cut === 'B' && high ? hiT + dt : 0; loT = cut === 'A' && low && props.benchCount() >= 3 ? loT + dt : 0;
     if (hiT > .25) { stage.setCut('A'); hiT = 0; } if (loT > .6) { stage.setCut('B'); loT = 0; }
   }
-  const dbg = Q.has('dbg') ? $('dbg') : null; if (dbg) dbg.style.display = '';
+  const dbg = Q.has('dbg') ? $('labDbg') : null; if (dbg) dbg.style.display = '';
   stage.onTick((dt, rdt, now) => {
     input.update(now); props.update(dt, now); cutRule(rdt); flow.update();
     const holdingWear = props.hs.some(s => s.held && s.held.kind === 'wear');

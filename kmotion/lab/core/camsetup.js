@@ -69,7 +69,9 @@ export function createCamSetup({ input, $ }){
       else { pc.fillStyle = '#0d0f12'; pc.fillRect(0, 0, prev.width, prev.height); }
     } catch (_) {} }
     const n = input.hands.filter(h => h.present).length;
-    if (!km.running) { hand.className = 'cs-hand'; hand.textContent = video && video.readyState >= 2 ? '카메라는 켜졌어요 · 손 인식을 준비하는 중…' : '카메라를 켜는 중…'; return; }
+    if (!km.running) {
+      if (input.camError && video && video.readyState >= 2) { hand.className = 'cs-hand bad'; hand.textContent = '카메라는 켜졌는데 손 인식을 켜지 못했어요 — 아래 글을 봐 주세요'; return; }   // 준비 중이 아니라 실패: 끝없이 「준비 중」을 띄우지 않는다
+      hand.className = 'cs-hand'; hand.textContent = video && video.readyState >= 2 ? '카메라는 켜졌어요 · 손 인식을 준비하는 중…' : '카메라를 켜는 중…'; return; }
     if (n) { noHandT = 0; hand.className = 'cs-hand ok'; hand.textContent = n > 1 ? '손 두 개가 보여요 ✓' : '손이 보여요 ✓'; }
     else { noHandT += dt; hand.className = 'cs-hand' + (noHandT > 2.5 ? ' bad' : ''); hand.textContent = noHandT > 2.5 ? '손이 안 보여요 — 다른 카메라를 고르거나 「멀리」를 눌러 보세요' : '손을 화면에 보여 주세요'; }
   }
