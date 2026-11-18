@@ -71,7 +71,9 @@ export function createStage(host, opt = {}){
   function ctrlTo(to, dur){ cr.from = { pos: ctrl.position.clone(), look: cr.look.clone(), fov: ctrl.fov }; cr.to = to; cr.t = 0; cr.dur = dur; }
   function setCut(name, dur){ const to = CUTS[name] || name; if (cam.name === name && !cam.cOverride) return; cam.from = { pos: camera.position.clone(), look: cam.look.clone(), fov: camera.fov }; cam.to = to; cam.t = 0; cam.dur = dur == null ? .8 : dur; cam.name = typeof name === 'string' ? name : 'C'; if (CUTS[name] && cr.to !== CUTS[name]) ctrlTo(CUTS[name], cam.dur); }
   // 눈앞 컷: 대상 자리를 가까이 보고 hold 초 뒤 이전 컷으로
-  function closeUp(target, hold = 1.8){ const back = cam.name === 'C' ? (cam.back || 'B') : cam.name; const look = target.clone(); const pos = look.clone().add(new THREE.Vector3(.08, .22, .55));
+  function closeUp(target, hold = 1.8){ const back = cam.name === 'C' ? (cam.back || 'B') : cam.name; const look = target.clone();
+    const dir = camera.position.clone().sub(look); dir.y = Math.max(dir.y, dir.length() * .35); dir.normalize();   // 지금 보던 쪽에서 그대로 다가간다(옆의 그릇·손이 가리지 않게)
+    const pos = look.clone().addScaledVector(dir, .4); pos.x += .03;
     setCut({ pos, look, fov: 34 }, .35); cam.name = 'C'; cam.back = back; cam.cLeft = hold; }   // 무대 시간으로 센다(느린 동작·손으로 흘린 시간에도 맞게)
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   function stepCamera(dt){
@@ -89,6 +91,8 @@ export function createStage(host, opt = {}){
   const pv = new THREE.Vector3();
   function projectView(v){ pv.copy(v).project(camera); return { x: (pv.x + 1) / 2, y: (1 - pv.y) / 2, z: pv.z }; }   // 지금 보이는 화면 기준(떠오르는 글자)
   function project(v){ pv.copy(v).project(ctrl); return { x: (pv.x + 1) / 2, y: (1 - pv.y) / 2, z: pv.z }; }
+  // 매 프레임 쓰는 쪽(그림 판 놀이): 새 물체를 만들지 않고 out 에 적는다
+  function projectTo(v, out){ pv.copy(v).project(ctrl); out.x = (pv.x + 1) / 2; out.y = (1 - pv.y) / 2; out.z = pv.z; return out; }
 
   // ── 크기·그리기
   function resize(){ const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight; if (w < 2 || h < 2) return; /* 숨은 창(0×0)에서는 비율을 지키려고 그대로 둔다 */ renderer.setSize(w, h, false); camera.aspect = ctrl.aspect = w / h; camera.updateProjectionMatrix(); ctrl.updateProjectionMatrix(); }
@@ -99,7 +103,7 @@ export function createStage(host, opt = {}){
   requestAnimationFrame(frame);
   // 화면이 숨겨져 rAF 가 멈춘 미리보기·자동 시험용: 시간을 손으로 흘린다 (window.__pause = true 와 같이)
   let manualNow = 0;
-  function advance(sec, fps = 30){ const dt = 1 / fps, n = Math.max(1, Math.round(sec * fps)); if (!manualNow) manualNow = performance.now(); for (let k = 0; k < n; k++) { manualNow += dt * 1000; step(dt, manualNow, k === n - 1); } }   // 그리기는 마지막 장만(긴 묶음에서 GPU 가 끊기지 않게)
+  function advance(sec, fps = 30, draw = true){ const dt = 1 / fps, n = Math.max(1, Math.round(sec * fps)); if (!manualNow) manualNow = performance.now(); for (let k = 0; k < n; k++) { manualNow += dt * 1000; step(dt, manualNow, draw && k === n - 1); } }   // 그리기는 마지막 장만(긴 묶음에서 GPU 가 끊기지 않게)
 
   // ── 그림 판 방 올리기: 블렌더에서 구운 room.glb(+ room.json·env.webp). 없으면 회색 판 그대로.
   //    구운 재질(baked_*)은 조명 계산 없이 그림만 붙인다. 자리(빈 점)·컷·햇빛 방향은 블렌더 장면에서 온 값을 쓴다.
@@ -128,7 +132,7 @@ export function createStage(host, opt = {}){
 
   const stage = { THREE, scene, camera, renderer, room, slots, sun, BENCH_Y, WORK_Z, fps: 60, loadRoom, pictured: false,
     setCut, closeUp, get cut(){ return cam.name; }, shake(v = 1){ cam.shake = Math.max(cam.shake, v); },
-    slowMo(scale, sec){ timeScale = scale; slowUntil = performance.now() + sec * 1000; },
-    screenToPlane, project, projectView, onTick: f => ticks.push(f), resize, advance, now: () => window.__pause && manualNow ? manualNow : performance.now() };
+    slowMo(scale, sec){ timeScale = scale; slowUntil = stage.now() + sec * 1000; },
+    screenToPlane, project, projectTo, projectView, ctrl, get camMoving(){ return cam.t < 1 || cr.t < 1; }, onTick: f => ticks.push(f), resize, advance, now: () => window.__pause && manualNow ? manualNow : performance.now() };
   return stage;
 }

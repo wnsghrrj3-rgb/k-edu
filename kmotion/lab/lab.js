@@ -27,12 +27,31 @@ async function start(mode){
   const audio = createAudio({ muted: Q.has('mute') }); audio.unlock();
   const stage = createStage($('app'), { capture: Q.has('capture') });
   if (!Q.has('grey')) { for (let k = 0; k < 3 && !stage.pictured; k++) { try { await stage.loadRoom(); } catch (e) { console.warn('[lab] 방 그림을 못 올림(' + (k + 1) + '번째) — 다시 해 보고 안 되면 회색 판으로', e); } } }   /* 블렌더에서 구운 과학실. ?grey=1 이면 회색 판 */
-  $('ov').classList.add('hidden'); $('ov').classList.remove('wait'); $('err').textContent = ''; $('tools').style.display = ''; document.documentElement.dataset.lab = 'ready';
   const input = createInput({ mode, el: stage.renderer.domElement, camBox: $('camBox'), camStatus: $('camSt'), video: $('v'), camCanvas: $('c') });
+  // 그림 판 놀이(진짜 기구 + 실험 논리): 방이 올라왔고 ?grey=1 이 아니면. 못 올리면 회색 연습판으로 간다.
+  let play = null;
+  if (stage.pictured && !Q.has('grey')) {
+    try { const { createPlay } = await import('./core/play.js?v=2');
+      play = await createPlay({ stage, input, audio, mode, Q, els: { hud: $('hud'), note: $('note'), bodySpot: $('bodySpot'), goggle: $('goggle'), askHands: on => $('camBox').classList.toggle('big', !!on) } });
+    } catch (e) { console.error('[lab] 그림 판 놀이를 못 올림 — 회색 연습판으로', e); play = null; }
+  }
+  $('ov').classList.add('hidden'); $('ov').classList.remove('wait'); $('err').textContent = ''; $('tools').style.display = ''; document.documentElement.dataset.lab = 'ready';
   input.onError = e => { $('camSt').textContent = e.message; if (mode === 'cam') openCamPick(e.message); };
   // ── 카메라 설정(카메라 손 모드만): 도구 줄 「📷 카메라」·카메라 창 누르기 · 켜기 실패 때 저절로 · 카메라가 둘 이상이고 처음이면 한 번 저절로 (core/camsetup.js)
   let camSetup = null; const openCamPick = err => { if (camSetup) camSetup.open(err); };
   if (mode === 'cam') { camSetup = createCamSetup({ input, $ }); if (input.camError) openCamPick(input.camError); if (Q.has('campick')) setTimeout(() => openCamPick(), 1500); }
+  $('bSnd').onclick = () => { audio.on = !audio.on; $('bSnd').textContent = audio.on ? '🔊 소리' : '🔇 소리'; if (audio.on) audio.unlock(); };
+  if (!audio.on) $('bSnd').textContent = '🔇 소리';
+  $('bFs').onclick = () => { const d = document.documentElement; if (!document.fullscreenElement) d.requestFullscreen && d.requestFullscreen(); else document.exitFullscreen(); };
+  if (play) {
+    const lab = window.__lab = { stage, input, play, audio, mode };
+    // ?auto=1 자동 맛보기 한 판(진짜 입력 길) · &fast=1 시간을 손으로 흘림 · &fr=n&ft=초 그 움직임에서 멈춤(화면 찍기) · &upto=이름 그 걸음 뒤 멈춤
+    lab.auto = async (opt) => (await import('./auto_play.js?v=2')).autoPlay(lab, opt);
+    if (Q.has('auto')) setTimeout(async () => { if (Q.has('fast')) { window.__pause = true; stage.advance(.3); }
+      let r; try { r = await lab.auto({ freezeRun: +Q.get('fr') || 0, freezeT: +Q.get('ft') || 0, upto: Q.get('upto') || '', full: Q.has('full'), shots: Q.get('shots') ? Q.get('shots').split(',') : [] }); } catch (e) { r = e && e.freeze ? { frozen: true, at: e.at, log: e.log, overflow: e.overflow } : { error: String(e && e.stack || e) }; }
+      input.freeze(); stage.advance(1 / 30); window.__pause = !!r.frozen; document.title = 'AUTO ' + JSON.stringify({ done: r.done, frozen: r.frozen, at: r.at, error: r.error, overflow: r.overflow, log: r.log }); console.log('[lab auto]', JSON.stringify(r)); }, 300);
+    return lab;
+  }
   const hud = makeHud(), liquid = createLiquid(stage);
   const props = createProps({ stage, input, audio, liquid, hud });
   const flow = createFlow({ noteEl: $('note'), props, mode, audio });

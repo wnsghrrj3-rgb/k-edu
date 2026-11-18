@@ -17,7 +17,11 @@ const port = 9300 + Math.floor(Math.random() * 600), W = +(process.env.CAP_W || 
 const chrome = spawn(CHROME, ['--headless=new', '--disable-gpu-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--mute-audio', '--hide-scrollbars', '--no-first-run',
   '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--user-data-dir=${mkdtempSync(join(tmpdir(), 'labcap-'))}`, `--window-size=${W},${H}`, `--remote-debugging-port=${port}`, 'about:blank'], { stdio: 'ignore' });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const done = (code, obj) => { console.log(JSON.stringify(obj)); try { chrome.kill(); } catch (_) {} process.exit(code); };
+// 끝낼 때 크롬 나무(자식 프로세스까지) 전부 닫는다 — 남은 chrome.exe 가 쌓이지 않게
+import { execFileSync } from 'node:child_process';
+const killChrome = () => { try { if (process.platform === 'win32') execFileSync('taskkill', ['/pid', String(chrome.pid), '/T', '/F'], { stdio: 'ignore' }); else chrome.kill('SIGKILL'); } catch (_) { try { chrome.kill(); } catch (__) {} } };
+process.on('exit', killChrome); process.on('SIGINT', () => process.exit(130)); process.on('SIGTERM', () => process.exit(143));
+const done = (code, obj) => { console.log(JSON.stringify(obj)); killChrome(); process.exit(code); };
 const t0 = Date.now();
 try {
   let ws = null; for (let k = 0; k < 60 && !ws; k++) { await sleep(250); try { const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json(); const pg = list.find(t => t.type === 'page'); if (pg) ws = new WebSocket(pg.webSocketDebuggerUrl); } catch (_) {} }
@@ -32,7 +36,12 @@ try {
   await send('Runtime.enable'); await send('Page.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url });
-  let ok = false; while (Date.now() - t0 < TIMEOUT) { await sleep(300); try { if (await ev(`!!(${waitExpr})`)) { ok = true; break; } } catch (_) {} }
+  // 여러 장(자동 한 판의 &shots=이름,…): 제목이 「SHOT 이름」이 될 때마다 <out 앞부분>_<이름>.png 로 찍고 window.__shotDone 으로 풀어 준다
+  const multi = process.env.CAP_MULTI === '1', taken = [];
+  let ok = false; while (Date.now() - t0 < TIMEOUT) { await sleep(300); try {
+    if (multi) { const ti = await ev('document.title'); if (ti && ti.startsWith('SHOT ')) { const name = ti.slice(5); await sleep(+extra); const s = await send('Page.captureScreenshot', { format: 'png' }); const f = out.replace(/\.png$/, '') + '_' + name + '.png'; writeFileSync(f, Buffer.from(s.result.data, 'base64')); taken.push(name); await ev(`window.__shotDone = ${JSON.stringify(name)}`); continue; } }
+    if (await ev(`!!(${waitExpr})`)) { ok = true; break; } } catch (_) {} }
+  if (multi) logs.unshift('찍음: ' + taken.join(','));
   if (evalJs) { try { await ev(evalJs); } catch (e) { logs.push('eval 실패: ' + e); } }
   await sleep(+extra);
   const shot = await send('Page.captureScreenshot', { format: 'png' }); writeFileSync(out, Buffer.from(shot.result.data, 'base64'));

@@ -26,5 +26,17 @@ export function createAudio({ muted = false } = {}){
     pour(level){ loop('pour', level, { freq: 1200 + level * 900 }); },
     boil(level){ loop('boil', level * .7, { freq: 4200, q: .5 }); },
     ok(){ tone(880, .1, { vol: .1 }); tone(1320, .2, { vol: .08, at: .09 }); },
+    // ── 그림 판 놀이(결과 소리): 깨짐·튕김·터짐·땡·경보 — L08 에서 녹음으로 바꾼다
+    shatter(level = 2){ const v = [0, .25, .4, .6][level] || .4; burst(.05, { vol: v, freq: 5200, q: 2 }); for (let k = 0; k < 6 + level * 4; k++) tone(2600 + Math.random() * 3800, .05 + Math.random() * .12, { type: 'triangle', vol: v * .25, at: .01 + Math.random() * (.25 + level * .12) }); burst(.4 + level * .15, { vol: v * .35, freq: 6500, q: .8, type: 'highpass', at: .03 }); },
+    pop(big = false){ burst(big ? .35 : .18, { vol: big ? .9 : .6, freq: big ? 500 : 900, q: .6 }); tone(big ? 90 : 160, big ? .3 : .15, { type: 'triangle', vol: .4, f2: 40 }); },
+    boing(){ tone(240, .22, { type: 'sine', vol: .18, f2: 520 }); tone(520, .16, { type: 'sine', vol: .08, f2: 260, at: .1 }); },
+    thud(level = 1){ burst(.1, { vol: .15 + level * .1, freq: 260, q: 1.4 }); tone(95, .14, { type: 'triangle', vol: .18, f2: 55 }); },
+    clang(){ tone(1180, .9, { type: 'triangle', vol: .14, f2: 1150 }); tone(1770, .6, { type: 'sine', vol: .06 }); burst(.05, { vol: .2, freq: 3000, q: 2 }); },
+    squash(){ burst(.22, { vol: .3, freq: 420, q: .5, type: 'lowpass' }); tone(150, .2, { type: 'sine', vol: .12, f2: 70 }); },
+    crackle(){ for (let k = 0; k < 7; k++) burst(.025, { vol: .14, freq: 3200 + Math.random() * 2400, q: 3, at: k * .045 + Math.random() * .02 }); },
+    warm(){ tone(330, .5, { vol: .07, f2: 392 }); },
+    alarm(){ for (let k = 0; k < 4; k++) { tone(880, .16, { type: 'square', vol: .07, at: k * .32 }); tone(660, .16, { type: 'square', vol: .07, at: k * .32 + .16 }); } },
+    freeze(){ burst(.6, { vol: .22, freq: 7000, q: .6, type: 'highpass' }); tone(2200, .5, { type: 'sine', vol: .05, f2: 3400 }); },
+    discover(){ tone(1046, .12, { vol: .1 }); tone(1318, .12, { vol: .09, at: .1 }); tone(1568, .3, { vol: .08, at: .2 }); },
   };
 }

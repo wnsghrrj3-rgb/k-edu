@@ -64,7 +64,8 @@ export function createInput({ mode, el, camBox, camStatus, video, camCanvas }){
 
   // ── 자동 재생(세 관문 「한 판」): [{t(초), hand, x, y, grab, tilt}] 사이를 이어 손을 움직인다
   let script = null;
-  api.play = function(keys, onDone){ script = { keys: keys.slice().sort((a, b) => a.t - b.t), t0: null, onDone }; api.mode = 'script'; };
+  // opt.hold = true: 끝나도 손을 그 자리·그 쥠 그대로 둔다(자동 한 판이 쥔 기구를 여러 토막에 걸쳐 들고 있게)
+  api.play = function(keys, onDone, opt = {}){ script = { keys: keys.slice().sort((a, b) => a.t - b.t), t0: null, onDone, hold: !!opt.hold }; api.mode = 'script'; };
   api.freeze = function(){ script = null; };   // 자동 재생을 그 자리에서 멈춤(손은 그대로 쥔 채) — 화면 찍기용
   api.update = function(now){
     if (!script) return; if (script.t0 == null) script.t0 = now;
@@ -73,7 +74,7 @@ export function createInput({ mode, el, camBox, camStatus, video, camCanvas }){
       let a = mine[0], b = mine[0]; for (const k of mine) { if (k.t <= t) a = k; if (k.t > t) { b = k; break; } b = k; }
       const u = b.t > a.t ? Math.min(1, Math.max(0, (t - a.t) / (b.t - a.t))) : 1, lerp = (p, q) => p + (q - p) * u;
       const H = hands[id]; H.present = a.present !== false; H.x = lerp(a.x, b.x); H.y = lerp(a.y, b.y); H.grab = !!a.grab; H.tiltIn = lerp(a.tilt || 0, b.tilt || 0); H.lastSeen = now; H.src = 'script'; }
-    if (t > ks[ks.length - 1].t + .3) { const d = script.onDone; script = null; hands.forEach(H => { H.present = false; H.grab = false; }); d && d(); }
+    if (script.hold ? t >= ks[ks.length - 1].t : t > ks[ks.length - 1].t + .3) { const d = script.onDone, hold = script.hold; script = null; if (!hold) hands.forEach(H => { H.present = false; H.grab = false; }); d && d(); }
   };
   return api;
 }
