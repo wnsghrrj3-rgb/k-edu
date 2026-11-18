@@ -6,7 +6,7 @@
    그림(2026-11-17): 상자 대신 블렌더로 만든 모델 — 공통 묶음(people · nature · build · props)과 이 장면 묶음(refuge.glb ← tools/blender/make_refuge.py, 이름이 rf_ 로 시작). 놀이(규칙 · 수치 · 막는 네모 · 난수 차례)는 그대로다.
    좌표: x 동쪽(+), z 남쪽(+) — 화면 아래(z 큰 쪽)에서 위(z 작은 쪽)로 걷는다. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, glowSprite, people, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, backdrop, groundTex, loadArt, ART, art, artInst, artGeo, artMat } from '../scene/kit.js?v=3';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, glowSprite, people, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, backdrop, groundTex, loadArt, ART, art, artInst, artGeo, artMat, missions } from '../scene/kit.js?v=4';
 await loadArt('people', 'nature', 'build', 'props', 'refuge');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 80, H = 320, START = [41, 316], RIVER = [72, 90], FORD = [12.5, 19.5], ICE = [56.5, 69.5], DOCK = [40, 92.6], DOCK_S = [40, 69.4], CAP = 4.5, BACK0 = 370, BACKV = 2.9;
@@ -448,7 +448,7 @@ function endScreen() {
   const marks = `<div class="marks"><span class="${home === 3 ? 'ok' : ''}">👨‍👩‍👧 함께 온 식구 ${home + 1}/4</span><span class="${S.child ? 'ok' : ''}">🧒 ${S.child ? '데려온 아이' : '아이를 못 데려옴'}</span><span class="${S.note ? 'ok' : ''}">📝 ${S.note ? '쪽지를 남김' : '쪽지 없음'}</span><span class="${S.cls === 2 ? 'ok' : ''}">🎒 ${S.cls === 2 ? '천막 교실' : '교실 못 감'}</span></div>`;
   overlay(`<h1>천막촌의 저녁</h1><p>${story}</p>${marks}<p class="keys">많은 사람이 이 길을 걸었고, 지금도 서로를 찾는 사람들이 있다.</p>
     <div class="fact">📜 <b>6·25 전쟁</b> — 1950년에 전쟁이 일어나 수많은 사람이 집을 떠나 남쪽으로 피란했다.<br>📜 <b>헤어진 식구</b> — 피란길에 흩어져 다시 만나지 못한 식구가 아주 많았다.<br>📜 <b>천막 교실</b> — 피란 간 곳에서도 천막을 치고 학교를 열어 아이들을 가르쳤다.<br>📜 <b>멈춘 전쟁</b> — 1953년에 싸움을 멈추기로 했고, 그때 그은 선이 지금도 남아 있다.</div>`,
-    '한 번 더', () => { evSmoke.forEach((s) => (s.visible = false)); potFire.visible = potMesh.visible = quiltGlow.visible = false; emptyMat.forEach((m) => (m.visible = false)); for (const f of [...fam, kid]) f.seated = false; hemi.intensity = 1.15; sun.intensity = 1.1; resetAll(); S.mode = 'play'; });
+    '한 번 더', () => { evSmoke.forEach((s) => (s.visible = false)); potFire.visible = potMesh.visible = quiltGlow.visible = false; emptyMat.forEach((m) => (m.visible = false)); for (const f of [...fam, kid]) f.seated = false; hemi.intensity = 1.15; sun.intensity = 1.1; resetAll(); misClear(); S.mode = 'play'; });
 }
 
 /* ───── 그리기 ───── */
@@ -494,9 +494,35 @@ function view() {
   for (const t of tags) { const vis = S.mode === 'play' && S.view !== 3 && t.show() && dist(t.x, t.z, S.px, S.pz) < t.range; if (!vis) { t.el.style.display = 'none'; continue; } const q = v3.set(t.x, t.y, t.z).project(cam); if (q.z > 1 || Math.abs(q.x) > 1.1 || Math.abs(q.y) > 1.1) { t.el.style.display = 'none'; continue; } t.el.style.display = 'block'; t.el.style.left = ((q.x + 1) / 2) * innerWidth + 'px'; t.el.style.top = clamp(((1 - q.y) / 2) * innerHeight, 120, innerHeight - 20) + 'px'; }
 }
 
+/* ───── 미션(11-18 준호 「어떻게 뭘 하는지 · 미션이 있으면」): 지금 할 일 하나 — 무엇을·어떻게·어디서.
+   짐·나루·언 강·여울·천막에는 장면의 꼬리표가 이미 있으니 빛기둥은 모닥불 미션에만. 흔적 할 일(아이·쪽지·교실)은 미션에 넣지 않는다.
+   미션은 S 를 읽기만 하고, 「한 번이라도 했다」는 아래 작은 변수로 지켜본다(misWatch 는 돌림 고리에서만 — 시험용 update 와 놀이 숫자는 그대로) ───── */
+let mis = null, misPicked = false, misCalled = false, misFireT = 0;
+const CALLK = (tc) => (tc ? '「부르기」' : '<kbd>스페이스</kbd>');
+const fireAhead = () => { let b = null, bd = 1e9; for (const f of fireFx) { if (f.z > S.pz + 4) continue; const d = dist(f.x, f.z, S.px, S.pz); if (d < bd) { bd = d; b = f; } } return b; };   /* 가장 가까운, 아직 지나지 않은 모닥불 */
+mis = missions(scene, cam, [
+  { t: '가져갈 짐 지기', how: `집 앞 짐 위에 가만히 서면 등에 진다 — 무게 ${CAP}까지 · 무거울수록 걸음이 느리다`, done: () => misPicked || S.pz < 296 },   /* 아무것도 안 지고 떠나도 고른 셈(집 앞은 다시 못 간다) */
+  { t: '식구 불러 모으기', how: (tc) => `${CALLK(tc)}를 누르면 식구가 곁으로 모인다 — 머리 위 끈이 붉어지거나 식구를 놓쳤을 때`, done: () => misCalled },
+  { t: '모닥불에 손 녹이기', how: '❄ 막대가 차면 걸음이 굳는다 — 모닥불 곁에 가만히 서서 녹이기(그동안 뒤쪽이 다가온다)', done: () => misFireT >= 1,
+    at: () => { const f = fireAhead(); return f ? [f.x, f.z] : null; }, tag: '🔥 곁에 가만히 서서 손 녹이기', tagY: 2.2 },
+  { t: '식구와 함께 읍내 빠져나가기', how: (tc) => `사람 사이에서 식구가 처지면 ${CALLK(tc)} · 놓친 식구는 돌아가 곁에 서면 손을 잡는다`, done: () => S.pz < 150 },
+  { t: '강 건너기', how: '셋 중 하나로 — 나룻배(🌾 쌀을 지고 나루에 서기) · 언 강(뛰지 말고 걷기) · 다리 아래 여울(멀리)', done: () => S.pz < RIVER[0] },
+  { t: '식구와 함께 우리 천막까지', how: '천막촌의 「🏕 우리 천막」 앞에 가만히 서기 — 놓친 식구가 있으면 먼저 부르기', done: () => S.mode === 'evening' },
+], { allText: '🎉 천막촌에 닿았다!' });
+function misWatch(dt) { if (S.mode !== 'play') return;
+  if (S.pack.length) misPicked = true;
+  if (S.callT > 0) misCalled = true;
+  if (mis.idx >= 2 && !S.moving && fireFx.some((f) => dist(f.x, f.z, S.px, S.pz) < 3.4)) misFireT += dt; }   /* 모닥불 미션에 온 뒤, 곁에 멈춰 선 시간 */
+function misClear() { mis.reset(); misPicked = misCalled = false; misFireT = 0; }
+/* 처음 부를 때 · 끈이 붉어질 때: 처진 식구 머리 위에 「스페이스 = 부르기」(보이기만 한다 — 위치는 view 의 꼬리표 고리가 그린다) */
+const callTag = tag(`📣 ${ctl.isTouch ? '「부르기」' : '스페이스'}<small>식구를 불러 모은다</small>`, 0, 3.4, 0, () => {
+  if (!mis || S.boat || mis.idx > 3) return false; const ch = chain(); if (!ch.length) return false;
+  let worst = 0, prev = S.ps, who = ch[ch.length - 1]; for (const f of ch) { if (prev - f.s > worst) { worst = prev - f.s; who = f; } prev = f.s; }
+  if (mis.idx !== 1 && worst < 4.2) return false; if (mis.idx === 1) who = ch[ch.length - 1]; callTag.x = who.x; callTag.z = who.z; if (callTag.el.nextSibling) callTag.el.parentNode.appendChild(callTag.el); return true; });   /* 짐 꼬리표에 가리지 않게 맨 앞으로 */
+
 resetAll(); placeAll(0);
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; };
-runLoop(update, view, () => renderer.render(scene, cam));
+runLoop((dt) => { update(dt); misWatch(dt); mis.update(dt, S.mode === 'play' || (S.mode === 'evening' && S.endT < 2.4)); }, view, () => renderer.render(scene, cam));
 window.__scene = { S, fam, kid, crowd, update, keys, ctl, act, dropItem, trail: () => trail, chain,
   go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; placeChainAt(x, z, 0, 1); }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },

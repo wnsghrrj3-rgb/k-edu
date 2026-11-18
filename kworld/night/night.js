@@ -4,7 +4,7 @@
    v2.1: 시점 넷(위에서·가까이·어깨 너머·지도) + 돌려 보기(Q/E) + 당겨 보기(휠). 받아 온 모델로 바꾼 v3(k-edu ce81149)은 준호 반려로 되돌림.
    좌표: x 동쪽(+), z 남쪽(+). 강은 북쪽(z 0~6). */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, scatter } from '../scene/kit.js?v=3';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=4';
 await loadArt('people', 'nature', 'build', 'props', 'night');   /* 블렌더로 만든 모델(사람·자연·집·소품 + 이 장면만의 것: tools/blender/make_night.py → night.glb) */
 
 const W = 70, H = 46;
@@ -296,7 +296,7 @@ function won(how) {
       <div class="marks"><span class="${S.doc ? 'ok' : ''}">📜 문서 ${S.doc ? '태움' : '남음'}</span><span class="${S.cloth ? 'ok' : ''}">👘 ${S.cloth ? '상민 옷' : '해진 옷 그대로'}</span><span class="${how === 'pay' ? 'ok' : ''}">🍙 ${how === 'pay' ? '삯을 냄' : '몰래 탐'}</span><span class="${clean[3] ? 'ok' : ''}">👁 ${clean[3] ? '아무도 못 봄' : S.caught ? S.night + '번째 밤' : '들킨 적 있음'}</span></div>
       <p class="keys">${n === 4 ? '흔적 하나 없이 사라졌다.' : `남긴 흔적 ${4 - n}개 — 흔적이 적을수록 쫓기 어렵다.`}</p>
       <div class="fact">📜 <b>인정과 파루</b> — 조선은 밤에 종(인정)을 치면 길을 막고, 새벽 종(파루)이 울려야 풀었다. 그 사이 순라꾼이 돌았다.<br>📜 <b>추노</b> — 달아난 노비가 아주 많아서, 주인과 나라가 사람을 풀어 잡으러 다녔다.<br>📜 <b>노비 문서</b> — 누가 누구의 노비인지 적은 문서가 있어야 주인이 권리를 내세울 수 있었다. 난리 때 사람들이 가장 먼저 태운 것이 이 문서였다.<br>📜 <b>옷과 호패</b> — 옷차림과 호패(신분을 적은 패)로 신분이 한눈에 드러났다.</div>`,
-      n === 4 ? '한 번 더' : '흔적 없이 한 번 더', () => { S.night = 1; S.caught = 0; S.limp = 0; resetNight(); S.mode = 'play'; });
+      n === 4 ? '한 번 더' : '흔적 없이 한 번 더', () => { S.night = 1; S.caught = 0; S.limp = 0; resetNight(); misClear(); S.mode = 'play'; });
   }, 3600);
 }
 
@@ -390,10 +390,44 @@ function view() {
   overBar($('eye'), cam, S.px, 2.7, S.pz, S.mode === 'play' && S.meter > 0.02 ? S.meter : null);
 }
 
+/* ───── 미션(11-18 준호 「어떻게 뭘 하는지 · 미션이 있으면」): 지금 할 일 하나 — 무엇을·어떻게·어디서.
+   숨기 놀이라 빛기둥은 첫 볏가리(숨기 배우기) 하나만, 그것도 가까이 있을 때만 · 밤빛을 덮지 않게 빛기둥을 흐리게.
+   흔적 할 일(문서·옷·주먹밥)은 미션에 넣지 않는다 — 고르는 재미로 남긴다. 미션은 S 를 읽기만 하고, 「한 번이라도 했다」는 아래 작은 변수로 지켜본다(misWatch 는 돌림 고리에서만) ───── */
+const HAY0 = [HIDE[0][0], HIDE[0][1]], YARD = [4, 22, 30, 44];
+const EXITS = [[15, 22.35, '🧱 무너진 담 — 기어 넘는다'], [4.35, 34, '🕳 수챗구멍 — 개울로 이어진다'], [29.65, 33, '🚪 대문 — 장터 쪽으로']];
+let mis = null, misWalk = false, misHid = false, misMoonT = 0, misThrew = false, misOut = false;
+mis = missions(scene, cam, [
+  { t: '살금살금 걸어 보기', how: (tc) => `${tc ? '왼쪽 동그라미' : '<kbd>방향키</kbd>'}로 걷기 · ${tc ? '「뛰기」는' : '<kbd>Shift</kbd> 뛰기는'} 소리가 난다`, done: () => misWalk },
+  { t: '볏가리 곁에 숨기', how: '볏가리·장독 곁에 걸어가 서면 숨는다 — 발밑 고리가 초록이면 숨은 것', done: () => misHid,
+    at: () => (dist(S.px, S.pz, HAY0[0], HAY0[1]) < 14 ? HAY0 : null), tag: '🌾 곁에 서면 숨는다', tagY: 2.6 },
+  { t: '달빛 동안 그늘에 있기', how: '오른쪽 위가 🌕 달빛이면 밝은 데서는 멀리서도 보인다 — 그늘·숨을 곳에서 기다리기(발밑 고리가 빨가면 밝은 곳)', n: () => [Math.min(3, Math.floor(misMoonT)), 3], done: () => misMoonT >= 3 },
+  { t: '돌을 던져 순라꾼 꾀기', how: (tc) => `${tc ? '땅을 톡 누르면' : '땅을 <kbd>클릭</kbd>하면'} 그쪽으로 돌을 던진다 — 순라꾼은 소리 난 곳으로 간다 · 떨어진 돌은 밟으면 줍는다`, done: () => misThrew },
+  { t: '담 밖으로 빠져나가기', how: '대문 · 무너진 담 · 수챗구멍 가운데 하나로 — 순라꾼의 노란 불빛 부채꼴에 들지 않게', done: () => misOut },
+  { t: '강 건너 나루의 등불까지', how: '주먹밥(🍙)이 있으면 사공 곁에 서서 삯을 내고, 없으면 사공이 등을 돌릴 때 배로 숨어든다', done: () => S.mode === 'cross' || !!S.win },
+], { allText: '🎉 강을 건넌다!' });
+{ const b = scene.children[scene.children.length - 2]; if (b && b.material && b.material.blending === THREE.AdditiveBlending) b.material.color.setScalar(0.6); }   /* 빛기둥(더하기 섞기)을 밤에 맞게 흐리게 */
+function misWatch(dt) { if (S.mode !== 'play') return;
+  if (dist(S.px, S.pz, START[0], START[1]) > 3) misWalk = true;
+  if (S.hidden) misHid = true;
+  if (mis.idx >= 2 && S.moonOut && S.inShade) misMoonT += dt;   /* 달 미션에 온 뒤부터만 센다 — 저절로 지나가지 않게 */
+  if (S.fly) misThrew = true;
+  if (!inRect(S.px, S.pz, YARD)) misOut = true; }
+function misClear() { mis.reset(); misWalk = misHid = misThrew = misOut = false; misMoonT = 0; }
+/* 자리 꼬리표(처음 하는 일이 무엇인지 그 자리에 — 보이기만 한다) */
+const tagEls = {}, tv = new THREE.Vector3();
+function showTag(k, html, on, x, y, z) { let e = tagEls[k]; if (!e) { e = tagEls[k] = document.createElement('div'); e.className = 'tag'; document.body.appendChild(e); }
+  if (!on) { e.style.display = 'none'; return; } const q = tv.set(x, y, z).project(cam); if (q.z > 1 || Math.abs(q.x) > 1 || Math.abs(q.y) > 1) { e.style.display = 'none'; return; }
+  if (e.innerHTML !== html) e.innerHTML = html; e.style.display = 'block'; const hw = e.offsetWidth / 2 + 6; e.style.left = clamp(((q.x + 1) / 2) * innerWidth, hw, innerWidth - hw) + 'px'; e.style.top = clamp(((1 - q.y) / 2) * innerHeight, 120, innerHeight - 30) + 'px'; }
+function hints() { const play = S.mode === 'play' && S.view !== 3, i = mis.idx;
+  let st = null, bd = 5; if (play && i >= 3 && S.ground.every((g) => g.on)) for (const g of S.ground) { const d = dist(S.px, S.pz, g.x, g.z); if (d < bd) { bd = d; st = g; } }
+  showTag('stone', '🪨 밟으면 줍는다', !!st, st ? st.x : 0, 0.9, st ? st.z : 0);
+  EXITS.forEach(([x, z, h], k) => showTag('exit' + k, h, play && i === 4 && inRect(S.px, S.pz, YARD) && dist(S.px, S.pz, x, z) < 15, x, 2.4, z));
+  showTag('ferry', S.rice ? '🍙 사공 곁에 서면 삯을 낸다' : '⛵ 사공이 등 돌릴 때 배로', play && i === 5 && dist(S.px, S.pz, FERRY[0], FERRY[1]) < 16, S.rice ? FERRY[0] : 59.2, 2.4, S.rice ? FERRY[1] : 6.8); }
+
 resetNight(); for (const g of guards) { drawCone(g.cone, g.x, g.z, g.dir, 10, 0.56, g); place(g, false); }
 pMesh.position.set(S.px, 0, S.pz); pRing.position.set(S.px, 0.11, S.pz); skyMat.color.setScalar(1);
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; SFX.bell(3); say('댕— 댕— 인정 종이 울렸다. 이제 밤길은 막혔다', null, 3.6); };
-runLoop(update, view, () => renderer.render(scene, cam));
+runLoop((dt) => { update(dt); misWatch(dt); mis.update(dt, S.mode === 'play' || (S.mode === 'cross' && S.crossT < 2.4)); }, () => { view(); hints(); }, () => renderer.render(scene, cam));
 window.__night = { S, get guards() { return guards; }, update, shaded, findPath, los, keys, go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   walk(pts, run, maxSec = 120) { let t = 0; for (const [x, z] of pts) { while (S.mode === 'play' && Math.hypot(x - S.px, z - S.pz) > 0.5 && t < maxSec) { const l = Math.hypot(x - S.px, z - S.pz); ctl.sx = (x - S.px) / l; ctl.sz = (z - S.pz) / l; ctl.run = !!run; update(1 / 30); t += 1 / 30; } } ctl.sx = ctl.sz = 0; ctl.run = false; return { t: +t.toFixed(1), mode: S.mode, x: +S.px.toFixed(1), z: +S.pz.toFixed(1), meter: +S.meter.toFixed(2), alert: S.alert, dawn: +S.dawn.toFixed(0) }; } };

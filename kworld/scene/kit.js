@@ -379,7 +379,7 @@ export function runLoop(update, view, render) {
 
 /* ───── 미션(11-18 준호 「어떻게 뭘 하는지 · 미션이 있으면 좋겠다」) ─────
    지금 할 일 하나를 「미션 2/5」 로 크게: 무엇을(t) · 어떻게(how — 키, 터치면 다른 글) · 어디서(at → 빛기둥·꼬리표·화면 밖이면 가장자리 화살표).
-   done() 이 참이 되면 「미션 완료!」 가 터지고 다음 미션으로. 뒤 미션을 먼저 해 두었으면 그 미션에 왔을 때 곧바로 지나간다.
+   done() 이 참이 되면 「미션 완료!」 가 터지고 다음 미션으로. 뒤 미션이 먼저 끝나면 앞의 것은 건너뛰고 그 뒤로 넘어간다(done 은 매 걸음 모두 본다 — 가볍게).
    목표·흔적 줄(#todo)은 그대로 두고 카드 아래로 내린다. 놀이 규칙은 건드리지 않는다(S 를 읽기만 한다).
    list = [{ t: '굴림대를 돌 앞에', how: (touch) => touch ? '「들기」 누르기' : '<kbd>E</kbd> 들기', done: () => bool, at: () => [x, z] 또는 [x, y, z] 또는 null, n: () => [지금, 다] 또는 null, tag: '🪵 이것을 들어', tagY: 2.4 }] */
 const MIS_CSS = `#mis{position:fixed;left:14px;top:60px;width:min(330px,calc(100vw - 28px));box-sizing:border-box;background:rgba(255,248,226,.96);color:#2a2410;border-radius:16px;padding:9px 14px 11px;box-shadow:0 4px 0 rgba(0,0,0,.28);pointer-events:none;border:3px solid #ffcf4d;transition:transform .25s}
@@ -426,7 +426,9 @@ export function missions(scene, cam, list, o = {}) {
   function update(dt, active = true) {
     t += dt;
     card.style.display = active || popT > 0 ? '' : 'none';
-    if (active) while (idx < list.length && list[idx].done()) { finish(idx); idx++; }
+    if (active) { while (idx < list.length && list[idx].done()) { finish(idx); idx++; }
+      /* 앞 미션을 건너뛰고 뒤 미션을 해 버렸으면 그 뒤로 넘어간다 — 지나간 일을 붙들고 있지 않게 */
+      for (let j = list.length - 1; j > idx; j--) if (list[j].done()) { for (let i = idx; i < j; i++) ok[i] = true; finish(j); idx = j + 1; while (idx < list.length && list[idx].done()) { ok[idx] = true; idx++; } break; } }
     paint();
     if (popT > 0) { popT -= dt; if (popT <= 0) pop.classList.remove('on'); }
     if (bumpT > 0) { bumpT -= dt; if (bumpT <= 0) card.classList.remove('bump'); }
