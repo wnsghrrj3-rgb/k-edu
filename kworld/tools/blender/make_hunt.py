@@ -13,6 +13,8 @@ for n, c in [('tint_fur', 0xc08748), ('tint_leaf', 0x3e9a4c), ('tint_c', 0x7fd06
              ('stone', 0x9a968e), ('stone_d', 0x7d7a74), ('flint', 0xd6d2c8), ('flintc', 0xc9c3b4), ('flint_d', 0x8e8a82), ('stickc', 0x8a5a2b), ('stick_d', 0x6e4520),
              ('berry', 0xd8324a), ('berry_d', 0xa81e36), ('dirt', 0x7a5a3a), ('rootleaf', 0x5aa040), ('rootleaf_d', 0x437f34), ('tuber', 0xe0bc8e), ('smoke', 0xd8d4cc),
              ('cliff_a', 0xa08a70), ('cliff_b', 0x8f7a62), ('cliff_c', 0xb09a7c), ('cliff_l', 0xc2ad8c), ('cliff_d', 0x77654f), ('moss', 0x6f9a48), ('moss_d', 0x557a3a),
+             ('pine_l', 0x5a9a58), ('pine_m', 0x4a8a50), ('pine_d2', 0x3d7646),
+             ('grass', 0x6fae4e), ('grass_d', 0x4f8a3e), ('reed', 0xc8b06a), ('reed_h', 0x7a5a3a),
              ('glow_f1', 0xff5a2a), ('glow_f2', 0xffa23a), ('glow_f3', 0xffe07a)]:
     mat(n, c)
 
@@ -279,6 +281,10 @@ b = B()
 pw = wob(0.2, 18)
 b.cone(1.0, 0.95, 0.07, (0, 0, 0.035), 'tint_c', seg=9, jit=0.03, f=lambda v: Vector((pw(Vector((v.x, v.y, 0))).x, pw(Vector((v.x, v.y, 0))).y, v.z)))
 b.done('patch', smooth=0, shade=(1.0, 1.0), under=0.0)
+b = B()      # 윗면만 있는 얼룩(넓은 들에 수백 개 — 보이지 않는 옆·밑면을 뺐다). 윗면 높이는 patch 와 같다(0.07)
+rr = random.Random(18)
+face(b, 'tint_c', [(math.cos(i / 9 * 6.2832) * (0.95 + rr.random() * 0.25), math.sin(i / 9 * 6.2832) * (0.95 + rr.random() * 0.25), 0.07) for i in range(9)], (0, 0, 1), 1.0, 0.03)
+b.done('hpatch', smooth=0, shade=(1.0, 1.0), under=0.0)
 b = B()
 b.ball(1.0, (0, 0, -0.06), 'tint_c', sub=2, scale=(1, 1, 0.62), jit=0.05, f=wob(0.1, 19))
 b.done('hill', smooth=0, shade=(0.74, 1.06), under=0.0)
@@ -338,13 +344,67 @@ def crag(b, x0, z0, x1, z1, h, seed, step=1.9):
 
 
 b = B()
-crag(b, 60, 0, 63.5, 16.5, 7, 1)             # 골짜기 서쪽 벽
-crag(b, 78.5, 0, 96, 16.5, 7, 2)             # 골짜기 동쪽 벽
-crag(b, 60.3, -0.6, 78.9, 3, 8, 3)           # 막다른 벽
-crag(b, 89, 15.7, 96, 72, 6, 4)              # 동쪽 벼랑
-crag(b, 46, 0, 60.4, 10.5, 5, 5)             # 북서 벼랑
-crag(b, 50, -13, 92, 0.4, 11.5, 6, step=2.6) # 뒤로 솟은 산마루(놀이판 밖)
-crag(b, 57, -24, 86, -9, 15.5, 7, step=3.0)
-b.done('cliffs', smooth=0, shade=(0.6, 1.08), under=0.3)
+crag(b, 164, 0, 167.5, 16.5, 7, 1)                # 골짜기 서쪽 벽
+crag(b, 182.5, 0, 214, 16.5, 7, 2, step=2.2)      # 골짜기 동쪽 벽(판 밖으로 이어진 마루까지)
+crag(b, 164.3, -0.6, 182.9, 3, 8, 3)              # 막다른 벽
+crag(b, 154, -13, 200, 0.4, 11.5, 6, step=2.6)    # 골짜기 뒤로 솟은 산마루(놀이판 밖)
+crag(b, 161, -24, 194, -9, 15.5, 7, step=3.0)
+b.done('cliffs_v', smooth=0, shade=(0.6, 1.08), under=0.3)
+b = B()
+crag(b, 193, 15.7, 214, 146, 6, 4, step=2.4)      # 동쪽 벼랑(강까지 내려가는 높은 마루)
+b.done('cliffs_e', smooth=0, shade=(0.6, 1.08), under=0.3)
+b = B()
+crag(b, 150, 0, 164.4, 10.5, 5, 5)                # 북쪽 날개 — 골짜기 곁
+crag(b, 118, 0, 150.4, 7.5, 4.5, 8, step=2.2)     # 북쪽 날개 — 벼랑 끝자락
+crag(b, 112, -11, 156, 0.4, 7.5, 9, step=2.6)     # 날개 뒤 낮은 마루(놀이판 밖)
+b.done('cliffs_n', smooth=0, shade=(0.6, 1.08), under=0.3)
+
+
+# ───── 가벼운 풀섶 · 갈대 · 꽃 · 먼 떼(넓은 판에 수백 개 뿌리는 것이라 세모를 아낀다) ─────
+def blades(b, n, r, h, m, m2=None, seed=1, head=None, hl=0.2):
+    rr = random.Random(seed)
+    for i in range(n):
+        a = rr.random() * 6.28
+        d = rr.random() * r
+        hh = h * (0.6 + rr.random() * 0.6)
+        lean = 0.15 + rr.random() * 0.35
+        b.cone(0.045, 0.004, hh, (math.cos(a) * d + math.cos(a) * lean * hh / 2, math.sin(a) * d + math.sin(a) * lean * hh / 2, hh / 2 * math.cos(lean)), m if (i % 3 or not m2) else m2, seg=3, cap=False, jit=0.12, rot=(0, lean, a))
+        if head and i % 2 == 0:
+            tip = Vector((math.cos(a) * d + math.cos(a) * math.sin(lean) * hh, math.sin(a) * d + math.sin(a) * math.sin(lean) * hh, hh * math.cos(lean)))
+            b.cone(0.045, 0.012, hl, tuple(tip - Vector((math.cos(a) * math.sin(lean), math.sin(a) * math.sin(lean), math.cos(lean))) * hl * 0.45), head, seg=3, cap=False, jit=0.05, rot=(0, lean, a))
+
+
+b = B(); blades(b, 4, 0.16, 0.42, 'grass', 'grass_d', seed=21); b.done('htuft', smooth=0, shade=(0.6, 1.15), under=0.1)
+b = B(); blades(b, 5, 0.22, 1.5, 'reed', 'grass_d', seed=22, head='reed_h', hl=0.26); b.done('hreed', smooth=0, shade=(0.7, 1.1), under=0.1)
+b = B()
+blades(b, 1, 0.05, 0.2, 'grass_d', None, seed=23)
+for i in range(3):
+    a = i * 2.1 + 0.4
+    hh = 0.22 + 0.05 * (i % 2)
+    b.cone(0.012, 0.012, hh, (math.cos(a) * 0.09, math.sin(a) * 0.09, hh / 2), 'grass_d', seg=3, cap=False, jit=0)
+    b.cone(0.075, 0.035, 0.035, (math.cos(a) * 0.09, math.sin(a) * 0.09, hh + 0.01), 'tint_c', seg=4, rot=(0, 0, a), jit=0.05)
+b.done('hflower', smooth=0, shade=(0.85, 1.1), under=0.1)
+b = B()
+b.box((0.42, 1.25, 0.5), (0, 0, 0.98), 'tint_fur', jit=0.03)
+b.box((0.2, 0.26, 0.62), (0, -0.62, 1.38), 'tint_fur', rot=(-0.45, 0, 0), jit=0.03)
+b.box((0.22, 0.42, 0.22), (0, -0.82, 1.7), 'tint_fur', jit=0.03)
+b.box((0.34, 0.1, 0.76), (0, -0.48, 0.38), 'fur_d', jit=0.03)
+b.box((0.34, 0.1, 0.76), (0, 0.48, 0.38), 'fur_d', jit=0.03)
+b.done('hdeer_far', smooth=0, shade=(0.7, 1.08), under=0.3)
+
+
+# ───── 소나무 둘(공통 소나무보다 밝은 잎 — 위에서 봐도 검게 뭉치지 않게 · 세모를 아낀다) ─────
+def hpine(name, tiers, seed):
+    b = B()
+    b.cone(0.17, 0.1, 1.3, (0, 0, 0.65), 'wood_d', seg=5, cap=False, jit=0.05)
+    for k, (r, h, z) in enumerate(tiers):
+        m = ('pine_d2', 'pine_m', 'pine_m', 'pine_l')[min(3, k + (4 - len(tiers)))]
+        b.cone(r, 0.02, h, (0, 0, z + h / 2), m, seg=6, rot=(0, 0, k * 0.5), jit=0.1, f=wob(0.12, seed + k))
+    b.done(name, smooth=0, shade=(0.72, 1.1), under=0.35)
+
+
+hpine('hpine_a', [(1.3, 1.6, 0.9), (1.0, 1.4, 1.85), (0.66, 1.3, 2.75), (0.36, 1.0, 3.55)], 61)
+hpine('hpine_b', [(1.15, 1.7, 1.0), (0.9, 1.6, 2.1), (0.62, 1.5, 3.15), (0.34, 1.3, 4.2)], 62)
+
 
 export('hunt.glb')
