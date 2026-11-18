@@ -5,8 +5,8 @@
    고인돌에서 「어떻게 하라는지 모르겠다」를 들었으므로: 따라갈 것은 늘 빛나고, 할 일은 「곁에 서기·가만히 서기·데려가기」 셋뿐이다.
    좌표: x 동쪽(+), z 남쪽(+). 흙성 안. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
-await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat, scatter } from '../scene/kit.js?v=3';
+await loadArt('people', 'nature', 'props', 'law');   /* 블렌더로 만든 모델(사람·자연·소품 + 이 장면만의 것: tools/blender/make_law.py → law.glb) */
 
 const W = 80, H = 60, BX = [7, 73], BZ = [7, 53], TRIAL = 240;
 const GRANARY = [18, 13.5], DOOR = [18, 18.4], COURT = [40, 46.5], DRUM = [40, 45.6], WELL = [38, 30], MARKET = [55, 22], SMITHY = [62, 42];
@@ -34,31 +34,80 @@ const flat = flatMaker(scene);
 const { occl, group } = occluders(scene);
 const { person, walkAnim } = people(scene);
 const { ring, update: ringsUpdate } = ringsFx(scene);
+let gateG = null;   /* 남문 — 눈(카메라)이 문 바로 곁에 오면(재판 마당을 남쪽에서 볼 때 · 재판 장면 · 첫 화면) 아예 감춘다 */
+const drnd = rng(40417);   /* 꾸밈(풀·나무 뿌리기)만 쓰는 따로 된 난수 — 놀이 난수(rnd)의 차례는 그대로 둔다 */
+
+/* 그림 도우미 — 모델 여럿을 한 덩이로 굽는다(그리기 한 번). parts = [[이름, x, y, z, 크기 또는 [sx, sy, sz], 돌림y, 색], …]. own 이 참이면 제 재질(비쳐 보이게 할 묶음용 — 빛나는 조각까지 따로) */
+const _o = new THREE.Object3D();
+function joinGeo(list) { if (!list.length) return null; let nv = 0, ni = 0; for (const g of list) { nv += g.attributes.position.count; ni += g.index.count; }
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), C = new Float32Array(nv * 3), I = new Uint32Array(ni); let v = 0, i = 0;
+  for (const g of list) { P.set(g.attributes.position.array, v * 3); N.set(g.attributes.normal.array, v * 3); C.set(g.attributes.color.array, v * 3); const ix = g.index.array; for (let k = 0; k < ix.length; k++) I[i + k] = ix[k] + v; v += g.attributes.position.count; i += ix.length; g.dispose(); }
+  const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.BufferAttribute(P, 3)); o.setAttribute('normal', new THREE.BufferAttribute(N, 3)); o.setAttribute('color', new THREE.BufferAttribute(C, 3)); o.setIndex(new THREE.BufferAttribute(I, 1)); return o; }
+function bake(parts, own = false, shadow = true) { const gs = [[], []];
+  for (const [name, x, y, z, s = 1, ry = 0, tints = {}] of parts) { _o.position.set(x, y, z); _o.rotation.set(0, ry, 0); if (Array.isArray(s)) _o.scale.set(s[0], s[1], s[2]); else _o.scale.setScalar(s); _o.updateMatrix();
+    for (const k of [0, 1]) { const g = artGeo(name, tints, !!k); if (g) gs[k].push(g.clone().applyMatrix4(_o.matrix)); } }
+  const grp = new THREE.Group(), m = new THREE.Mesh(joinGeo(gs[0]) || new THREE.BufferGeometry(), own ? artMat.clone() : artMat); m.castShadow = shadow; m.receiveShadow = true; grp.add(m);
+  const gl = joinGeo(gs[1]); if (gl) grp.add(new THREE.Mesh(gl, own ? artGlowMat.clone() : artGlowMat)); return grp; }
+const strew = (o) => scatter(scene, drnd, o);
 
 /* 땅 · 흙성 · 길 */
 flat(-60, -30, W + 60, H + 30, 0x8cbf5a, 0);
 flat(7, 7, 73, 53, 0xcdb487, 0.02);
 for (const r of [[16, 18, 20, 46], [16, 28, 64, 32], [38, 18, 42, 46], [42, 20, 62, 24], [20, 42, 60, 46]]) flat(r[0], r[1], r[2], r[3], 0xd9c496, 0.03);
-for (let i = 0; i < 80; i++) { const t = box(0.6 + rnd() * 1.2, 0.08, 0.5 + rnd(), rnd() > 0.5 ? 0xbfa678 : 0xd4bd8e); t.castShadow = false; at(t, 8 + rnd() * 64, 0.05, 8 + rnd() * 44); scene.add(t); }
-function wallSeg(x0, z0, x1, z1) { const w = Math.abs(x1 - x0) || 1.6, d = Math.abs(z1 - z0) || 1.6, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2; scene.add(at(box(w, 2.4, d, 0xb89a6a), cx, 1.2, cz), at(box(w + 0.3, 0.3, d + 0.3, 0x8fae5a), cx, 2.55, cz)); }
-wallSeg(5, 5, 75, 5); wallSeg(5, 55, 36, 55); wallSeg(44, 55, 75, 55); wallSeg(5, 5, 5, 55); wallSeg(75, 5, 75, 55);
+/* 밟힌 땅 얼룩(예전 네모 조각과 같은 자리 · 같은 난수 차례) */
+{ const P = []; for (let i = 0; i < 80; i++) { const w = 0.6 + rnd() * 1.2, d = 0.5 + rnd(), lt = rnd() > 0.5, x = 8 + rnd() * 64, z = 8 + rnd() * 44; P.push(['law_patch', x, 0.045, z, [w * 1.2, 1, d * 1.2], i * 0.9, { c: lt ? 0xbfa678 : 0xd4bd8e }]); } scene.add(bake(P, false, false)); }
+/* 흙성: 판축 흙둑 + 나무 울(길이 4 조각을 잇는다) · 네 모서리 망루 · 남문 */
+{ const L = []; for (const [x0, z0, x1, z1] of [[5, 5, 75, 5], [5, 55, 36, 55], [44, 55, 75, 55], [5, 5, 5, 55], [75, 5, 75, 55]]) { const len = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(len / 4)), vert = x0 === x1;
+    for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; L.push([x0 + (x1 - x0) * t, 0, z0 + (z1 - z0) * t, [len / n / 4.04, 1, 1], vert ? Math.PI / 2 : (i % 2) * Math.PI]); } }
+  artInst(scene, 'law_wall', L, {}, { shadow: false });   /* 둘레 60 조각 — 그림자까지 그리면 세모가 두 배라 끈다(흙둑 아래 어둠은 꼭짓점 색에 있다) */
+  artInst(scene, 'law_tower', [[5, 0, 5, 1, 0.3], [75, 0, 5, 1, 1.2], [5, 0, 55, 1, 2.1], [75, 0, 55, 1, 0.8]], {}, { shadow: true });
+  gateG = group([35.5, 54.4, 44.5, 55.6], [bake([['law_gate', 40, 0, 55, 1, 0]], true)]); }   /* 문 가로보가 재판 마당을 가리면 비쳐 보이게 */
 /* 곳간(다락) · 우물 · 대장간 · 장터 · 집 · 재판 마당 */
-{ const P = []; for (const [dx, dz] of [[-3.6, -3], [3.6, -3], [-3.6, 3], [3.6, 3]]) P.push(at(cyl(0.2, 0.22, 1.4, 0x6a4526, 6), GRANARY[0] + dx, 0.7, GRANARY[1] + dz)); P.push(at(box(8, 2.2, 7, 0xd8b884), GRANARY[0], 2.5, GRANARY[1]), at(box(2, 1.6, 0.12, 0x5a3a1a), DOOR[0], 2.2, GRANARY[1] + 3.56));
-  const r = new THREE.Mesh(new THREE.ConeGeometry(6.2, 2.4, 4), M(0xd9a84a)); r.rotation.y = Math.PI / 4; r.position.set(GRANARY[0], 4.8, GRANARY[1]); r.castShadow = true; P.push(r); group([14, 10, 22, 17], P); }
-scene.add(at(cyl(1.2, 1.3, 1, 0x9a948a, 12), WELL[0], 0.5, WELL[1]), at(cyl(0.95, 0.95, 0.06, 0x3a7ac0, 12), WELL[0], 0.98, WELL[1]));
-{ const P = [at(box(9, 2.6, 6, 0x8a6a4a), SMITHY[0], 1.3, SMITHY[1])], r = box(10, 0.5, 7, 0x5a4a3a); at(r, SMITHY[0], 2.85, SMITHY[1]); P.push(r); group([57.5, 39, 66.5, 45], P); }
+group([14, 10, 22, 17], [bake([['law_granary', GRANARY[0], 0, GRANARY[1], 1, 0]], true)]);
+scene.add(bake([['law_well', WELL[0], 0, WELL[1], 1, 0]]));
+group([57.5, 39, 66.5, 45], [bake([['law_smithy', SMITHY[0], 0, SMITHY[1], 1, Math.PI]], true)]);   /* 앞(화덕 쪽)이 북쪽 길을 본다 */
 const forge = glowSprite(scene, 'rgba(255,170,90,.95)', 'rgba(255,90,30,0)', 3.5); forge.position.set(SMITHY[0] - 2, 1.2, SMITHY[1] - 3.2);
-for (const s of SOLID.filter((s) => s[5] === 'stall')) { scene.add(at(box(s[2] - s[0], 0.9, s[3] - s[1], 0x9a7a50), (s[0] + s[2]) / 2, 0.45, (s[1] + s[3]) / 2), at(box(s[2] - s[0] + 0.4, 0.12, s[3] - s[1] + 0.6, 0xe8d8b0), (s[0] + s[2]) / 2, 2.1, (s[1] + s[3]) / 2)); for (const dx of [s[0] + 0.1, s[2] - 0.1]) scene.add(at(cyl(0.06, 0.06, 2.1, 0x6a4526, 5), dx, 1.05, s[1] + 0.1)); for (let k = 0; k < 4; k++) scene.add(at(box(0.4, 0.3, 0.4, [0xe8b84a, 0xc84a3a, 0x7ab04a, 0xe8d8b0][k]), s[0] + 0.5 + k * 0.6, 1.05, (s[1] + s[3]) / 2)); }
-const homeFlags = HOMES.map(([x, z], i) => { const P = [at(box(5.6, 1.7, 4.4, 0xf0e0c0), x, 0.85, z)], cols = [0xd9a53c, 0xe4b54c, 0xefc661]; for (let k = 0; k < 3; k++) P.push(at(box(6.8 - k * 1.6, 0.6, 5.6 - k * 1.4, cols[k]), x, 1.95 + k * 0.55, z));
-  P.push(at(box(1.1, 1.2, 0.12, 0x6a4226), x, 0.6, z + 2.26)); group([x - 3, z - 2.4, x + 3, z + 2.4], P);
-  const pole = at(cyl(0.06, 0.06, 3.2, 0x6a4526, 5), x + 3.3, 1.6, z + 2.2), flag = at(box(0.9, 0.6, 0.06, COLORS[i].shirt), x + 3.8, 2.9, z + 2.2); scene.add(pole, flag); return flag; });
+scene.add(bake(SOLID.filter((s) => s[5] === 'stall').map((s, k) => { const south = s[1] < 21; return ['law_stall_' + 'abc'[k], (s[0] + s[2]) / 2, 0, (s[1] + s[3]) / 2, [(s[2] - s[0]) / 3, 1, (s[3] - s[1]) / 2], south ? 0 : Math.PI]; })));
+const WALLS = [0xc8a878, 0xd2b488, 0xbfa070];
+const homeFlags = HOMES.map(([x, z], i) => { group([x - 3, z - 2.4, x + 3, z + 2.4], [bake([['law_house_' + 'abc'[i], x, 0, z, 1, 0, { wall: WALLS[i] }]], true)]);
+  const flag = art('law_flag', { cloth: COLORS[i].shirt }); flag.position.set(x + 3.8, 2.9, z + 2.2); scene.add(flag); return flag; });
 /* 북 · 족장 · 마당 */
 flat(32, 41, 48, 52, 0xc9ad7a, 0.035);
-const drum = new THREE.Group(); drum.add(at(cyl(1.0, 1.0, 1.4, 0xa8443a, 14), 0, 1.6, 0), at(cyl(1.02, 1.02, 0.08, 0xf2e2c0, 14), 0, 2.32, 0), at(cyl(1.02, 1.02, 0.08, 0xf2e2c0, 14), 0, 0.88, 0)); drum.children[0].rotation.x = 0; for (const dx of [-0.9, 0.9]) drum.add(at(box(0.16, 1.6, 0.16, 0x6a4526), dx, 0.8, 0)); drum.position.set(DRUM[0], 0, DRUM[1]); drum.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(drum);
+const drum = new THREE.Group(); drum.add(art('law_drum')); drum.position.set(DRUM[0], 0, DRUM[1]); scene.add(drum);
 const drumGlow = glowSprite(scene, 'rgba(255,230,160,.8)', 'rgba(255,190,80,0)', 6); drumGlow.position.set(DRUM[0], 2.2, DRUM[1]);
 const SKIN = 0xf0c48e;
-const chief = person({ shirt: 0x6a2a20, pants: 0x3a1a10, hat: 'gat', mood: 'stern', skin: SKIN }); chief.position.set(43.5, 0, 45.4); chief.rotation.y = -Math.PI / 2 + 0.3;
+const chief = person({ shirt: 0x6a2a20, pants: 0x3a1a10, mood: 'stern', skin: SKIN }); chief.position.set(43.5, 0, 45.4); chief.rotation.y = -Math.PI / 2 + 0.3;
 const elders = [[36.5, 45.2], [44.5, 48]].map(([x, z]) => { const m = person({ shirt: 0x8a7a60, pants: 0x5a4a3a, hat: 'top', skin: SKIN }); m.position.set(x, 0, z); m.rotation.y = Math.PI; return m; });
+/* 재판 마당 꾸밈: 족장 자리 · 제단(비파형 동검·거울) · 청동 거울 장대 둘 · 신단수(큰 나무 — 가리면 비쳐 보이게) */
+scene.add(bake([['law_seat', 45.1, 0, 45.2, 1, -Math.PI / 2], ['law_altar', 46.9, 0, 46.9, 0.9, -Math.PI / 2 - 0.4], ['law_pole', 34.2, 0, 49.6, 1, 0.3], ['law_pole', 45.8, 0, 49.8, 1, -0.3]]));
+group([31.6, 49.2, 34.4, 51.8], [bake([['tree_big', 33, 0, 50.6, 0.78, 0.6, { leaf: 0x4f8f45 }], ['rock_flat', 34.6, 0.02, 51.6, 0.6, 0.4]], true)]);
+
+/* 마을 살림(움직이지 않는 꾸밈): 깃대 · 돼지우리 · 소 · 개 · 조 걸이 · 볏가리 · 자루 더미는 그림자를 드리우고, 작은 것(돼지 · 닭 · 장작 · 토기 · 갈돌 · 바구니)은 그림자 없이 한 덩이 더 — 세모를 아낀다 */
+scene.add(bake([...HOMES.map(([x, z]) => ['law_flagpole', x + 3.3, 0, z + 2.2, 1, 0]),
+  ['law_pen', 9.9, 0, 49.7, 1, 0.1], ['ox', 70.6, 0, 47.2, 0.9, -0.5], ['dog', 69.6, 0, 17.0, 1, 2.5],
+  ['law_rack', 24.0, 0, 35.6, 1, Math.PI / 2], ['sack_pile', 55.0, 0, 16.6, 0.9, 0], ['straw_stack', 24.6, 0, 12.0, 1, 0.3], ['straw_stack', 25.9, 0, 14.6, 0.85, 1.4], ['law_rack', 71.3, 0, 22.4, 1, Math.PI / 2]]));
+scene.add(bake([['law_pig', 9.2, 0, 49.3, 0.9, 0.7], ['law_pig', 10.7, 0, 50.2, 0.8, 2.6], ['law_pig', 10.4, 0, 48.9, 0.6, 4.2],
+  ['law_wood', 68.4, 0, 40.4, 1, Math.PI / 2], ['law_wood', 68.4, 0, 42.6, 0.9, Math.PI / 2 + 0.1], ['law_wood', 9.6, 0, 34.2, 0.9, 0.2],
+  ['chicken', 26.4, 0, 41.6, 1, 0.4], ['chicken', 27.2, 0, 42.3, 0.9, 2.2], ['chicken', 15.6, 0, 45.4, 1, 4.0], ['chicken', 70.2, 0, 16.7, 1, 1.1],
+  ['law_pots', 24.4, 0, 40.6, 0.9, 0.9], ['law_pots', 62.2, 0, 17.0, 0.9, 0.3], ['law_quern', 47.8, 0, 18.7, 1, 0.4], ['basket', 48.7, 0, 17.7, 0.9, 1.1]], false, false));
+/* 성 밖: 남문 길 · 조밭(익은 밭 · 푸른 밭) · 먼 고인돌 · 먼 산 · 숲 · 풀 */
+flat(37, 55.9, 43, H + 30, 0xd9c496, 0.03);
+const FIELDS = [], fieldList = [[], []];
+for (let i = 0; i < 10; i++) for (let j = 0; j < 3; j++) { const x = -6 + i * 9.2, zN = 0.4 - j * 6, zS = 59.6 + j * 6, k = (i * 7 + j * 3) % 5;
+  if (k !== 4) { fieldList[k % 2].push([x, 0.02, zN, 1, 0]); FIELDS.push([x - 4.2, zN - 2.7, x + 4.2, zN + 2.7]); }
+  if (!(x > 30 && x < 50) && k !== 2) { fieldList[(k + 1) % 2].push([x, 0.02, zS, 1, Math.PI]); FIELDS.push([x - 4.2, zS - 2.7, x + 4.2, zS + 2.7]); } }
+for (let j = 0; j < 5; j++) for (const [x, side] of [[0.5, 0], [-5.6, 1], [79.5, 0], [85.6, 1]]) { const z = 10 + j * 9.6; if ((j + side) % 3 === 2) continue; fieldList[(j + side) % 2].push([x, 0.02, z, 1, Math.PI / 2]); FIELDS.push([x - 2.7, z - 4.2, x + 2.7, z + 4.2]); }
+artInst(scene, 'law_field', fieldList[0], {}, { shadow: false }); artInst(scene, 'law_field_g', fieldList[1], {}, { shadow: false });
+scene.add(bake([['dolmen', -16, 0, -24, 1.3, 0.3], ['dolmen', 30, 0, -31, 1.1, 1.0], ['dolmen', 99, 0, 6, 1.2, 2.2], ['dolmen', -22, 0, 40, 1.0, 1.4], ['dolmen', 96, 0, 70, 1.1, 0.6], ['dolmen', 18, 0, 78, 1.0, 2.6]], false, false));
+{ const hs = []; for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2 + 0.2, r = 118 + (i % 3) * 14; hs.push([W / 2 + Math.cos(a) * r, 0, H / 2 + Math.sin(a) * r * 0.85, [1.6 + (i % 4) * 0.35, 1 + (i % 3) * 0.35, 1.4], -a + Math.PI / 2]); } artInst(scene, 'law_hill', hs, {}, { shadow: false }); }
+{ const inWall = (x, z, p = 0) => x > 3 - p && x < 77 + p && z > 3 - p && z < 57 + p, onField = (x, z, p = 0.6) => FIELDS.some((r) => inRect(x, z, r, p));
+  const ROADS = [[16, 18, 20, 46], [16, 28, 64, 32], [38, 18, 42, 46], [42, 20, 62, 24], [20, 42, 60, 46], [32, 41, 48, 52]];
+  const KEEP = [DOOR, [DOOR[0], DOOR[1] + 2.4], ...WITNESS, ...SUS_POS, INJURED, SMITH, ...HIDE2, ...HOMES.map(([x, z]) => [x, z + 3.4]), [17.2, 36.6], [62.8, 8.6], [33.2, 33.6]];
+  const busy = (x, z) => ROADS.some((r) => inRect(x, z, r, 0.4)) || SOLID.some((s) => inRect(x, z, s, 1.1)) || KEEP.some((k) => Math.hypot(k[0] - x, k[1] - z) < 2.2) || (x < 12 && z > 47) || (x > 66 && z > 45);
+  strew({ area: [-40, -34, W + 40, H + 34], n: 58, names: ['pine_a', 'tree_a', 'pine_b', 'tree_b', 'tree_a', 'pine_a', 'bush'], avoid: (x, z) => inWall(x, z, 9) || onField(x, z, 1.5) || (x > 34 && x < 46 && z > 56), scale: [0.9, 1.4], minGap: 2.4, shadow: false, tints: { leaf: 0x4f8f45 } });
+  strew({ area: [-26, -18, W + 26, H + 22], n: 190, names: ['grass_a', 'grass_b', 'grass_a', 'grass_a', 'grass_b', 'flower_y', 'grass_a', 'grass_a', 'grass_a', 'grass_b', 'grass_a', 'flower_w'], avoid: (x, z) => inWall(x, z, 0.4) || onField(x, z, 0.1) || (x > 36.5 && x < 43.5 && z > 55), scale: [0.9, 1.5], shadow: false });
+  strew({ area: [7.4, 7.4, 72.6, 52.6], n: 110, names: ['grass_a', 'grass_b', 'grass_a', 'grass_a', 'flower_y', 'grass_a', 'grass_b', 'grass_a', 'grass_a', 'grass_a', 'flower_p'], avoid: busy, scale: [0.7, 1.2], shadow: false });
+  strew({ area: [-12, -8, W + 12, H + 12], n: 26, names: ['rock_a', 'rock_flat', 'rock_a'], avoid: (x, z) => inWall(x, z, 1) || onField(x, z, 0.3), scale: [0.6, 1.2], minGap: 1.5, shadow: false }); }
 
 /* 증거: 발자국 · 낟알 · 자루 */
 const grid = new Uint8Array(W * H); for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) { const cx = x + 0.5, cz = z + 0.5; let b = cx < BX[0] || cx > BX[1] || cz < BZ[0] || cz > BZ[1]; for (const s of SOLID) if (inRect(cx, cz, s, 0.9)) b = true; grid[z * W + x] = b ? 1 : 0; }
@@ -66,23 +115,24 @@ const findPath = gridPath(grid, W, H);
 const printMat = new THREE.MeshStandardMaterial({ color: 0x4a3420, transparent: true, opacity: 0.85, roughness: 1 });
 const grainMat = new THREE.MeshStandardMaterial({ color: 0xf0c040, emissive: 0x6a4a00, roughness: 0.6 });
 let prints = [], grains = [];
-const sack = new THREE.Group(); { const b = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), M(0xd8c090)); b.scale.set(1, 1.2, 1); b.position.y = 0.6; sack.add(b); const cord = box(0.5, 0.14, 0.5, 0xd8302a); cord.position.y = 1.1; sack.add(cord); sack.userData.cord = cord; } sack.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(sack);
+const printGeo = artGeo('law_print'), grainGeo = artGeo('law_grain');   /* 발자국(길이·너비 1 — 판마다 크기를 준다) · 낟알 몇 톨 */
+const sack = new THREE.Group(); { const b = art('law_sack'); sack.add(b); const cord = artOwn('law_knot'); sack.add(cord); sack.userData.cord = cord; } scene.add(sack);   /* 매듭은 흰색 모델 + 제 재질 — 재질 색이 끈 색이 된다 */
 const sackGlow = glowSprite(scene, 'rgba(255,236,150,.85)', 'rgba(255,200,80,0)', 3);
 /* 길잡이 빛: 내 곁의 자취에서 몇 걸음 앞을 비춘다 — 따라가면 된다 */
 const lamp = glowSprite(scene, 'rgba(255,248,200,.95)', 'rgba(255,220,120,0)', 2.6); const lampPost = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3, 6), new THREE.MeshBasicMaterial({ color: 0xfff2b0, transparent: true, opacity: 0.35, depthWrite: false })); scene.add(lampPost);
-const spill = new THREE.Group(); for (let k = 0; k < 14; k++) spill.add(at(box(0.12, 0.06, 0.12, 0xf0c040), (rnd() - 0.5) * 2, 0.04, (rnd() - 0.5) * 1)); spill.position.set(DOOR[0], 0, DOOR[1] + 0.4); scene.add(spill);
+const spill = new THREE.Group(); { const P = [['law_spill', 0.1, 0, -0.1, 1, 0.25]]; for (let k = 0; k < 14; k++) P.push(['law_grain', (rnd() - 0.5) * 2, 0.04, (rnd() - 0.5) * 1, 1, k * 0.8]); spill.add(bake(P, false, false)); } spill.position.set(DOOR[0], 0, DOOR[1] + 0.4); scene.add(spill);
 /* 비 */
 const rainEl = (() => { const N = 700, pos = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pos[i * 3] = rnd() * (W + 20) - 10; pos[i * 3 + 1] = rnd() * 26; pos[i * 3 + 2] = rnd() * (H + 20) - 10; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const pts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xbcd4ff, size: 0.22, transparent: true, opacity: 0 })); pts.frustumCulled = false; scene.add(pts); return { pts, pos, N }; })();
 
 /* 사람: 의심받는 셋 · 본 사람 넷 · 다친 사람 · 대장장이 · 굶는 식구 */
-function suspectMesh(i) { const m = person({ shirt: COLORS[i].shirt, pants: 0x5a4434, hat: i === 1 ? 'satgat' : 'top', skin: SKIN }); const belt = box(0.74, 0.1, 0.46, 0xffffff); belt.position.y = 0.66; m.add(belt); m.userData.belt = belt;
-  const feet = [-0.17, 0.17].map((x) => { const f = box(0.26, 0.1, 0.4, 0x3a2a1a); f.position.set(x, 0.05, 0.06); m.add(f); return f; }); m.userData.feet = feet; return m; }
+function suspectMesh(i) { const m = person({ shirt: COLORS[i].shirt, pants: 0x5a4434, hat: i === 1 ? 'satgat' : 'top', skin: SKIN }); const belt = artOwn('law_belt', {}, { shadow: false }); belt.position.y = 0.66; m.add(belt); m.userData.belt = belt;
+  const feet = [-0.17, 0.17].map((x) => { const f = art('law_shoe', {}, { shadow: false }); f.position.set(x, 0.05, 0.06); m.add(f); return f; }); m.userData.feet = feet; return m; }
 const sus = [0, 1, 2].map((i) => ({ i, m: suspectMesh(i), x: SUS_POS[i][0], z: SUS_POS[i][1], hx: SUS_POS[i][0], hz: SUS_POS[i][1], big: false, cord: 0, follow: false, dir: Math.PI / 2, tag: null, moving: false }));
 const witnesses = WITNESS.map(([x, z, kind], i) => { const m = person({ shirt: [0xb89a70, 0xa89070, 0xc0a880, 0x9a8a68][i], pants: 0x6a5034, hat: i === 3 ? 'satgat' : 'top', skin: SKIN }); m.position.set(x, 0, z); m.rotation.y = -Math.PI / 2 + i; return { x, z, kind, m, tag: null }; });
-const injured = person({ shirt: 0xa89878, pants: 0x6a5034, hat: 'top', skin: SKIN }); injured.position.set(INJURED[0], -0.35, INJURED[1]); injured.add(at(box(0.62, 0.12, 0.62, 0xffffff), 0, 1.86, 0));
+const injured = person({ shirt: 0xa89878, pants: 0x6a5034, hat: 'top', skin: SKIN }); injured.position.set(INJURED[0], -0.35, INJURED[1]); injured.add(at(art('law_bandage', {}, { shadow: false }), 0, 1.86, 0));
 const smith = person({ shirt: 0x5a4a3a, pants: 0x3a2a20, hat: 'top', skin: SKIN }); smith.position.set(SMITH[0], 0, SMITH[1]); smith.rotation.y = Math.PI;
-const family = HOMES.map(([x, z]) => { const g = new THREE.Group(); const kid = person({ shirt: 0xc8b090, pants: 0x7a6040, hat: 'top', skin: SKIN }); kid.scale.setScalar(0.6); kid.position.set(-0.8, 0, 0); scene.remove(kid); g.add(kid); const pot = cyl(0.4, 0.3, 0.5, 0x8a5a3a, 8); pot.position.set(0.6, 0.25, 0); g.add(pot); g.position.set(x - 1, 0, z + 3.4); scene.add(g); return { g, kid, pot }; });
+const family = HOMES.map(([x, z]) => { const g = new THREE.Group(); const kid = person({ shirt: 0xc8b090, pants: 0x7a6040, hat: 'top', skin: SKIN }); kid.scale.setScalar(0.6); kid.position.set(-0.8, 0, 0); scene.remove(kid); g.add(kid); const pot = art('law_pot_full'); pot.position.set(0.6, 0, 0); g.add(pot); g.position.set(x - 1, 0, z + 3.4); scene.add(g); return { g, kid, pot }; });
 const pMesh = person({ shirt: 0xd8c8a0, pants: 0x7a6040, hat: 'top', skin: SKIN });
 const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
 const tagBox = $('tags'); function mkTag() { const d = document.createElement('div'); d.className = 'tag'; tagBox.appendChild(d); return d; }
@@ -123,18 +173,18 @@ function layTrails() {
   S.sackAt = back.slice(); S.sackOld = back.slice();
   const pth = findPath(DOOR[0], DOOR[1] + 1, home[0], home[1] + 3.6) || [];
   const big = sus[T].big, pw = big ? 0.3 : 0.2, pl = big ? 0.56 : 0.36;
-  for (let i = 1; i < pth.length; i += 1) { const [x, z] = pth[i], [px, pz] = pth[i - 1], a = Math.atan2(z - pz, x - px), side = i % 2 ? 1 : -1; const m = new THREE.Mesh(new THREE.BoxGeometry(pl, 0.04, pw), printMat.clone()); m.position.set(x - Math.sin(a) * 0.22 * side, 0.06, z + Math.cos(a) * 0.22 * side); m.rotation.y = -a; scene.add(m); prints.push({ m, x: m.position.x, z: m.position.z }); }
+  for (let i = 1; i < pth.length; i += 1) { const [x, z] = pth[i], [px, pz] = pth[i - 1], a = Math.atan2(z - pz, x - px), side = i % 2 ? 1 : -1; const m = new THREE.Mesh(printGeo, printMat.clone()); m.scale.set(pl, 1, pw); m.position.set(x - Math.sin(a) * 0.22 * side, 0.06, z + Math.cos(a) * 0.22 * side); m.rotation.y = -a; scene.add(m); prints.push({ m, x: m.position.x, z: m.position.z }); }
   addGrains(DOOR[0] + 1.2, DOOR[1] + 1, back[0], back[1]);
   sack.position.set(back[0], 0, back[1]); sack.visible = true; sack.userData.cord.material.color.set(CORDS[sus[T].cord].c); sackGlow.position.set(back[0], 1.4, back[1]);
 }
-function addGrains(ax, az, bx, bz) { const pth = findPath(ax, az, bx, bz) || []; for (let i = 0; i < pth.length; i += 2) { const [x, z] = pth[i]; const m = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.16), grainMat); m.position.set(x + 0.6, 0.06, z + 0.3); scene.add(m); grains.push({ m, x, z }); } }
+function addGrains(ax, az, bx, bz) { const pth = findPath(ax, az, bx, bz) || []; for (let i = 0; i < pth.length; i += 2) { const [x, z] = pth[i]; const m = new THREE.Mesh(grainGeo, grainMat); m.position.set(x + 0.6, 0.06, z + 0.3); m.rotation.y = i; scene.add(m); grains.push({ m, x, z }); } }
 function resetRound(full) {
   if (full) { S.round = 1; S.hints = 4; }
   roundSetup();
   Object.assign(S, { t: 0, k: 0, px: DOOR[0], pz: DOOR[1] + 2.4, pdir: -Math.PI / 2, ev: [null, null, null], rain: 'none', rainT: 0, rained: false, moved: false, why: false, hurtSeen: false, hurtDone: false, drums: 0, workT: 0, endT: 0, shown: false, verdict: null, by: 'you' });
   sus.forEach((s) => { s.x = s.hx; s.z = s.hz; s.follow = false; s.carrying = false; s.m.visible = true; });
   layTrails(); printMat.opacity = 0.85; prints.forEach((p) => (p.m.material.opacity = 0.85)); rainEl.pts.material.opacity = 0;
-  family.forEach((f, i) => { f.pot.material.color.set(i === S.thief ? 0x6a5a4a : 0x8a5a3a); });
+  family.forEach((f, i) => { f.pot.geometry = artGeo(i === S.thief ? 'law_pot_empty' : 'law_pot_full'); });   /* 훔친 사람 집 솥은 텅 비었다 */
   smith.position.set(SMITH[0], 0, SMITH[1]); injured.userData.paid = false;
   $('fade').style.opacity = 0; lightFor(0); hud();
 }
@@ -294,6 +344,7 @@ function view() {
   else if (S.mode === 'trial') { v3.set(DRUM[0] + 2, 7, DRUM[1] + 13); cam.position.lerp(v3, 0.05); cam.lookAt(DRUM[0] + 1, 1.5, DRUM[1]); }
   else followCam(cam, S, { W, H, map: { h: [86, 160], z: 10, look: -2 } });
   fadeOccluders(occl, cam, S, S.mode === 'play');
+  gateG.visible = Math.abs(cam.position.z - 55) > 4.5 || Math.abs(cam.position.x - 40) > 6.5;
   edgeGoal($('goal'), cam, new THREE.Vector3(DRUM[0], 2.2, DRUM[1]), S.mode === 'play', 0.8);
   if (S.mode !== 'play') { for (const s of sus) s.tag.style.display = 'none'; for (const w of witnesses) w.tag.style.display = 'none'; tagInj.style.display = tagSmith.style.display = tagHome.style.display = 'none'; }
 }
