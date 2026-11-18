@@ -15,7 +15,7 @@ export function createCards(hudEl){
       close(); wrap.style.display = ''; const q = document.createElement('div'); q.className = 'q'; q.textContent = question; wrap.appendChild(q);
       const row = document.createElement('div'); row.className = 'row'; wrap.appendChild(row);
       const els = choices.map((c, i) => { const b = document.createElement('button'); b.className = 'card'; b.innerHTML = `<span class="ring"></span><span class="t"></span>`; b.querySelector('.t').textContent = c; b.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); pick(i); }); row.appendChild(b); return b; });
-      cur = { els, prog: choices.map(() => 0), onPick, picked: null, closeIn: 0, cb: null };
+      cur = { els, prog: choices.map(() => 0), onPick, picked: null, closeIn: 0, cb: null, start: [null, null], armed: [false, false] };   /* 카드가 뜬 뒤 손이 한 번 움직여야 고르기 시작(쉬던 손 밑에 카드가 떠서 저절로 골라지지 않게) */
     },
     close,
     /** 매 프레임: hands = [{present, x, y}] 화면 비율. 손이 카드 위에 머무는 동안 테두리가 차오른다. */
@@ -23,8 +23,9 @@ export function createCards(hudEl){
       if (!cur) return;
       if (cur.picked != null) { cur.closeIn -= dt; if (cur.closeIn <= 0) { const cb = cur.cb; close(); cb && cb(); } return; }
       const W = innerWidth, H = innerHeight;
+      hands.forEach((h, k) => { if (k > 1 || !h || !h.present) return; if (!cur.start[k]) cur.start[k] = { x: h.x, y: h.y }; else if (!cur.armed[k] && Math.hypot(h.x - cur.start[k].x, h.y - cur.start[k].y) > .06) cur.armed[k] = true; });
       cur.els.forEach((el, i) => { const r = el.getBoundingClientRect();
-        const over = hands.some(h => h.present && h.src !== 'mouse' && h.src !== 'touch' && h.src !== 'pen' && h.x * W >= r.left && h.x * W <= r.right && h.y * H >= r.top && h.y * H <= r.bottom);
+        const over = hands.some((h, k) => h.present && cur.armed[k] && h.src !== 'mouse' && h.src !== 'touch' && h.src !== 'pen' && h.x * W >= r.left && h.x * W <= r.right && h.y * H >= r.top && h.y * H <= r.bottom);
         cur.prog[i] = over ? Math.min(1, cur.prog[i] + dt / DWELL) : Math.max(0, cur.prog[i] - dt * 2.5);
         el.style.setProperty('--p', cur.prog[i].toFixed(3)); el.classList.toggle('hot', over);
         if (cur.prog[i] >= 1) pick(i); });

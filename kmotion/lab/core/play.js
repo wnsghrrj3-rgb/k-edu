@@ -7,7 +7,7 @@ import { createSession } from '../sim/session.js';
 import { kindOf } from '../sim/thermal.js';
 import { loadPropAssets, makeItem, restQuat, pivotForRest, makeHand, cloneOwn, SHELF_LAYOUT, FLIP_IN_TONGS } from './items.js';
 import { createFxBridge } from './fxbridge.js';
-import { createCards } from './cards.js';
+import { createCards } from './cards.js?v=2';
 import { createNote } from './note.js';
 import { makeStrike, wrapDeg, followK, lostAction, inZone, BODY_ZONE, WEAR_LOST_Y, LOST_ASK_MS, GRAB_RADIUS, clamp } from './hands.js';
 
@@ -24,6 +24,8 @@ export const ASSIST = {
   wearPull: .8,         // 카메라 손: 장비를 쥔 손이 쥘 때 크기의 이 배 아래로 작아지면(= 내 몸 쪽으로 당김) 쓴다
   wearPullT: .15,       // …그 상태가 이 시간(s) 이어지면
   handDipFrom: .12,     // 장갑 낀 손으로 든 시료: 손이 그릇 테두리 위 이만큼(m) 아래로 오면 액면 아래로 끌어 준다(손을 이보다 들면 꺼냄)
+  hoverDip: .5,         // …또는 그릇 위(테두리 위 hoverDipHeight 안)에 이 시간(s) 머물면 높이와 상관없이 끌어 담근다(11-18 준호 「장미가 그릇에 안 담겨」)
+  hoverDipHeight: .4,   // m — 이보다 높이 들면 머물러도 안 담그고, 담근 뒤 이보다 들면 꺼낸다
   grabKeep: 1.4,        // 밝아진 기구는 다른 기구가 이 배 더 가까워야 바뀐다(두 기구 사이에서 깜빡이지 않게)
   grabLate: .35,        // 손을 먼저 쥐고 다가와도 이 시간(s) 안에 기구가 반경에 들면 잡는다
   releaseCam: .14,      // 카메라 손: 손이 이 시간(s) 넘게 펴져 있어야 놓는다(쥔 손 인식이 한두 장 끊겨도 안 떨어뜨림)
@@ -477,9 +479,11 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     if (!B.on || !(B.ln2 > 0)) { if (it.handDipped) { it.handDipped = false; send('lift', it.id, 'tongs'); } return; } lowOf(it, _low);
     // 장갑 낀 손(11-18 준호 「장미를 그릇에 놓는 게 너무 어렵다」): 손에 든 채 담그고 꺼낸다 — 실제 시연처럼 줄기를 쥐고 꽃만. 맨손은 아래 옛 길(사고).
     if (gloved()) { const dh = Math.hypot(_low.cx - B.c.x, _low.cz - B.c.z), handLow = _low.minY - it.assist.y;
-      if (dh < B.surfR * ASSIST.bowlPull && handLow < B.rim + ASSIST.handDipFrom) {   /* 그릇 입구 위: 가운데로, 그리고 액면 아래로 끌어 줌 */
+      const hdt = it.hdNow ? Math.min(.1, (now - it.hdNow) / 1000) : 0; it.hdNow = now;
+      const overB = dh < B.surfR * ASSIST.bowlPull && handLow < B.rim + ASSIST.hoverDipHeight; it.overBowlT = overB ? (it.overBowlT || 0) + hdt : 0;   /* 그릇 위에 머문 시간 */
+      if (overB && (handLow < B.rim + ASSIST.handDipFrom || it.overBowlT >= ASSIST.hoverDip)) {   /* 그릇 입구 위: 가운데로, 그리고 액면 아래로 끌어 줌(낮추거나 잠깐 머물면) */
         it.assistWant.x = clamp(it.assist.x + (B.c.x - _low.cx), -ASSIST.bowlPullMax, ASSIST.bowlPullMax);
-        if (now >= (it.dipBlockUntil || 0)) it.assistWant.y = clamp(it.assist.y + (B.surf - ASSIST.dipPullDepth - _low.minY), -ASSIST.dipPullMax - ASSIST.handDipFrom, 0); }
+        if (now >= (it.dipBlockUntil || 0)) it.assistWant.y = clamp(it.assist.y + (B.surf - ASSIST.dipPullDepth - _low.minY), -ASSIST.dipPullMax - ASSIST.hoverDipHeight, 0); }
       if (!it.handDipped && dh < B.surfR * .95 && _low.minY < B.surf - ASSIST.dipIn) {
         if (now < (it.dipBlockUntil || 0)) { pushAbove(it, it); return; }
         const fx = send('dip', it.id, 'tongs'); if (fx.some(e => (e.type === 'dip' || e.type === 'shallow') && e.id === it.id)) it.handDipped = true; else { it.dipBlockUntil = now + ASSIST.dipBlock * 1000; pushAbove(it, it); } }
