@@ -19,7 +19,8 @@ const DEG = Math.PI / 180, G = 9.8;
 //    · 자석은 성공 쪽으로만 끈다(맨손을 질소 쪽으로 끄는 일은 없다).
 export const ASSIST = {
   grab: .11,            // 집기: 손에서 이 반경(화면) 안의 가장 가까운 기구가 밝아지고, 쥐면 잡힌다
-  camGrab: 1.4,         // 카메라 손은 집기 반경을 이 배로(손 위치가 떨리고 깊이를 모르니 더 넉넉히)
+  camGrab: 1.2,         // 카메라 손은 집기 반경을 이 배로(손 위치가 떨리고 깊이를 모르니 조금 넉넉히 — 1.4 는 지나가다 엉뚱한 것을 집어 「예민」했음)
+  wearDwell: .3,        // 장비(보안면·장갑)를 들고 「내 몸」 자리에 이 시간(s) 머물면 손을 펴지 않아도 쓴다
   grabKeep: 1.4,        // 밝아진 기구는 다른 기구가 이 배 더 가까워야 바뀐다(두 기구 사이에서 깜빡이지 않게)
   grabLate: .35,        // 손을 먼저 쥐고 다가와도 이 시간(s) 안에 기구가 반경에 들면 잡는다
   releaseCam: .14,      // 카메라 손: 손이 이 시간(s) 넘게 펴져 있어야 놓는다(쥔 손 인식이 한두 장 끊겨도 안 떨어뜨림)
@@ -346,6 +347,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
         if (lostAction(now - st.lostAt) === 'return') { st.held = null; it.held = null; ring.visible = false; st.lostAt = null; send('drop', it.id, 0, true); if (it.clamp) { const sp = it.clamp; unclampSpec(sp); if (sp.loc !== 'bowl') { goHome(sp); send('place', sp.id, sp.home.slot); } } goHome(it); send('place', it.id, it.home.slot); }
         return; }
       st.lostAt = null;
+      if (it.role === 'wear' && inZone(H, BODY_ZONE)) { st.wearT = (st.wearT || 0) + dt; if (st.wearT >= ASSIST.wearDwell) { st.wearT = 0; st.openT = 0; release(it, i, H); return; } } else st.wearT = 0;   /* 「내 몸」에 가져가 잠깐 머물면 쓴다(손을 안 펴도) */
       // 놓기: 카메라 손은 주먹이 releaseCam 초 넘게 풀려야 놓는다(인식이 한두 장 끊겨도 안 떨어뜨림) · 터치·마우스·자동은 바로
       if (!H.grab) { st.openT = (st.openT || 0) + dt; if (H.src !== 'cam' || st.openT >= ASSIST.releaseCam) { st.openT = 0; release(it, i, H); return; } } else st.openT = 0;
       carry(it, i, H, dt, now); return; }

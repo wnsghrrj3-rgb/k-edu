@@ -24,9 +24,9 @@ export function snapSlot(pt, slots, aspect = 16 / 9, radius = SNAP_RADIUS){
 
 export const inZone = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.y >= z.y0 && p.y <= z.y1;
 /** 「내 몸」 자리 — 화면 아래 가운데. 자리가 크다(설계 3-2 쓰기) */
-export const BODY_ZONE = { x0: 0.20, x1: 0.80, y0: 0.66, y1: 1.01 };   // 넓게: 카메라 손은 화면 맨 아래까지 내리면 손목부터 카메라 밖으로 빠져 끊긴다
+export const BODY_ZONE = { x0: 0.18, x1: 0.82, y0: 0.60, y1: 1.01 };   // 넓게: 카메라 손은 화면 맨 아래까지 내리면 손목부터 카메라 밖으로 빠져 끊긴다
 /** 장비(보안면·장갑)를 쥔 손이 이 높이(화면 비율)보다 아래에서 사라지면 「내 쪽으로 당겼다」 = 쓰기 (카메라 손) */
-export const WEAR_LOST_Y = 0.55;
+export const WEAR_LOST_Y = 0.50;
 
 /** 기울여 붓기: 떨림 무시 ±8°, 25° 넘으면 흐르기 시작, 18° 아래로 내려가면 멈춤(오르내림 방지). 양 = 기울기에 비례 */
 export function makeTilt({ dead = 8, start = 25, stop = 18, full = 95 } = {}){
