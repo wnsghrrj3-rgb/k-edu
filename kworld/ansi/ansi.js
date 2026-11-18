@@ -140,7 +140,7 @@ const SFX = {
 const S = { mode: 'title', round: 1, view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: -Math.PI / 2, t: 0, at: 0, act: 1, px: 60, pz: 40, py: 0, pdir: -Math.PI / 2, moving: false, running: false, said: {}, sayT: 0,
   hp: 7, hp0: 7, got: 0, burned: 0, carry: null, fireT: 0, pushed: 0, ramsBurned: 0, fixed: 0, flagUp: false, hitBy: 0,
   armyZ: -150, armyMove: true, armyBack: false, squads: [], ram: null, ramN: 0, gateHP: 6, spawnT: 0, shootT: 0, catT: 0,
-  moundH: 0, pal: 0, overT: 0, ramp: false, rainK: 0, snow: false, assaultT: 0, plantT: 0, stun: 0, shake: 0, workT: 0, workKey: '', endT: 0, shown: false, introT: 0, beatT: 0, stepT: 0, vigor: 1 };
+  moundH: 0, pal: 0, overT: 0, ramp: false, rainK: 0, snow: false, assaultT: 0, plantT: 0, stun: 0, shake: 0, workT: 0, workKey: '', T2: T2, lossBy: {}, endT: 0, shown: false, introT: 0, beatT: 0, stepT: 0, vigor: 1 };
 const { say, tick: sayTick } = sayLine(S);
 const ctl = controls(S, say), keys = ctl.keys;
 if (ctl.isTouch) $('keys').textContent = '왼쪽 동그라미로 걷기 · 가만히 서면 집고·쌓는다 · 「밀기」 단추로 사다리를 밀고 불화살을 쏜다 · 「시점」 ⟲⟳';
@@ -151,7 +151,7 @@ function resetRound(full) {
   R = rng(seed0 * 3 + S.round * 97);
   for (const f of foes) f.on = false; for (const l of ladders) { l.on = false; l.g.visible = false; }
   Object.assign(S, { t: 0, at: 0, act: 1, px: 60, pz: 40, py: 0, pdir: -Math.PI / 2, hp: S.hp0, got: 0, burned: 0, carry: null, fireT: 0, pushed: 0, ramsBurned: 0, fixed: 0, flagUp: false,
-    armyZ: -150, armyMove: true, armyBack: false, squads: [], ram: null, ramN: 0, gateHP: 6, spawnT: 6, shootT: 0, catT: 8, moundH: 0, pal: 0, overT: 0, ramp: false, rainK: 0, snow: false, assaultT: 0, plantT: 0, stun: 0, shake: 0, workT: 0, endT: 0, shown: false, vigor: 1, moundFoes: null });
+    armyZ: -150, armyMove: true, armyBack: false, squads: [], ram: null, ramN: 0, gateHP: 6, spawnT: 6, shootT: 0, catT: 8, moundH: 0, pal: 0, overT: 0, ramp: false, rainK: 0, snow: false, assaultT: 0, plantT: 0, stun: 0, shake: 0, workT: 0, endT: 0, shown: false, vigor: 1, moundFoes: null, T2: T2, lossBy: {}, hitBy: 0 });
   stacks.forEach((s) => { s.st = 'field'; s.m.visible = true; s.f.visible = false; s.bt = 0; s.m.scale.setScalar(1.25); });
   breaches.forEach((b) => { b.on = b.fixed = false; b.rb.visible = b.gap.visible = b.pal.visible = false; });
   cats.forEach((c) => { c.g.visible = false; c.cd = 0; }); shots.forEach((s) => { s.m.visible = s.r.visible = false; s.t = 9; });
@@ -166,16 +166,16 @@ function hud() {
   $('tField').className = S.got + S.burned >= 6 ? 'on' : ''; $('tField').textContent = `🌾 들 비우기 ${S.got + S.burned}/8 (들임 ${S.got})`;
   $('tFix').className = S.fixed ? 'on' : ''; $('tFlag').className = S.flagUp ? 'on' : '';
   $('tGoal').textContent = S.act === 1 ? '🌾 대군이 닿기 전에 들을 비운다' : S.act === 2 ? '🛡 무엇이 오는지 보고 막는다' : S.ramp ? '🚩 지금이다 — 흙산 꼭대기에 깃발을!' : '⛰ 흙산이 성벽을 넘지 못하게';
-  $('night').querySelector('i').style.width = clamp(S.t / TOTAL, 0, 1) * 100 + '%';
+  { const all = S.T2 + T3_FALL, used = S.act === 1 ? 0 : S.act === 2 ? S.at : S.T2 + Math.min(S.at, T3_FALL), sup = S.act === 1 ? clamp(1 - (S.got + S.burned) * 0.03 + stacks.filter((s) => s.st === 'taken').length * 0.05, 0, 1.2) / 1.2 : clamp(1 - used / all, 0, 1) * (1 - (S.got + S.burned) * 0.03 + (S.left || 0) * 0.05) / 1.2; S.supply = S.flagUp ? 0 : sup; $('night').querySelector('i').style.width = clamp(S.supply, 0, 1) * 100 + '%'; }
 }
-function hurt(n, why) { if (S.mode !== 'play') return; S.hp -= n; S.hitBy++; S.shake = 1; SFX.crash(); say(why, null, 2.6); hud(); if (S.hp <= 0) finish(false); }
+function hurt(n, why, by) { if (S.mode !== 'play') return; S.lossBy[by] = (S.lossBy[by] || 0) + n; S.hp -= n; S.hitBy++; S.shake = 1; SFX.crash(); say(why, null, 2.6); hud(); if (S.hp <= 0) finish(false); }
 
 /* ───── 막 넘기기 ───── */
 function toAct(n) {
   S.act = n; S.at = 0; S.workT = 0;
   if (n === 2) { S.carry = null; S.px = clamp(S.px, 14, 106); S.pz = 51.5; S.py = WH; takePad.visible = false; takers.forEach((t) => (t.visible = false)); camp.visible = true; S.armyMove = false;
-    const left = stacks.filter((s) => s.st === 'field').length; S.vigor = 1 + left * 0.05; stacks.forEach((s) => { if (s.st === 'field') s.st = 'taken'; });
-    SFX.horn(); SFX.drum(0.4); say(left ? `성문이 닫혔다 — 들에 남긴 볏가리 ${left}개는 적의 밥이 됐다` : '성문이 닫혔다 — 들에는 적이 먹을 것이 없다', null, 3.6); S.spawnT = 5; S.shootT = 2; S.catT = 26; }
+    const left = stacks.filter((s) => s.st === 'field' || s.st === 'taken').length; S.vigor = 1 + left * 0.03; S.T2 = T2 - 3 * (S.got + S.burned) + 5 * left; S.left = left; stacks.forEach((s) => { if (s.st === 'field') s.st = 'taken'; });
+    SFX.horn(); SFX.drum(0.4); say(left ? `성문이 닫혔다 — 들에 남긴 볏가리 ${left}개만큼 적이 오래 버틴다` : '성문이 닫혔다 — 들이 비었다. 적의 군량은 오래 못 간다', null, 3.8); S.spawnT = 5; S.shootT = 2; S.catT = 26; }
   if (n === 3) { say('적이 성벽 앞에 흙산을 쌓는다! — 통나무로 울짱을 올려 버티자', null, 4); SFX.horn(); S.spawnT = 14; }
   hud();
 }
@@ -184,7 +184,7 @@ function toAct(n) {
 const onWall = () => S.act >= 2 && S.pz > 50;
 function act() {
   if (S.mode !== 'play' || S.stun > 0) return;
-  if (S.act === 1) { const s = stacks.find((s) => s.st === 'field' && dist(S.px, S.pz, s.x, s.z) < 2.6); if (s && S.carry !== 'stack') { s.st = 'burn'; s.f.visible = true; S.burned++; SFX.fire(); ring(s.x, s.z, 3.5, 0xff8a3a); say('볏가리를 태웠다 — 적이 먹을 것이 준다', 'burn1', 2.2); hud(); } return; }
+  if (S.act === 1) { const s = stacks.find((s) => s.st === 'field' && dist(S.px, S.pz, s.x, s.z) < 2.6); if (s && S.carry !== 'stack') { s.st = 'burn'; s.f.visible = true; S.burned++; SFX.fire(); ring(s.x, s.z, 3.5, 0xff8a3a); say('볏가리를 태웠다 — 적의 군량이 준다', 'burn1', 2.2); hud(); } return; }
   /* 사다리 밀기 */
   const sq = S.squads.find((q) => q.st === 'climb' && Math.abs(q.x - S.px) < 2.4);
   if (sq && onWall()) { pushLadder(sq); return; }
@@ -210,14 +210,22 @@ function landShot(s) { SFX.thud(); S.shake = Math.max(S.shake, 0.7); ring(s.x1, 
 /* ───── 끝 ───── */
 function finish(win) { S.mode = win ? 'dawn' : 'fall'; S.endT = 0; S.endWin = win; overBar($('work'), cam, 0, 0, 0, null); $('bAct').style.display = 'none'; SFX[win ? 'win' : 'sad'](); if (win) { S.snow = true; S.armyBack = true; S.armyMove = true; for (const f of foes) foeFall(f); } }
 function endScreen() {
-  const win = S.endWin, marks = `<div class="marks"><span class="${S.got + S.burned >= 6 ? 'ok' : ''}">🌾 비운 들 ${S.got + S.burned}/8</span><span class="${S.fixed ? 'ok' : ''}">🪵 메운 성벽 ${S.fixed}</span><span class="${S.flagUp ? 'ok' : ''}">🚩 ${S.flagUp ? '흙산의 깃발' : '흙산 못 차지함'}</span><span class="${S.hp > 0 ? 'ok' : ''}">🛡 남은 버팀 ${Math.max(0, S.hp)}</span></div>`;
-  if (win) overlay(`<h1>첫눈</h1><p>흙산 꼭대기에 고구려 깃발이 섰다. 눈이 내리기 시작하고, 먹을 것이 떨어진 대군은 물러간다.</p>${marks}
-      <p class="keys">작은 성 하나가 큰 군대를 돌려보냈다.</p>
+  const win = S.endWin, cleared = S.got + S.burned, stars = win ? (S.hp >= 5 ? 3 : S.hp >= 3 ? 2 : 1) : 0;
+  const marks = `<div class="marks"><span class="${cleared >= 6 ? 'ok' : ''}">🌾 비운 들 ${cleared}/8</span><span class="${S.pushed ? 'ok' : ''}">🪜 밀어 넘긴 사다리 ${S.pushed}</span><span class="${S.fixed ? 'ok' : ''}">🪵 메운 성벽 ${S.fixed}</span><span class="${S.flagUp ? 'ok' : ''}">🚩 ${S.flagUp ? '흙산의 깃발' : '흙산 못 차지함'}</span></div>`;
+  /* 까닭: 이기고 진 것이 무엇 때문이었나(역사의 전술과 이어서) */
+  const why = [];
+  why.push(cleared >= 6 ? '들을 비워 둔 덕에 적의 군량이 일찍 떨어졌다.' : `들에 볏가리 ${8 - cleared}개를 남겨 적이 그만큼 오래 버텼다.`);
+  const worst = Object.entries(S.lossBy).sort((a, b) => b[1] - a[1])[0];
+  if (worst) why.push({ ladder: '사다리를 제때 밀지 못해 성벽을 여러 번 내줬다.', gate: '성문 부수는 수레를 불화살로 막지 못했다.', mound: '흙산이 성벽보다 높아지도록 울짱을 올리지 못했다.', slow: '흙산이 무너졌을 때 머뭇거렸다.' }[worst[0]]);
+  else why.push('사다리도 수레도 흙산도 하나도 넘어오지 못했다.');
+  const whyHtml = `<p style="text-align:left;font-size:14px;line-height:1.6;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 12px"><b>${win ? '이긴' : '진'} 까닭</b><br>· ${why.join('<br>· ')}</p>`;
+  if (win) overlay(`<h1>이겼다 — 안시성을 지켰다</h1><p style="font-size:30px;letter-spacing:6px;margin:2px 0">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</p><p>남은 버팀 <b>${S.hp}</b> / ${S.hp0}. 흙산 꼭대기에 고구려 깃발이 섰고, 군량이 떨어진 대군은 첫눈 속에 물러간다.</p>${marks}${whyHtml}
+      <p class="keys">역사 속 안시성도 이겼다 — 석 달 가까이 버텨 대군을 돌려보냈다.${stars < 3 ? ' 버팀을 다섯 넘게 남기면 별 셋.' : ''}</p>
       <div class="fact">📜 <b>안시성 싸움(645년)</b> — 당나라 임금이 큰 군사를 이끌고 고구려에 쳐들어왔다. 안시성 사람들은 여러 달을 버텨 물리쳤다.<br>📜 <b>들 비우기</b> — 고구려는 싸움이 나면 들의 곡식을 거두거나 태우고 산성에 들어가 지켰다. 먼 길을 온 군대는 먹을 것이 떨어진다.<br>📜 <b>흙산</b> — 당군은 두 달 가까이 걸려 성벽보다 높은 흙산을 쌓았다. 그 흙산이 무너지자 고구려군이 달려 나가 차지했다.<br>📜 <b>성주의 이름</b> — 안시성을 지킨 성주의 이름은 그때 기록에 남아 있지 않다. 「양만춘」이라는 이름은 훨씬 뒷날의 책에 나온다.</div>`,
-      '한 번 더', () => { resetRound(true); S.mode = 'play'; });
-  else overlay(`<h1>바깥 성벽을 내줬다</h1><p>더는 버틸 수 없었다. 사람들을 데리고 안쪽 성벽으로 물러났다.</p>${marks}
-      <p>다음 싸움 — 지친 사람이 늘어 <b>버팀이 하나 적다</b>. 무엇이 오는지 먼저 보고 움직이자.</p><p class="keys">${S.round + 1}번째 싸움 · 깃발은 아직 서 있다.</p>`,
-      '다시 성벽으로', () => { S.round++; S.hp0 = Math.max(6, S.hp0 - 1); resetRound(false); S.mode = 'play'; say('대군이 다시 온다 — 들부터 비우자', null, 3); });
+      stars < 3 ? '별 셋에 다시 도전' : '한 번 더', () => { resetRound(true); S.mode = 'play'; });
+  else overlay(`<h1>졌다 — 성벽을 내줬다</h1><p>적의 군량이 <b>${Math.round(clamp(S.supply, 0, 1) * 100)}%</b> 남았을 때 버팀이 다했다. 사람들을 데리고 안쪽 성벽으로 물러났다.</p>${marks}${whyHtml}
+      <p class="keys">역사 속 안시성은 끝까지 버텨 이겼다. 다시 해 보자 — ${S.round + 1}번째 싸움.</p>`,
+      '다시 싸운다', () => { S.round++; S.hp0 = Math.max(6, S.hp0 - 1); resetRound(false); S.mode = 'play'; say('대군이 다시 온다 — 들부터 비우자', null, 3); });
 }
 
 /* ───── 하늘: 가을 낮 → 흐림 → 비 → 눈 ───── */
@@ -246,15 +254,15 @@ function update(dt) {
     S.armyZ = lerp(-150, 22, clamp(S.at / T1, 0, 1)); const front = S.armyZ + 1;
     if (S.at > T1 * 0.55) say('대군이 가까워진다 — 못 들일 볏가리는 태우자' + (ctl.isTouch ? '(「태우기」)' : '(스페이스)'), 'near', 3.4);
     for (const s of stacks) if (s.st === 'burn') { s.bt += dt; s.m.scale.setScalar(Math.max(0.01, 1.25 * (1 - s.bt / 5))); s.f.scale.setScalar(0.9 + Math.sin(S.t * 13) * 0.15); if (s.bt > 5) { s.st = 'gone'; s.m.visible = s.f.visible = false; } }
-    for (const s of stacks) if (s.st === 'field' && s.z < front + 2) { s.st = 'taken'; s.m.visible = false; ring(s.x, s.z, 3, 0xb02a22); say('볏가리 하나가 적의 손에 들어갔다', null, 2); }
+    for (const s of stacks) if (s.st === 'field' && s.z < front + 2) { s.st = 'taken'; s.m.visible = false; ring(s.x, s.z, 3, 0xb02a22); say('볏가리 하나가 적의 손에 들어갔다 — 적의 군량이 는다', null, 2.2); }
     const done = stacks.every((s) => s.st !== 'field') && S.carry !== 'stack';
     if (S.at >= T1 || (done && dist(S.px, S.pz, TAKE[0], TAKE[1]) < 5) || S.pz < front + 3) { if (S.pz < front + 3) { S.carry = null; say('적이 코앞이다 — 겨우 성문으로 뛰어들었다', null, 2.6); } toAct(2); }
   }
   /* ── 2·3막: 사다리 · 수레 · 돌 · 활 ── */
   if (S.act >= 2) {
-    const hard = clamp((S.act === 2 ? S.at / T2 : 1), 0, 1);
+    const hard = clamp((S.act === 2 ? S.at / S.T2 : 1), 0, 1);
     S.spawnT -= dt; if (S.spawnT <= 0 && !S.ramp) { spawnLadder(); S.spawnT = (S.act === 3 ? 26 : lerp(18, 13, hard)) / S.vigor; }
-    if (S.act === 2 && !S.ram && ((S.ramN === 0 && S.at > 30) || (S.ramN === 1 && S.at > 70))) spawnRam();
+    if (S.act === 2 && !S.ram && ((S.ramN === 0 && S.at > 30) || (S.ramN === 1 && S.at > S.T2 * 0.66))) spawnRam();
     if (S.act === 2 && S.at > 24) { cats.forEach((c) => (c.g.visible = true)); S.catT -= dt; if (S.catT <= 0) { S.catT = lerp(13, 10, hard); fireCat(cats[Math.floor(R() * 2)]); say('돌이 날아온다 — 붉은 고리에서 비켜서자', 'cat1', 3); } }
     for (const c of cats) c.g.userData.arm.rotation.x = lerp(c.g.userData.arm.rotation.x, 0.5, 0.05);
     for (const s of shots) if (s.t < 1) { s.t += dt / 2.3; const k = s.t; s.m.position.set(lerp(s.x0, s.x1, k), 3 + Math.sin(k * Math.PI) * 22 + k * (WH - 2), lerp(s.z0, 51.5, k)); s.m.rotation.x += dt * 5; s.r.scale.setScalar(0.4 + k * 0.6); s.r.material.opacity = 0.3 + k * 0.4; if (s.t >= 1) { s.m.visible = s.r.visible = false; landShot(s); } }
@@ -264,14 +272,14 @@ function update(dt) {
         if (!alive.length) { q.st = 'dead'; q.ld.on = false; } else if (q.z >= 48.4) { q.st = 'climb'; q.climb = 0; q.ld.g.visible = true; q.ld.g.position.set(q.x, 0, 48.7); q.ld.g.rotation.set(0.3, 0, 0); SFX.thud(); } }
       else if (q.st === 'climb') { const br = breaches.some((b) => b.on && !b.fixed && Math.abs(b.x - q.x) < 6); q.climb += dt / (br ? 9 : 12) * S.vigor;
         alive.forEach((f, k) => { const c = clamp(q.climb * 1.25 - k * 0.14, 0, 1); f.x = q.x + (k % 2 ? 0.25 : -0.25); f.z = lerp(48.2, 49.9, c); f.y = c * (WH + 0.2); f.moving = c > 0 && c < 1; });
-        if (q.climb >= 1) { q.st = 'over'; q.t = 0; for (const f of q.men) foeFall(f); hurt(1, '성벽을 넘어왔다! — 사다리 위에 서서 ' + (ctl.isTouch ? '「밀기」' : '스페이스')); }
+        if (q.climb >= 1) { q.st = 'over'; q.t = 0; for (const f of q.men) foeFall(f); hurt(1, '성벽을 넘어왔다! — 사다리 위에 서서 ' + (ctl.isTouch ? '「밀기」' : '스페이스'), 'ladder'); }
         if (!alive.length) { q.st = 'pushed'; q.t = 0; } }
       else if (q.st === 'pushed' || q.st === 'over') { q.ld.g.rotation.x = Math.max(-1.3, 0.3 - q.t * 2.6); if (q.t > 0.9) { q.ld.g.visible = false; q.ld.on = false; q.st = 'dead'; } } }
     S.squads = S.squads.filter((q) => q.st !== 'dead');
     /* 수레 */
     if (S.ram) { const r = S.ram; r.t += dt;
       if (r.st === 'roll') { r.z = Math.min(46, r.z + dt * 2.5 * S.vigor); if (r.z >= 46) { r.st = 'hit'; r.hitT = 1.2; say('수레가 성문을 친다!', null, 2); } }
-      else if (r.st === 'hit') { r.hitT -= dt; ramG.userData.log.position.z = 0.6 + Math.max(0, Math.sin((2.2 - r.hitT) / 2.2 * Math.PI)) * 1.6; ramG.userData.head.position.z = ramG.userData.log.position.z + 3; if (r.hitT <= 0) { r.hitT = 2.4; S.gateHP--; SFX.thud(); S.shake = 0.6; ring(GATE_X, 49, 3, 0xff6a3a); if (S.gateHP <= 0) { hurt(2, '성문이 부서졌다! — 안에서 겨우 다시 막았다'); r.st = 'burn'; r.t = 0; for (const f of r.men) foeFall(f); S.gateHP = 6; } } }
+      else if (r.st === 'hit') { r.hitT -= dt; ramG.userData.log.position.z = 0.6 + Math.max(0, Math.sin((2.2 - r.hitT) / 2.2 * Math.PI)) * 1.6; ramG.userData.head.position.z = ramG.userData.log.position.z + 3; if (r.hitT <= 0) { r.hitT = 2.4; S.gateHP--; SFX.thud(); S.shake = 0.6; ring(GATE_X, 49, 3, 0xff6a3a); if (S.gateHP <= 0) { hurt(2, '성문이 부서졌다! — 안에서 겨우 다시 막았다', 'gate'); r.st = 'burn'; r.t = 0; for (const f of r.men) foeFall(f); S.gateHP = 6; } } }
       else if (r.st === 'burn') { ramG.scale.setScalar(Math.max(0.01, 1 - r.t / 3.5)); ramG.userData.f.scale.setScalar(1 + Math.sin(S.t * 12) * 0.2); if (r.t > 3.5) { ramG.visible = false; S.ram = null; } }
       if (S.ram && r.st !== 'burn') { ramG.position.z = r.z; r.men.forEach((f, k) => { if (f.on && f.st !== 'fall') { f.z = r.z + r.off[k][1]; f.moving = r.st === 'roll'; } }); if (!r.men.some((f) => f.on && f.st !== 'fall')) r.st0 = 1; } }
     /* 성 위의 활: 다가오는 무리를 줄인다(들인 볏가리가 많을수록 자주) */
@@ -279,12 +287,12 @@ function update(dt) {
       if (tg) { const f = tg.men.find((f) => f.on && f.st !== 'fall'); const g = guards.slice().sort((a, b) => Math.abs(a.x - tg.x) - Math.abs(b.x - tg.x))[0]; if (f && !breaches.some((b) => b.on && !b.fixed && Math.abs(b.x - g.x) < 5)) { shoot(g.x, f.z, false, f.x); SFX.volley(); const ff = f; setTimeoutS(0.6, () => foeFall(ff)); } } }
   }
   /* ── 3막: 흙산 ── */
-  if (S.act === 2 && S.at >= T2) toAct(3);
+  if (S.act === 2 && S.at >= S.T2) toAct(3);
   if (S.act === 3) {
     if (!S.ramp) { S.moundH = Math.min(9, S.moundH + dt * 0.115 * S.vigor); moundM.scale.y = Math.max(0.01, S.moundH); moundM.position.y = S.moundH / 2;
       if (!S.moundFoes) { S.moundFoes = []; for (let k = 0; k < 8; k++) { const f = foeNew(MOUND_X - 7 + k * 2, 30 - (k % 3) * 2); if (f) { f.k = k; S.moundFoes.push(f); } } }
       for (const f of S.moundFoes) if (f.on && f.st !== 'fall') { const c = (S.t * 0.16 + f.k / 8) % 1, up = c < 0.5 ? c * 2 : 2 - c * 2; f.x = MOUND_X - 6 + f.k * 1.6; f.z = lerp(22, MOUND_Z - 2, up); f.y = up > 0.8 ? S.moundH * (up - 0.8) * 5 * 0.9 : 0; f.dir = c < 0.5 ? Math.PI / 2 : -Math.PI / 2; f.moving = true; }
-      if (S.moundH > wallTopAt()) { S.overT += dt; say('흙산이 성벽보다 높아졌다! — 통나무로 울짱을 더 올리자', 'over', 3); if (S.overT > 9) { S.overT = 0; hurt(1, '흙산 위에서 화살이 쏟아진다!'); } } else S.overT = Math.max(0, S.overT - dt);
+      if (S.moundH > wallTopAt()) { S.overT += dt; say('흙산이 성벽보다 높아졌다! — 통나무로 울짱을 더 올리자', 'over', 3); if (S.overT > 9) { S.overT = 0; hurt(1, '흙산 위에서 화살이 쏟아진다!', 'mound'); } } else S.overT = Math.max(0, S.overT - dt);
       if (S.at > T3_RAIN) { S.rainK = Math.min(1, S.rainK + dt * 0.25); if (!wx.m.visible) { wx.m.visible = true; wx.m.material.size = 0.2; wx.m.material.color.set(0xcfe0ff); SFX.thunder(); say('큰비가 온다…', null, 2.4); } }
       if (S.at > T3_FALL) collapse(); }
     else { /* 큰 순간: 무너진 흙산으로 달려 나간다 */
@@ -292,7 +300,7 @@ function update(dt) {
       for (const f of S.moundFoes || []) if (f.on && f.st !== 'fall') { f.moving = false; if (dist(f.x, f.z, S.px, S.pz) < 3.4 || guards.some((g) => dist(f.x, f.z, g.x, g.z) < 2.2)) { foeFall(f); SFX.volley(); } }
       const top = dist(S.px, S.pz, MOUND_X, MOUND_Z + 0.5) < 2.6;
       if (top && !S.moving) { S.plantT += dt; if (S.plantT > 2.2) { S.flagUp = true; flagM.visible = true; flagM.position.set(MOUND_X, S.moundH, MOUND_Z); ring(MOUND_X, MOUND_Z, 8, 0xffcf4d); say('흙산 꼭대기에 깃발을 꽂았다!', null, 3); hud(); finish(true); } } else S.plantT = 0;
-      if (S.assaultT > 22) { S.assaultT = 16; hurt(1, '머뭇거리는 사이 적이 흙산으로 몰려온다 — 꼭대기로!'); } }
+      if (S.assaultT > 22) { S.assaultT = 16; hurt(1, '머뭇거리는 사이 적이 흙산으로 몰려온다 — 꼭대기로!', 'slow'); } }
   }
 
   /* ── 나 ── */
@@ -307,7 +315,7 @@ function update(dt) {
   /* 가만히 서서: 볏가리 들기 · 통나무 들기 · 울짱 세우기 */
   let job = null, need = 1, jb = null;
   if (S.act === 1) { if (!S.carry) { jb = stacks.find((s) => s.st === 'field' && dist(S.px, S.pz, s.x, s.z) < 2.4); if (jb) { job = 'stack'; need = 0.6; } }
-    if (S.carry === 'stack' && dist(S.px, S.pz, TAKE[0], TAKE[1]) < 2.6) { S.carry = null; S.got++; SFX.drop(); ring(TAKE[0], TAKE[1], 3, 0xffcf4d); say(`볏가리를 들였다 — 성 위의 활이 더 자주 쏜다 (${S.got})`, null, 1.8); hud(); } }
+    if (S.carry === 'stack' && dist(S.px, S.pz, TAKE[0], TAKE[1]) < 2.6) { S.carry = null; S.got++; SFX.drop(); ring(TAKE[0], TAKE[1], 3, 0xffcf4d); say(`볏가리를 들였다 — 적의 군량은 줄고, 성 위의 활은 더 자주 쏜다 (${S.got})`, null, 2); hud(); } }
   else if (onWall()) {
     for (const bx of BRAZ) if (Math.abs(S.px - bx) < 1.5 && S.fireT < 8 && S.carry !== 'log') { S.fireT = 16; SFX.fire(); say('화살에 불을 붙였다 — 성문 위에서 ' + (ctl.isTouch ? '「쏘기」' : '스페이스'), 'fire1', 2.6); hud(); }
     if (!S.carry) for (const lx of LOGS) if (Math.abs(S.px - lx) < 1.6) { job = 'log'; need = 0.5; }
