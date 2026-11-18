@@ -9,7 +9,7 @@ import { loadPropAssets, makeItem, restQuat, pivotForRest, makeHand, cloneOwn, S
 import { createFxBridge } from './fxbridge.js';
 import { createCards } from './cards.js';
 import { createNote } from './note.js';
-import { makeStrike, wrapDeg, followK, lostAction, inZone, BODY_ZONE, LOST_ASK_MS, GRAB_RADIUS, clamp } from './hands.js';
+import { makeStrike, wrapDeg, followK, lostAction, inZone, BODY_ZONE, WEAR_LOST_Y, LOST_ASK_MS, GRAB_RADIUS, clamp } from './hands.js';
 
 const DEG = Math.PI / 180, G = 9.8;
 
@@ -19,6 +19,7 @@ const DEG = Math.PI / 180, G = 9.8;
 //    · 자석은 성공 쪽으로만 끈다(맨손을 질소 쪽으로 끄는 일은 없다).
 export const ASSIST = {
   grab: .11,            // 집기: 손에서 이 반경(화면) 안의 가장 가까운 기구가 밝아지고, 쥐면 잡힌다
+  camGrab: 1.4,         // 카메라 손은 집기 반경을 이 배로(손 위치가 떨리고 깊이를 모르니 더 넉넉히)
   grabKeep: 1.4,        // 밝아진 기구는 다른 기구가 이 배 더 가까워야 바뀐다(두 기구 사이에서 깜빡이지 않게)
   grabLate: .35,        // 손을 먼저 쥐고 다가와도 이 시간(s) 안에 기구가 반경에 들면 잡는다
   releaseCam: .14,      // 카메라 손: 손이 이 시간(s) 넘게 펴져 있어야 놓는다(쥔 손 인식이 한두 장 끊겨도 안 떨어뜨림)
@@ -340,6 +341,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     const H = input.hands[i], st = hs[i];
     if (st.held) { const it = st.held;
       if (!H.present && H.src === 'cam') {           // 손을 놓침 — 0.4초 머묾 → 제자리로 사뿐히. 깨지지 않는다.
+        if (it.role === 'wear' && H.y >= WEAR_LOST_Y) { st.lostAt = null; release(it, i, { ...H, x: Math.min(.79, Math.max(.21, H.x)), y: .9 }); return; }   /* 장비를 들고 내 쪽(화면 아래)으로 당기다 카메라 밖으로 빠짐 = 쓰기 */
         if (st.lostAt == null) st.lostAt = now; stopPour(st); it.angle *= Math.max(0, 1 - dt * 8);
         if (lostAction(now - st.lostAt) === 'return') { st.held = null; it.held = null; ring.visible = false; st.lostAt = null; send('drop', it.id, 0, true); if (it.clamp) { const sp = it.clamp; unclampSpec(sp); if (sp.loc !== 'bowl') { goHome(sp); send('place', sp.id, sp.home.slot); } } goHome(it); send('place', it.id, it.home.slot); }
         return; }
@@ -351,11 +353,11 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     if (!H.present) { st.prevGrab = false; st.blockGrab = false; st.grabT = 0; return; }
     if (!H.grab) { st.blockGrab = false; st.grabT = 0; } else st.grabT = (st.grabT || 0) + dt;
     // 집을 수 있는 것 중 가장 가까운 것(ASSIST.grab). 밝아진 것은 다른 것이 grabKeep 배 더 가까워야 바뀐다.
-    let best = null, bd = ASSIST.grab, keepD = 9;
+    const gR = ASSIST.grab * (H.src === 'cam' ? ASSIST.camGrab : 1); let best = null, bd = gR, keepD = 9;
     for (const it of items.values()) { if (!visible(it) || it.held != null || it.clampedBy || it.fall || it.loc === 'fall' || (it.anim && it.anim.t < .6) || it.scale < .5) continue;
       const gp = (it === bowl && B.on && B.ln2 > 0) ? _a.set(B.c.x, B.rim - .01, B.c.z + bowlEx.rTop) : it.root.position;   /* 질소가 든 그릇은 앞 테두리를 쥔다(가운데는 질소 속) */
       stage.projectTo(gp, _s); const d = sdist(H, _s); if (it === prevHover) keepD = d; if (d < bd) { bd = d; best = it; } }
-    if (prevHover && keepD < ASSIST.grab * 1.2 && best !== prevHover && bd * ASSIST.grabKeep > keepD) best = prevHover;
+    if (prevHover && keepD < gR * 1.2 && best !== prevHover && bd * ASSIST.grabKeep > keepD) best = prevHover;
     st.hover = best;
     const fresh = H.grab && !st.prevGrab, late = H.grab && st.grabT < ASSIST.grabLate && !st.lateTried;
     if (fresh) st.lateTried = false;

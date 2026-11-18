@@ -31,7 +31,7 @@ async function start(mode){
   // 그림 판 놀이(진짜 기구 + 실험 논리): 방이 올라왔고 ?grey=1 이 아니면. 못 올리면 회색 연습판으로 간다.
   let play = null;
   if (stage.pictured && !Q.has('grey')) {
-    try { const { createPlay } = await import('./core/play.js?v=2');
+    try { const { createPlay } = await import('./core/play.js?v=3');
       play = await createPlay({ stage, input, audio, mode, Q, els: { hud: $('hud'), note: $('note'), bodySpot: $('bodySpot'), goggle: $('goggle'), askHands: on => $('camBox').classList.toggle('big', !!on) } });
     } catch (e) { console.error('[lab] 그림 판 놀이를 못 올림 — 회색 연습판으로', e); play = null; }
   }

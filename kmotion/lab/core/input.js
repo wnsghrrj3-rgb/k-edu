@@ -6,6 +6,10 @@ const REACH = 0.70;   // 카메라에 잡힌 손 영역의 가운데 70% 를 화
 
 function blankHand(id){ return { id, present: false, x: .5, y: .6, grab: false, dir: 0, tiltIn: 0, lastSeen: -1e9, src: null }; }
 const reach = r => Math.min(1, Math.max(0, (r - (1 - REACH) / 2) / REACH));
+// 세로는 위아래가 다르다: 손을 카메라 화면 아래 끝까지 내리면 손목·손바닥이 먼저 화면 밖으로 빠져 인식이 끊긴다
+// → 카메라 세로 12%~72% 를 화면 위~아래로 쓴다(가슴 높이쯤에서 화면 맨 아래 「내 몸」 자리에 닿음)
+const REACH_Y0 = 0.12, REACH_Y1 = 0.72;
+const reachY = r => Math.min(1, Math.max(0, (r - REACH_Y0) / (REACH_Y1 - REACH_Y0)));
 
 export function createInput({ mode, el, camBox, camStatus, video, camCanvas }){
   const hands = [blankHand(0), blankHand(1)];
@@ -17,16 +21,21 @@ export function createInput({ mode, el, camBox, camStatus, video, camCanvas }){
     // 엔진의 작은 「📷 카메라」 단추는 끄고(카메라 창이 작아 안 보임) 과학실 도구 줄의 카메라 고르기 창을 쓴다
     const km = api.km = window.KMotion.create({ video, canvas: camCanvas, modes: ['hands'], numHands: 2, activity: 'lab', rangeButton: false });
     km.onStatus = s => { camStatus.textContent = s || '카메라 연결됨'; };
-    const grabbed = [false, false];
+    const grabbed = [false, false], held = [false, false];
+    // 쥐기 판정(너그럽게): 엔진이 주먹·집기로 읽었거나, 손가락을 반쯤만 오므려도(curl) 쥔 것. 놓기는 손을 확실히 폈을 때만.
+    // 아이 손은 주먹이 덜 쥐어지고, 쥔 채 옮기다 조금 풀리기 쉽다 → 사이 구간에서는 지금 상태를 유지(오르내림 막음)
+    const GRIP_ON = { curl: .74, pinch: .32 }, GRIP_OFF = { curl: .9, fingers: 4 };
     km.on('hand:grab', e => { if (e.hand < 2) grabbed[e.hand] = true; });
     km.on('hand:release', e => { if (e.hand < 2) grabbed[e.hand] = false; });
     km.onFrame = f => {
       km.drawCamera(); f.hands.forEach(h => h && km.drawSkeleton(h, km.HAND_BONES, 'rgba(120,220,255,.9)', 3));
       const seen = [false, false];
       for (const a of (f.actions && f.actions.hands) || []) { if (a.hand > 1) continue; const H = hands[a.hand];
-        const p = a.pinched ? a.pinchPt : { x: (a.center.x + a.pinchPt.x) / 2, y: (a.center.y + a.pinchPt.y) / 2 };
-        H.x = reach(p.x / f.W); H.y = reach(p.y / f.H); H.dir = a.dir; H.grab = grabbed[a.hand]; H.present = true; H.lastSeen = performance.now(); H.src = 'cam'; seen[a.hand] = true; }
-      hands.forEach((H, i) => { if (!seen[i]) { H.present = false; H.grab = false; grabbed[i] = false; } });
+        const p = { x: (a.center.x + a.pinchPt.x) / 2, y: (a.center.y + a.pinchPt.y) / 2 };   /* 쥐든 펴든 같은 점 → 쥐는 순간 손이 튀지 않게 */
+        const k = a.hand, closed = grabbed[k] || a.curl < GRIP_ON.curl || a.pinch < GRIP_ON.pinch, open = !grabbed[k] && (a.pose === 'open' || (a.fingersUp >= GRIP_OFF.fingers && a.curl > GRIP_OFF.curl));
+        if (!held[k] && closed) held[k] = true; else if (held[k] && open) held[k] = false;
+        H.x = reach(p.x / f.W); H.y = reachY(p.y / f.H); H.dir = a.dir; H.grab = held[k]; H.present = true; H.lastSeen = performance.now(); H.src = 'cam'; seen[a.hand] = true; }
+      hands.forEach((H, i) => { if (!seen[i]) { H.present = false; H.grab = false; grabbed[i] = false; held[i] = false; } });
     };
     const boot = () => km.start().then(() => { api.camOk = true; api.camError = null; api.onReady && api.onReady(); }).catch(e => { api.camOk = false; api.camError = e.message; camStatus.textContent = e.message; api.onError && api.onError(e); throw e; });
     boot().catch(() => {});
