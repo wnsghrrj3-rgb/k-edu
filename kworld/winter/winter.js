@@ -4,7 +4,7 @@
    조여 오는 것: 철(잎 색·하늘, 끝에 첫눈) · 멧돼지(밭을 파헤침) · 비(덮지 않으면 널어 둔 이삭이 썩음) · 새 떼(널어 둔 이삭을 쪼아 먹음).
    좌표: x 동쪽(+), z 남쪽(+). 강은 남쪽(z 52~), 밭은 동쪽, 숲은 북쪽·동쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, box, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat, missions } from '../scene/kit.js?v=4';
+import { $, clamp, lerp, dist, rng, stage, sunLight, box, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'winter');   /* 블렌더로 만든 모델 — winter = 이 장면에만 쓰는 것(움집·나무·조·토기·건조대·갈판·강가 살림·개·멧돼지·새 …, tools/blender/make_winter.py) */
 
 const W = 80, H = 60;
@@ -451,9 +451,9 @@ function update(dt) {
   /* 나 */
   let { ix, iz, back } = ctl.read(dt);
   const il = Math.hypot(ix, iz); S.moving = il > 0.15; S.running = S.moving && ctl.running();
-  if (S.moving) { ix /= Math.max(1, il); iz /= Math.max(1, il); const sp = (S.running ? 4.7 : 3.0) * (back ? 0.6 : 1) * (S.carry.length >= 3 ? 0.85 : 1); const [nx, nz] = collideRects(SOLID, S.px + ix * sp * dt, S.pz + iz * sp * dt, 0.42); S.px = clamp(nx, BX[0], BX[1]); S.pz = clamp(nz, BZ[0], BZ[1]); if (S.view !== 2) S.pdir = Math.atan2(iz, ix);
+  if (S.moving) { ix /= Math.max(1, il); iz /= Math.max(1, il); const sp = (S.running ? 6.2 : 3.0) * (back ? 0.6 : 1) * (S.carry.length >= 3 ? 0.85 : 1);   /* 뛰기 4.7 → 6.2(11-18 준호 「뛰는 기능 있어야」 — 티 나게) */ const [nx, nz] = collideRects(SOLID, S.px + ix * sp * dt, S.pz + iz * sp * dt, 0.42); S.px = clamp(nx, BX[0], BX[1]); S.pz = clamp(nz, BZ[0], BZ[1]); if (S.view !== 2) S.pdir = Math.atan2(iz, ix);
     S.stepT -= dt * (S.running ? 2 : 1); if (S.stepT <= 0) { S.stepT = 0.42; noise(0.05, S.running ? 0.12 : 0.05, 300); } }
-  pMesh.position.set(S.px, 0, S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; walkAnim(pMesh, S.t * (S.running ? 16 : 10), S.moving);
+  pMesh.position.set(S.px, 0, S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; walkAnim(pMesh, S.t * (S.running ? 19 : 10), S.moving);
   pRing.position.set(S.px, 0.11, S.pz);
   carryG.position.set(S.px - Math.cos(S.pdir) * 0.4, 0, S.pz - Math.sin(S.pdir) * 0.4); carryG.rotation.y = -S.pdir + Math.PI / 2; carryMeshes.forEach((m, i) => m.position.set((i - 1) * 0.36, 1.25 + (i % 2) * 0.1, -0.1));
 

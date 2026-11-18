@@ -5,7 +5,7 @@
    실제 인물·지명은 넣지 않는다(「어느 읍내」). 끝 화면에 진압은 그리지 않는다.
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 예배당, 북쪽 주재소, 남동쪽 장터. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=4';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'build', 'props', 'manse');   /* 블렌더로 만든 모델(사람·자연·집·소품 + 이 장면만의 것: tools/blender/make_manse.py → manse.glb) */
 
 const W = 70, H = 50, BX = [1, 69], BZ = [1, 49], DAWN = 210;

@@ -4,7 +4,7 @@
    무엇이 모자란지는 깃발 위 그림에 늘 뜬다(🏹 남은 화살 · 🔥 → 💧 · 🧱). 한 번에 하나씩 들고 뛰어 나른다.
    좌표: x 동쪽(+), z 남쪽(+). 북쪽 성벽(z=10) 너머에 적. 남쪽 문 밖 들에 남은 사람들. 첫 판은 고구려 산성(나라는 나중에 고를 자리만 둔다). */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=4';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'build', 'props', 'fort');   /* 블렌더로 만든 모델(사람·자연·집·소품 + 이 장면만의 것: tools/blender/make_fort.py → fort.glb) */
 
 const W = 80, H = 66, BX = [10, 70], BZ = [12, 62], NIGHT = 240;

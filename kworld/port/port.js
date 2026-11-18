@@ -5,7 +5,7 @@
    청자(언덕 가마)는 걸어서 날라야 한다 — 들고 뛰면 깨진다. 아라비아 상인 곁에 빈손으로 서 있으면 「고려」를 알려 준다. 은병(10닢)으로 큰 짐(12)을 사면 두 칸.
    좌표: x 동쪽(+), z 남쪽(+). 강은 북쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=4';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'build', 'props', 'port');   /* 블렌더로 만든 모델(사람·자연·집·소품 + 이 장면만의 것: tools/blender/make_port.py → port.glb) */
 
 const W = 84, H = 60, BX = [4, 81], BZ = [12.2, 56], TIDE = 260;

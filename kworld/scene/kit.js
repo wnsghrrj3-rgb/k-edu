@@ -395,6 +395,7 @@ const MIS_CSS = `#mis{position:fixed;left:14px;top:60px;width:min(330px,calc(100
 #marr{position:fixed;width:0;height:0;pointer-events:none;display:none}#marr b{position:absolute;left:-19px;top:-19px;width:38px;height:38px;border-radius:50%;background:#ffcf4d;box-shadow:0 3px 0 rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#3a2a00;font-weight:900}
 #mpop{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);background:#3fb46a;color:#fff;font-weight:900;font-size:28px;border-radius:20px;padding:14px 28px;box-shadow:0 6px 0 #23824a;pointer-events:none;opacity:0;transition:all .3s cubic-bezier(.3,1.6,.5,1);text-align:center;white-space:nowrap}
 #mpop small{display:block;font-size:16px;font-weight:800;opacity:.92;margin-top:3px}#mpop.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#runkey{position:fixed;left:14px;bottom:34px;background:rgba(22,44,78,.8);color:#fff;border-radius:10px;padding:5px 10px;font-size:13px;font-weight:800;pointer-events:none;transition:all .15s}#runkey kbd{display:inline-block;background:#fff;color:#1e2436;border-radius:5px;padding:0 6px;font-family:inherit;margin-right:4px}#runkey.on{background:#ffcf4d;color:#3a2a00;transform:scale(1.06)}.touch #runkey{display:none}
 @media (max-width:640px){#mis .mt{font-size:16px}#mis .mk{font-size:12.5px}#mpop{font-size:22px;top:52%}}`;
 export function missions(scene, cam, list, o = {}) {
   const isTouch = o.isTouch || (() => document.body.classList.contains('touch')), gy = o.groundY || (() => 0);
@@ -403,6 +404,9 @@ export function missions(scene, cam, list, o = {}) {
   const card = mk('div', 'mis'), tag = mk('div', null, 'mtag'), arr = mk('div', 'marr'), pop = mk('div', 'mpop');
   card.innerHTML = '<div class="mh"></div><div class="mt"></div><div class="mk"></div><div class="mp"><b></b></div>'; arr.innerHTML = '<b>➜</b>';
   const [hEl, tEl, kEl, pEl] = card.children, todo = document.getElementById('todo');
+  /* 뛰기 알림(11-18 준호 「뛰는 기능 있어야 할 거 같은데」 — 있었지만 첫 화면에만 적혀 있었다): 왼쪽 아래에 늘, 누르는 동안 켜진다 */
+  const rk = mk('div', 'runkey'); rk.innerHTML = '<kbd>Shift</kbd>누르고 있으면 뛰기';
+  addEventListener('keydown', (e) => { if (e.key === 'Shift') rk.classList.add('on'); }); addEventListener('keyup', (e) => { if (e.key === 'Shift') rk.classList.remove('on'); }); addEventListener('blur', () => rk.classList.remove('on'));
   /* 빛기둥 + 땅 고리(더하기 섞기 — 밤 장면에서도 보인다) */
   const ptex = canvasTex(8, 128, (g) => { const r = g.createLinearGradient(0, 0, 0, 128); r.addColorStop(0, 'rgba(255,230,140,0)'); r.addColorStop(1, 'rgba(255,220,120,.9)'); g.fillStyle = r; g.fillRect(0, 0, 8, 128); });
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 10, 16, 1, true), new THREE.MeshBasicMaterial({ map: ptex, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
@@ -425,7 +429,7 @@ export function missions(scene, cam, list, o = {}) {
     if (o.sound !== false) { tone(660, 660, 0.12, 'triangle', 0.12); tone(880, 880, 0.12, 'triangle', 0.12, 0.11); tone(1320, 1320, 0.22, 'triangle', 0.1, 0.22); } }
   function update(dt, active = true) {
     t += dt;
-    card.style.display = active || popT > 0 ? '' : 'none';
+    card.style.display = active || popT > 0 ? '' : 'none'; rk.style.display = active ? '' : 'none';
     if (active) { while (idx < list.length && list[idx].done()) { finish(idx); idx++; }
       /* 앞 미션을 건너뛰고 뒤 미션을 해 버렸으면 그 뒤로 넘어간다 — 지나간 일을 붙들고 있지 않게 */
       for (let j = list.length - 1; j > idx; j--) if (list[j].done()) { for (let i = idx; i < j; i++) ok[i] = true; finish(j); idx = j + 1; while (idx < list.length && list[idx].done()) { ok[idx] = true; idx++; } break; } }

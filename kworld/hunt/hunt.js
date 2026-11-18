@@ -5,7 +5,7 @@
    v2(2026-11-17 넓히기): 판 96×72 → 200×150, 세 막 — ① 숲 가장자리에서 발자국 따라 떼 찾기 ② 넓은 들 몰기(개울·징검돌 여울, 늑대) ③ 좁아지는 골짜기(바위 줄 틈).
    큰 순간 = 떼의 폭주(들 한가운데서 내달림 — 곁에서 같이 뛰면 반대쪽으로 꺾인다). 판 밖 세 겹(강 건너 들 · 언덕과 먼 떼 · 산 능선). */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, losRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, missions } from '../scene/kit.js?v=4';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, losRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'props', 'hunt');   /* 블렌더로 만든 모델 — hunt = 이 장면에만 쓰는 것(사슴·늑대·막집·벼랑·불꽃 …, tools/blender/make_hunt.py) */
 
 const W = 200, H = 150;
@@ -621,24 +621,34 @@ const PRINT0 = [34, 122], GAP = [163.5, 43.6], FORDC = [creekX((FORD[0] + FORD[1
 let misTrail = false, misFound = false, misWall = false, misCross = false, misNear = false;
 const standing = () => comps.filter((c) => c.state === 'stand').length;
 /* 동료를 세울 만한 자리: 떼에서 가는 쪽(여울 · 어귀)으로 조금 앞, 옆으로 비켜서 */
-function wallSpot() { const [gx, gz] = misCross ? MOUTH : FORDC, l = dist(S.hx, S.hz, gx, gz) || 1, ux = (gx - S.hx) / l, uz = (gz - S.hz) / l, s = (S.px - S.hx) * -uz + (S.pz - S.hz) * ux > 0 ? -1 : 1;
+/* 11-18 준호 「빛기둥이 계속 위치가 바뀌어서 할 수가 없다」 → 자리를 한 번 정하면 그대로 둔다(떼가 12m 넘게 옮겨 갔을 때만 다시). 첫 동료가 서면 둘째 자리는 떼 반대편 */
+let wallFix = null, wallHerd = null, wallSide = 1, wallN = -1, wallStay = 0, wallSentAt = -99;
+function wallCalc() { const [gx, gz] = misCross ? MOUTH : FORDC, l = dist(S.hx, S.hz, gx, gz) || 1, ux = (gx - S.hx) / l, uz = (gz - S.hz) / l, s = wallSide;
   return collideRects(SOLID, clamp(S.hx + ux * 7 - uz * 5.5 * s, BX[0] + 1, BX[1] - 1), clamp(S.hz + uz * 7 + ux * 5.5 * s, BZ[0] + 1, BZ[1] - 1), 1.0); } /* 바위 속에는 세우지 않는다(누를 때와 같은 셈) */
+function wallSpot() { const n = standing();
+  if (!wallFix) { const [gx, gz] = misCross ? MOUTH : FORDC, l = dist(S.hx, S.hz, gx, gz) || 1; wallSide = (S.px - S.hx) * -((gz - S.hz) / l) + (S.pz - S.hz) * ((gx - S.hx) / l) > 0 ? -1 : 1; }
+  if (wallFix && n !== wallN && n > wallN) wallSide = -wallSide;   /* 한 명이 서면 다음 자리는 반대편 */
+  if (!wallFix || n !== wallN || dist(S.hx, S.hz, wallHerd[0], wallHerd[1]) > 12) { wallFix = wallCalc(); wallHerd = [S.hx, S.hz]; }
+  wallN = n; return wallFix; }
 const mis = missions(scene, cam, [
   { t: '발자국 찾기', how: (tc) => `${tc ? '왼쪽 동그라미' : '<kbd>방향키</kbd>'}로 빛기둥까지 걷기`, done: () => misTrail, at: () => PRINT0, tag: '👣 발자국이 여기서 시작' },
   { t: '발자국 따라 사슴 떼 찾기', how: '땅에 난 발자국 줄을 따라 걷기 · 떼가 보이면 뛰지 말고 천천히', done: () => misFound },
-  { t: '동료 둘을 떼 옆에 세우기', how: (tc) => `${tc ? '땅을 톡 누르면' : '땅을 <kbd>클릭</kbd>하면'} 동료가 가서 선다 — 한 번 더 누르면 다른 동료`, n: () => [misWall ? 2 : standing(), 2], done: () => misWall,
-    at: wallSpot, tag: (() => (ctl.isTouch ? '👆 여기를 눌러 동료 세우기' : '🖱 여기를 눌러 동료 세우기')) },
+  { t: '동료 둘을 떼 옆에 세우기', how: (tc) => `${tc ? '땅을 톡 누르면' : '땅을 <kbd>클릭</kbd>하면'} 동료가 가서 선다 · 빛기둥 안에 잠깐 서 있어도 동료가 온다`, n: () => [misWall ? 2 : standing(), 2], done: () => misWall,
+    at: wallSpot, tag: (() => (wallStay > 0 ? '🙋 동료를 부르는 중…' : ctl.isTouch ? '👆 여기를 톡 — 또는 빛 안에 서 있기' : '🖱 여기를 클릭 — 또는 빛 안에 서 있기')) },
   { t: '떼를 개울 건너편으로', how: '떼 뒤에서 걸어서 밀기 · 물 말고 징검돌 여울(빛기둥)로 건너게', done: () => misCross, at: () => FORDC, tag: '🪨 징검돌 여울 — 떼를 이리로' },
   { t: '떼를 골짜기 어귀 앞까지', how: (tc) => `떼가 내달리면 곁에서 ${tc ? '「뛰기」' : '<kbd>Shift</kbd>'}로 같이 뛰어 꺾기 · 바위 줄 틈(빛기둥)은 동료로 막기`, done: () => misNear, at: () => GAP, tag: '🧍 틈 — 동료를 세워 막기' },
   { t: '횃불 사이로 사슴 몰아넣기', how: '어귀 양옆에 동료를 세우고 떼 뒤에서 천천히 밀기', n: () => [S.inside, NEED], done: () => S.inside >= NEED || S.mode === 'win' },
 ], { allText: '🎉 떼가 골짜기로 들어갔다!' });
 function misWatch() { if (S.mode !== 'play') return;
+  /* 빛기둥 안에 0.7초 서 있으면 동료를 그 자리로(땅 누르기와 같은 일 — 돌림 고리에서만, 시험용 update 는 그대로) */
+  const sent = S.t - wallSentAt < 6 && standing() === wallN;   /* 방금 보낸 동료가 아직 가는 중이면 기다린다 */
+  if (mis.idx === 2 && wallFix && !misWall && !sent && dist(S.px, S.pz, wallFix[0], wallFix[1]) < 2.4 && !S.moving) { wallStay += 1 / 30; if (wallStay > 0.7) { wallStay = 0; wallSentAt = S.t; pressGround(wallFix[0], wallFix[1]); } } else wallStay = 0;
   if (dist(S.px, S.pz, PRINT0[0], PRINT0[1]) < 4) misTrail = true;
   if (dist(S.px, S.pz, S.hx, S.hz) < 30) misFound = misTrail = true; /* 발자국 끝(떼)에 먼저 닿아도 첫 미션은 한 셈 */
   if (standing() >= 2) misWall = true;
   if (S.hx > creekX(S.hz) + 3.2) misCross = true;
   if (dist(S.hx, S.hz, MOUTH[0], MOUTH[1]) < 24 && S.hx < 178.4) misNear = true; }
-function misClear() { mis.reset(); misTrail = misFound = misWall = misCross = misNear = false; }
+function misClear() { mis.reset(); misTrail = misFound = misWall = misCross = misNear = false; wallFix = null; wallN = -1; wallStay = 0; wallSentAt = -99; }
 /* 자리 꼬리표(처음 하는 일이 무엇인지 그 자리에 — 보이기만 한다) */
 const tagEls = {}, tv = new THREE.Vector3();
 function showTag(k, html, on, x, y, z) { let e = tagEls[k]; if (!e) { e = tagEls[k] = document.createElement('div'); e.className = 'tag'; document.body.appendChild(e); }
@@ -666,7 +676,7 @@ pMesh.position.set(S.px, 0, S.pz); pRing.position.set(S.px, 0.11, S.pz);
 for (const c of comps) { c.mesh.position.set(c.x, 0, c.z); }
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; SFX.howl(); };
 runLoop((dt) => { update(dt); misWatch(); mis.update(dt, S.mode === 'play' || (S.mode === 'win' && S.endT < 2.4)); }, view, () => renderer.render(scene, cam));
-window.__scene = { S, deer, comps, wolves, update, keys, ctl,
+window.__scene = { S, deer, comps, wolves, update, keys, ctl, wallFix: () => wallFix, misIdx: () => mis.idx,
   go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   press: pressGround, shout, strike, smells,

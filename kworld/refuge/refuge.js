@@ -6,7 +6,7 @@
    그림(2026-11-17): 상자 대신 블렌더로 만든 모델 — 공통 묶음(people · nature · build · props)과 이 장면 묶음(refuge.glb ← tools/blender/make_refuge.py, 이름이 rf_ 로 시작). 놀이(규칙 · 수치 · 막는 네모 · 난수 차례)는 그대로다.
    좌표: x 동쪽(+), z 남쪽(+) — 화면 아래(z 큰 쪽)에서 위(z 작은 쪽)로 걷는다. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, glowSprite, people, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, backdrop, groundTex, loadArt, ART, art, artInst, artGeo, artMat, missions } from '../scene/kit.js?v=4';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, glowSprite, people, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, backdrop, groundTex, loadArt, ART, art, artInst, artGeo, artMat, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'build', 'props', 'refuge');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 80, H = 320, START = [41, 316], RIVER = [72, 90], FORD = [12.5, 19.5], ICE = [56.5, 69.5], DOCK = [40, 92.6], DOCK_S = [40, 69.4], CAP = 4.5, BACK0 = 370, BACKV = 2.9;
