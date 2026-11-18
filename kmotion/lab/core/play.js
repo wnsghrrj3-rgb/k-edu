@@ -21,6 +21,9 @@ export const ASSIST = {
   grab: .11,            // 집기: 손에서 이 반경(화면) 안의 가장 가까운 기구가 밝아지고, 쥐면 잡힌다
   camGrab: 1.2,         // 카메라 손은 집기 반경을 이 배로(손 위치가 떨리고 깊이를 모르니 조금 넉넉히 — 1.4 는 지나가다 엉뚱한 것을 집어 「예민」했음)
   wearDwell: .3,        // 장비(보안면·장갑)를 들고 「내 몸」 자리에 이 시간(s) 머물면 손을 펴지 않아도 쓴다
+  wearPull: .8,         // 카메라 손: 장비를 쥔 손이 쥘 때 크기의 이 배 아래로 작아지면(= 내 몸 쪽으로 당김) 쓴다
+  wearPullT: .15,       // …그 상태가 이 시간(s) 이어지면
+  handDipFrom: .12,     // 장갑 낀 손으로 든 시료: 손이 그릇 테두리 위 이만큼(m) 아래로 오면 액면 아래로 끌어 준다(손을 이보다 들면 꺼냄)
   grabKeep: 1.4,        // 밝아진 기구는 다른 기구가 이 배 더 가까워야 바뀐다(두 기구 사이에서 깜빡이지 않게)
   grabLate: .35,        // 손을 먼저 쥐고 다가와도 이 시간(s) 안에 기구가 반경에 들면 잡는다
   releaseCam: .14,      // 카메라 손: 손이 이 시간(s) 넘게 펴져 있어야 놓는다(쥔 손 인식이 한두 장 끊겨도 안 떨어뜨림)
@@ -87,6 +90,8 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
   // ── 임시 그릇(매 프레임 다시 씀)
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _t = new THREE.Vector3(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
   const _s = { x: 0, y: 0, z: 0 }, _s2 = { x: 0, y: 0, z: 0 }, _low = { minY: 0, maxY: 0, cx: 0, cy: 0, cz: 0, rx: 0 }, _low2 = { minY: 0, maxY: 0, cx: 0, cy: 0, cz: 0, rx: 0 };
+  const QFLIP = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI);
+  const gloved = () => !!(V && V.worn && V.worn.gloves);
   const AXZ = new THREE.Vector3(0, 0, 1), UP = new THREE.Vector3(0, 1, 0), DOWN = new THREE.Vector3(0, -1, 0), QI = new THREE.Quaternion();
   const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
   const aspect = () => stage.camera.aspect;
@@ -311,7 +316,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     if (!fx.some(e => e.type === 'grab' && e.id === it.id)) { it.wob = .5; st.blockGrab = true; return; }
     if (it.clampedBy) unclampSpec(it);
     st.held = it; it.held = i; it.loc = 'hand'; freeSlot(it); it.anim = null; it.fall = null; it.detachStays(scene); it.zc = WORK_Z; it.inBowlIdx = 0; it.assist.set(0, 0, 0); it.assistWant.set(0, 0, 0); st.hover = null;
-    st.dir0 = H.dir; st.tiltIn0 = H.tiltIn; st.strike.reset(); st.flowing = false; st.pourAcc = 0; st.pourT = 0; it.angle = 0; }
+    st.dir0 = H.dir; st.tiltIn0 = H.tiltIn; st.size0 = H.size || 0; st.pullT = 0; st.strike.reset(); st.flowing = false; st.pourAcc = 0; st.pourT = 0; it.angle = 0; }
   function stopPour(st){ if (st.flowing || st.pourAcc > 0) { if (st.pourAcc > 0 && st.held) send('pour', st.held.id, st.pourInto, st.pourAcc); } st.flowing = false; st.pourAcc = 0; st.pourT = 0; bridge.pour.setFlow(_t.set(0, 0, 0), UP, 0); audio.pour(0); }
   function release(it, i, H){ const st = hs[i]; stopPour(st); st.held = null; it.held = null; ring.visible = false;
     const spec = it.clamp;
@@ -347,6 +352,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
         if (lostAction(now - st.lostAt) === 'return') { st.held = null; it.held = null; ring.visible = false; st.lostAt = null; send('drop', it.id, 0, true); if (it.clamp) { const sp = it.clamp; unclampSpec(sp); if (sp.loc !== 'bowl') { goHome(sp); send('place', sp.id, sp.home.slot); } } goHome(it); send('place', it.id, it.home.slot); }
         return; }
       st.lostAt = null;
+      if (it.role === 'wear' && H.src === 'cam' && st.size0 > 0 && H.size > 0 && H.size < st.size0 * ASSIST.wearPull) { st.pullT = (st.pullT || 0) + dt; if (st.pullT >= ASSIST.wearPullT) { st.pullT = 0; st.openT = 0; release(it, i, { ...H, x: Math.min(.79, Math.max(.21, H.x)), y: .9 }); return; } } else st.pullT = 0;   /* 장비를 들고 내 몸 쪽으로 당김(카메라에서 손이 작아짐) = 쓰기 */
       if (it.role === 'wear' && inZone(H, BODY_ZONE)) { st.wearT = (st.wearT || 0) + dt; if (st.wearT >= ASSIST.wearDwell) { st.wearT = 0; st.openT = 0; release(it, i, H); return; } } else st.wearT = 0;   /* 「내 몸」에 가져가 잠깐 머물면 쓴다(손을 안 펴도) */
       // 놓기: 카메라 손은 주먹이 releaseCam 초 넘게 풀려야 놓는다(인식이 한두 장 끊겨도 안 떨어뜨림) · 터치·마우스·자동은 바로
       if (!H.grab) { st.openT = (st.openT || 0) + dt; if (H.src !== 'cam' || st.openT >= ASSIST.releaseCam) { st.openT = 0; release(it, i, H); return; } } else st.openT = 0;
@@ -385,7 +391,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     it.root.position.lerp(_t, followK(dt, it.weight));
     // 자세: 쥐면 곧게 선다(붓는 통은 손목만큼 기울어짐)
     if (isPourer(it)) pourStep(it, st, H, dt);
-    else { it.angle = 0; it.root.quaternion.slerp(QI, Math.min(1, dt * 12)); }
+    else { it.angle = 0; it.root.quaternion.slerp(it.kind === 'rose' && gloved() ? QFLIP : QI, Math.min(1, dt * 12)); }   /* 장갑 낀 손으로 든 장미는 줄기를 쥐고 꽃을 아래로(담그기 쉽게) */
     // 상판 밑으로 못 들어감
     lowOf(it, _low); if (overBench(_low.cx, _low.cz) && _low.minY < benchY + .001) it.root.position.y += benchY + .001 - _low.minY;
     if (it.kind === 'tongs') tongsStep(it, dt, now);
@@ -398,7 +404,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
 
   // 기울여 붓기: 손목 각도 1:1 (카메라 = 손목 방향, 터치 = 다른 손가락 위아래 끌기·휠, 자동 = tilt)
   function pourStep(it, st, H, dt){
-    let raw; if (H.src === 'cam') raw = wrapDeg(H.dir - st.dir0); else { raw = H.tiltIn - st.tiltIn0; const o = input.hands[1 - st.idx]; if (o && o.present && o.grab && !hs[1 - st.idx].held && o.dragDy) raw += o.dragDy * 260; }
+    let raw; if (H.src === 'cam') raw = -wrapDeg(H.dir - st.dir0);   /* 손을 시계 방향으로 돌리면 통도 시계 방향으로(11-18 준호 「손 모양과 다르게 기울어져」) */ else { raw = H.tiltIn - st.tiltIn0; const o = input.hands[1 - st.idx]; if (o && o.present && o.grab && !hs[1 - st.idx].held && o.dragDy) raw += o.dragDy * 260; }
     const want = Math.abs(raw) < 8 ? 0 : clamp(raw, -130, 130);
     it.angle += (want - it.angle) * Math.min(1, dt * 12);
     it.root.quaternion.setFromAxisAngle(AXZ, it.angle * DEG);
@@ -467,7 +473,18 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     } else if (!inside || _low.minY > B.surf + ASSIST.dipOut || (spec.dipTipY != null && handTip > spec.dipTipY + ASSIST.liftRaise)) { spec.loc = 'tongs'; spec.liftedHigh = _low.minY <= B.surf + ASSIST.dipOut; spec.setDownArmed = true; send('lift', spec.id, 'tongs'); }   /* 큰 시료(풍선)는 집게를 그릇 위로 높이 들면 꺼낸 것 */
   }
   function pushAbove(holder, spec){ lowOf(spec, _low); const want = B.surf + .014; if (_low.minY < want) { holder.root.position.y += want - _low.minY; if (holder.kind === 'tongs') followClamp(holder, 0); } }
-  function handDipStep(it, now){ if (!B.on || !(B.ln2 > 0)) return; lowOf(it, _low);
+  function handDipStep(it, now){
+    if (!B.on || !(B.ln2 > 0)) { if (it.handDipped) { it.handDipped = false; send('lift', it.id, 'tongs'); } return; } lowOf(it, _low);
+    // 장갑 낀 손(11-18 준호 「장미를 그릇에 놓는 게 너무 어렵다」): 손에 든 채 담그고 꺼낸다 — 실제 시연처럼 줄기를 쥐고 꽃만. 맨손은 아래 옛 길(사고).
+    if (gloved()) { const dh = Math.hypot(_low.cx - B.c.x, _low.cz - B.c.z), handLow = _low.minY - it.assist.y;
+      if (dh < B.surfR * ASSIST.bowlPull && handLow < B.rim + ASSIST.handDipFrom) {   /* 그릇 입구 위: 가운데로, 그리고 액면 아래로 끌어 줌 */
+        it.assistWant.x = clamp(it.assist.x + (B.c.x - _low.cx), -ASSIST.bowlPullMax, ASSIST.bowlPullMax);
+        if (now >= (it.dipBlockUntil || 0)) it.assistWant.y = clamp(it.assist.y + (B.surf - ASSIST.dipPullDepth - _low.minY), -ASSIST.dipPullMax - ASSIST.handDipFrom, 0); }
+      if (!it.handDipped && dh < B.surfR * .95 && _low.minY < B.surf - ASSIST.dipIn) {
+        if (now < (it.dipBlockUntil || 0)) { pushAbove(it, it); return; }
+        const fx = send('dip', it.id, 'tongs'); if (fx.some(e => (e.type === 'dip' || e.type === 'shallow') && e.id === it.id)) it.handDipped = true; else { it.dipBlockUntil = now + ASSIST.dipBlock * 1000; pushAbove(it, it); } }
+      else if (it.handDipped && (_low.minY > B.surf + ASSIST.dipOut || dh > B.surfR)) { it.handDipped = false; send('lift', it.id, 'tongs'); }
+      return; }
     if (Math.hypot(_low.cx - B.c.x, _low.cz - B.c.z) < B.surfR * .9 && _low.minY < B.surf - .012) {
       if (now < it.dipBlockUntil) { pushAbove(it, it); return; }
       const st = hs[it.held], fx = send('dip', it.id, 'hand');

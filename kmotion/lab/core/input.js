@@ -36,7 +36,7 @@ export function createInput({ mode, el, camBox, camStatus, video, camCanvas }){
         const k = a.hand, closedNow = grabbed[k] || a.curl < GRIP_ON.curl || a.pinch < GRIP_ON.pinch, open = !grabbed[k] && (a.pose === 'open' || (a.fingersUp >= GRIP_OFF.fingers && a.curl > GRIP_OFF.curl));
         closeN[k] = closedNow ? closeN[k] + 1 : 0;
         if (!held[k] && (grabbed[k] || closeN[k] >= GRIP_ON.frames)) held[k] = true; else if (held[k] && open) held[k] = false;
-        H.x = reach(p.x / f.W); H.y = reachY(p.y / f.H); H.dir = a.dir; H.grab = held[k]; H.present = true; H.lastSeen = performance.now(); H.src = 'cam'; seen[a.hand] = true; }
+        H.x = reach(p.x / f.W); H.y = reachY(p.y / f.H); H.dir = a.dir; H.size = a.span / f.W; H.grab = held[k]; H.present = true; H.lastSeen = performance.now(); H.src = 'cam'; seen[a.hand] = true; }
       hands.forEach((H, i) => { if (!seen[i]) { H.present = false; H.grab = false; grabbed[i] = false; held[i] = false; closeN[i] = 0; } });
     };
     const boot = () => km.start().then(() => { api.camOk = true; api.camError = null; api.onReady && api.onReady(); }).catch(e => { api.camOk = false; api.camError = e.message; camStatus.textContent = e.message; api.onError && api.onError(e); throw e; });
