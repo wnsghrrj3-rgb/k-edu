@@ -5,8 +5,8 @@
    실제 인물·지명은 넣지 않는다(「어느 읍내」). 끝 화면에 진압은 그리지 않는다.
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 예배당, 북쪽 주재소, 남동쪽 장터. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
-await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, scatter, missions } from '../scene/kit.js?v=4';
+await loadArt('people', 'nature', 'build', 'props', 'manse');   /* 블렌더로 만든 모델(사람·자연·집·소품 + 이 장면만의 것: tools/blender/make_manse.py → manse.glb) */
 
 const W = 70, H = 50, BX = [1, 69], BZ = [1, 49], DAWN = 210;
 const HOUSES = [[22, 12], [34, 20], [55, 14], [63, 30], [28, 45]];
@@ -36,36 +36,102 @@ const { occl, group } = occluders(scene);
 const { person, walkAnim } = people(scene);
 const { ring, update: ringsUpdate } = ringsFx(scene);
 
-/* 땅 · 길 · 집 */
-flat(-40, -40, W + 40, H + 40, 0x4a6a4a, 0);
+/* 땅 · 길 · 집 — 블렌더로 만든 모델(tools/blender/make_manse.py → manse.glb). 꾸밈은 제 난수(drnd)를 쓴다 — 놀이의 rnd() 차례는 그대로 */
+const drnd = rng(19190228);
+const _o = new THREE.Object3D();
+function joinGeo(list) { if (!list.length) return null; let nv = 0, ni = 0; for (const g of list) { nv += g.attributes.position.count; ni += g.index.count; }
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), C = new Float32Array(nv * 3), I = new Uint32Array(ni); let v = 0, i = 0;
+  for (const g of list) { P.set(g.attributes.position.array, v * 3); N.set(g.attributes.normal.array, v * 3); C.set(g.attributes.color.array, v * 3); const ix = g.index.array; for (let k = 0; k < ix.length; k++) I[i + k] = ix[k] + v; v += g.attributes.position.count; i += ix.length; g.dispose(); }
+  const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.BufferAttribute(P, 3)); o.setAttribute('normal', new THREE.BufferAttribute(N, 3)); o.setAttribute('color', new THREE.BufferAttribute(C, 3)); o.setIndex(new THREE.BufferAttribute(I, 1)); return o; }
+/* 모델 여럿을 한 덩이로 굽는다(그리기 한 번). parts = [[이름, x, y, z, 크기 또는 [sx, sy, sz], 돌림y, 색], …]. own 이 참이면 제 재질(비쳐 보이게 할 묶음용) */
+function bake(parts, own = false, shadow = true) { const gs = [[], []];
+  for (const [name, x, y, z, s = 1, ry = 0, tints = {}] of parts) { _o.position.set(x, y, z); _o.rotation.set(0, ry, 0); if (Array.isArray(s)) _o.scale.set(s[0], s[1], s[2]); else _o.scale.setScalar(s); _o.updateMatrix();
+    for (const k of [0, 1]) { const g = artGeo(name, tints, !!k); if (g) gs[k].push(g.clone().applyMatrix4(_o.matrix)); } }
+  const grp = new THREE.Group(), m = new THREE.Mesh(joinGeo(gs[0]) || new THREE.BufferGeometry(), own ? artMat.clone() : artMat); m.castShadow = shadow; m.receiveShadow = true; grp.add(m);
+  const gl = joinGeo(gs[1]); if (gl) grp.add(new THREE.Mesh(gl, own ? artGlowMat.clone() : artGlowMat)); return grp; }
+/* 밤빛에 묻히는 풀·나무는 제 재질로 조금 밝힌다 */
+const litMat = (k) => { const m = artMat.clone(); m.color.setScalar(k); return m; }, plantM = litMat(1.7), grassM = litMat(1); grassM.color.setRGB(1.7, 1.0, 0.45);
+function strew(o, mat) { const n0 = scene.children.length, put = scatter(scene, drnd, o); for (const m of scene.children.slice(n0)) m.material = mat; return put; }
+
+flat(-40, -40, W + 40, H + 40, 0x4e6046, 0);
 flat(0, 0, W, H, 0x8a7a64, 0.02);
-for (let i = 0; i < 80; i++) { const t = box(0.6 + rnd(), 0.08, 0.5 + rnd(), rnd() > 0.5 ? 0x7a6a54 : 0x9a8a72); t.castShadow = false; at(t, 1 + rnd() * 68, 0.05, 1 + rnd() * 48); scene.add(t); }
-function house([x0, z0, x1, z1, h], c = 0xb8a888, roof = 0x4a4a5a) { const w = x1 - x0, d = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, P = [at(box(w, h * 0.7, d, c), cx, h * 0.35, cz)]; const r = box(w + 1, 0.7, d + 1, roof); at(r, cx, h * 0.7 + 0.35, cz); P.push(r); P.push(at(box(1, 1.4, 0.1, 0x3a2a1a), cx, 0.7, z1 + 0.05)); group([x0, z0, x1, z1], P); }
-{ const [x0, z0, x1, z1, h] = SOLID[0]; const P = [at(box(x1 - x0, h * 0.7, z1 - z0, 0xc8b8a0), (x0 + x1) / 2, h * 0.35, (z0 + z1) / 2)]; const s = new THREE.Shape(); s.moveTo(-4.5, 0); s.lineTo(0, 2.6); s.lineTo(4.5, 0); s.closePath(); const r = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: x1 - x0 + 1, bevelEnabled: false }), M(0x5a4a5a)); r.rotation.y = Math.PI / 2; r.position.set(x0 - 0.5, h * 0.7, (z0 + z1) / 2); P.push(r); P.push(at(box(1.6, 3, 1.6, 0xc8b8a0), x0 + 1.6, h * 0.7 + 2.4, 35.5), at(box(0.2, 1.2, 0.2, 0xe8e0d0), x0 + 1.6, h * 0.7 + 4.5, 35.5), at(box(0.7, 0.2, 0.2, 0xe8e0d0), x0 + 1.6, h * 0.7 + 4.7, 35.5)); group([x0, z0, x1, z1], P); }
-house(SOLID[1], 0x8a8a8a, 0x2a2a3a);
-const houses = HOUSES.map(([x, z]) => { house([x - 2.5, z - 2, x + 2.5, z + 2, 2.8], 0xc8b898, 0x4a4a5a); const win = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.08), new THREE.MeshBasicMaterial({ color: 0x1a1a24 })); win.position.set(x + 1.4, 1.3, z + 2.06); scene.add(win); const g = glowSprite(scene, 'rgba(255,214,130,.95)', 'rgba(255,170,60,0)', 3.2); g.position.set(x + 1.4, 1.3, z + 2.3); g.visible = false; return { x, z, win, g, state: 'dark' }; });
-for (const [x, z] of BLOCKS) house([x - 3, z - 2, x + 3, z + 2, 2.8], 0x9a8e7a, 0x3a3a48);
-for (const s of SOLID.filter((s) => s[5] === 'stall')) scene.add(at(box(s[2] - s[0], 0.9, s[3] - s[1], 0x7a6040), (s[0] + s[2]) / 2, 0.45, (s[1] + s[3]) / 2), at(box(s[2] - s[0] + 0.5, 0.1, s[3] - s[1] + 1, 0xb8a888), (s[0] + s[2]) / 2, 2, (s[1] + s[3]) / 2));
-const bellG = new THREE.Group(); bellG.add(at(cyl(0.12, 0.14, 4, 0x6a4526, 6), 0, 2, 0), at(box(1.6, 0.16, 0.16, 0x6a4526), 0, 3.9, 0)); const bellM = at(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.55, 0.8, 10), M(0xb08a40, { metalness: 0.5, roughness: 0.4 })), 0.5, 3.3, 0); bellG.add(bellM); const rope = at(box(0.05, 2.6, 0.05, 0xd8c090), 0.5, 1.6, 0); rope.visible = false; bellG.add(rope); bellG.position.set(BELL[0], 0, BELL[1]); scene.add(bellG);
-const lampGlows = LAMPS.map(([x, z]) => { scene.add(at(cyl(0.08, 0.1, 3.2, 0x3a3a3a, 6), x, 1.6, z)); const g = glowSprite(scene, 'rgba(255,230,170,.9)', 'rgba(255,190,100,0)', 5); g.position.set(x, 3.3, z); const l = new THREE.PointLight(0xffd8a0, 9, 12, 1.6); l.position.set(x, 3.2, z); scene.add(l); return g; });
-const hideMeshes = HIDE.map(([x, z, r], i) => { const g = new THREE.Group(); g.position.set(x, 0, z); if (i % 2 === 0) g.add(at(cyl(r * 0.6, r * 0.95, 1.3, 0x8a7a4a, 8), 0, 0.65, 0), at(cyl(r * 0.2, r * 0.66, 0.9, 0x9a8a5a, 8), 0, 1.75, 0)); else for (let k = 0; k < 4; k++) g.add(at(cyl(0.4, 0.32, 0.9, 0x5a3a2a, 8), Math.cos(k * 1.7) * 0.7, 0.45, Math.sin(k * 1.7) * 0.7)); g.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(g); return g; });
-/* 지하 등사기 · 태극기 그리는 상 */
-const pressM = new THREE.Group(); pressM.add(at(box(1.4, 0.8, 1, 0x3a3a3a), 0, 0.4, 0), at(cyl(0.18, 0.18, 1.2, 0x6a6a6a, 8), 0, 1, 0)); pressM.children[1].rotation.z = Math.PI / 2; const pressHatch = at(box(2.2, 0.1, 1.8, 0x5a3a20), 0, 0.05, 0); scene.add(pressM, pressHatch);
+const ROADS = [[11, 8.6, 63, 11.3], [26.6, 11.3, 29.4, 42.6], [12, 26.3, 41, 28.4], [50.6, 11.3, 53.2, 29.8], [44, 35, 68.6, 48.6], [13, 42.6, 37, 44.4]];
+for (const [x0, z0, x1, z1] of ROADS) flat(x0, z0, x1, z1, 0x968670, 0.03);
+/* 납작 돌(옛 바닥 조각 80 — rnd() 를 같은 차례로 다섯 번씩) */
+{ const L = [[], []]; for (let i = 0; i < 80; i++) { const w = 0.6 + rnd(), d = 0.5 + rnd(), k = rnd() > 0.5 ? 0 : 1, x = 1 + rnd() * 68, z = 1 + rnd() * 48; if (!SOLID.some((s) => inRect(x, z, s, 0.5))) L[k].push([x, 0.02, z, [w, 0.55, d], drnd() * 6.28]); }
+  artInst(scene, 'mn_slab', L[0], { stone: 0x7a6a54 }, { shadow: false }); artInst(scene, 'mn_slab', L[1], { stone: 0xa09078 }, { shadow: false }); }
+/* 벽 곁 살림(막는 네모 바로 밖 — 아이가 닿지 않는 틈에만): 옆벽 하나 · 뒷벽 하나 */
+const PROPS = [['mn_firewood', 0.3, 1], ['jar_b', 0.32, 0.9], ['jar_a', 0.42, 0.85], ['sack', 0.26, 0.9], ['basket', 0.38, 0.8]];
+function wallProps([x0, z0, x1, z1], front = true) { const out = [], pick = () => PROPS[Math.floor(drnd() * PROPS.length)];
+  for (const side of [drnd() < 0.5 ? 'w' : 'e', 'n']) { const [nm, dep, sc] = pick(), t = 0.25 + drnd() * 0.5;
+    if (side === 'n') out.push([nm, x0 + (x1 - x0) * t, 0, z0 - dep, sc, Math.PI]);
+    else { const e = side === 'e'; out.push([nm, e ? x1 + dep : x0 - dep, 0, z0 + (z1 - z0) * (front ? t * 0.7 : t), sc, e ? Math.PI / 2 : -Math.PI / 2]); } }
+  return out; }
+/* 예배당(서쪽 · 지하에 등사기) — 비쳐 보이게 묶음 */
+group(SOLID[0], [bake([['mn_church', 7.5, 0, 35.5, 1, 0, { roof: 0x6e6680 }], ['mn_firewood', 4.2, 0, 31.7, 1, Math.PI], ['jar_b', 6.4, 0, 31.68, 0.85, 0], ['jar_a', 3 - 0.42, 0, 37.6, 0.8, 0]], true)]);
+/* 헌병 주재소(북쪽) */
+group([36, 2, 48, 8], [bake([['mn_police', 42, 0, 5, 1, 0], ['mn_firewood', 48.3, 0, 4.4, 1, Math.PI / 2], ['jar_b', 35.68, 0, 3.4, 0.8, 0]], true)]);
+/* 다섯 집 — 창 종이(win)는 장면이 켠다(받으면 불빛) */
+const HOMEM = [['mn_home_a', 0xd9c6a2], ['mn_home_b', 0xe2d6bc], ['mn_home_a', 0xcfbb96], ['mn_home_b', 0xd8caa8], ['mn_home_a', 0xd6c29c]];
+const houses = HOUSES.map(([x, z], i) => { const win = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.08), new THREE.MeshBasicMaterial({ color: 0x1a1a24 })); win.position.set(x + 1.4, 1.3, z + 2.06);
+  const r = [x - 2.5, z - 2, x + 2.5, z + 2]; group(r, [bake([[HOMEM[i][0], x, 0, z, 1, 0, { wall: HOMEM[i][1] }], ...wallProps(r)], true), win]);
+  const g = glowSprite(scene, 'rgba(255,214,130,.95)', 'rgba(255,170,60,0)', 3.2); g.position.set(x + 1.4, 1.3, z + 2.3); g.visible = false; return { x, z, win, g, state: 'dark' }; });
+/* 거리 집: 기와집 · 이층 상점 · 초가 · 상점 · 인쇄소 · 초가 · 학교 · 기와집(예배당 곁 — 예배당과 겹치지 않게 조금 좁혀 짓고 틈에 장작) */
+const BLOCKM = [['mn_giwa', 0xd9c6a2], ['mn_store', 0xcdbb98], ['mn_choga', 0xd6c29c], ['mn_store_b', 0xd8ccb0], ['mn_print', 0], ['mn_choga', 0xcfbb96], ['mn_school', 0], ['mn_giwa', 0xe0d2b4]];
+BLOCKS.forEach(([x, z], i) => { const [nm, wc] = BLOCKM[i], r = [x - 3, z - 2, x + 3, z + 2], tint = wc ? { wall: wc, roof: 0x5c5a66 } : { roof: 0x5c5a66 };
+  const P = i === 7 ? [[nm, x + 0.45, 0, z, [0.85, 1, 1], 0, tint], ['mn_firewood', x - 2.55, 0, z - 0.6, [0.55, 1, 1], -Math.PI / 2], ['jar_b', x - 2.6, 0, z + 0.8, 0.75, 0]] : [[nm, x, 0, z, 1, 0, tint], ...wallProps(r, false)];
+  group(r, [bake(P, true)]); });
+/* 장터: 가게 둘(거적 덮음) · 곁 살림 */
+scene.add(bake([['mn_stall_a', 52, 0, 41.25, 1, 0], ['mn_stall_b', 60, 0, 41.25, 1, 0, { cloth: 0x7a6248 }], ['basket', 49.6, 0, 41.6, 0.7, 0.4], ['sack', 54.3, 0, 41.1, 0.8, Math.PI / 2], ['jar_b', 57.65, 0, 41.5, 0.7, 0], ['basket', 62.38, 0, 41.0, 0.7, 1.2]]));
+const bellG = new THREE.Group(); bellG.add(art('mn_bellpost')); const rope = art('mn_bellrope'); rope.visible = false; bellG.add(rope); bellG.position.set(BELL[0], 0, BELL[1]); scene.add(bellG);
+/* 거리 등(점광원은 예전 그대로 셋) */
+artInst(scene, 'mn_lamp', LAMPS.map(([x, z]) => [x, 0, z, 1, 0]), {}, { shadow: true });
+const lampGlows = LAMPS.map(([x, z]) => { const g = glowSprite(scene, 'rgba(255,230,170,.9)', 'rgba(255,190,100,0)', 5); g.position.set(x, 3.3, z); const l = new THREE.PointLight(0xffd8a0, 9, 12, 1.6); l.position.set(x, 3.2, z); scene.add(l); return g; });
+/* 숨을 곳: 볏짚 낟가리 · 장독대(숨으면 살짝 부푼다) */
+const hideMeshes = HIDE.map(([x, z, r], i) => { const g = new THREE.Group(); g.position.set(x, 0, z); const m = art(i % 2 === 0 ? 'mn_hide_straw' : 'mn_hide_jars'); m.scale.setScalar(r / 1.4); m.rotation.y = drnd() * 6.28; g.add(m); scene.add(g); return g; });
+/* 전봇대 · 줄(막는 네모 모서리 바로 곁 — 지나가는 길을 막지 않게) */
+{ const LINES = [[[11.3, 8.3], [15.3, 11.7], [24.8, 9.7], [35.7, 8.3], [48.3, 8.3], [52.2, 11.7], [62.7, 10.3], [70.8, 11.6]], [[52.2, 11.7], [52.2, 16.3], [47.3, 28.3], [46.7, 34.3], [49.7, 40.2]], [[11.3, 8.3], [-1.5, 7]]];
+  const poles = new Map(), wv = [], key = (p) => p[0] + ',' + p[1];
+  for (const L of LINES) L.forEach((p, i) => { const q = poles.get(key(p)) || { p, d: [0, 0] }; for (const j of [i - 1, i + 1]) if (L[j]) { const dx = L[j][0] - p[0], dz = L[j][1] - p[1], l = Math.hypot(dx, dz), sg = j > i ? 1 : -1; q.d[0] += dx / l * sg; q.d[1] += dz / l * sg; } poles.set(key(p), q); });
+  for (const q of poles.values()) { if (Math.hypot(q.d[0], q.d[1]) < 0.01) q.d = [1, 0]; q.th = Math.atan2(-q.d[0], -q.d[1]); }
+  const arm = (q, s) => [q.p[0] + Math.cos(q.th) * 0.75 * s, 5.95, q.p[1] - Math.sin(q.th) * 0.75 * s];
+  for (const L of LINES) for (let i = 1; i < L.length; i++) { const a = poles.get(key(L[i - 1])), b = poles.get(key(L[i]));
+    for (const s of [-1, 1]) { const A = arm(a, s), B1 = arm(b, s), B2 = arm(b, -s), B = Math.hypot(B1[0] - A[0], B1[2] - A[2]) <= Math.hypot(B2[0] - A[0], B2[2] - A[2]) ? B1 : B2;
+      let p0 = A; for (let k = 1; k <= 3; k++) { const t = k / 3, p1 = [A[0] + (B[0] - A[0]) * t, A[1] - (k < 3 ? 0.45 * Math.sin(t * Math.PI) : 0), A[2] + (B[2] - A[2]) * t]; wv.push(...p0, ...p1); p0 = p1; } } }
+  artInst(scene, 'power_pole', [...poles.values()].map((q) => [q.p[0], 0, q.p[1], 1, q.th]), {}, { shadow: false });
+  const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wv, 3)); scene.add(new THREE.LineSegments(wg, new THREE.LineBasicMaterial({ color: 0x1a1a22 }))); }
+/* 마을 둘레: 돌담(문 자리는 비움) · 울타리 밖 먼 집 · 빈 가지 나무와 솔 · 수레 · 볏짚 더미 · 마른 풀 */
+{ const walls = [], gap = (v, gs) => gs.some(([a, b]) => v > a && v < b);
+  for (let x = 2; x < W; x += 4) { if (!gap(x, [[25, 31], [55, 61]])) walls.push([x, 0, 0.2, [1, 0.95 + drnd() * 0.1, 0.7], 0]); if (!gap(x, [[19, 25], [45, 51]])) walls.push([x, 0, H - 0.2, [1, 0.95 + drnd() * 0.1, 0.7], Math.PI]); }
+  for (let z = 2; z < H; z += 4) { if (!gap(z, [[19, 25], [41, 47]])) walls.push([0.2, 0, z, [1, 0.95 + drnd() * 0.1, 0.7], Math.PI / 2]); if (!gap(z, [[17, 23], [35, 41]])) walls.push([W - 0.2, 0, z, [1, 0.95 + drnd() * 0.1, 0.7], -Math.PI / 2]); }
+  artInst(scene, 'mn_doldam', walls, {}, { shadow: false });
+  const far = [[], []], put = (x, z, ry) => far[drnd() < 0.55 ? 0 : 1].push([x, 0, z, 0.9 + drnd() * 0.2, ry + (drnd() - 0.5) * 0.2]);
+  for (let x = -4; x < W + 6; x += 7 + drnd() * 2) { if (!gap(x, [[24, 32], [54, 62]])) put(x, -5 - drnd() * 2, 0); if (!gap(x, [[18, 26], [44, 52]])) { drnd(); far[0].push([x, 0, H + 7 + drnd() * 2, 0.85 + drnd() * 0.15, Math.PI + (drnd() - 0.5) * 0.2]); } }
+  for (let z = 4; z < H - 2; z += 7 + drnd() * 2) { if (!gap(z, [[18, 26], [40, 48]])) put(-5 - drnd() * 2, z, Math.PI / 2); if (!gap(z, [[16, 24], [34, 42]])) put(W + 5 + drnd() * 2, z, -Math.PI / 2); }
+  artInst(scene, 'mn_far_choga', far[0], { wall: 0xcbb994 }, { shadow: false }); artInst(scene, 'mn_far_giwa', far[1], { wall: 0xd8ccb0 }, { shadow: false });
+  const nearFar = (x, z) => far[0].concat(far[1]).some((h) => Math.abs(h[0] - x) < 4.2 && Math.abs(h[2] - z) < 3.6);
+  strew({ area: [-26, -22, W + 26, H + 22], n: 70, names: ['tree_bare', 'tree_bare', 'pine_a', 'pine_k'], avoid: (x, z) => (x > -3 && x < W + 3 && z > -3 && z < H + 3) || nearFar(x, z), scale: [1.0, 1.6], shadow: false }, plantM);
+  scene.add(bake([['cart', 36, 0, 51.6, 1, 1.4], ['straw_stack', 12, 0, 51.8, 1.1, 0], ['straw_stack', 15, 0, 52.4, 0.9, 1], ['handcart', -1.6, 0, 31, 1, 0.2], ['jige', 71.4, 0, 27, 1, -1.2], ['sack_pile', 71.6, 0, 44, 1, -Math.PI / 2], ['tree_bare', 0.45, 0, 13, 1.5, 0.4], ['tree_bare', 69.55, 0, 33, 1.4, 2], ['tree_bare', 62.3, 0, 40.2, 1.45, 1.1], ['tree_bare', 2.7, 0, 31.65, 1.3, 2.6]]));
+  strew({ area: [-8, -8, W + 8, H + 8], n: 260, names: ['grass_a', 'grass_b'], avoid: (x, z) => SOLID.some((s) => inRect(x, z, s, 0.2)) || ROADS.some((r) => inRect(x, z, r, 0.2)) || HIDE.some(([hx, hz, r]) => Math.hypot(hx - x, hz - z) < r + 0.3), scale: [0.8, 1.3], shadow: false }, grassM); }
+/* 지하 등사기(널 마루 위) · 태극기 그리는 상 */
+const pressM = new THREE.Group(); pressM.add(art('mn_press')); const pressHatch = art('mn_hatch'); scene.add(pressM, pressHatch);
 const pressGlow = glowSprite(scene, 'rgba(255,214,150,.8)', 'rgba(255,170,60,0)', 3);
-const tableM = new THREE.Group(); tableM.add(at(box(1.4, 0.6, 0.9, 0x6a4526), 0, 0.3, 0), at(box(1.0, 0.04, 0.7, 0xffffff), 0, 0.62, 0)); scene.add(tableM);
-/* 사람 */
+const tableM = new THREE.Group(); tableM.add(art('mn_flagdesk')); scene.add(tableM);
+/* 사람: 나 = 학생(흰 저고리 · 학생 모자) · 헌병 = 제복과 모자(손에는 등불뿐) · 밀정 = 양복과 중절모 · 아침 장터 = 갓 쓴 어른 · 학생 · 치마 입은 아낙 · 머릿수건 농부 */
 const SKIN = 0xf0c48e;
-const pMesh = person({ shirt: 0xe8e0d0, pants: 0x4a4a5a, hat: 'top', skin: SKIN });
+const pMesh = person({ shirt: 0xeee6d4, pants: 0x2a3044, hat: 'cap', skin: SKIN });
 const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
 const packM = box(0.5, 0.3, 0.4, 0xf6f2e6); packM.visible = false; scene.add(packM);
 function mkCone(col) { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(26 * 3), 3)); const idx = []; for (let i = 1; i < 25; i++) idx.push(0, i + 1, i); geo.setIndex(idx); const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide })); m.frustumCulled = false; m.renderOrder = 2; scene.add(m); return m; }
 let guards = [];
-function mkGuard(path) { const m = person({ shirt: 0x3a4a3a, pants: 0x2a2a2a, hat: 'guard', mood: 'stern', lantern: true, skin: SKIN }); const l = new THREE.PointLight(0xfff0c0, 9, 10, 1.6); scene.add(l); return { path, x: path[0][0], z: path[0][1], wp: 1, dir: 0, state: 'patrol', tx: 0, tz: 0, wait: 0, lost: 0, p: null, pi: 0, repath: 0, see: 0, mesh: m, light: l, cone: mkCone(0xfff0a0) }; }
-const spy = { m: person({ shirt: 0x4a4a4a, pants: 0x2a2a2a, hat: 'gat', skin: SKIN }), x: SPY_W[0][0], z: SPY_W[0][1], wi: 1, sus: 0, tail: false, lostT: 0, dir: 0 };
+function mkGuard(path) { const m = person({ shirt: 0x56603e, pants: 0x30351f, hat: 'cap', style: 'coat', mood: 'stern', lantern: true, skin: SKIN }); const l = new THREE.PointLight(0xfff0c0, 9, 10, 1.6); scene.add(l); return { path, x: path[0][0], z: path[0][1], wp: 1, dir: 0, state: 'patrol', tx: 0, tz: 0, wait: 0, lost: 0, p: null, pi: 0, repath: 0, see: 0, mesh: m, light: l, cone: mkCone(0xfff0a0) }; }
+const spy = { m: person({ shirt: 0x46464c, pants: 0x26262c, hat: 'fedora', style: 'coat', skin: SKIN }), x: SPY_W[0][0], z: SPY_W[0][1], wi: 1, sus: 0, tail: false, lostT: 0, dir: 0 };
 const flying = new THREE.Mesh(new THREE.DodecahedronGeometry(0.2, 0), M(0xd6dbe6, { emissive: 0x39404e })); flying.visible = false; scene.add(flying);
 let stoneMeshes = [];
 const crowd = [], flags = [];
-for (let i = 0; i < 30; i++) { const m = person({ shirt: [0xe8e0d0, 0xd8d0c0, 0xc8c0b0, 0xf0e8d8][i % 4], pants: 0x4a4a5a, hat: i % 3 ? 'top' : 'gat', skin: SKIN }); m.position.set(50 + (i % 6) * 1.6, 0, 33 + Math.floor(i / 6) * 1.4); m.rotation.y = Math.PI; m.visible = false; crowd.push(m); const f = new THREE.Group(); f.add(at(cyl(0.03, 0.03, 1.6, 0x6a4526, 5), 0, 0.8, 0)); const cl = box(0.8, 0.55, 0.03, 0xffffff); cl.position.set(0.42, 1.35, 0); f.add(cl); const dot = new THREE.Mesh(new THREE.CircleGeometry(0.12, 12), new THREE.MeshBasicMaterial({ color: 0xc0302a })); dot.position.set(0.42, 1.35, 0.02); f.add(dot); f.position.set(0.5, 0.9, 0); f.visible = false; m.add(f); flags.push(f); }
+const CROWD = [{ shirt: 0xeee6d4, pants: 0x6a6a74, hat: 'gat' }, { shirt: 0x2e3650, pants: 0x262c40, hat: 'cap', style: 'coat' }, { shirt: 0xf2ead8, pants: 0x9a3440, chima: true, hat: 'bun' }, { shirt: 0xd8d0bc, pants: 0x5a5444, hat: 'scarf' },
+  { shirt: 0xe8e0d0, pants: 0x3a4a7a, chima: true, hat: 'braid' }, { shirt: 0xe2dac8, pants: 0x4a4a5a, hat: 'crop' }, { shirt: 0xc8c0aa, pants: 0x6a5a44, hat: 'top' }, { shirt: 0xeee6d4, pants: 0x2a6a5a, chima: true, hat: 'scarf' }];
+for (let i = 0; i < 30; i++) { const m = person({ ...CROWD[(i * 5) % CROWD.length], skin: SKIN }); m.position.set(50 + (i % 6) * 1.6, 0, 33 + Math.floor(i / 6) * 1.4); m.rotation.y = ((i * 7) % 5 - 2) * 0.12; m.visible = false; crowd.push(m); const f = new THREE.Group(); f.add(art('mn_flag')); f.position.set(0.5, 0.9, 0); f.visible = false; m.add(f); flags.push(f); }
 
 /* ───── 소리 ───── */
 const SFX = {
@@ -99,6 +165,8 @@ const findPath = gridPath(grid, W, H);
 const los = (ax, az, bx, bz) => losRects(SOLID, ax, az, bx, bz);
 const rayLen = (ax, az, dx, dz, max) => rayLenRects(SOLID, ax, az, dx, dz, max);
 
+let mis = null;   /* 미션 카드(아래에서 만든다) — 「한 번 더」(처음부터)에서 비운다 */
+let misAtPress = false, misHid = false, misThrew = false;
 function resetNight(keepLit) {
   for (const g of guards) { scene.remove(g.mesh, g.cone, g.light); } guards = PATROLS0.concat(PATROL_EXTRA.slice(0, S.night - 1)).map(mkGuard);
   S.press = S.night > 1 ? 1 : 0;
@@ -184,7 +252,7 @@ function endScreen() {
   const story = lit >= 5 ? `아침 장터. 다섯 집 사람들이 ${S.bell ? '종소리에 맞춰 한꺼번에' : ''} 모여들고, 품에서 꺼낸 태극기가 하나둘 오른다.` : lit ? `아침 장터. 불이 켜졌던 ${lit}집 사람들이 모였다.` : '아침 장터는 여느 날과 같았다.';
   overlay(`<h1>그날 아침</h1><p>${story}</p>${marks}<p class="keys">그날, 온 나라 장터에서 같은 소리가 났다.</p>
     <div class="fact">📜 <b>3·1 운동</b> — 1919년 3월, 나라를 되찾자는 만세 소리가 온 나라로 번졌다. 학생, 농민, 상인이 함께했다.<br>📜 <b>준비한 사람들</b> — 선언서를 몰래 찍고 태극기를 그려 집집이 돌린 사람들이 있었다.<br>📜 <b>총칼 앞에서</b> — 일제는 총칼로 막았고 많은 사람이 다치고 잡혀갔다. 그래도 만세는 여러 달 이어졌다.<br>📜 <b>임시 정부</b> — 이 일 뒤 나라 밖 상하이에 대한민국 임시 정부가 세워졌다.</div>`,
-    '한 번 더', () => { S.night = 1; S.caughtN = 0; S.seen = false; S.printed = 0; S.bell = false; rope.visible = false; resetNight(false); S.mode = 'play'; });
+    '한 번 더', () => { if (mis) mis.reset(); misAtPress = misHid = misThrew = false; S.night = 1; S.caughtN = 0; S.seen = false; S.printed = 0; S.bell = false; rope.visible = false; resetNight(false); S.mode = 'play'; });
 }
 
 /* ───── 한 걸음 ───── */
@@ -263,9 +331,34 @@ function view() {
   const fp = $('flagpad'); if (S.mode === 'play' && atTable()) { const q = v3.set(FLAGT[S.press][0], 1, FLAGT[S.press][1]).project(cam); fp.style.display = 'block'; fp.style.left = ((q.x + 1) / 2) * innerWidth + 'px'; fp.style.top = ((1 - q.y) / 2) * innerHeight - 90 + 'px'; for (let c = 0; c < 4; c++) { const el = $('k' + c); if (!el.classList.contains('ok')) { el.textContent = c === S.flagCur ? TRIG[S.flagStep].s : ''; el.className = 'k' + (c === S.flagCur ? ' cur' : ''); } } } else fp.style.display = 'none';
 }
 
+/* ───── 미션(11-18): 지금 할 일 하나 — 무엇을·어떻게·어디서. 흔적 할 일(태극기·종)은 고르는 재미로 남기고 미션에 넣지 않는다(곁에 가면 자리 꼬리표만).
+   등사기는 장면이 가장자리 빛으로만 가리키니 빛기둥을 세우고, 문 앞 「가만히 서기」 자리도 빛기둥으로. 미션은 S 를 읽기만 한다(놀이 숫자 그대로) ───── */
+const litN = () => houses.filter((h) => h.state === 'lit').length;
+function darkDoor() { let best = null, bd = 1e9; for (const h of houses) if (h.state === 'dark') { const d = dist(S.px, S.pz, h.x, h.z + 2.7); if (d < bd) { bd = d; best = [h.x, h.z + 2.7]; } } return best; }
+let misHideI = 0;
+function nearHide() { let best = null, bd = 1e9; HIDE.forEach(([x, z], i) => { const d = dist(S.px, S.pz, x, z); if (d < bd) { bd = d; best = [x, z]; misHideI = i; } }); return best; }
+const goNext = () => (S.pack > 0 ? darkDoor() : PRESSES[S.press]), goTag = () => (S.pack > 0 ? '🏠 문 앞에 가만히 서기' : '📜 등사기에서 다시 찍기');
+mis = missions(scene, cam, [
+  { t: '등사기 앞에 서기', how: (tc) => (tc ? '왼쪽 동그라미를 밀어 빛기둥까지 걷기' : '<kbd>방향키</kbd> 또는 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 로 빛기둥까지 걷기'), done: () => misAtPress, at: () => PRESSES[S.press], tag: '📜 등사기' },
+  { t: '박자 맞춰 선언서 세 묶음 찍기', how: (tc) => `흰 고리가 노란 고리에 닿을 때 ${tc ? '「찍기」' : '<kbd>스페이스</kbd>'} — 찍을 때마다 소리가 샌다`, n: () => [Math.min(S.printed, 3), 3], done: () => S.printed >= 3 },
+  { t: '볏짚 더미나 장독대에 숨어 보기', how: (tc) => `곁에 붙어 서면 숨는다(${tc ? '「뛰기」' : '<kbd>Shift</kbd>'} 없이) — 숨으면 손전등에 안 보인다`, done: () => misHid, at: nearHide, tag: () => (misHideI % 2 === 0 ? '🌾 볏짚 더미에 붙어 숨기' : '🏺 장독대에 붙어 숨기') },
+  { t: '불 꺼진 집에 선언서 건네기', how: '집 문 앞 빛기둥에 가만히 서 있으면 건넨다 — 받은 집은 창에 불이 켜진다', done: () => litN() >= 1, at: goNext, tag: goTag },
+  { t: '돌 던져 헌병 눈 돌리기', how: (tc) => `${tc ? '땅을 톡 누르면' : '땅을 <kbd>클릭</kbd>하면'} 돌이 날아가 소리가 난다 — 헌병이 그쪽을 보러 간다`, done: () => misThrew },
+  { t: '다섯 집 모두 불 켜기', how: '품이 비면 등사기로 돌아가 다시 찍기 · 뒤를 밟히면 골목을 돌거나 숨어서 따돌린 뒤에', n: () => [litN(), 5], done: () => litN() >= 5, at: goNext, tag: goTag },
+], { allText: '🎉 다섯 집에 다 불이 켜졌다!', allHow: '새벽까지 숨어 있기 — 태극기 그리기 · 종 줄 걸기도 해 볼 수 있다' });
+function misWatch() { if (S.mode !== 'play') return; if (atPress()) misAtPress = true; if (S.hidden) misHid = true; if (S.fly) misThrew = true; }
+/* 처음 하는 일 자리 꼬리표(고인돌처럼): 태극기 상 · 장터 종 · 품이 있을 때 가까운 불 꺼진 집 문 앞 — 미션 빛기둥이 가리키는 곳은 두 겹이 되지 않게 뺀다 */
+const tagEls = {}, tv = new THREE.Vector3();
+function tagEl(k, html) { if (!tagEls[k]) { const e = document.createElement('div'); e.className = 'tag'; e.innerHTML = html; document.body.appendChild(e); tagEls[k] = e; } return tagEls[k]; }
+function showTag(k, html, on, x, y, z) { const e = tagEl(k, html); if (!on) { e.style.display = 'none'; return; } const q = tv.set(x, y, z).project(cam); if (q.z > 1 || Math.abs(q.x) > 1.05 || Math.abs(q.y) > 1.05) { e.style.display = 'none'; return; } e.style.display = 'block'; const hw = e.offsetWidth / 2 + 6; e.style.left = clamp(((q.x + 1) / 2) * innerWidth, hw, innerWidth - hw) + 'px'; e.style.top = clamp(((1 - q.y) / 2) * innerHeight, 150, innerHeight - 30) + 'px'; }
+function hints() { const play = S.mode === 'play', ft = FLAGT[S.press], md = (mis.idx === 3 || mis.idx === 5) && S.pack > 0 ? darkDoor() : null;
+  showTag('flag', '🇰🇷 상 앞에 서면 태극기 그리기', play && mis.idx >= 2 && !S.flagDone && !atTable() && !atPress() && dist(S.px, S.pz, ft[0], ft[1]) < 5.5, ft[0], 1.3, ft[1] - 0.8);
+  showTag('bell', '🔔 종 아래 가만히 서면 줄 걸기', play && !S.bell && dist(S.px, S.pz, BELL[0], BELL[1]) < 9 && dist(S.px, S.pz, BELL[0], BELL[1] + 1.2) > 1.7, BELL[0], 4.7, BELL[1]);
+  houses.forEach((h, i) => showTag('door' + i, '🏠 문 앞에 가만히 서면 건넨다', play && S.pack > 0 && h.state === 'dark' && dist(S.px, S.pz, h.x, h.z + 2.7) < 7 && dist(S.px, S.pz, h.x, h.z + 2.7) > 1.6 && !(md && md[0] === h.x), h.x, 2.3, h.z + 2.7)); }
+
 resetNight(false); place();
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; };
-runLoop(update, view, () => renderer.render(scene, cam));
+runLoop((dt) => { update(dt); misWatch(); mis.update(dt, S.mode === 'play' || (S.mode === 'morning' && S.endT < 2.4)); hints(); }, view, () => renderer.render(scene, cam));
 window.__scene = { S, get guards() { return guards; }, spy, houses, update, keys, ctl, act, findPath,
   go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
