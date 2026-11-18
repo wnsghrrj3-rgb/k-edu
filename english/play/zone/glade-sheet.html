@@ -110,6 +110,8 @@ async function play(m){ const h = m.cell.hand, k = m.d.hand, it = m.carry ? m.ce
   else if (k === 'drag') { const [zx, zy] = mid(z); for (let i = 1; i <= 26; i++) await go(x + (zx - x) * i / 26, y + (zy - y) * i / 26); }
   else if (k === 'throw') { const [zx, zy] = mid(z), dx = zx - x, dy = zy - y, l = Math.hypot(dx, dy); for (let i = 1; i <= 6; i++) await go(x + dx / l * i * 12, y + dy / l * i * 12); }
   else if (k === 'pull') for (let i = 1; i <= 16; i++) await go(x, y + i * 7);
+  else if (k === 'spin') { const r = it.getBoundingClientRect().width * 0.42; h.up(x, y, now()); h.down(x + r, y, now()); for (let i = 1; i <= 44; i++) await go(x + Math.cos(i * 0.13) * r, y + Math.sin(i * 0.13) * r); }
+  else if (k === 'knock') { h.up(x, y, now()); await sleep(180); ghost.classList.remove('down'); await sleep(120); ghost.classList.add('down'); h.down(x, y, now()); }
   else if (k === 'line') { const [zx, zy] = mid(z); for (let i = 1; i <= 30; i++) await go(x + (zx - x) * i / 30 + Math.sin(i / 30 * Math.PI) * 26, y + (zy - y) * i / 30); }
   h.up(gx, gy, now()); ghost.classList.remove('down'); await sleep(500); ghost.style.opacity = '0'; }
 moves.forEach((m, i) => { m.ghost = document.createElement('div'); m.ghost.className = 'gs-ghost'; m.ghost.innerHTML = window.PlayIcon ? PlayIcon.html('finger') : ''; m.ghost.style.opacity = '0'; document.body.appendChild(m.ghost);

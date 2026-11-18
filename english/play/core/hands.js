@@ -29,24 +29,27 @@
     'throw': { minSpeed: 0.4, sampleMs: 110, cone: 0.75, drop: 1.3 },   /* 던진 빠르기(점/ms) · 빠르기를 재는 끝 구간 · 자리 쪽으로 본 각의 너그러움(라디안) */
     rub:   { needPx: 460, maxGapMs: 900, reach: 1.35 },                 /* 물건 위에서 문지른 길이 · 쉬면 풀리는 시간 · 물건 둘레의 넉넉함 */
     pull:  { needPx: 84, side: 0.9 },               /* 아래로 당긴 길이 · 옆으로 샌 만큼(당긴 길이의 몫)까지 봐준다 */
-    line:  { drop: 1.3, everyPx: 14 }               /* 닿는 자리의 넉넉함 · 긋는 길에 점을 찍는 사이 */
+    line:  { drop: 1.3, everyPx: 14 },              /* 닿는 자리의 넉넉함 · 긋는 길에 점을 찍는 사이 */
+    spin:  { needRad: 4.4, minR: 0.3, reach: 2.2 }, /* 돌린 각(라디안 — 한 바퀴의 일곱 할쯤) · 가운데에서 이만큼(물건 반지름의 몫)은 떨어져야 각을 센다 · 물건 둘레의 넉넉함 */
+    knock: { need: 2, maxGapMs: 750 }               /* 똑똑 — 두드린 수 · 두드림 사이의 시간 */
   };
-  var KINDS = ['shake', 'drag', 'hold', 'throw', 'rub', 'pull', 'line'], CARRY = { drag: true, 'throw': true, line: true };      /* 옮기는 손짓 = 물건을 자리로(끌어 놓기 · 던지기 · 이어 긋기 — 긋기는 물건이 아니라 길이 간다) */
-  var NAME = { shake: '흔들기', drag: '끌어 놓기', hold: '꾹 눌렀다 놓기', 'throw': '던지기', rub: '문지르기', pull: '당기기', line: '이어 긋기' };
+  var KINDS = ['shake', 'drag', 'hold', 'throw', 'rub', 'pull', 'line', 'spin', 'knock'], CARRY = { drag: true, 'throw': true, line: true };      /* 옮기는 손짓 = 물건을 자리로(끌어 놓기 · 던지기 · 이어 긋기 — 긋기는 물건이 아니라 길이 간다) */
+  var NAME = { shake: '흔들기', drag: '끌어 놓기', hold: '꾹 눌렀다 놓기', 'throw': '던지기', rub: '문지르기', pull: '당기기', line: '이어 긋기', spin: '돌리기', knock: '두드리기' };
   function near(list, x, y, k) { var best = null, bd = 1e9; (list || []).forEach(function (o) { var d = Math.hypot(o.x - x, o.y - y); if (d <= (o.r || 30) * k && d < bd) { bd = d; best = o; } }); return best; }
 
   function create(kind, env) {
     if (KINDS.indexOf(kind) < 0) throw new Error('아직 짓지 않은 손짓 ' + kind);
     var C = CONF[kind] || {}, on = env.on || function () {}, items = env.items || function () { return []; }, zones = env.zones || function () { return []; };
-    var st = null, taps = {}, picked = null;           /* st = 지금 누르고 있는 손 · picked = 눌러서 골라 둔 물건(끌어 놓기 · 던지기의 누르기 길) */
+    var st = null, taps = {}, picked = null, knocks = {};           /* st = 지금 누르고 있는 손 · picked = 눌러서 골라 둔 물건(끌어 놓기 · 던지기의 누르기 길) */
     function emit(type, o) { o = o || {}; o.type = type; o.hand = kind; on(o); }
     function tapOn(it) { taps[it.id] = (taps[it.id] || 0) + 1; if (taps[it.id] >= CONF.assist) { taps[it.id] = 0; emit('choose', { id: it.id, by: 'tap' }); } else emit('hint', { id: it.id, n: taps[it.id] }); }
     function down(x, y, t) {
-      var it = near(items(), x, y, kind === 'rub' ? C.reach : CONF.grab);
+      var it = near(items(), x, y, kind === 'rub' || kind === 'spin' ? C.reach : CONF.grab);
       st = { x0: x, y0: y, x: x, y: y, t0: t, t: t, it: it, moved: 0, path: [[x, y, t]], turns: 0, dir: 0, run: 0, lastTurn: t, rubbed: 0, charged: false, slipped: false, done: false };
       if (it && CARRY[kind]) emit('grab', { id: it.id });
       if (it && (kind === 'hold' || kind === 'pull')) emit('progress', { id: it.id, k: 0 });
       if (it && kind === 'line') emit('line', { id: it.id, x: x, y: y, start: true });
+      if (it && kind === 'spin') { st.ang = Math.atan2(y - it.y, x - it.x); st.sum = 0; emit('progress', { id: it.id, k: 0, a: 0 }); }
     }
     function move(x, y, t) {
       if (!st || st.done) return; var dx = x - st.x, dy = y - st.y, d = Math.hypot(dx, dy); st.moved += d; st.path.push([x, y, t]); if (st.path.length > 40) st.path.shift();
@@ -61,6 +64,10 @@
       else if (kind === 'pull' && st.it) {                                        /* 아래로 당긴 만큼 찬다 — 다 당기면 고른 것 */
         var py = y - st.y0, px = Math.abs(x - st.x0), kq = py > 0 && px <= Math.max(C.needPx * 0.4, py * C.side) ? Math.min(1, py / C.needPx) : 0; emit('progress', { id: st.it.id, k: kq, dy: Math.max(0, py) }); if (kq >= 1) { st.done = true; emit('choose', { id: st.it.id, by: 'gesture' }); }
       } else if (kind === 'line' && st.it) { st.run += d; if (st.run >= C.everyPx) { st.run = 0; emit('line', { id: st.it.id, x: x, y: y }); } }      /* 긋는 길 — 물건은 제자리에, 길만 손을 따라간다 */
+      else if (kind === 'spin' && st.it) {                                        /* 물건 가운데를 축으로 돈 각을 모은다(어느 쪽으로 돌려도 된다 — 한쪽으로 모인 만큼만) */
+        var rr = Math.hypot(x - st.it.x, y - st.it.y); if (rr >= (st.it.r || 30) * C.minR) { var an = Math.atan2(y - st.it.y, x - st.it.x), da = an - st.ang; if (da > Math.PI) da -= Math.PI * 2; else if (da < -Math.PI) da += Math.PI * 2; st.ang = an; st.sum += da;
+          emit('progress', { id: st.it.id, k: Math.min(1, Math.abs(st.sum) / C.needRad), a: st.sum }); if (Math.abs(st.sum) >= C.needRad) { st.done = true; emit('choose', { id: st.it.id, by: 'gesture', a: st.sum }); } }
+      }
       else if (CARRY[kind] && st.it) emit('drag', { id: st.it.id, x: x, y: y });
       st.x = x; st.y = y; st.t = t;
     }
@@ -87,9 +94,12 @@
       if (kind === 'shake') { emit('progress', { id: s.it.id, k: 0 }); if (isTap) tapOn(s.it); return; }
       if (kind === 'rub') { if (isTap) tapOn(s.it); return; }
       if (kind === 'pull') { emit('progress', { id: s.it.id, k: 0 }); if (isTap) tapOn(s.it); return; }
+      if (kind === 'spin') { emit('progress', { id: s.it.id, k: 0, a: 0 }); if (isTap) tapOn(s.it); return; }
+      if (kind === 'knock') { if (!isTap) return; var kn = knocks[s.it.id], n = kn && t - kn.t <= C.maxGapMs ? kn.n + 1 : 1; knocks[s.it.id] = { n: n, t: t };      /* 똑 · 똑 — 이어 두드린 수 */
+        if (n >= C.need) { knocks[s.it.id] = null; emit('choose', { id: s.it.id, by: 'gesture' }); } else emit('progress', { id: s.it.id, k: n / C.need, knock: n }); return; }
     }
     function cancel() { if (st && st.it) emit('back', { id: st.it.id }); st = null; }
-    return { kind: kind, carry: !!CARRY[kind], down: down, move: move, up: up, tick: tick, cancel: cancel, get active() { return !!st; }, get picked() { return picked; }, reset: function () { st = null; taps = {}; picked = null; } };
+    return { kind: kind, carry: !!CARRY[kind], down: down, move: move, up: up, tick: tick, cancel: cancel, get active() { return !!st; }, get picked() { return picked; }, reset: function () { st = null; taps = {}; picked = null; knocks = {}; } };
   }
 
   /* 포인터를 손짓에 잇는다 — 한 번에 한 손가락. opt.capture 면 다른 것보다 먼저 받는다(입체 판 — 화면 돌리기보다 손짓이 먼저) */
@@ -118,7 +128,7 @@
       var b = els[e.id];
       if (e.type === 'grab' && b) b.classList.add('held');
       else if (e.type === 'drag' && b) { var c = mid(b), t = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(b.style.transform) || [0, 0, 0]; b.style.transform = 'translate(' + (+t[1] + e.x - c.x) + 'px, ' + (+t[2] + e.y - c.y) + 'px)'; }
-      else if (e.type === 'progress' && b) { b.style.setProperty('--k', e.k); if (kind === 'shake') b.style.transform = 'translateX(' + (e.k ? (Math.round(e.k * 10) % 2 ? 6 : -6) : 0) + 'px)'; if (kind === 'pull') b.style.transform = e.k ? 'translateY(' + Math.round(e.k * 26) + 'px)' : ''; }
+      else if (e.type === 'progress' && b) { b.style.setProperty('--k', e.k); if (kind === 'shake') b.style.transform = 'translateX(' + (e.k ? (Math.round(e.k * 10) % 2 ? 6 : -6) : 0) + 'px)'; if (kind === 'pull') b.style.transform = e.k ? 'translateY(' + Math.round(e.k * 26) + 'px)' : ''; if (kind === 'spin') b.style.transform = e.a ? 'rotate(' + (e.a * 57.3).toFixed(0) + 'deg)' : ''; if (kind === 'knock' && e.knock) { b.classList.remove('hint'); void b.offsetWidth; b.classList.add('hint'); } }
       else if (e.type === 'line') { var rr = root.getBoundingClientRect(); if (e.start) trail = []; trail.push((e.x - rr.left).toFixed(0) + ',' + (e.y - rr.top).toFixed(0)); path.setAttribute('points', trail.join(' ')); path.setAttribute('class', 'ph-trail' + (e.end ? ' ok' : '')); }
       else if (e.type === 'back' && b) { home(b); if (kind === 'line') { trail = []; path.setAttribute('points', ''); } }
       else if (e.type === 'fly' && b) { b.classList.add('fly'); b.style.transform = 'translate(' + (e.to[0] - mid(b).x) + 'px, ' + (e.to[1] - mid(b).y) + 'px) scale(.7)'; }

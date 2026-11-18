@@ -150,6 +150,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 .gsheet.show{transform:none}
 .gsheet .head{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;color:var(--ink-2)}
 .gsheet .lt .art,.gsheet .lt svg{width:44px;height:44px}
+.gnote .gn-lt .bud{font-style:normal;font-size:.62em;opacity:.55;margin-left:1px}
 .gsheet .lt{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:var(--r-2);background:var(--a-cream);font-family:var(--font-read);font-weight:700;font-size:34px;color:var(--ink)}
 .gsheet #pad{width:100%;max-width:300px}
 .gsheet .pw-sheet{max-width:none}
@@ -291,8 +292,9 @@ const L1 = STEP.letters[0], L2 = STEP.letters[1];
 const HOW = howOf(window.PLAY_PATH_DIFFER, STEP.id, IS01 ? ROOM_AB.how : ROOM.how), HOWMISS = checkHow(HOW);
 if (HOWMISS.length) { location.replace('step.html?step=' + STEP.id); throw new Error('방법 칸이 비었다 — ' + HOWMISS.join(' · ')); }
 /* 글자마다 제 걸음의 그릇 — 손님이 내미는 글자 줄에는 앞 걸음의 글자도 제 그릇에 담겨 나온다(c 는 찻잔 받침, a 는 사과) */
-const LETTER_CARRIER = {};
-for (const id of ['A01'].concat(Object.keys(ROOMS))) { const st = PLAY_PATH.steps.find(x => x.id === id), hp = await loadHowParts(id).catch(() => null); if (st && hp && hp.carrier) { LETTER_CARRIER[st.letters[0]] = hp.carrier.L; LETTER_CARRIER[st.letters[1]] = hp.carrier.R; } }
+const LETTER_CARRIER = {}, LETTER_BUD = {};      /* LETTER_BUD = 늘 붙어 다니는 글자(방 자료 buddy — q 는 u 와): 글자 그릇 · 쪽지의 글자 칸에 붙여 적는다 */
+const shownL = l => l + (LETTER_BUD[l] || '');
+for (const id of ['A01'].concat(Object.keys(ROOMS))) { const st = PLAY_PATH.steps.find(x => x.id === id), hp = await loadHowParts(id).catch(() => null); if (st && hp && hp.carrier) { LETTER_CARRIER[st.letters[0]] = hp.carrier.L; LETTER_CARRIER[st.letters[1]] = hp.carrier.R; } if (id !== 'A01') { const rm = await loadRoom(id).catch(() => null); if (rm && rm.buddy) Object.assign(LETTER_BUD, rm.buddy); } }
 const AX = AXES[HOW.axis];                                                        /* 구도 — 자리 이름은 그대로, 좌표는 구도가 준다(rooms/glade.js) */
 if (!IS01) CONF.slot = Object.assign({}, GL.slots, GL.spots, slotsFor(HOW.axis), { creek: null });      /* 그 구도의 자리 표(서로 가리지 않게 놓은 자리) */
 const SLOTS = { slots: CONF.slot, spots: {} };
@@ -328,7 +330,7 @@ const { focus } = eye;
 
 /* ── 터(content/rooms/lands.js) — 그 걸음의 땅(높낮이 · 물) · 바닥 · 뒤 풍경 · 하늘(빛 · 날씨) · 글자 나무 둘. 이 화면은 물건 자리와 얼룩(햇볕 자리 · 오솔길 · 밟힌 자리)만 넘긴다 ── */
 const CARR = k => { const c = HOW.carrier[k], at = c.at || AX.carrier[k]; return Object.assign({}, c, { at: at === 'tree' ? 'tree' : at }); };      /* 글자 그릇 — 방이 고른 것, 자리는 구도가(나무 가지 · 받침 위) */
-const LANDOPT = { letters: [L1, L2], slots: { treeL: CONF.slot.treeL, treeR: CONF.slot.treeR }, carriers: { L: CARR('L'), R: CARR('R') }, light: { view: [CONF.cam.yaw, CONF.cam.pitch] } };
+const LANDOPT = { letters: [L1, L2], slots: { treeL: CONF.slot.treeL, treeR: CONF.slot.treeR }, carriers: { L: CARR('L'), R: CARR('R') }, labels: { [L1]: shownL(L1), [L2]: shownL(L2) }, light: { view: [CONF.cam.yaw, CONF.cam.pitch] } };
 /* 둘레 모형(모형 설계 v1) — 그 걸음의 모형을 미리 불러온다. 늦거나 못 오면 빈 채로 — 손으로 지은 둘레가 그대로 선다(?models=0 이면 부르지 않는다) */
 LANDOPT.models = /[?&]models=0/.test(location.search) ? null : await loadModels(K, modelNames(PLACE.around));
 const G = buildLand(K, PLACE, Object.assign(LANDOPT, !IS01 ? roomGround() : {
@@ -701,7 +703,7 @@ let noteBusy = false, noteWant = null;
 function flash(b){ b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 420); }
 async function noteShow(nt){
   const el = $('note');
-  el.innerHTML = '<span class="gn-from">' + (nt.from === 'paw' ? I('paw') : PlayArt.html(nt.from)) + '</span><span class="gn-bits">' + nt.letters.map(l => '<button type="button" class="gn-lt" data-l="' + l + '">' + l + '</button>').join('') +
+  el.innerHTML = '<span class="gn-from">' + (nt.from === 'paw' ? I('paw') : PlayArt.html(nt.from)) + '</span><span class="gn-bits">' + nt.letters.map(l => '<button type="button" class="gn-lt" data-l="' + l + '">' + l + (LETTER_BUD[l] ? '<i class="bud">' + LETTER_BUD[l] + '</i>' : '') + '</button>').join('') +
     nt.pics.map(w => '<button type="button" class="gn-pc" data-w="' + w + '">' + PlayArt.html(w) + '<small><b>' + w.charAt(0) + '</b>' + w.slice(1) + '</small></button>').join('') + '</span><span class="gn-ln">' +
     nt.line.split(' ').map(s => '<button type="button" data-w="' + s.replace(/[^A-Za-z]/g, '') + '">' + s + '</button>').join('') + '</span>';
   el.querySelectorAll('button').forEach(b => { b.onclick = () => { if (noteBusy || listening) return; flash(b); if (b.dataset.l) saySound(b.dataset.l, null); else sayWord(b.dataset.w, 0, null); }; });
@@ -829,7 +831,7 @@ function handStart(o){ handEnd(); if (!HANDK) return false;
     else if (e.type === 'put') { if (o.put) o.put(e.id, e.zone, e.by); else o.choose(e.id, e.by); }
     else if (e.type === 'hint') { tip(HANDTIP[HANDK], 2600); if (m) tween(420, t => m.scale.setScalar(s0 * (1 + Math.sin(t * Math.PI) * 0.25)), t => t); }
     else if (!m) return;
-    else if (e.type === 'progress') { if (HANDK === 'pull') { const u = m.userData; if (u.pullY == null) u.pullY = m.position.y; u.pull = e.k; if (!u.float) m.position.y = u.pullY - e.k * 0.55; m.scale.set(s0, s0 * (1 + e.k * 0.18), s0); if (!e.k) { if (!u.float) m.position.y = u.pullY; u.pullY = null; } }      /* 당기기 — 당긴 만큼 내려온다(떠 있는 방울은 제 흔들림에 userData.pull 을 더한다) */ else m.scale.setScalar(s0 * (1 + e.k * 0.32)); if (HANDK === 'shake') m.rotation.z = e.k ? Math.sin(e.k * 31) * 0.28 : 0; if (o.progress) o.progress(e.id, e.k); }
+    else if (e.type === 'progress') { if (HANDK === 'pull') { const u = m.userData; if (u.pullY == null) u.pullY = m.position.y; u.pull = e.k; if (!u.float) m.position.y = u.pullY - e.k * 0.55; m.scale.set(s0, s0 * (1 + e.k * 0.18), s0); if (!e.k) { if (!u.float) m.position.y = u.pullY; u.pullY = null; } }      /* 당기기 — 당긴 만큼 내려온다(떠 있는 방울은 제 흔들림에 userData.pull 을 더한다) */ else m.scale.setScalar(s0 * (1 + e.k * 0.32)); if (HANDK === 'shake') m.rotation.z = e.k ? Math.sin(e.k * 31) * 0.28 : 0; if (HANDK === 'knock' && e.knock) sfx(BEAT); if (o.progress) o.progress(e.id, e.k, e.a); }
     else if (e.type === 'line') { if (e.start) trailOff(); const q = K.toPlane(e.x, e.y, handPlane.set(UPV, -(m.position.y - 0.1))); if (q) trailDot(q, e.end); if (e.end) sfx('ok'); else if (trail.length % 3 === 0) sfx('pop'); }      /* 이어 긋기 — 물건은 제자리에, 손이 지나간 길에 빛 점이 놓인다 */
     else if (e.type === 'grab') { m.userData.float = false; m.userData.held = true; sfx('pop'); }
     else if (e.type === 'drag') { const q = K.toPlane(e.x, e.y, handPlane.set(UPV, -m.position.y)); if (q) { m.position.x = q.x; m.position.z = q.z; } }
@@ -846,7 +848,7 @@ function tokenOff(){ if (!token) return; const m = token; token = null; picOff(d
 /* 사건의 놀이 = 판정 뼈대(core/frames.js — 놀이 열쇠가 정한다) + 그 걸음의 손짓(core/hands.js — how.hand) + 그 걸음의 글자 그릇(how.carrier). 사건을 몇 가지 판형으로 모으지 않는다 */
 const frameOf = ev => { const f = PlayFrames.of(ev.game); if (!f) throw new Error('뼈대를 정하지 않은 놀이 ' + ev.game); return f; };
 const FRAME_STEP = { say: ['', 'train', '말하기'], pick: ['', 'sparkle', '듣고 고르기'], sort: ['', 'fruit', '첫소리 가르기'], write: ['', 'pencil', '쓰기'], link: ['', 'sparkle', '잇기'], order: ['', 'sparkle', '차례 놓기'] };
-const HANDTIP = { shake: '흔들어 봐', drag: '끌어다 놓아 봐', hold: '꾹 눌렀다가 놓아 봐', throw: '던져 봐', rub: '문질러 봐', pull: '아래로 당겨 봐', line: '손가락으로 이어 그어 봐' };
+const HANDTIP = { shake: '흔들어 봐', drag: '끌어다 놓아 봐', hold: '꾹 눌렀다가 놓아 봐', throw: '던져 봐', rub: '문질러 봐', pull: '아래로 당겨 봐', line: '손가락으로 이어 그어 봐', spin: '빙글 돌려 봐', knock: '똑똑 두드려 봐' };
 function roomParts(){ const e0 = EVB(0), e3 = EVB(3);
   return [
     { name: L1 + ' 글자', mark: L1, steps: [[L1, 'ear', L1 + ' 듣고 말하기'], [L1, 'pencil', L1 + ' 쓰기'], ['', 'leaf', '쪽지']], bye: L1 + ' 글자 이야기 끝! 다음에는 ' + L2 + ' 글자를 만나요' },
@@ -864,7 +866,7 @@ async function evIntro(ev){
   sfx('pop'); burstAt(a, dy + 0.2, 8); act(a.userData.w, 1100); await wait(500);
   bubble('<span class="say">' + ev.en + '</span>', who); await sayLine(ev.en, who); await wait(250); bubble(null); spotAt(null);
 }
-function evDone(ev){ if (ROOM && ROOM.onEvent) try { ROOM.onEvent(ev.id, { decor: DECOR, things, sfx }); } catch (e) {} }
+function evDone(ev){ if (ROOM && ROOM.onEvent) try { ROOM.onEvent(ev.id, { decor: DECOR, things, sfx, land: G }); } catch (e) {} }
 /* 낱말마다 한 걸음 — 주인공이 from 에서 to(없으면 제자리)로 n 걸음(A01 개미 줄과 같은 몸짓) */
 function stepper(ev, n){ const s = stageOf(ev.id); if (!s.from) return null; const a = things[s.walker] || actorOf(ev), u = a.userData, home = u.home.clone(), rot0 = a.rotation.y, lift0 = liftOf(a), gl = s.ground ? { lift: 0 } : null;      /* walker = 걷는 것이 사건의 물건과 다를 때 · ground = 높은 데서 땅으로 내려와 걷는다 */
   const A0 = new THREE.Vector3(s.from[0], home.y, s.from[1]), B0 = s.to ? new THREE.Vector3(s.to[0], home.y, s.to[1]) : home;
@@ -894,16 +896,24 @@ async function dictRound(ev, list){ const a = actorOf(ev), dy = a.userData.dy ||
 async function lineRound(ev){ const a = actorOf(ev); focus(a, 1.18, 0.6, 0, -0.08, a.userData.dy || 1); mood(me, 'speak'); const r = await lineOrTap(ev.en); sayEv(ev.en, r, ev.game === 'magic' ? 'magic-call' : 'sound-chant'); mood(me, 'happy', 800); hop(a, 0.35, 450); await wait(500); }
 function roundTick(ev, i){ if (ROOM && ROOM.onRound) try { ROOM.onRound(ev.id, i, { decor: DECOR, things, sfx }); } catch (e) {} }
 /* 주문 — 주인공 위에 그림이 하나씩 뜨고 아이가 이름을 말한다(낱말 기차와 같은 nameIt) */
-async function orderRound(ev, list){ const a = actorOf(ev), dy = a.userData.dy || 1;
+let sigWant = null;
+async function orderRound(ev, list){ const a = actorOf(ev), dy = a.userData.dy || 1, SG = sigOf(ev), sc = SG ? sigCtx(ev) : null;
+  if (SG && SG.start) { try { await SG.start(sc); } catch (e) {} }                                   /* 얼굴 놀이 — 그 걸음에만 있는 장면을 차린다 */
   for (let i = 0; i < list.length; i++) { if (mode === 'stop') break; const x = list[i];
     focus(a, 1.22, 0.65, 0, -0.05, dy); lookAll(a); const q = picAt(a, x.w, dy + 1.0, 'now'); q.size = 0.5; q.pulse = 1; sfx('enter'); hop(a, 0.3, 400); await wait(500);
     sayEv(x.w, await nameIt(x), ev.game === 'order' ? 'order-shop' : 'word-train');
+    if (SG && mode !== 'stop') {                                                                       /* 이름은 말하기 뼈대가 이미 받았다 — 그 걸음의 손짓은 무대를 움직이는 일(증거를 더 만들지 않는다) */
+      const tgt = (SG.bin && SG.bin(sc, x)) || a; if (SG.tip) tip(SG.tip, 3200);
+      if (HANDK) { await new Promise(done => { sigWant = done; handStart({ items: () => [{ id: 'sig', obj: tgt, dy: SG.binDy == null ? (tgt.userData.dy || 1) * 0.5 : SG.binDy, r: SG.binR || 1.6 }], choose: () => done(), progress: SG.progress ? (id, k, ang) => SG.progress(sc, x, k, ang) : null }); }); sigWant = null; handEnd(); }
+      if (SG.ok && mode !== 'stop') { try { await SG.ok(sc, x, i, list.length); } catch (e) {} } }
     q.pulse = 0; q.d.classList.remove('now'); q.d.classList.add('lit'); present(x.w, CONF.cam.word); act(x.w, 700); burstAt(things[x.w], x.dy + 0.3, 8); roundTick(ev, i); await wait(600); picOff(q); unpresent(); word(null); await wait(250); }
+  if (SG && SG.end) { try { await SG.end(sc); } catch (e) {} }
 }
 /* 톡톡 — 주인공에게서 그림 방울이 떠오르고, 들린 이름의 방울을 톡(A01 악어의 하품과 같은 판정) */
 async function popRound(ev, order){
   const a = actorOf(ev), all = CONF.words.map(x => x.w), SG = sigOf(ev), sc = SG ? sigCtx(ev) : null; a.getWorldPosition(vA);
-  if (SG && SG.start) { try { await SG.start(sc); } catch (e) {} }                                   /* 얼굴 놀이 — 그 걸음에만 있는 장면을 차린다 */ const base = new THREE.Vector3(Math.max(-4.2, Math.min(4.2, vA.x)), (a.userData.dy || 1) + 0.3, Math.max(-3.4, Math.min(1.2, vA.z)));
+  const base = new THREE.Vector3(Math.max(-4.2, Math.min(4.2, vA.x)), (a.userData.dy || 1) + 0.3, Math.max(-3.4, Math.min(1.2, vA.z)));
+  if (SG && SG.start) { try { await SG.start(sc); } catch (e) {} }                                   /* 얼굴 놀이 — 그 걸음에만 있는 장면을 차린다 */
   const homes = drops.map((m, i) => new THREE.Vector3(base.x + (i - (drops.length - 1) / 2) * 1.6, base.y + 1.5 + (i % 2 ? 0.45 : 0), base.z + 1.0));
   unpresent(); word(null); focus(dropEye, 1.12, 0, 0, 0, 0); eye.goal.obj = null; lookAll(a); tip(SG && SG.tip ? SG.tip : HANDK ? '들리는 그림 방울을 ' + HANDTIP[HANDK] : '들리는 그림 방울을 톡 눌러 봐', 3400);
   for (const w of order) {
@@ -993,7 +1003,7 @@ async function ride(){
 let guestHead = null;
 function guestTalk(dur, amp){ return guestHead ? hop(guestHead, 0.25 * (amp || 0.5) * 2, dur) : wait(dur); }
 function letterRow(ls, near, twin){ near.getWorldPosition(vA); const row = {}, tones = ['a-red', 'a-gold', 'a-plum', 'a-fish'];      /* twin = { of, with:[…] } — 같은 소리의 다른 글자가 한 줄기에 쌍둥이로(c · k) */
-  const put = (l, x, tn, sc) => { const c = LETTER_CARRIER[l] || HOW.carrier.L, f = carrier(K, c.kind, { letter: l, tone: c.tone || tn });      /* 그 글자의 걸음이 쓰는 그릇 */
+  const put = (l, x, tn, sc) => { const c = LETTER_CARRIER[l] || HOW.carrier.L, f = carrier(K, c.kind, { letter: shownL(l), tone: c.tone || tn });      /* 그 글자의 걸음이 쓰는 그릇 */
     f.userData.letter = l; f.position.set(x, 0.75, 3.5); f.userData.s = sc; f.scale.setScalar(0.01); glade.add(f); row[l] = f; tween(420, t => f.scale.setScalar(Math.max(0.01, t * sc))); return f; };      /* 앞 흙길 위에 크게 — 사람 · 그림 딱지에 가리지 않게 */
   ls.forEach((l, i) => { const x = -(ls.length - 1) * 0.75 + i * 1.5, tn = tones[i % tones.length];
     if (twin && twin.of === l && twin.with && twin.with.length) { const all = [l].concat(twin.with), w = 1.0; all.forEach((k, j) => put(k, x + (j - (all.length - 1) / 2) * w, tn, 0.9));
@@ -1228,7 +1238,7 @@ $('ldT').textContent = IS01 ? '숲속 빈터에 아침이 왔어요' : (STEP.sto
 /* 버스를 타고 왔다(?ride=1) — 통나무 버스가 숲길에서 정류장으로 들어온다 */
 if (/[?&]ride=1/.test(location.search)) { BUS.userData.busy = true; const h = BUS.userData.home; BUS.position.set(h.x - 7.5, h.y, h.z + 0.9); tween(2600, t => { BUS.position.x = h.x - 7.5 * (1 - t); BUS.position.z = h.z + 0.9 * (1 - t); BUS.userData.car.position.y = 0.42 + Math.abs(Math.sin(t * 30)) * 0.03; }).then(() => { BUS.userData.busy = false; sfx('enter'); }); }
 { const q = /[?&]part=([123])/.exec(location.search); pick(q ? +q[1] - 1 : prog.next); dockNext(); }
-window.__glade = { frame, things, SH, K, evLog, paintStage, STEP, DET, ROOM, BUS, DECOR, HOW, AX, G, OPENERS, CARRIERS: [CA, CB], get hand(){ return handNow; }, handStart, handEnd, screenOf, get busWant(){ return busWant; }, get goNext(){ return goNext; }, noteRoom, guestRoom, evRound, ride, gateOpen, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, focus, burstAt, petals, pickDrop, drops, cars, carry, get mode(){ return mode; }, get want(){ return want; }, get dropWant(){ return dropWant; }, noteTap, pickLetter, noteShow, noteHide, evGuest, PARTS, prog, pick, stage, get sel(){ return sel; }, get noteWant(){ return noteWant; }, get letterWant(){ return letterWant; }, cam, CONF };
+window.__glade = { get sigWant(){ return sigWant; }, frame, things, SH, K, evLog, paintStage, STEP, DET, ROOM, BUS, DECOR, HOW, AX, G, OPENERS, CARRIERS: [CA, CB], get hand(){ return handNow; }, handStart, handEnd, screenOf, get busWant(){ return busWant; }, get goNext(){ return goNext; }, noteRoom, guestRoom, evRound, ride, gateOpen, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, focus, burstAt, petals, pickDrop, drops, cars, carry, get mode(){ return mode; }, get want(){ return want; }, get dropWant(){ return dropWant; }, noteTap, pickLetter, noteShow, noteHide, evGuest, PARTS, prog, pick, stage, get sel(){ return sel; }, get noteWant(){ return noteWant; }, get letterWant(){ return letterWant; }, cam, CONF };
 </script>
 <script src="/kedu_back.js"></script>
 </body>

@@ -10,8 +10,8 @@
  *   ⏳ 걷기는 아직 — 지금 장면은 서서 하는 몸짓만 쓴다(걷는 장면이 생기면 여기 더한다).
  * ============================================================ */
 /* 몸짓 이름 — 방 자료의 how.body 가 고른다(챈트 몸짓은 걸음마다 다르다) */
-export const MOODS = ['idle', 'happy', 'wave', 'ear', 'lead', 'point', 'lift', 'speak', 'tilt', 'knee', 'clink', 'trunk', 'horns', 'jump', 'kick', 'nose'];
-export const BEAT_MOODS = ['lead', 'knee', 'clink', 'trunk', 'horns', 'jump', 'kick', 'nose'];      /* 박자(stomp)를 타는 몸짓 */
+export const MOODS = ['idle', 'happy', 'wave', 'ear', 'lead', 'point', 'lift', 'speak', 'tilt', 'knee', 'clink', 'trunk', 'horns', 'jump', 'kick', 'nose', 'bigo', 'quack'];
+export const BEAT_MOODS = ['lead', 'knee', 'clink', 'trunk', 'horns', 'jump', 'kick', 'nose', 'bigo', 'quack'];      /* 박자(stomp)를 타는 몸짓 */
 export const PEOPLE = {
   /* 이름 있는 사람들의 겉모습(빈터의 셋 — 뒤 걸음도 같은 사람) */
   max:  { skin: 'skin-3', hair: 'hair-1', shirt: 'stage', scarf: 'warm', pocket: 'stage-deep' },
@@ -69,6 +69,8 @@ export function stepPeople(K, people, dt, t, o = {}){
     else if (m === 'jump') { by = Math.sin(u.stomp * Math.PI) * 0.5; az[0] = -0.6 - u.stomp; az[1] = 0.6 + u.stomp; smile = 1.5; brow = 1; snap = true; }                                                                    /* 제자리에서 폴짝 */
     else if (m === 'kick') { leg = -1.25 + Math.sin(t * 6) * 0.2 - u.stomp * 0.5; az[0] = -0.9; az[1] = 0.9; smile = 1.4; brow = 0.8; }                                /* 한 다리를 쭉 든다(박자에 툭 찬다) */
     else if (m === 'nose') { ax[1] = -2.25; az[1] = -0.5 + u.stomp * 0.25; hz = Math.sin(t * 9) * 0.07; brow = 1; smile = 1.2; }                               /* 손가락으로 코를 톡 — 찡긋 */
+    else if (m === 'bigo') { az[0] = -2.55 - u.stomp * 0.25; az[1] = 2.55 + u.stomp * 0.25; ax[0] = ax[1] = -0.25; by += u.stomp * 0.08; smile = 0.6; brow = 1; }                 /* 두 팔을 머리 위로 둥글게 — 큰 동그라미(박자에 더 크게) */
+    else if (m === 'quack') { ax[0] = ax[1] = -1.45; ay[0] = 0.55; ay[1] = -0.55; az[0] = 0.5 - u.stomp * 0.45; az[1] = -0.5 + u.stomp * 0.45; smile = 1.3; brow = 0.7; }      /* 두 손을 입 앞에 모아 오리 부리 — 박자에 벌렸다 닫는다 */
     else if (m === 'tilt') { hz = 0.32; brow = 1; smile = 0.9; az[1] = 0.9; ax[1] = -0.6; }                                                                   /* 갸웃 */
     if (o.leader && p !== o.leader && o.leader.userData.mood === 'lead' && m === 'idle') by += o.leader.userData.stomp * 0.1;           /* 박자에 맞춰 까딱 */
     by += Math.sin(u.hop * Math.PI) * 0.6;

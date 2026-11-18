@@ -60,7 +60,16 @@ export const LANDS = {
     return { heightAt: (x, z) => (A * sm(0.5, 1.1, -z) + B * sm(3.3, 3.9, -z)) * (1 - sm(1.7, GLADE.flatFrom, z)), waters: [], waterY: 0.03, creek: null, ext: { back: 1.8, left: 0, right: 0 }, drop: 0.35, steps: [[-1.0, -0.8], [-1.0, -3.6]] }; },
   /* 아주 큰 나무 밑 — 굵은 뿌리가 등을 내밀고, 가운데 뒤로 달맞이 바위 자리가 솟았다 */
   roothollow(o){ const R = o.rock || [0.4, -3.4, 0.85], root = (x, z) => 0.22 * Math.pow(Math.abs(Math.sin(x * 0.75 + z * 0.35)), 6) * sm(3.6, 6.8, Math.abs(x));
-    return { heightAt: (x, z) => (R[2] * (1 - sm(0.5, 1.9, Math.hypot(x - R[0], (z - R[1]) * 1.15))) + root(x, z) + 0.35 * sm(6.4, 9.0, Math.abs(x))) * (1 - sm(1.8, GLADE.flatFrom, z)), waters: [], waterY: 0.03, creek: null, ext: { back: 2.6, left: 0.8, right: 0.8 }, drop: 0, rock: R }; }
+    return { heightAt: (x, z) => (R[2] * (1 - sm(0.5, 1.9, Math.hypot(x - R[0], (z - R[1]) * 1.15))) + root(x, z) + 0.35 * sm(6.4, 9.0, Math.abs(x))) * (1 - sm(1.8, GLADE.flatFrom, z)), waters: [], waterY: 0.03, creek: null, ext: { back: 2.6, left: 0.8, right: 0.8 }, drop: 0, rock: R }; },
+  /* 둥근 연못이 주인공 — 가운데 뒤로 큰 연못, 물가가 그 쪽으로 낮아진다 */
+  pond(o){ const Pd = Object.assign({ x: 0.4, z: -3.1, rx: 2.7, rz: 1.85 }, o.pond || {}), WY = -0.14;
+    const heightAt = (x, z) => { const d = shoreD(Pd, x, z); if (d < 0) return WY - 0.3 * sm(0, 0.6, -d); return (-0.12 + 0.12 * sm(0.25, 1.3, d)) * (1 - sm(1.9, GLADE.flatFrom, z)); };
+    return { heightAt, waters: [Pd], waterY: WY, creek: [Pd.x, Pd.z], ext: { back: 1.6, left: 0.4, right: 0.4 }, drop: 0.5, waterTone: K => K.mix(K.mix('a-fish', 'word-blue', 0.3), 'surface', 0.12),
+      frees: [Object.assign({ pad: 0.2 }, Pd)], lilies: [[Pd.x - 1.5, Pd.z + 0.9, 0.34], [Pd.x + 1.7, Pd.z + 0.6, 0.3], [Pd.x + 0.9, Pd.z - 1.1, 0.26], [Pd.x - 1.0, Pd.z - 0.9, 0.3]], lilyFlower: true,
+      reeds: [[Pd.x - 2.5, Pd.z - 1.2, 1.2], [Pd.x - 2.3, Pd.z - 1.45, 1.0], [Pd.x + 2.5, Pd.z - 1.3, 1.1], [Pd.x + 2.25, Pd.z - 1.55, 0.9]], rings: 6 }; },
+  /* 다듬은 정원 — 평평하고, 가운데 뒤 정자 자리만 한 단 높다 */
+  garden(o){ const B = o.base || [0.4, -3.4, 0.22];
+    return { heightAt: (x, z) => B[2] * (1 - sm(1.5, 2.0, Math.hypot(x - B[0], z - B[1]))) * (1 - sm(1.9, GLADE.flatFrom, z)), waters: [], waterY: 0.03, creek: null, ext: { back: 1.4, left: 0, right: 0 }, drop: 0.2, base: B }; }
 };
 
 /* ── ④ 하늘 — 빛의 때(키트의 빛 벌 + 그 곳만의 빛 tune) · 하늘 색 띠 · 안개 · 바람 · 보이는 날씨 ── */
@@ -83,7 +92,12 @@ export const SKIES = {
   highBlue: { light: 'day', tune: { hemi: [['word-blue', 'surface', 0.55], ['a-steel', 'a-leaf', 0.3], 0.85], sun: ['surface', 3.2, [9, 15, 5]] }, stops: [['word-blue', 'a-fish', 0.25], ['a-fish', 'surface', 0.35], ['surface', 'a-fish', 0.25]], fog: null, wind: 2.3, weather: ['kites'] },
   /* 남보라 저녁 · 별 · 반딧불 · 달빛 테두리 */
   moonNight: { light: 'evening', tune: { hemi: [['a-plum', 'word-blue', 0.5], ['a-plum', 'stage-deep', 0.45], 0.95], sun: [['surface', 'a-fish', 0.5], 1.7, [-9, 12, -8]], fill: [['a-fish', 'a-plum', 0.4], 0.55], glow: 'surface' },
-    stops: [['ink', 'a-plum', 0.45], ['a-plum', 'word-blue', 0.35], ['a-plum', 'a-pink', 0.3]], fog: null, wind: 0.5, weather: ['moon'], dustTone: 'a-gold', dustSize: 0.12 }
+    stops: [['ink', 'a-plum', 0.45], ['a-plum', 'word-blue', 0.35], ['a-plum', 'a-pink', 0.3]], fog: null, wind: 0.5, weather: ['moon'], dustTone: 'a-gold', dustSize: 0.12 },
+  /* 맑은 낮 · 물에 비친 하늘 · 냄비에서 오르는 김 */
+  clearMirror: { light: 'day', tune: { hemi: [['a-fish', 'surface', 0.45], ['a-fish', 'a-leaf', 0.45], 0.8], sun: [['surface', 'warm-soft', 0.25], 3.1, [-4, 16, 9]] }, stops: [['a-fish', 'word-blue', 0.2], ['a-fish', 'surface', 0.5], ['surface', 'warm-soft', 0.3]], fog: null, wind: 0.8, weather: ['steam'] },
+  /* 회보라 비구름 · 빗줄기 · 웅덩이 파문 */
+  rainGrey: { light: 'afternoon', tune: { hemi: [['a-plum', 'a-steel', 0.6], ['a-steel', 'a-leaf', 0.45], 0.9], sun: [['a-steel', 'surface', 0.5], 1.5, [8, 12, 6]], fill: [['a-plum', 'a-fish', 0.5], 0.5], glow: 'surface' },
+    stops: [['a-steel', 'a-plum', 0.35], ['a-steel', 'surface', 0.35], ['surface', 'a-plum', 0.18]], fog: [['a-steel', 'surface', 0.5], 34, 70], wind: 1.3, weather: ['rain'] }
 };
 /* ── ⑥ 첫눈 — 눈(카메라)의 자리. pitch · yaw 는 판형 값을 덮고, lift 는 눈이 보는 곳을 올린다(터가 화면 아래로 — 하늘이 넓어진다) ── */
 export const LOOKS = {
@@ -93,7 +107,9 @@ export const LOOKS = {
   skyHalf:    { cam: { pitch: 0.46, lift: 2.3 } },                    /* 하늘이 화면의 절반 — 낮게, 올려다보듯 */
   blueWindow: { cam: { pitch: 0.6, lift: 0.5 } },                     /* 희고 푸른 그늘 속 노란 창 하나 */
   redKite:    { cam: { pitch: 0.5, lift: 1.7 } },                     /* 돌 회색 위의 빨간 연 — 하늘을 넉넉히 */
-  moonRound:  { cam: { pitch: 0.54, lift: 1.3 } }                     /* 밤, 그리고 둥근 달 */
+  moonRound:  { cam: { pitch: 0.54, lift: 1.3 } },                    /* 밤, 그리고 둥근 달 */
+  pondIsle:   { cam: { pitch: 0.66, lift: 0.2 } },                    /* 물이 주인공 — 위에서 내려다본다 */
+  rainPavilion: { cam: { pitch: 0.58, lift: 0.9 } }                   /* 비, 그리고 지붕 있는 정자 */
 };
 /* place 가 여섯 칸을 다 채웠나 — 비었거나 상자에 없는 부품 이름이면 그 칸 이름을 돌려준다(하네스 · 짓기 전에 막는다) */
 export function checkPlace(place){
@@ -163,7 +179,20 @@ export const FLOORS = {
       g.strokeStyle = hexOf(K.mix('a-wood', 'ink', 0.35)); g.lineCap = 'round'; for (let i = 0; i < 14; i++) { g.globalAlpha = 0.35; g.lineWidth = 6 + rnd() * 10; g.beginPath(); const x = rnd() * w, y = rnd() * h * 0.7; g.moveTo(x, y); g.quadraticCurveTo(x + (rnd() - 0.5) * 160, y + 40 + rnd() * 60, x + (rnd() - 0.5) * 240, y + 110 + rnd() * 80); g.stroke(); }      /* 뿌리 */
       P.soft(g, P.gx(-1.6), P.gz(-0.6), 4.2 * P.gs, 2.2 * P.gs, hexOf(K.mix('a-fish', 'surface', 0.4)), 0.32, 1.2 * P.gs); g.globalAlpha = 1; },      /* 달빛이 떨어진 자리 */
     speck: ['a-plum', 420], blades: { n: 130, h: 0.17, sway: 0.14, tones: K => [K.mix('stage-deep', 'a-leaf', 0.35), K.mix('a-leaf', 'a-plum', 0.4)] },
-    flowers: 12, scatter: (K, c) => { flakes(K, c, 260, [['a-wood', 'a-plum', 0.4], ['a-gold', 'a-wood', 0.5], ['stage-deep', 'a-leaf', 0.4]], 0.12); sparkle(K, c, 40, 'a-gold', 0.35); } }
+    flowers: 12, scatter: (K, c) => { flakes(K, c, 260, [['a-wood', 'a-plum', 0.4], ['a-gold', 'a-wood', 0.5], ['stage-deep', 'a-leaf', 0.4]], 0.12); sparkle(K, c, 40, 'a-gold', 0.35); } },
+  /* 젖은 모래 · 물가 자갈 · 나무 판자 */
+  wetsand: { base: K => K.mix(K.mix('a-cream', 'a-gold', 0.3), 'a-fish', 0.18), dirt: K => K.mix(K.mix('a-cream', 'a-wood', 0.35), 'a-fish', 0.1), lip: K => K.mix('a-wood', 'a-cream', 0.35), rough: 0.7,
+    paint(g, P){ const { rnd, w, h, hex, hexOf, K } = P; for (let i = 0; i < 90; i++) { g.globalAlpha = 0.06 + rnd() * 0.1; g.fillStyle = i % 2 ? hexOf(K.mix('a-fish', 'a-cream', 0.5)) : hexOf(K.mix('a-gold', 'a-wood', 0.4)); g.beginPath(); g.ellipse(rnd() * w, rnd() * h, 30 + rnd() * 90, 8 + rnd() * 18, rnd() * 0.4 - 0.2, 0, 7); g.fill(); }      /* 물결 자국 */
+      g.strokeStyle = hexOf(K.mix('a-wood', 'ink', 0.2)); for (let i = 0; i < 5; i++) { const x = P.gx(-6.6 + i * 0.5), y = P.gz(2.2); g.globalAlpha = 0.5; g.lineWidth = 0.34 * P.gs; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 1.2 * P.gs); g.stroke(); } g.globalAlpha = 1; },      /* 나무 판자 */
+    speck: ['a-gold', 520], blades: { n: 180, h: 0.3, sway: 0.3, tones: K => [K.mix('a-leaf', 'a-fish', 0.25), K.mix('a-leaf', 'a-gold', 0.3)] },
+    flowers: 10, scatter: (K, c) => pebbles(K, c, 150) },
+  /* 짧게 깎은 잔디 · 젖은 디딤돌 · 물웅덩이 */
+  wetlawn: { base: K => K.mix(K.mix('a-leaf', 'a-steel', 0.35), 'stage-deep', 0.12), dirt: K => K.mix('a-steel', 'a-cream', 0.3), lip: K => K.mix('stage-deep', 'a-steel', 0.3), rough: 0.6,
+    paint(g, P){ const { rnd, w, h, hex, hexOf, K } = P; for (let r = 0; r < 9; r++) { g.globalAlpha = 0.08; g.fillStyle = r % 2 ? hex('stage-deep') : hex('a-leaf'); g.fillRect(0, r * h / 9, w, h / 9); }      /* 깎은 줄무늬 */
+      for (let i = 0; i < 6; i++) P.soft(g, P.gx(0.2 + Math.sin(i * 1.3) * 0.5), P.gz(1.6 - i * 0.85), 0.5 * P.gs, 0.34 * P.gs, hexOf(K.mix('a-steel', 'a-cream', 0.35)), 0.95, 4);      /* 정자로 가는 디딤돌 */
+      for (let i = 0; i < 9; i++) P.soft(g, rnd() * w, rnd() * h, 26 + rnd() * 40, 12 + rnd() * 16, hexOf(K.mix('a-fish', 'surface', 0.5)), 0.5, 12); g.globalAlpha = 1; },      /* 웅덩이 빛 */
+    speck: ['stage-deep', 380], blades: { n: 520, h: 0.1, sway: 0.3, tones: K => [K.mix('a-leaf', 'a-steel', 0.3), K.mix('a-leaf', 'stage-deep', 0.3)] },
+    flowers: 24, scatter: (K, c) => sparkle(K, c, 50, 'surface', 0.05) }
 };
 /* 반짝임 — 이슬 · 서리(바닥 바로 위의 빛 점) */
 function sparkle(K, c, n, tn, y){ const { THREE } = K, N = K.LOW ? Math.round(n / 2) : n, p = new Float32Array(N * 3), rnd = K.RNG(41); let k = 0, guard = 0;
@@ -248,7 +277,18 @@ export const TREES = {
     limb(K, t, [0, 2.9, 0], [s * 1.9, 3.5, 0.3], 0.2);
     const crown = new THREE.Group(); crown.position.y = 3.4; t.trunk.add(crown);
     [[0, 1.1, 0, 1.75], [-1.4, 0.75, 0.2, 1.25], [1.45, 0.8, -0.1, 1.3], [0.2, 0.6, 1.0, 1.1], [-0.5, 1.9, -0.2, 1.05], [0.8, 1.8, 0.3, 0.95]].forEach((c, i) => crown.add(ball(c[3], i % 2 ? L2 : L1, c[0], c[1], c[2], 1.1, 0.72, 1)));
-    const g = treeDone(K, t, crown, Object.assign({ fruitAt: [s * 1.2, 2.3, 0.9] }, o)); g.userData.limb = [s * 1.9, 3.5, 0.3]; return g; }
+    const g = treeDone(K, t, crown, Object.assign({ fruitAt: [s * 1.2, 2.3, 0.9] }, o)); g.userData.limb = [s * 1.9, 3.5, 0.3]; return g; },
+  /* 대나무 떨기 — 마디진 곧은 줄기 여럿과 가는 잎 */
+  bamboo(K, o){ const { THREE, M, mix, mesh, ball } = K, t = treeBase(K, Object.assign({ bark: ['a-leaf', 'a-gold', 0.35] }, o)), L1 = M(o.leaf, { roughness: 0.9 }), node = M(mix('a-leaf', 'stage-deep', 0.4), { roughness: 0.9 });
+    const crown = new THREE.Group(); t.trunk.add(crown);
+    [[0, 0, 5.2], [0.42, 0.2, 4.4], [-0.36, 0.26, 4.8], [0.1, -0.4, 3.8], [-0.5, -0.2, 3.4]].forEach((p, i) => { t.trunk.add(mesh(new THREE.CylinderGeometry(0.07, 0.09, p[2], 7), t.bark, p[0], p[2] / 2, p[1])); for (let y = 0.9; y < p[2]; y += 0.9) { const n = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.05, 7), node, p[0], y, p[1]); n.castShadow = false; t.trunk.add(n); }
+      for (let k = 0; k < 4; k++) { const lf = ball(0.34, L1, p[0] + Math.cos(k * 1.7 + i) * 0.42, p[2] - 0.3 - k * 0.42, p[1] + Math.sin(k * 1.7 + i) * 0.42, 1.5, 0.16, 0.45); lf.rotation.z = Math.cos(k * 1.7 + i) * 0.7; lf.rotation.y = k * 1.7 + i; crown.add(lf); } });
+    return treeDone(K, t, crown, Object.assign({ fruitAt: [0.7, 2.2, 0.6] }, o)); },
+  /* 둥글게 깎은 정원수 — 곧은 줄기에 공 둘(큰 것 · 작은 것) */
+  topiary(K, o){ const { THREE, M, mix, mesh, ball } = K, t = treeBase(K, o), L1 = M(o.leaf, { roughness: 1 });
+    t.trunk.add(mesh(new THREE.CylinderGeometry(0.11, 0.15, 3.3, 9), t.bark, 0, 1.65, 0)); { const pot = mesh(new THREE.CylinderGeometry(0.52, 0.4, 0.5, 14), M(mix('a-steel', 'a-cream', 0.35), { roughness: 0.9 }), 0, 0.25, 0); t.trunk.add(pot); }      /* 돌 화분 */
+    const crown = new THREE.Group(); crown.position.y = 1.5; t.trunk.add(crown); crown.add(ball(1.05, L1, 0, 0.9, 0)); crown.add(ball(0.7, L1, 0, 2.35, 0)); crown.add(ball(0.42, L1, 0, 3.3, 0));
+    return treeDone(K, t, crown, Object.assign({ fruitAt: [0.75, 2.5, 0.75] }, o)); }
 };
 export function letterTree(K, o){ const f = TREES[o.kind || 'apple']; if (!f) throw new Error('없는 나무 ' + o.kind); return f(K, o); }
 
@@ -317,7 +357,21 @@ export const BACKS = {
     const halo = K.fx(new THREE.Mesh(new THREE.CircleGeometry(mo[3] * 1.7, 48), new THREE.MeshBasicMaterial({ color: mix('surface', 'a-fish', 0.3), transparent: true, opacity: 0.16, depthWrite: false }))); halo.position.set(mo[0], mo[1], mo[2] - 0.1); c.group.add(halo);
     for (let i = 0; i < 15; i++) { const x = c.x0 - 2.5 + i * (c.x1 - c.x0 + 5) / 14, far = i % 2, h = 5.5 + (i * 7 % 5) * 0.9, z = c.z0 - 0.4 - far * 2.2, g = new THREE.Group(); if (Math.abs(x - mo[0]) < (far ? 1.2 : 2.6)) continue;      /* 달 앞은 비워 둔다 */ g.position.set(x, c.heightAt(Math.max(c.x0, Math.min(c.x1, x)), c.z0) - 0.4, z);
       g.add(K.fx(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, h * 0.5, 7), far ? dark2 : dark))).position.y = h * 0.25; for (let k = 0; k < 3; k++) { const cr = K.fx(new THREE.Mesh(new THREE.ConeGeometry(1.9 - k * 0.45, h * 0.42, 8), far ? dark2 : dark)); cr.position.y = h * (0.45 + k * 0.22); g.add(cr); } c.group.add(g); }
-    c.moon = moon; return (dt, t) => { halo.material.opacity = 0.14 + Math.sin(t * 0.6) * 0.04; }; }
+    c.moon = moon; return (dt, t) => { halo.material.opacity = 0.14 + Math.sin(t * 0.6) * 0.04; }; },
+  /* 갈대밭과 낮게 늘어진 버드나무 — 물 건너편이 낮고 훤하다 */
+  reedWillow(K, c){ const { THREE, M, mix, mesh, ball } = K, reed = M(mix('a-leaf', 'a-gold', 0.4), { roughness: 0.95 }), head = M(mix('a-wood', 'ink', 0.15), { roughness: 0.9 }), list = [];
+    for (let i = 0; i < 46; i++) { const x = c.x0 + 0.3 + (i * 0.618 % 1) * (c.x1 - c.x0 - 0.6), z = c.z0 + 0.3 + (i * 0.37 % 1) * 1.4, h = 1.3 + (i * 7 % 5) * 0.28, g = new THREE.Group(); g.position.set(x, c.heightAt(x, z), z);
+      const st = mesh(new THREE.CylinderGeometry(0.02, 0.035, h, 5), reed, 0, h / 2, 0); st.castShadow = false; g.add(st); if (i % 3 === 0) g.add(mesh(new THREE.CapsuleGeometry(0.06, 0.24, 4, 8), head, 0, h + 0.1, 0)); else { const lf = ball(0.22, reed, 0.1, h * 0.7, 0, 1.3, 0.1, 0.3); lf.rotation.z = 0.8; lf.castShadow = false; g.add(lf); } g.userData.k = i * 1.3; c.group.add(g); list.push(g); }
+    [[c.x0 + 1.2, 1], [c.x1 - 1.0, -1], [c.x0 + 6.2, 1]].forEach((w, i) => { const g = new THREE.Group(), z = c.z0 - 0.5 - i * 0.3; g.position.set(w[0], c.heightAt(Math.max(c.x0, Math.min(c.x1, w[0])), c.z0), z); g.add(mesh(new THREE.CylinderGeometry(0.3, 0.46, 3.0, 9), M(mix('a-wood', 'ink', 0.18), { roughness: 1 }), 0, 1.5, 0));
+      const lm = M(mix(mix('a-leaf', 'a-fish', 0.3), 'surface', 0.12), { roughness: 0.95 }); for (let k = 0; k < 5; k++) g.add(ball(1.0 - k * 0.06, lm, w[1] * (k * 0.5 - 0.6), 3.4 - Math.abs(k - 2) * 0.25, 0.2, 1.3, 0.75, 1)); for (let k = 0; k < 7; k++) { const dr = mesh(new THREE.CapsuleGeometry(0.05, 1.2 + (k % 3) * 0.4, 3, 5), lm, w[1] * (k * 0.42 - 1.0), 2.4 - (k % 3) * 0.2, 0.55); dr.castShadow = false; g.add(dr); } c.group.add(g); });      /* 늘어진 버드나무 */
+    return (dt, t) => { list.forEach(g => { g.rotation.z = Math.sin(t * 1.3 + g.userData.k) * 0.06 * (c.wind || 1); }); }; },
+  /* 장미 덩굴 담과 아치문 — 그 뒤로 비에 흐린 숲 */
+  roseWall(K, c){ const { THREE, M, mix, mesh, ball, C } = K, hedge = M(mix('stage-deep', 'a-leaf', 0.35), { roughness: 1 }), stone = M(mix('a-steel', 'a-cream', 0.3), { roughness: 0.95 }), rose = [M('a-red', { roughness: 0.6 }), M('a-pink', { roughness: 0.6 }), M(mix('a-red', 'a-plum', 0.4), { roughness: 0.6 })], zw = c.z0 + 0.7, y0 = c.heightAt(0, zw), ax = c.o.arch == null ? -4.6 : c.o.arch;
+    [[c.x0 + 0.2, ax - 1.1], [ax + 1.1, c.x1 - 0.2]].forEach(sp => { const w = sp[1] - sp[0]; c.group.add(mesh(new THREE.BoxGeometry(w, 1.9, 0.8), hedge, (sp[0] + sp[1]) / 2, y0 + 0.95, zw)); const top = ball(0.5, hedge, (sp[0] + sp[1]) / 2, y0 + 1.9, zw, w, 0.5, 0.85); c.group.add(top);
+      for (let i = 0; i < Math.round(w * 1.6); i++) { const x = sp[0] + 0.3 + (i * 0.618 % 1) * (w - 0.6), y = y0 + 0.5 + (i * 0.37 % 1) * 1.4, r = ball(0.11, rose[i % 3], x, y, zw + 0.42, 1, 1, 0.6); r.castShadow = false; c.group.add(r); } });      /* 장미 */
+    [-1, 1].forEach(sd => c.group.add(mesh(new THREE.BoxGeometry(0.34, 2.6, 0.9), stone, ax + sd * 0.95, y0 + 1.3, zw))); { const ar = mesh(new THREE.TorusGeometry(0.95, 0.17, 8, 18, Math.PI), stone, ax, y0 + 2.6, zw); c.group.add(ar); for (let i = 0; i < 7; i++) { const a = i / 6 * Math.PI, r = ball(0.12, rose[i % 3], ax + Math.cos(a) * 1.0, y0 + 2.6 + Math.sin(a) * 1.0, zw + 0.2); r.castShadow = false; c.group.add(r); } }      /* 아치문 */
+    c.trail = [[ax, c.z0 + 0.4, 0.8], [ax + 0.2, c.z0 + 1.5, 0.7]];
+    for (let i = 0; i < 11; i++) { const x = c.x0 - 2 + i * (c.x1 - c.x0 + 4) / 10, b = bushOf(K, x, 0.4 + (i % 3) * 0.3, c.z0 - 1.8 - (i % 2) * 1.2, 1.9 + (i % 3) * 0.3, mix(i % 2 ? 'stage-deep' : 'a-leaf', 'a-steel', 0.45), false, 1.4); b.traverse(m => { m.castShadow = false; }); c.group.add(b); } }      /* 비에 흐린 숲 */
 };
 
 /* ── 날씨 — 값이 아니라 보이는 것(R6). (K, c) → { step(dt, t), … }. null = 뒤 묶음이 채울 자리(비 · 달 · 눈) ── */
@@ -354,7 +408,20 @@ export const WEATHER = {
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const pts = K.fx(new THREE.Points(geo, new THREE.PointsMaterial({ color: K.C('surface'), size: 0.13, transparent: true, opacity: 0.9, depthWrite: false }))); c.group.add(pts);
     return { kites, step: (dt, t) => { kites.forEach(g => { const u = g.userData; g.position.x = u.p[0] + Math.sin(t * 0.5 + u.k) * 0.9; g.position.y = u.p[1] + Math.sin(t * 0.8 + u.k) * 0.4; g.rotation.z = Math.sin(t * 1.3 + u.k) * 0.2 - 0.25; u.tail.forEach((m, k) => { m.position.x = -(k + 1) * 0.22 + Math.sin(t * 4 + k + u.k) * 0.12; }); });
       const W = c.x1 - c.x0 + 4; for (let i = 0; i < N; i++) { const q = sd[i], x = c.x0 - 2 + ((q[0] + t * 0.07 * q[3]) % 1) * W; pos[i * 3] = x; pos[i * 3 + 1] = q[1] + Math.sin(t * 1.4 + i) * 0.25; pos[i * 3 + 2] = q[2]; } geo.attributes.position.needsUpdate = true; } }; },
-  rain: null, snow: null,      /* 뒤 묶음이 채운다 — 비는 빗줄기와 웅덩이 파문, 눈은 쌓이는 눈(R6) */
+  /* 김 — 따뜻한 것(냄비) 위로 오르는 흰 김과 물 위의 반짝임. c.o 가 아니라 터가 아는 물 자리에서 오른다 */
+  steam(K, c){ const { THREE } = K, at = c.land.creek || [0.4, -3.1], puffs = [], N = K.LOW ? 5 : 10; for (let i = 0; i < N; i++) { const m = K.fx(new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), puffM(K, 'surface', 0))); m.userData.k = i / N; c.group.add(m); puffs.push(m); }
+    const NG = K.LOW ? 10 : 22, gp = new Float32Array(NG * 3), rnd = K.RNG(37), W0 = c.land.waters[0] || { x: at[0], z: at[1], rx: 2, rz: 1.4 }; for (let i = 0; i < NG; i++) { const a = rnd() * 6.28, r = Math.sqrt(rnd()) * 0.9; gp[i * 3] = W0.x + Math.cos(a) * W0.rx * r; gp[i * 3 + 1] = c.waterY + 0.03; gp[i * 3 + 2] = W0.z + Math.sin(a) * W0.rz * r; }
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(gp, 3)); const glint = K.fx(new THREE.Points(gg, new THREE.PointsMaterial({ color: K.C('surface'), size: 0.11, transparent: true, opacity: 0.8, depthWrite: false }))); c.group.add(glint);
+    return { puffs, step: (dt, t) => { puffs.forEach(m => { const k = (m.userData.k + t * 0.16) % 1; m.position.set(at[0] + Math.sin(m.userData.k * 19) * 1.5, c.waterY + 0.8 + k * 2.0, at[1] + Math.cos(m.userData.k * 13) * 0.9); m.scale.setScalar(0.5 + k * 1.1); m.material.opacity = Math.sin(k * Math.PI) * 0.34; }); glint.material.opacity = 0.5 + Math.sin(t * 2.2) * 0.3; } }; },
+  /* 비 — 빗줄기와 땅에 번지는 파문. stop() 으로 그친다(비 갠 뒤의 장면) */
+  rain(K, c){ const { THREE } = K, N = K.LOW ? 60 : 150, pos = new Float32Array(N * 6), rnd = K.RNG(53), dr = []; for (let i = 0; i < N; i++) dr.push([c.bx(rnd()), c.bz(rnd()), rnd(), 0.8 + rnd() * 0.5]);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const lines = K.fx(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: K.mix('surface', 'a-fish', 0.3), transparent: true, opacity: 0.55, depthWrite: false }))); c.group.add(lines);
+    const rings = []; for (let i = 0; i < (K.LOW ? 4 : 8); i++) { const m = K.fx(new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 24), new THREE.MeshBasicMaterial({ color: K.C('surface'), transparent: true, opacity: 0, depthWrite: false }))); m.rotation.x = -Math.PI / 2; m.userData = { t: i / 8, x: 0, z: 0 }; c.group.add(m); rings.push(m); }
+    let on = 1, goal = 1;
+    return { stop(){ goal = 0; }, start(){ goal = 1; }, get on(){ return on; }, step: (dt, t) => { on += (goal - on) * Math.min(1, dt * 1.2); lines.material.opacity = 0.55 * on; const TOP = 7.5;
+      for (let i = 0; i < N; i++) { const q = dr[i], k = (q[2] + t * 0.9 * q[3]) % 1, y = TOP * (1 - k), x = q[0] - k * 0.6; pos[i * 6] = x; pos[i * 6 + 1] = y; pos[i * 6 + 2] = q[1]; pos[i * 6 + 3] = x - 0.05; pos[i * 6 + 4] = y - 0.45; pos[i * 6 + 5] = q[1]; } geo.attributes.position.needsUpdate = true;
+      rings.forEach((m, i) => { const u = m.userData; u.t += dt * 0.9; if (u.t >= 1) { u.t = 0; u.x = c.bx(Math.random()); u.z = c.bz(Math.random()); } m.position.set(u.x, c.heightAt(u.x, u.z) + 0.03, u.z); m.scale.setScalar(0.1 + u.t * 0.5); m.material.opacity = (1 - u.t) * 0.5 * on; }); } }; },
+  snow: null,      /* 뒤 묶음이 채운다 — 쌓이는 눈(R6) */
   /* 달밤 — 별과, 박자에 깜박이는 반딧불(flies 는 그 걸음의 놀이가 빌려 쓴다) */
   moon(K, c){ const { THREE } = K, NS = K.LOW ? 40 : 110, sp = new Float32Array(NS * 3), rnd = K.RNG(61); for (let i = 0; i < NS; i++) { sp[i * 3] = c.x0 - 8 + rnd() * (c.x1 - c.x0 + 16); sp[i * 3 + 1] = 6 + rnd() * 9; sp[i * 3 + 2] = c.z0 - 6 - rnd() * 8; }
     const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3)); const stars = K.fx(new THREE.Points(sg, new THREE.PointsMaterial({ color: K.C('surface'), size: 0.14, transparent: true, opacity: 0.85, depthWrite: false }))); c.group.add(stars);
@@ -462,7 +529,7 @@ export function buildLand(K, place, opt = {}){
     const onTree = c => c.kind === 'fruit' && (c.at === 'tree' || !c.at);
     const mk = (p, l, t, c) => letterTree(K, Object.assign({ kind: AR.kind, x: p[0], y: heightAt(p[0], p[1]), z: p[1], letter: onTree(c) ? l : null, lean: 1 }, t, { leaf: tone(t.leaf || 'a-leaf'), bark: t.bark ? tone(t.bark) : null, fruitTone: t.fruit || 'a-red', apples: t.apples }));
     treeA = mk(tl, ls[0], T.L, CR.L); treeB = mk(tr, ls[1], T.R, CR.R); group.add(treeA, treeB);
-    const put = (c, l, t, tree) => { if (onTree(c)) return tree.userData.fruit; const g2 = carrier(K, c.kind, { letter: l, tone: c.tone || t.fruit }), at = c.at, wet = inWater(at[0], at[1]), h = heightAt(at[0], at[1]);
+    const put = (c, l, t, tree) => { if (onTree(c)) return tree.userData.fruit; const g2 = carrier(K, c.kind, { letter: (opt.labels && opt.labels[l]) || l, tone: c.tone || t.fruit }), at = c.at, wet = inWater(at[0], at[1]), h = heightAt(at[0], at[1]);
       if (!wet) { const st = mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.42, 12), M(mix('a-wood', 'ink', 0.1), { roughness: 0.9 }), at[0], h + 0.21, at[1]); group.add(st); }      /* 받침 그루터기 */
       g2.position.set(at[0], h + (wet ? 0.34 : 0.98) + (c.y || 0), at[1]); g2.userData.y0 = g2.position.y; g2.userData.home = g2.position.clone(); group.add(g2); return g2; };
     carrierA = put(CR.L, ls[0], T.L, treeA); carrierB = put(CR.R, ls[1], T.R, treeB); }

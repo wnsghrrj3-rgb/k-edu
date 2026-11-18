@@ -103,7 +103,7 @@
          손짓이 어려운 손 · 글쇠로 하는 아이는 그릇을 그냥 눌러도 된다(누르기는 손짓 부품이 받고, 포인터 없는 누름은 여기서 받는다) */
       function how2d() { var H = g.__how2d, P = g.PlayHands; return H && P && P.has(H.hand) && Z.id === H.step && letters.length === 2 && letters.every(function (k) { return !!H.carrier[k]; }) ? H : null; }
       function howRound(x, want) {
-        var H = how2d(), P = g.PlayHands, carry = !!P.CARRY[H.hand], tries = 1, clean = true, over = false, chip = function (k) { return '<span class="ph-chip">' + k + '</span>'; };
+        var H = how2d(), P = g.PlayHands, carry = !!P.CARRY[H.hand], tries = 1, clean = true, over = false, chip = function (k) { return '<span class="ph-chip">' + k + ((H.bud || {})[k] || '') + '</span>'; };      /* 늘 붙어 다니는 글자(q 는 u 와)는 붙여 적는다 */
         if (cell) cell.destroy(); row.className = 'fb-baskets fb-how'; row.setAttribute('data-axis', H.axis); pic.style.display = carry ? 'none' : '';
         function answer(k, by) {
           if (over) return; var b = (carry ? cell.zones : cell.items)[k];

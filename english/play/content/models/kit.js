@@ -31,10 +31,12 @@ export function toneOf(mat, tones = {}){
 export function namesOf(around){ const a = around || {}, sw = a.swap || {}, out = [];
   ['rocks', 'mushrooms', 'bushes'].forEach(k => (sw[k] || []).forEach(n => out.push(n))); Object.keys(sw.plants || {}).forEach(k => sw.plants[k].forEach(n => out.push(n))); (a.models || []).forEach(m => out.push(m[0]));
   return [...new Set(out.filter(Boolean))]; }
-export const TALL = /Tree|Willow/;      /* 키로 세우는 것(나머지는 가장 긴 쪽의 길이로) */
+export const TALL = /Tree|Willow|Bamboo/;      /* 키로 세우는 것(나머지는 가장 긴 쪽의 길이로) */
 
 /* 모형 이름 → 파일에서 센 것(tools 없이 손으로 고치지 않는다 — 하네스가 파일과 견준다) */
 export const MODELS = {
+  Bamboo_3: { kb: 29, tris: 492, mats: ['Green', 'DarkGreen2'] },
+  Bamboo_4: { kb: 38, tris: 644, mats: ['Green', 'DarkGreen2'] },
   BirchTree_1: { kb: 96, tris: 1704, mats: ['White', 'Black', 'DarkGreen', 'Green'] },
   BirchTree_3: { kb: 98, tris: 1730, mats: ['White', 'Black', 'Green', 'DarkGreen'] },
   BirchTree_Dead_Snow_2: { kb: 81, tris: 1433, mats: ['White', 'Black', 'Snow'] },
@@ -45,6 +47,7 @@ export const MODELS = {
   CommonTree_1: { kb: 155, tris: 2888, mats: ['Wood', 'Green'] },
   CommonTree_3: { kb: 88, tris: 1584, mats: ['Wood', 'Green', 'DarkGreen'] },
   CommonTree_5: { kb: 100, tris: 1836, mats: ['Wood', 'Green'] },
+  Flower_4: { kb: 13, tris: 230, mats: ['Cyan', 'DarkGreen2'] },
   Flowers: { kb: 26, tris: 408, mats: ['Green', 'Cyan', 'Yellow'] },
   Grass: { kb: 13, tris: 192, mats: ['Green'] },
   Grass_2: { kb: 13, tris: 192, mats: ['Green'] },

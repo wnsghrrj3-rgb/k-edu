@@ -28,7 +28,9 @@ export const ROOMS = {
   A04: () => import('./glade-gh.js'),
   A05: () => import('./glade-ij.js'),
   A06: () => import('./glade-kl.js'),
-  A07: () => import('./glade-mn.js')
+  A07: () => import('./glade-mn.js'),
+  A08: () => import('./glade-op.js'),
+  A09: () => import('./glade-qr.js')
 };
 export const hasRoom = id => !!ROOMS[id];
 export async function loadRoom(id){ const f = ROOMS[id]; return f ? (await f()).default : null; }
@@ -44,6 +46,7 @@ export async function loadPlace(id){ if (id === 'A01') return (await import('./g
 export const HOW_KEYS = ['carrier', 'axis', 'hand', 'sig', 'body', 'pen', 'open'];
 export const OPEN_KINDS = ['scene', 'guest', 'ear', 'beat', 'hand', 'seek', 'note'];      /* 여는 꼴 일곱 — 빈터 화면이 하나씩 짓는다 */
 export async function loadHowParts(id){ if (id === 'A01') return (await import('./glade-ab.js')).ROOM_AB.how; const r = await loadRoom(id); return r ? r.how : null; }
+export async function loadBuddy(id){ if (id === 'A01') return null; const r = await loadRoom(id); return (r && r.buddy) || null; }      /* 늘 붙어 다니는 글자(방 자료 buddy — q 는 u 와) — 2D 판이 같이 읽는다 */
 export function howOf(differ, id, parts){ const d = differ && differ.steps && differ.steps[id]; if (!d || !parts) return null; const c = parts.carrier || {};
   return { carrier: { L: c.L || null, R: c.R || null, text: d.carrier }, axis: d.axis, hand: d.hand, handLook: d.handLook, sig: d.sig, sigLine: d.sigLine, sigEvent: d.sigEvent || null,
     body: parts.body ? Object.assign({ text: d.body }, parts.body) : null, pen: parts.pen ? Object.assign({ text: d.pen }, parts.pen) : null, open: d.open, cam: !!d.cam }; }
