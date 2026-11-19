@@ -1,6 +1,6 @@
 /* 가르기 틀 「두 배에 나눠 싣기」(3D, T01) — 선착장의 짐을 두 배에 나눠 실어 보낸다(가르기) · 두 배가 싣고 온 짐을 창고에 모은다(모으기).
  * 설계: 핸드오프 kedu/math-play-work/T01_가르기_틀.md · 정본 kmotion/math-wizard/27_수학놀이터_내용지도와_틀_설계_v1.md(4 · 5 · 6절). 규칙 = ./rules.js(화면 없음).
- * 한 나들이 = 낱칸 하나(B01~B05) · 판 = 문제 셋(구슬) · 나들이 = 판 셋(등불). 덧셈식 · 뺄셈식 · 합 고르기는 없다 — 띠는 「5 → 2 와 3」.
+ * 한 나들이 = 낱칸 하나(B01~B05) · 판 = 문제 셋(구슬) · 나들이 = 판 셋(등불). 덧셈식 · 뺄셈식 · 합 고르기는 없다 — 띠는 교과서 말 「5를 가르면 2와 3」 「2와 3을 모으면 5」.
  * 걸음 ① 손으로(낱칸의 첫 판 · 막히면 한 판 다시) → 걸음 ② 먼저 고르기(통과는 여기서만 센다). 틀린 표시 없음 — 짐이 남거나 칸이 빈 것이 보이고, 그 수가 물러난다.
  * 사건(rules.js events): 닻을 올리는 배(시계 · 생각하는 동안에만) · 파도(짐이 굴러감) · 깜짝 짐 · 안개(통과 뒤) · 뱃고동(깨끗한 문제가 이어지면). 사건은 수를 바꾸지 않는다.
  * 그림은 기성 3D 재료만(Quaternius Pirate Kit, CC0 — ./assets · 이름표는 ./art.js). 화면 위 표시(팻말 · 띠 · 수 셋 · 구슬 · 등불 · 안개)만 코드로. */
@@ -18,7 +18,7 @@ import { ASSETS, MODEL, SCENERY, BOATS, GLOW, ICON } from './art.js?v=1';
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
 const T = { DECK: .45, DZ: 1.95, CARGO: { dx: .58, z: [1.62, 2.26], s: .5 }, WARE: { dx: .52, z: [1.6, 2.2], s: .46 },
   SHIP: { s: .62, sTall: .74, x: 2.25, z: -.7, xTall: 1.12, zTall: -1.45 }, SLOT: { x: [-.78, -.26, .26, .78], z: [.34, -.3], s: .62 },
-  FLY_MS: 380, ARRIVE_MS: 1500, LEAVE_MS: 1800, SHOW_MS: 1400, LAST_BIG: 1.18, DRAG_PX: 12, PICK_PX: 46, ONBOAT_PX: 24, BOAT_PX: 95, ANCHOR_DROP: .5, FRONT: .8, TELL_GRACE: 5 };
+  FLY_MS: 380, ARRIVE_MS: 1500, LEAVE_MS: 1800, SHOW_MS: 1400, LAST_BIG: 1.18, DRAG_PX: 12, PICK_PX: 46, ONBOAT_PX: 24, BOAT_PX: 95, ANCHOR_DROP: .5, FRONT: .8, TELL_GRACE: 5, CHOOSE_GAP: 14 };
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
 const S = { ready: false, busy: true, active: false, gate: false, t: 0, oid: 0, cell: null, kind: null, p: null, res: null, step: 2, ev: {}, board: null, clock: 0, streak: 0, closed: false,
@@ -114,19 +114,23 @@ function signsDraw(){ const sg = S.signs, p = S.p; if (!p || S.gate) { sg.forEac
   A.signDraw(sg[2], stage.screenOf(V(first.x - .62, T.DECK + .55, (p.kind === 'join' ? T.WARE : T.CARGO).z[0] + .05)), dk);
   sg[2].classList.toggle('ask', dk === '?' && !!S.choose && S.choose.side === 'ware'); sg[2].classList.toggle('done', p.kind === 'join' && S.closed); }
 
-// ── 띠: 가르기 「5 → 2 와 3」 · 모으기 「2 와 3 → 5」 · 여러 가지로 「7 → 2와5 · 3와4 · ?」(+ = 은 쓰지 않는다)
-function trayDraw(){ A.trayClear(); const t = $('tray'), p = S.p; if (!p || S.gate) return; const b = (v, c = '') => `<b class="${c}">${v}</b>`, w = s => `<i class="w">${s}</i>`, to = '<i>→</i>'; let h = '';
-  if (p.kind === 'split') h = b(p.N) + to + b(p.a, 'red') + w('와') + (S.closed ? b(p.b, 'blue done') : b('?', 'hole blue'));
-  else if (p.kind === 'join') h = b(p.a, 'red') + w('와') + b(p.b, 'blue') + to + (S.closed ? b(p.N, 'done') : b('?', 'hole'));
-  else h = b(p.N) + to + S.ways.map((x, k) => `<b class="way${S.hit === k ? ' hit' : ''}">${x[0]}${w('와')}${x[1]}</b>`).join('') + (S.ways.length < R.T.WAYS ? b('?', 'hole') : '');
-  t.innerHTML = h; t.className = 'on'; }
+// ── 띠: 교과서 말 그대로 — 가르기 「5를 가르면 2와 ?」 · 모으기 「1과 1을 모으면 ?」 · 여러 가지로 「7을 가르면 2와5 · 3과4 · ?」(+ = → 은 쓰지 않는다)
+const jong = n => [0, 1, 3, 6, 7, 8].includes(Math.abs(n) % 10), wa = n => jong(n) ? '과' : '와', eul = n => jong(n) ? '을' : '를';   /* 받침: 영·일·삼·육·칠·팔·십 */
+function trayDraw(){ A.trayClear(); const t = $('tray'), p = S.p; if (!p || S.gate) return; const b = (v, c = '') => `<b class="${c}">${v}</b>`, w = s => `<i class="w">${s}</i>`; let h = '';
+  if (p.kind === 'split') h = b(p.N) + w(eul(p.N) + ' 가르면') + b(p.a, 'red') + w(wa(p.a)) + (S.closed ? b(p.b, 'blue done') : b('?', 'hole blue'));
+  else if (p.kind === 'join') h = b(p.a, 'red') + w(wa(p.a)) + b(p.b, 'blue') + w(eul(p.b) + ' 모으면') + (S.closed ? b(p.N, 'done') : b('?', 'hole'));
+  else h = b(p.N) + w(eul(p.N) + ' 가르면') + S.ways.map((x, k) => `<b class="way${S.hit === k ? ' hit' : ''}">${x[0]}${w(wa(x[0]))}${x[1]}</b>`).join('') + (S.ways.length < R.T.WAYS ? b('?', 'hole') : '');
+  t.innerHTML = h; t.className = 'on'; holeAsk(); trayFit(); }
+function trayFit(){ const t = $('tray'); t.style.fontSize = ''; const room = innerWidth * .96; if (t.offsetWidth > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / t.offsetWidth) + 'px'; }   /* 좁은 화면에서 띠가 넘치면 글씨를 줄인다 */
+/** 수 셋이 떠 있는 동안은 띠의 「?」 칸이 깜박인다(여기에 들어갈 수를 고르는 것). */
+function holeAsk(){ const e = $('tray') && $('tray').querySelector('b.hole'); if (e) e.classList.toggle('ask', !!S.choose); }
 
-// ── 수 셋(팻말 아래): 맞으면 실림 · 아니면 짐이 남거나 칸이 빈 것이 보이고 그 수가 물러난다
+// ── 수 셋(띠 바로 아래 · 화면 가운데 위 · 크게): 맞으면 실림 · 아니면 짐이 남거나 칸이 빈 것이 보이고 그 수가 물러난다
 function chooseShow(side, list){ const c = $('choose'); S.choose = { side, list }; c.innerHTML = ''; c.className = 'on';
-  for (const n of list) { const b = document.createElement('button'); b.type = 'button'; b.textContent = n; b.dataset.n = n; b.addEventListener('click', () => onPick(n, b)); c.appendChild(b); } choosePlace(); }
-function chooseHide(){ const c = $('choose'); c.className = ''; c.innerHTML = ''; S.choose = null; }
-function choosePlace(){ if (!S.choose) return; const e = S.signs[S.choose.side === 'blue' ? 1 : 2], c = $('choose'); if (e.style.display === 'none') return; const r = e.getBoundingClientRect(), half = c.offsetWidth / 2 + 8;
-  c.style.left = Math.max(half, Math.min(innerWidth - half, r.left + r.width / 2)) + 'px'; c.style.top = (innerHeight * T.FRONT + 6) + 'px'; }   /* 배 · 짐을 가리지 않게 선착장 앞(아래쪽)에 — 팻말과 같은 x */
+  for (const n of list) { const b = document.createElement('button'); b.type = 'button'; b.textContent = n; b.dataset.n = n; b.addEventListener('click', () => onPick(n, b)); c.appendChild(b); } choosePlace(); holeAsk(); }
+function chooseHide(){ const c = $('choose'); c.className = ''; c.innerHTML = ''; S.choose = null; holeAsk(); }
+function choosePlace(){ if (!S.choose) return; const c = $('choose'), t = $('tray'), r = t && t.classList.contains('on') ? t.getBoundingClientRect() : null;
+  c.style.left = (innerWidth / 2) + 'px'; c.style.top = ((r ? r.bottom : 70) + T.CHOOSE_GAP) + 'px'; }   /* 띠의 「?」 바로 밑 — 배 두 척 사이 하늘(팻말을 가리지 않음) */
 async function onPick(k, btn){ if (!S.active || S.busy || !S.choose || S.acting) return; if (S.p.kind === 'split' && onBoat(ships.red) !== S.p.a) { chooseHide(); return; } const my = S.oid; audio(); S.lastAct = S.t; H.hide(); const p = S.p, ans = p.kind === 'split' ? p.b : p.N, how = R.judge({ answer: ans }, { type: 'pick', k }); S.log.push({ pick: k, how }); S.busy = true; fogOff(); if (S.wave) { const w = S.wave; w.rolling = false; S.wave = null; w.b.o.rotation.x = 0; w.b.o.position.copy(dockPos(w.b.home, S.cargo.length)); }   /* 굴러가던 짐은 제자리로(개수 그대로) */
   if (p.kind === 'split') { const sh = ships.blue, left = dockLeft(); sh.showSlots = k; ghostsDraw(sh); tone(520, .1, 'triangle', .1);
     const go = left.slice(0, k); await Promise.all(go.map((b, i) => sleep(i * 70).then(() => toShip(b, sh)))); await sleep(how === 'fit' ? 200 : T.SHOW_MS); if (S.oid !== my) return;
