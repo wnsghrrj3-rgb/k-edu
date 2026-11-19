@@ -120,6 +120,7 @@ const SFX = { pick: () => tone(660, 990, 0.12, 'triangle', 0.15), plant: () => {
   drum: (v = 0.3) => { tone(70, 45, 0.5, 'sine', v); noise(0.18, v, 120); }, bad: () => { tone(300, 160, 0.5, 'sawtooth', 0.1); }, good: () => { [523, 659, 784].forEach((f, i) => tone(f, f, 0.3, 'triangle', 0.13, i * 0.1)); },
   season: () => { tone(392, 392, 0.3, 'sine', 0.12); tone(523, 523, 0.5, 'sine', 0.1, 0.2); }, cut: () => noise(0.12, 0.3, 1600), beat: (v) => { tone(62, 40, 0.12, 'sine', v); tone(54, 36, 0.14, 'sine', v * 0.8, 0.16); }, win: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, f, 0.6, 'triangle', 0.16, i * 0.18)); }, sad: () => { tone(330, 220, 1.2, 'sine', 0.14); tone(262, 175, 1.4, 'sine', 0.1, 0.4); } };
 
+let skyKey = '';
 /* ───── 상태 ───── */
 const S = { mode: 'title', view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: -Math.PI / 2, t: 0, st: 0, year: 1, season: 0, px: HOME[0], pz: HOME[1] + 2, pdir: 0, moving: false, running: false, said: {}, sayT: 0,
   rice: 2, coin: 10, tob: 0, debt: 0, favor: 1, ox: false, yangban: false, knowMo: false, nursery: false, bo: 0, carry: null, taxDue: 0, taxPaid: false, drought: false, good: false,
@@ -143,6 +144,18 @@ function newGame() { R = rng(seed0 * 7 + 11);
   if (mis) mis.reset(); startSeason(0, true); }
 function resetPlot(p) { p.sow = 'none'; p.weed = 0; p.grow = 0; p.ripe = false; p.cut = false; p.dead = false; p.stub = false; p.weedBad = false; p.yield = 0; }
 
+/* ───── 중간 저장(준호 11-19): 철이 바뀔 때마다 이 기기에 적어 둔다 → 첫 화면 「이어서 하기」 ───── */
+const SAVE_KEY = 'kworld_farm_save_v1', S_KEYS = ['year', 'season', 'rice', 'coin', 'tob', 'debt', 'favor', 'ox', 'yangban', 'knowMo', 'nursery', 'bo', 'taxDue', 'taxPaid', 'drought', 'good', 'droughtYears', 'goodYear', 'log', 'lost', 'gone', 'servant', 'labor', 'soldY', 'harvY', 'lordY', 'stats'];
+const P_KEYS = ['owner', 'farmer', 'rent', 'sow', 'weed', 'grow', 'ripe', 'cut', 'dead', 'stub', 'weedBad', 'yield', 'keep'];
+function saveGame() { if (S.mode === 'title') return; try { const d = { v: 1, at: Date.now(), S: {}, plots: plots.map((p) => P_KEYS.map((k) => p[k])), nb: {} }; for (const k of S_KEYS) d.S[k] = S[k]; for (const k in NB) { const n = NB[k]; d.nb[k] = [n.coin, n.method, n.gone, n.trouble]; } localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} }
+function readSave() { try { const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return d && d.v === 1 && d.plots && d.plots.length === plots.length ? d : null; } catch (e) { return null; } }
+function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+function loadGame(d) { newGame(); Object.assign(S, JSON.parse(JSON.stringify(d.S))); d.plots.forEach((a, i) => P_KEYS.forEach((k, j) => (plots[i][k] = a[j])));
+  for (const k in NB) { const n = NB[k], a = d.nb[k]; if (!a) continue; [n.coin, n.method, n.gone, n.trouble] = a; n.mesh.visible = !n.gone; n.x = n.home[0]; n.z = n.home[1]; n.wait = 0; }
+  R = rng(seed0 * 7 + 11 + S.year * 10 + S.season); boG.children.forEach((c, i) => (c.visible = i < S.bo)); canal.visible = canal2.visible = canal3.visible = S.bo >= 6; if (oxM) oxM.visible = S.ox; if (cartM) cartM.visible = S.ox;
+  S.st = 0; S.workT = 0; S.said = {}; S.carry = null; S.px = HOME[0]; S.pz = HOME[1] + 2; skyKey = ''; for (const p of plots) drawPlot(p); hud();
+  say(`${S.year}번째 해 ${SEASONS[S.season]} — 이어서 한다`, null, 3.4); }
+
 /* ───── 철 넘기기 ───── */
 function startSeason(sn, first) { S.season = sn; S.st = 0; S.workT = 0; S.said = {}; SFX.season();
   if (sn === 0) { S.drought = S.droughtYears.includes(S.year); S.good = S.year === S.goodYear; S.taxPaid = false; S.labor = 0; S.soldY = 0; S.harvY = 0; S.lordY = 0;
@@ -159,7 +172,7 @@ function startSeason(sn, first) { S.season = sn; S.st = 0; S.workT = 0; S.said =
   if (sn === 3) { for (const p of plots) if (p.sow !== 'none' && !p.cut) { p.dead = true; p.ripe = false; if (p.farmer === 'me') S.log.push('거두지 못한 논이 서리를 맞았다'); }
     settleTax(); neighborsYear(); if (S.year === 1 && !S.knowMo) { S.knowMo = true; }
     say(S.year === 1 ? '겨울 — 보부상 말로는 아랫녘에서는 모를 길러 옮겨 심는단다. 못자리(초록 고리)를 만들어 두자' : '겨울 — 남은 것으로 무엇을 할까. 소 · 논 · 임명장 · 이웃 돕기', null, 5); }
-  for (const p of plots) drawPlot(p); hud(); }
+  for (const p of plots) drawPlot(p); hud(); saveGame(); }
 /* 한 해 농사 등급(여름이 끝날 때): 김매기 · 가뭄 · 모내기 */
 function grade(p) { if (p.sow === 'tob' || p.sow === 'bean') { p.yield = p.sow === 'tob' ? (p.weed >= 1 ? 5 : 3) : 3; return; }
   const mo = p.sow === 'mo', wf = mo ? [0.7, 1][Math.min(1, p.weed)] : [0.45, 0.75, 1][Math.min(2, p.weed)], watered = p.wet && S.bo >= 6;
@@ -188,7 +201,7 @@ function ledger() { const m = mine().filter((p) => p.kind === 'paddy').length, o
     last ? '다섯 해가 지났다' : `${S.year + 1}번째 해 봄으로`, () => { S.log = []; if (last) { finish(); return; } S.year++; S.px = HOME[0]; S.pz = HOME[1] + 2; S.carry = null; S.mode = 'play'; startSeason(0); }); }
 function rank() { const m = mine().filter((p) => p.kind === 'paddy').length, o = owned().filter((p) => p.kind === 'paddy').length; if (S.debt >= 150 || (o === 0 && S.debt >= 60)) return 0; if ((o >= 4 || (m >= 6 && o >= 2)) && S.debt === 0) return 3; if (o >= 2 && S.debt < 60) return 2; if (m >= 1) return 1; return 0; }
 function finish() { const r = rank(), names = ['고을을 떠난 집', '남의 땅을 짓는 집', '제 땅을 짓는 집', '부농'], win = r >= 2, m = mine().filter((p) => p.kind === 'paddy').length, o = owned().filter((p) => p.kind === 'paddy').length;
-  S.mode = 'end'; SFX[win ? 'win' : 'sad']();
+  S.mode = 'end'; clearSave(); SFX[win ? 'win' : 'sad']();
   const why = []; why.push(S.stats.mo ? `모내기로 품을 아껴 한 해에 많게는 논 ${S.stats.maxFarm || m}배미를 지었다.` : '끝까지 씨를 바로 뿌려 지었다 — 김매는 품이 많이 들어 넓게 짓지 못했다.');
   if (S.bo >= 6) why.push('보를 쌓아 가뭄에도 개울가 논이 버텼다.'); else if (S.droughtYears.length) why.push('보가 없어 가뭄 든 해에 크게 잃었다.');
   if (S.stats.rented) why.push(`양반댁 논을 ${S.stats.rented}번 빌려 지었다 — 넓게 짓기.`); if (S.stats.farMarket) why.push(`값 좋은 먼 장까지 ${S.stats.farMarket}번 지고 갔다.`); if (S.ox) why.push('소를 들여 한 번에 세 곱절을 날랐다.');
@@ -262,7 +275,7 @@ function touch() { const sn = S.season, c = S.carry;
   if (sn !== 0 && c && (c.k === 'seed' || c.k === 'mo' || c.k === 'tob')) S.carry = null; }
 
 /* ───── 하늘 ───── */
-const cT = new THREE.Color(), cL = new THREE.Color(), tc = new THREE.Color(); let skyKey = '';
+const cT = new THREE.Color(), cL = new THREE.Color(), tc = new THREE.Color(); 
 function lightFor() { const sn = S.season, d = S.drought && sn >= 1 && sn <= 2;
   const key = sn + '|' + d; if (key !== skyKey) { skyKey = key; const top = [0x6aa6e8, d ? 0x9ab0d0 : 0x5a9ae6, 0x6f9fe0, 0x9aa8ba][sn], low = [0xeaf2e0, d ? 0xf2e2b0 : 0xe6f0ea, 0xffe6b8, 0xe8ecf0][sn]; sky.paint(cT.set(top), cL.set(low)); scene.fog.color.set(low);
     groundM.material.color.set([0x8fbf5a, d ? 0xb8b060 : 0x7ab84a, 0xb8b25a, 0xe6e8e2][sn]); sun.intensity = [2.2, d ? 2.8 : 2.4, 2.0, 1.4][sn]; hemi.intensity = [1.3, 1.3, 1.2, 1.5][sn]; wx.m.visible = sn === 3; } }
@@ -373,9 +386,11 @@ const mis = missions(scene, cam, [
 
 newGame(); S.mode = 'title'; for (const p of plots) drawPlot(p); hud(); place(0.016);
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; SFX.season(); };
+{ const d = readSave(); if (d) { const b = document.createElement('button'); b.id = 'cont'; b.textContent = `이어서 하기 — ${d.S.year}번째 해 ${SEASONS[d.S.season]}`; b.style.marginRight = '10px'; $('go').parentNode.insertBefore(b, $('go')); $('go').textContent = '처음부터'; $('go').style.opacity = '.75';
+    b.onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'play'; loadGame(d); SFX.season(); }; } }
 canvas.addEventListener('pointerdown', () => { if (S.mode === 'intro') S.introT = 99; });
 runLoop((dt) => { update(dt); mis.update(dt, S.mode === 'play' && S.year === 1); }, view, () => renderer.render(scene, cam));
-window.__scene = { S, update, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn,
+window.__scene = { S, update, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, saveGame, readSave, loadGame,
   go() { $('go').click(); S.introT = 99; update(0.01); }, view(n) { S.view = n; }, step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   next() { const b = document.querySelector('#ov button'); if (b && $('ov').style.display !== 'none') b.click(); },
   const: { HOME, GRAN, SEED, NURS, TOBS, DOOR, BO, LORD, TOWN, GWE, PAPER, OX, CLOTH, NEXT, PORT, PEDD, SLEN, P_OX, P_NB, P_LORD, P_PAPER } };
