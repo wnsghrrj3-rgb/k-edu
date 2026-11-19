@@ -45,13 +45,14 @@ const audio = new AudioManager();
 const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['pose'], duo: true, numPoses: 3, activity: 'pattern-duo' });
 const ev = [new Ev(), new Ev()];
 let duo = [null, null], started = false;
-const S = { scr: 'menu', mode: 'next', start: 1, score: [0, 0], lives: [LIVES, LIVES], out: [false, false], phase: '', t0: 0, limit: 0, gameT0: 0, stage: 1,
+const S = { solo: Q.has('solo'), scr: 'menu', mode: 'next', start: 1, score: [0, 0], lives: [LIVES, LIVES], out: [false, false], phase: '', t0: 0, limit: 0, gameT0: 0, stage: 1,
   q: null, qn: 0, ans: [null, null], picked: [-1, -1], first: -1, hov: [{ k: -1, ms: 0 }, { k: -1, ms: 0 }], spots: [[], []], key: [-1, -1],
   row: null, rown: 0, cell: -1, done: [null, null], ready: [null, null], pops: [], timers: [] };
 
 // ── 메뉴
 document.querySelectorAll('.mode').forEach(b => b.onclick = () => { document.querySelectorAll('.mode').forEach(x => x.classList.toggle('on', x === b)); S.mode = b.dataset.m; });
 $('start').querySelectorAll('button').forEach(b => b.onclick = () => { $('start').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); S.start = +b.dataset.v; });
+$('who').querySelectorAll('button').forEach(b => { b.classList.toggle('on', (b.dataset.v === 'solo') === S.solo); b.onclick = () => { $('who').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); S.solo = b.dataset.v === 'solo'; }; });
 $('btnGo').onclick = () => begin(); $('btnAgain').onclick = () => begin(); $('btnMenu').onclick = () => toMenu();
 const KEYS = { a: [0, 'L'], s: [0, 'T'], d: [0, 'R'], j: [1, 'L'], k: [1, 'T'], l: [1, 'R'] };
 addEventListener('keydown', e => { if (e.key === 'Escape' && S.scr !== 'menu') return toMenu();
@@ -68,7 +69,7 @@ async function begin(){
   if (!started) { try { await km.start(); started = true; } catch (e) { banner('카메라를 켤 수 없어요', '', '주소창의 카메라 권한을 허용해 주세요'); later(2500, toMenu); return; } }
   km.resetDuo(); S.score = [0, 0]; S.lives = [LIVES, LIVES]; S.out = [false, false]; S.qn = 0; S.rown = 0; S.stage = S.start; S.q = null; S.row = null;
   S.ready = [null, null]; S.scr = 'ready'; S.phase = 'ready'; ev.forEach(e => e.setTarget(null));
-  show('board', 1); show('strip', 1); setScore(); setLives(); setTimer(0); $('round').textContent = MODE_NAME[S.mode]; $('cells').innerHTML = ''; $('rule').textContent = '둘 다 자리에 서서 양팔이 보이게 해요';
+  show('board', 1); show('strip', 1); $('board').classList.toggle('solo', S.solo); $('tn0').firstChild.textContent = S.solo ? '나' : '청팀'; setScore(); setLives(); setTimer(0); $('round').textContent = MODE_NAME[S.mode]; $('cells').innerHTML = ''; $('rule').textContent = S.solo ? '자리에 서서 양팔이 보이게 해요' : '둘 다 자리에 서서 양팔이 보이게 해요';
 }
 
 // ── 화면 조각
@@ -79,7 +80,8 @@ function setLives(){ for (let i = 0; i < 2; i++) $(i ? 'hR' : 'hB').textContent 
 function setTimer(k){ const i = $('tFill'); i.style.transform = `scaleX(${clamp(k, 0, 1)})`; i.classList.toggle('low', k < .3); }
 function pop(i, text){ S.pops.push({ i, text, t: performance.now() }); }
 const left = () => Math.max(0, GAME_MS - (performance.now() - S.gameT0));
-const alive = i => !S.out[i];
+const alive = i => !S.out[i] && !(S.solo && i === 1);
+const midX = i => S.solo ? km.W / 2 : km.W * (i ? .75 : .25);
 function label(){ $('round').textContent = `${MODE_NAME[S.mode]} · ${S.stage}단계 · 남은 ${Math.ceil(left() / 1000)}초`; }
 function add(i, pts, text){ S.score[i] += pts; setScore(i); pop(i, text); }
 function miss(i, why){ if (S.out[i]) return; S.lives[i]--; audio.hurt(); pop(i, why || '놓쳤어요 −❤'); if (S.lives[i] <= 0) { S.out[i] = true; ev[i].setTarget(null); } setLives(); }
@@ -90,10 +92,10 @@ let ticked = false; function tickLow(k){ if (k < .3 && !ticked) { ticked = true;
 function stepReady(dt){
   for (let i = 0; i < 2; i++) { const p = duo[i]; const r = S.ready[i] || (S.ready[i] = { acc: 0, y: 0, w: 0, n: 0 });
     const ok = p && p[11].v > .5 && p[12].v > .5 && p[15].v > .4 && p[16].v > .4;
-    if (ok) { r.acc += dt; r.y += (p[11].y + p[12].y) / 2; r.w += Math.abs(p[11].x - p[12].x); r.n++; } else { r.acc = Math.max(0, r.acc - dt); if (!r.acc) { r.y = r.w = r.n = 0; } } }
+    if (ok) { r.acc += dt; r.y += (p[11].y + p[12].y) / 2; r.w += Math.abs(p[11].x - p[12].x); r.n++; } else { r.acc = Math.max(0, r.acc - dt); if (!r.acc) { r.y = r.w = r.n = 0; } } if (S.solo && i === 1) r.acc = 1500; }
   setTimer(Math.min(S.ready[0].acc, S.ready[1].acc) / 1500);
   if (S.ready[0].acc >= 1500 && S.ready[1].acc >= 1500) {
-    S.ready.forEach((r, i) => { ev[i].norm.base = { cx: 0, shY: r.y / r.n, sw: r.w / r.n }; });
+    S.ready.forEach((r, i) => { if (r.n) ev[i].norm.base = { cx: 0, shY: r.y / r.n, sw: r.w / r.n }; });
     S.phase = 'count'; $('rule').textContent = S.mode === 'next' ? '빈칸에 올 것을 찾아 풍선에 손을 대요' : '노란 칸의 동작을 차례대로 따라 해요';
     let n = 3; const tick = () => { if (n) { banner(String(n)); audio.count(false); n--; later(700, tick); } else { banner('시작!'); audio.count(true); audio.startMusic('party', 112);
       later(600, () => { banner(''); S.scr = 'play'; S.gameT0 = performance.now(); S.mode === 'next' ? nextQ() : bodyRow(); }); } };
@@ -109,8 +111,8 @@ function nextQ(){
   // 보기 자리: 문제마다 각자 몸 기준으로 고정(왼쪽·머리 위·오른쪽). 보기 2개면 왼쪽·오른쪽
   const W = km.W, H = km.H, pos = q.choices.length === 2 ? ['L', 'R'] : ['L', 'T', 'R'];
   for (let i = 0; i < 2; i++) { const p = duo[i], b = ev[i].norm.base || { shY: H * .5, sw: 90 }; const sw = clamp(b.sw, 46, 150), r = clamp(sw * .55, 34, 62);
-    const ok = p && p[11].v > .5 && p[12].v > .5, cx = ok ? (p[11].x + p[12].x) / 2 : W * (i ? .75 : .25), cy = ok ? (p[11].y + p[12].y) / 2 : b.shY;
-    S.spots[i] = pos.map(k => ({ pos: k, r, x: clamp(cx + (k === 'L' ? -1.6 : k === 'R' ? 1.6 : 0) * sw, i * W / 2 + r + 4, (i + 1) * W / 2 - r - 4),
+    const ok = p && p[11].v > .5 && p[12].v > .5, cx = ok ? (p[11].x + p[12].x) / 2 : midX(i), cy = ok ? (p[11].y + p[12].y) / 2 : b.shY;
+    S.spots[i] = pos.map(k => ({ pos: k, r, x: clamp(cx + (k === 'L' ? -1.6 : k === 'R' ? 1.6 : 0) * sw, (S.solo ? 0 : i * W / 2) + r + 4, (S.solo ? W : (i + 1) * W / 2) - r - 4),
       y: clamp(cy - (k === 'T' ? 1.8 : .55) * sw, H * .17 + r, H * .68) })); }
   S.limit = Math.max(7000, 13000 - S.qn * 350); S.phase = 'show'; later(700, () => { S.phase = 'ask'; S.t0 = performance.now(); });
 }
@@ -125,7 +127,7 @@ function nextStep(t, dt){
 function choose(i, n, t){
   S.picked[i] = n; S.hov[i] = { k: -1, ms: 0 };
   if (S.q.choices[n] === S.q.answer) { S.ans[i] = 'ok'; audio.success('GREAT');
-    if (S.first < 0) { S.first = i; add(i, 2, '먼저! +2'); const rest = S.limit - (t - S.t0); if (rest > 3500) S.limit -= rest - 3500; } else add(i, 1, '+1'); }
+    if (S.first < 0) { S.first = i; add(i, 2, S.solo ? '정답! +2' : '먼저! +2'); const rest = S.limit - (t - S.t0); if (rest > 3500) S.limit -= rest - 3500; } else add(i, 1, '+1'); }
   else { S.ans[i] = 'bad'; miss(i, '아쉬워요 −❤'); }
 }
 function reveal(timeout){
@@ -136,7 +138,7 @@ function reveal(timeout){
 function drawSpots(ctx, t){
   if (!S.q || !(S.phase === 'show' || S.phase === 'ask' || S.phase === 'gap') || S.mode !== 'next' || S.scr !== 'play') return;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  for (let i = 0; i < 2; i++) { if (S.out[i]) continue;
+  for (let i = 0; i < 2; i++) { if (!alive(i)) continue;
     S.spots[i].forEach((s, n) => { const v = S.q.choices[n], right = v === S.q.answer, picked = S.picked[i] === n;
       const gone = (S.ans[i] && !picked && !(S.phase === 'gap' && right)); ctx.globalAlpha = gone ? .25 : S.phase === 'show' ? .6 : 1;
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
@@ -180,22 +182,25 @@ function finish(){
   if (S.scr === 'end') return; S.scr = 'end'; S.phase = ''; clearTimers(); audio.stopMusic(); banner(''); show('strip', 0);
   let w; if (S.out[0] !== S.out[1]) w = S.out[0] ? 1 : 0; else if (S.score[0] !== S.score[1]) w = S.score[0] > S.score[1] ? 0 : 1; else if (S.lives[0] !== S.lives[1]) w = S.lives[0] > S.lives[1] ? 0 : 1; else w = -1;
   $('wTeam').textContent = w < 0 ? '비겼어요' : `${TEAM[w].name} 승리`; $('wTeam').className = 'win ' + (w < 0 ? '' : TEAM[w].cls);
+  document.querySelector('.final').classList.toggle('hidden', S.solo); let best = 0;
+  if (S.solo) { const key = 'kmotion.pattern.best.' + S.mode; try { best = +localStorage.getItem(key) || 0; if (S.score[0] > best) localStorage.setItem(key, S.score[0]); } catch (_) {}
+    $('wTeam').textContent = `${S.score[0]}점`; $('wTeam').className = 'win blue'; }
   $('fB').textContent = S.score[0]; $('fR').textContent = S.score[1];
-  const why = S.out[0] && S.out[1] ? '둘 다 하트를 다 썼어요' : S.out[0] || S.out[1] ? `${TEAM[S.out[0] ? 0 : 1].name}이 하트를 다 썼어요` : '90초 끝 · 점수가 많은 팀이 이겨요';
-  $('wNote').textContent = `${why} · ${S.stage}단계까지 갔어요`; w < 0 ? audio.appear() : audio.win(); show('scrEnd', 1);
+  const why = S.solo ? (S.out[0] ? '하트를 다 썼어요' : '90초 끝') + (S.score[0] > best && best ? ' · 새 기록!' : best ? ` · 내 최고 ${best}점` : '') : S.out[0] && S.out[1] ? '둘 다 하트를 다 썼어요' : S.out[0] || S.out[1] ? `${TEAM[S.out[0] ? 0 : 1].name}이 하트를 다 썼어요` : '90초 끝 · 점수가 많은 팀이 이겨요';
+  $('wNote').textContent = `${why} · ${S.stage}단계까지 갔어요`; w < 0 && !S.solo ? audio.appear() : audio.win(); show('scrEnd', 1);
 }
 
 // ── 프레임
 let lastT = 0;
 km.onFrame = f => {
-  const t = f.t, dt = lastT ? Math.min(100, t - lastT) : 0; lastT = t; duo = f.duo || [null, null];
+  const t = f.t, dt = lastT ? Math.min(100, t - lastT) : 0; lastT = t; duo = f.duo || [null, null]; if (S.solo) duo = [duo[0] || duo[1], null];
   const ctx = f.ctx, W = f.W, H = f.H; km.drawCamera();
-  for (let i = 0; i < 2; i++) { ctx.fillStyle = S.out[i] ? 'rgba(20,20,20,.6)' : `rgba(${TEAM[i].rgb},.12)`; ctx.fillRect(i * W / 2, 0, W / 2, H); }
-  ctx.save(); ctx.setLineDash([14, 12]); ctx.strokeStyle = 'rgba(244,241,226,.55)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke(); ctx.restore();
+  if (!S.solo) { for (let i = 0; i < 2; i++) { ctx.fillStyle = S.out[i] ? 'rgba(20,20,20,.6)' : `rgba(${TEAM[i].rgb},.12)`; ctx.fillRect(i * W / 2, 0, W / 2, H); }
+  ctx.save(); ctx.setLineDash([14, 12]); ctx.strokeStyle = 'rgba(244,241,226,.55)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke(); ctx.restore(); }
   ctx.textAlign = 'center';
-  for (let i = 0; i < 2; i++) { const p = duo[i], cx = W * (i ? .75 : .25);
+  for (let i = 0; i < 2; i++) { if (S.solo && i) continue; const p = duo[i], cx = midX(i);
     if (S.out[i]) { ctx.font = '400 64px "Black Han Sans", sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillText('탈락', cx, H * .5); continue; }
-    if (!p) { if (S.scr !== 'menu' && S.scr !== 'end') { ctx.font = '400 32px "Black Han Sans", sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText(`${TEAM[i].name} 자리에 서요`, cx, H * .5); } continue; }
+    if (!p) { if (S.scr !== 'menu' && S.scr !== 'end') { ctx.font = '400 32px "Black Han Sans", sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText(S.solo ? '자리에 서요' : `${TEAM[i].name} 자리에 서요`, cx, H * .5); } continue; }
     km.drawSkeleton(p, BONES, `rgba(${TEAM[i].rgb},.95)`, 5);
     if (S.phase === 'ready') { const a = S.ready[i] ? S.ready[i].acc / 1500 : 0; ctx.font = '400 30px "Black Han Sans", sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(a >= 1 ? '준비 완료!' : '그대로!', cx, H * .2); }
     if (S.mode === 'body' && (S.phase === 'body' || S.done[i]) && S.scr === 'play') { const prog = S.done[i] ? 1 : ev[i].progress;
@@ -206,7 +211,7 @@ km.onFrame = f => {
   drawSpots(ctx, t);
   S.pops = S.pops.filter(q => t - q.t < 1200);
   for (const q of S.pops) { const k = (t - q.t) / 1200; ctx.globalAlpha = 1 - k; ctx.font = '400 40px "Black Han Sans", sans-serif'; ctx.fillStyle = '#ffd84a';
-    ctx.strokeStyle = `rgb(${TEAM[q.i].rgb})`; ctx.lineWidth = 6; const x = W * (q.i ? .75 : .25), y = H * .45 - k * 70; ctx.strokeText(q.text, x, y); ctx.fillText(q.text, x, y); ctx.globalAlpha = 1; }
+    ctx.strokeStyle = `rgb(${TEAM[q.i].rgb})`; ctx.lineWidth = 6; const x = midX(q.i), y = H * .45 - k * 70; ctx.strokeText(q.text, x, y); ctx.fillText(q.text, x, y); ctx.globalAlpha = 1; }
   if (S.phase === 'ready') stepReady(dt); else if (S.phase === 'ask') nextStep(t, dt); else if (S.phase === 'body') bodyStep(t);
 };
 if (DEV) window.__pt = S;
