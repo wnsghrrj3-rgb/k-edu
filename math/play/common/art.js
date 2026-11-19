@@ -12,7 +12,7 @@ const ART = {
   'rod.1': { src: '/math/play/art/rod.1.png?v=2' }, 'rod.2': { src: '/math/play/art/rod.2.png?v=2' }, 'rod.3': { src: '/math/play/art/rod.3.png?v=2' }, 'rod.4': { src: '/math/play/art/rod.4.png?v=2' }, 'rod.5': { src: '/math/play/art/rod.5.png?v=2' },
   // 낚시 섬 도감(모형을 찍은 그림)
   'fishbook.Clownfish': { src: '/math/play/art/fishbook.Clownfish.png' }, 'fishbook.BlueTang': { src: '/math/play/art/fishbook.BlueTang.png' }, 'fishbook.YellowTang': { src: '/math/play/art/fishbook.YellowTang.png' }, 'fishbook.Koi': { src: '/math/play/art/fishbook.Koi.png' }, 'fishbook.Tetra': { src: '/math/play/art/fishbook.Tetra.png' }, 'fishbook.ButterflyFish': { src: '/math/play/art/fishbook.ButterflyFish.png' }, 'fishbook.CardinalFish': { src: '/math/play/art/fishbook.CardinalFish.png' }, 'fishbook.RoyalGramma': { src: '/math/play/art/fishbook.RoyalGramma.png' }, 'fishbook.Betta': { src: '/math/play/art/fishbook.Betta.png' }, 'fishbook.Tang': { src: '/math/play/art/fishbook.Tang.png' }, 'fishbook.Goldfish': { src: '/math/play/art/fishbook.Goldfish.png' }, 'fishbook.Puffer': { src: '/math/play/art/fishbook.Puffer.png' }, 'fishbook.Shark': { src: '/math/play/art/fishbook.Shark.png' }, 'fishbook.Anglerfish': { src: '/math/play/art/fishbook.Anglerfish.png' },
-  'plaza.wood': { src: '/math/play/art/plaza.wood.png?v=2' }, 'map.piece': '🧩', 'hint.hand': '👆',
+  'plaza.wood': { src: '/math/play/art/plaza.wood.png?v=2' }, 'map.piece': '🧩', 'hint.hand': '👆', 'flag': '🚩', 'flag.star': '⭐',
   'shop.heart': '❤️', 'shop.heart.empty': '🤍', 'guest.mark.hurry': '💦', 'guest.mark.regular': '💛',
   'guest.bear': '🐻', 'guest.rabbit': '🐰', 'guest.cat': '🐱', 'guest.dog': '🐶', 'guest.fox': '🦊', 'guest.panda': '🐼', 'guest.frog': '🐸', 'guest.monkey': '🐵',
   // 낚시 섬
