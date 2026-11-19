@@ -1,0 +1,278 @@
+{
+  "id": "vacuum",
+  "title": "공기를 빼면",
+  "subtitle": "진공 종",
+  "shelfLabel": "장비가 없다",
+
+  "vac": {
+    "pMin": 0.02, "stroke": 0.14, "leak": 0.004, "valveShut": 0.05, "valveRate": 0.8,
+    "fastOpen": 0.6, "whooshBelow": 0.5, "liftAt": 0.9, "airBackAt": 0.95,
+    "gauge": [0.75, 0.5, 0.25, 0.1, 0.05]
+  },
+  "water": {
+    "T0": 30, "Tmin": 12,
+    "boilTable": [[10, 0.012], [15, 0.017], [20, 0.023], [25, 0.032], [30, 0.04], [35, 0.056], [40, 0.074], [50, 0.123], [60, 0.197], [100, 1]],
+    "simmer": 1.6, "stopAt": 1.05, "cool": 0.25, "coolGain": 0.5, "coolNeed": 1.0, "thermoStep": 0.5, "graphEvery": 0.5, "graphMax": 400
+  },
+  "flow": { "tickSlice": 0.1, "plateMax": 3, "cycleMin": 0.9, "restockDelay": 2.5, "puffStep": 0.25, "soundMarks": [0.5, 0.25, 0.12] },
+
+  "items": [
+    { "id": "plate", "name": "받침판", "role": "fixture", "appears": "marsh", "parts": ["고무 테", "압력 바늘", "공기 밸브"] },
+    { "id": "pump", "name": "손 펌프", "role": "fixture", "appears": "marsh", "parts": ["긴 손잡이"] },
+    { "id": "bell", "name": "유리 종", "role": "bell", "appears": "marsh", "bell": { "leak": 0.004 } },
+    { "id": "bell_cracked", "name": "유리 종", "role": "bell", "appears": "clock", "cracked": true, "look": "자세히 보면 가는 금이 보인다",
+      "bell": { "leak": 0.05, "crackWarn": 0.6, "crackBurst": 0.4 } },
+    { "id": "shield", "name": "방호 유리판", "role": "shield", "appears": "clock" },
+
+    { "id": "marshmallow", "name": "마시멜로", "role": "sample", "appears": "marsh",
+      "vac": { "kind": "puff", "elastic": 0.6, "cap": 2.4, "shrink": 0.35, "goal": 2 },
+      "on": { "goal": "marshDouble", "back": "marshShrink" } },
+    { "id": "balloon_s", "name": "덜 분 풍선", "role": "sample", "appears": "marsh",
+      "vac": { "kind": "puff", "elastic": 0.35, "cap": 1.8, "shrink": 0 },
+      "on": { "full": "balloonWall", "back": "balloonBack" } },
+    { "id": "clock", "name": "자명종", "role": "sample", "appears": "clock",
+      "vac": { "kind": "sound", "quiet": 0.06 },
+      "on": { "quiet": "clockSilent", "back": "clockBack" } },
+    { "id": "candle", "name": "촛불", "role": "sample", "appears": "clock",
+      "vac": { "kind": "flame", "out": 0.35 },
+      "on": { "out": "candleOut", "back": "candleSmoke" } },
+    { "id": "suction", "name": "흡착판과 추", "role": "sample", "appears": "clock",
+      "vac": { "kind": "suction", "drop": 0.25 },
+      "on": { "drop": "suctionDrop" } },
+    { "id": "beaker_water", "name": "미지근한 물", "role": "sample", "appears": "boil",
+      "vac": { "kind": "water" },
+      "on": { "boil": "waterBoil", "stop": "waterStop", "cooled": "waterCold", "simmer": "waterSimmer" } },
+    { "id": "foam", "name": "면도 거품", "role": "sample", "appears": "boil",
+      "vac": { "kind": "puff", "elastic": 1.0, "cap": 6, "shrink": 0.75 },
+      "on": { "full": "foamFill", "back": "foamCollapse" } },
+
+    { "id": "chips", "name": "과자 봉지", "role": "sample", "appears": "free",
+      "vac": { "kind": "puff", "elastic": 0.5, "cap": 1.6, "shrink": 0, "burst": 0.12, "burstSize": 0.9 },
+      "on": { "full": "chipsPuff", "burst": "chipsBurst" } },
+    { "id": "sponge", "name": "물 묻힌 스펀지", "role": "sample", "appears": "free",
+      "vac": { "kind": "puff", "elastic": 0.12, "cap": 1.3, "shrink": 0.1, "fizz": 0.3 },
+      "on": { "fizz": "spongeFizz" } },
+    { "id": "droptube", "name": "낙하 통", "role": "tube", "appears": "free",
+      "vac": { "kind": "tube", "together": 0.05, "close": 0.4, "tBall": 0.45, "drag": 2.2 },
+      "on": { "ballFirst": "dropBallFirst", "featherLate": "dropFeatherLate", "together": "dropTogether" } }
+  ],
+
+  "table": [
+    { "item": "marshmallow", "pump": "점점 부풀어 두 배가 된다", "valve": "원래보다 작게 쭈그러든다" },
+    { "item": "balloon_s", "pump": "탱탱하게 부푼다(끝까지 빼면 종 벽에 닿는다)", "valve": "원래대로" },
+    { "item": "clock", "pump": "흔들리는 건 보이는데 소리가 점점 작아져 사라진다", "valve": "소리가 돌아온다" },
+    { "item": "beaker_water", "pump": "바늘이 바닥 가까이 가면 불 없이 끓는다. 온도계는 오히려 내려간다", "valve": "뚝 멈춘다" },
+    { "item": "candle", "pump": "불꽃이 작아지다 꺼진다", "valve": "다시 안 켜진다(연기만)" },
+    { "item": "suction", "pump": "어느 순간 툭 떨어진다", "valve": "—" },
+    { "item": "foam", "pump": "종을 가득 채운다", "valve": "푹 꺼진다" },
+    { "item": "droptube", "pump": "공기 있을 때: 쇠구슬 먼저 / 뺀 뒤: 같이 떨어진다", "valve": "—" },
+    { "item": "bell", "pump": "공기를 뺀 종은 안 들린다", "valve": "쉽게 들린다" },
+    { "item": "chips", "pump": "빵빵해지다 이음매가 터진다", "valve": "터진 봉지는 그대로" },
+    { "item": "sponge", "pump": "구멍마다 거품이 보글보글 솟는다", "valve": "조금 납작해진다" }
+  ],
+
+  "outcomes": {
+    "marshDouble": { "fx": "puff", "flag": "double", "big": true, "text": "마시멜로가 두 배로 부풀었다." },
+    "marshShrink": { "fx": "shrink", "discover": "marshShrink", "text": "공기가 돌아오자 마시멜로가 처음보다 작게 쭈그러들었다." },
+    "marshHalf": { "fx": "shrink", "grade": "mid", "text": "마시멜로가 부풀었지만 두 배가 되기 전에 공기가 돌아왔다." },
+    "marshLittle": { "fx": "shrink", "grade": "fail", "text": "마시멜로가 조금 부풀다 말았다." },
+    "balloonWall": { "fx": "puff", "big": true, "discover": "balloonWall", "text": "풍선이 탱탱하게 부풀어 종 벽에 닿았다." },
+    "balloonBack": { "fx": "shrink", "text": "풍선이 원래대로 돌아왔다." },
+    "clockSilent": { "fx": "quiet", "flag": "silent", "discover": "silentClock", "text": "자명종은 흔들리는데 소리가 안 들린다." },
+    "clockBack": { "fx": "loud", "text": "공기가 돌아오자 소리도 돌아왔다." },
+    "clockSoft": { "fx": "quiet", "grade": "mid", "text": "소리가 작아졌다가 공기와 함께 돌아왔다." },
+    "clockSame": { "fx": "quiet", "grade": "fail", "text": "소리가 거의 그대로였다." },
+    "waterBoil": { "fx": "boilStart", "flag": "boil", "text": "불 없이 물이 보글보글 끓는다." },
+    "waterCold": { "fx": "thermo", "flag": "cooled", "discover": "coldBoil", "text": "물은 끓는데 온도계는 내려간다." },
+    "waterStop": { "fx": "boilStop", "text": "끓음이 뚝 멈췄다." },
+    "waterSimmer": { "fx": "bubbles", "text": "작은 방울이 송송 올라온다." },
+    "waterBrief": { "fx": "boilStop", "grade": "mid", "text": "물이 잠깐 끓다가 멈췄다." },
+    "waterBubbles": { "fx": "bubbles", "grade": "mid", "text": "작은 방울만 송송 올라오고 끓지는 않았다." },
+    "waterStill": { "fx": "still", "grade": "fail", "text": "물은 그대로였다." },
+    "candleOut": { "fx": "candleOut", "discover": "candleOut", "text": "불꽃이 작아지다 꺼졌다." },
+    "candleSmoke": { "fx": "smoke", "discover": "candleSmoke", "text": "공기가 돌아와도 다시 안 켜진다. 연기만 오른다." },
+    "suctionDrop": { "fx": "suctionDrop", "discover": "suctionDrop", "text": "흡착판이 툭 떨어졌다." },
+    "foamFill": { "fx": "foamFill", "discover": "foamFill", "text": "거품이 부풀어 종을 가득 채웠다." },
+    "foamCollapse": { "fx": "shrink", "discover": "foamCollapse", "text": "공기가 돌아오자 거품이 푹 꺼졌다." },
+    "chipsPuff": { "fx": "puff", "discover": "chipsPuff", "text": "과자 봉지가 빵빵해졌다." },
+    "chipsBurst": { "fx": "pop", "discover": "chipsBurst", "text": "봉지 이음매가 펑 터졌다." },
+    "spongeFizz": { "fx": "fizz", "discover": "spongeFizz", "text": "스펀지 구멍마다 거품이 보글보글 솟는다." },
+    "dropBallFirst": { "fx": "dropResult", "text": "쇠구슬이 먼저 떨어지고 깃털은 하늘하늘 늦게 왔다." },
+    "dropFeatherLate": { "fx": "dropResult", "text": "깃털이 조금 늦었지만 아까보다 훨씬 빨리 떨어졌다." },
+    "dropTogether": { "fx": "dropResult", "discover": "dropTogether", "text": "깃털과 쇠구슬이 나란히 같이 떨어졌다." },
+    "stuck": { "fx": "stuck", "discover": "stuckBell", "text": "종이 꿈쩍도 안 한다. 바깥 공기가 꾹 누르고 있다." },
+    "whoosh": { "fx": "whoosh", "grade": "fail", "discover": "whoosh", "text": "공기가 한꺼번에 쏟아져 들어와 안의 것이 엎어졌다." },
+    "noBell": { "fx": "pumpOpen", "grade": "fail", "text": "종을 덮지 않아서 공기가 그냥 들어온다." },
+    "crackWarn": { "fx": "crack", "stage": 1, "text": "쩍! 종에 금이 번진다." },
+    "crackBurst": { "fx": "crack", "stage": 2, "text": "종이 안쪽으로 와르르 터졌다." },
+    "shielded": { "fx": "shielded", "discover": "shieldSaved", "text": "방호 유리판이 튀는 조각을 막았다." },
+    "crackHeld": { "fx": "crackHeld", "text": "금이 더 번지기 전에 공기를 넣었다." }
+  },
+
+  "accidents": {
+    "crackedNoShield": {
+      "show": "alarm",
+      "log": "금 간 종을 방호 유리판 없이 썼다",
+      "real": "진짜였다면: 종이 안쪽으로 터지면서 유리 조각이 사방으로 튀어요.",
+      "rule": "금 간 유리 기구는 쓰지 않는다. 공기를 뺄 때는 방호 유리판을 세운다."
+    }
+  },
+
+  "blocks": {
+    "predictFirst": "먼저 예상 카드를 골라요.",
+    "bellOn": "종을 먼저 들어요.",
+    "plateFull": "받침판이 꽉 찼어요. 하나를 내려놓아요.",
+    "tooTall": "낙하 통 위에는 종을 덮을 수 없어요.",
+    "bellTaken": "받침판에는 종을 하나만 덮어요.",
+    "valveOpen": "밸브가 열려 있어요. 잠가야 공기가 빠져요.",
+    "fixture": "실험대에 붙어 있어요."
+  },
+
+  "missions": [
+    {
+      "id": "marsh", "title": "부푸는 마시멜로", "note": "마시멜로를 손대지 않고 두 배로 키워라", "stamp": "두 배 마시멜로",
+      "item": "marshmallow", "items": ["marshmallow"],
+      "predict": { "q": "종 안의 공기를 빼면 마시멜로는?", "cards": ["쪼그라든다", "그대로다", "부풀어 오른다"], "actual": 2,
+        "when": { "sealedWith": "marshmallow" }, "gate": ["pump"] },
+      "steps": [
+        { "glow": ["marshmallow"], "done": { "at": { "marshmallow": "plate" } } },
+        { "glow": ["bell"], "done": { "sealedWith": "marshmallow" } },
+        { "glow": [], "done": { "predicted": true } },
+        { "glow": ["pump"], "done": { "flag": "double:marshmallow" } }
+      ],
+      "done": ["double:marshmallow"],
+      "cycle": { "measure": "gMax", "rows": [[1.4, "marshHalf"], [0, "marshLittle"]] },
+      "happened": "공기를 뺄수록 마시멜로가 부풀어 두 배가 되었다.",
+      "cause": "우리는 공기가 사방에서 꾹 누르는 공기의 바다 밑에 살아요. 그 누르는 힘을 치우면 마시멜로 속 공기가 마음껏 부풀어요.",
+      "whyNot": "공기를 빼는 진공 펌프와 두꺼운 유리 종이 학교에는 없어요.",
+      "hints": {
+        "noBell": "종을 덮어야 공기가 빠져요.",
+        "marshLittle": "쉬지 말고 더 많이 펌프질해요.",
+        "marshHalf": "조금만 더! 두 배가 될 때까지 펌프질해요.",
+        "whoosh": "밸브는 천천히 열어요. 엎어진 것을 다시 놓아요.",
+        "valveOpen": "밸브를 잠가야 공기가 빠져요.",
+        "stuck": "밸브를 열어 공기를 넣으면 들려요."
+      }
+    },
+    {
+      "id": "clock", "title": "조용한 자명종", "note": "자명종을 끄지 않고 조용히 시켜라", "stamp": "소리 없는 종",
+      "item": "clock", "items": ["clock"], "pictures": ["clock", "bell", "pump"],
+      "predict": { "q": "종 안의 공기를 빼면 자명종 소리는?", "cards": ["더 커진다", "그대로다", "작아지다 사라진다"], "actual": 2,
+        "when": { "sealedWith": "clock" }, "gate": ["pump"] },
+      "done": ["silent:clock"],
+      "cycle": { "measure": "minP", "rows": [[0.3, "clockSoft"], [1.01, "clockSame"]] },
+      "happened": "자명종은 계속 흔들리는데 소리가 점점 작아지다 사라졌다.",
+      "cause": "소리는 공기를 타고 와요. 탈 것이 없으면 못 와요.",
+      "whyNot": "두꺼운 유리 종이 없어요. 금 간 유리는 공기에 눌려 안쪽으로 터져요.",
+      "hints": {
+        "noBell": "종을 덮어야 공기가 빠져요.",
+        "clockSame": "더 많이, 쉬지 말고 펌프질해요.",
+        "clockSoft": "거의 다 왔어요. 소리가 사라질 때까지 빼요.",
+        "crackWarn": "금이 번져요! 밸브를 천천히 열어 멈추거나, 방호 유리판을 세워요.",
+        "accident": "금 간 종은 쓰지 않아요. 종을 자세히 보고 골라요.",
+        "whoosh": "밸브는 천천히 열어요. 엎어진 것을 다시 놓아요.",
+        "valveOpen": "밸브를 잠가야 공기가 빠져요.",
+        "stuck": "밸브를 열어 공기를 넣으면 들려요."
+      }
+    },
+    {
+      "id": "boil", "title": "불 없이 끓는 물", "note": "불 없이 물을 끓여라", "stamp": "차가운 끓음",
+      "item": "beaker_water", "items": ["beaker_water"], "pictures": ["beaker_water", "bell", "pump"], "graph": true,
+      "predict": { "q": "불 없이 물이 끓는다면, 온도계는?", "cards": ["올라간다", "그대로다", "내려간다"], "actual": 2,
+        "when": { "sealedWith": "beaker_water" }, "gate": ["pump"] },
+      "done": ["boil:beaker_water", "cooled:beaker_water"],
+      "cycle": { "measure": "water", "rows": [["boiled", "waterBrief"], [1.6, "waterBubbles"], [999, "waterStill"]] },
+      "happened": "불 없이 물이 끓었다. 끓는 동안 온도계는 오히려 내려갔다.",
+      "cause": "누르는 힘이 약해지면 물은 낮은 온도에서도 끓어요. 끓을 때 물이 열을 가져가서 오히려 차가워져요.",
+      "whyNot": "물이 끓을 만큼 공기를 빼려면 진짜 진공 펌프가 있어야 해요.",
+      "hints": {
+        "noBell": "종을 덮어야 공기가 빠져요.",
+        "waterStill": "바늘이 바닥에 닿을 때까지 쉬지 말고 빼요.",
+        "waterBubbles": "방울이 보이면 거의 다 왔어요. 더 빼요.",
+        "waterBrief": "멈추면 공기가 새어 들어와요. 끝까지 계속해요.",
+        "waterStop": "멈추면 공기가 새어 들어와요. 끝까지 계속해요.",
+        "emptyBeaker": "물이 쏟아졌어요. 비커를 선반에 두면 새 물이 담겨요.",
+        "crackWarn": "금이 번져요! 밸브를 천천히 열어 멈추거나, 방호 유리판을 세워요.",
+        "accident": "금 간 종은 쓰지 않아요. 종을 자세히 보고 골라요.",
+        "whoosh": "밸브는 천천히 열어요. 엎어진 것을 다시 놓아요.",
+        "valveOpen": "밸브를 잠가야 공기가 빠져요.",
+        "stuck": "밸브를 열어 공기를 넣으면 들려요."
+      }
+    }
+  ],
+
+  "whyNot": {
+    "title": "왜 학교에서는 못 할까?",
+    "lines": [
+      "공기를 거의 다 빼는 진공 펌프가 학교에 없어요.",
+      "공기가 누르는 힘을 버틸 두꺼운 유리 종도 없어요.",
+      "금 간 유리는 공기에 눌려 안쪽으로 터져요."
+    ]
+  },
+  "free": { "id": "free", "title": "자유 실험", "note": "이것도 넣어 볼까" },
+
+  "encyclopedia": [
+    { "id": "marshShrink", "item": "marshmallow", "title": "쭈그러든 마시멜로", "text": "부풀며 속 거품이 터져서, 공기가 돌아오면 처음보다 작아져요." },
+    { "id": "balloonWall", "item": "balloon_s", "title": "벽에 닿은 풍선", "text": "풍선 속 공기를 누르던 바깥 공기가 없어지니 종 벽까지 부풀어요." },
+    { "id": "silentClock", "item": "clock", "title": "소리 없는 종", "text": "망치는 종을 치는데, 소리를 실어 나를 공기가 없어요." },
+    { "id": "coldBoil", "item": "beaker_water", "title": "차가운 끓음", "text": "끓을 때 물이 열을 가져가서 끓을수록 차가워져요." },
+    { "id": "candleOut", "item": "candle", "title": "숨 막힌 촛불", "text": "불이 타려면 공기 속 산소가 있어야 해요." },
+    { "id": "candleSmoke", "item": "candle", "title": "다시 안 켜지는 초", "text": "공기가 돌아와도 불씨가 없으면 다시 켜지지 않아요. 연기만 올라요." },
+    { "id": "suctionDrop", "item": "suction", "title": "툭 떨어진 흡착판", "text": "흡착판은 바깥 공기가 눌러서 붙어 있어요. 누르는 공기가 없으면 떨어져요." },
+    { "id": "foamFill", "item": "foam", "title": "종을 채운 거품", "text": "거품 방울 하나하나가 부풀어 종을 가득 채워요." },
+    { "id": "foamCollapse", "item": "foam", "title": "푹 꺼진 거품", "text": "크게 부푼 방울들이 터져서, 공기가 돌아오면 푹 꺼져요." },
+    { "id": "chipsPuff", "item": "chips", "title": "빵빵한 과자 봉지", "text": "봉지 안 공기가 부풀어 빵빵해져요. 높은 산에 가도 이렇게 돼요." },
+    { "id": "chipsBurst", "item": "chips", "title": "터진 과자 봉지", "text": "끝까지 빼면 안의 공기가 이음매를 밀어 터뜨려요." },
+    { "id": "spongeFizz", "item": "sponge", "title": "보글보글 스펀지", "text": "구멍 속 공기가 부풀어 물을 밀고 나와요." },
+    { "id": "dropTogether", "item": "droptube", "title": "같이 떨어진 깃털", "text": "공기가 없으면 깃털도 쇠구슬과 똑같이 떨어져요." },
+    { "id": "stuckBell", "item": "bell", "title": "안 들리는 종", "text": "바깥 공기가 종을 위에서 꾹 눌러서 손으로는 못 들어요." },
+    { "id": "whoosh", "item": "plate", "title": "휙 엎어진 것들", "text": "밸브를 한 번에 열면 공기가 바람처럼 쏟아져 들어와요." },
+    { "id": "shieldSaved", "item": "shield", "title": "막아 낸 유리판", "text": "금 간 종이 안쪽으로 터졌지만 방호 유리판이 조각을 막았어요." }
+  ],
+
+  "texts": {
+    "pumpOpen": "슉— 공기가 그냥 들어와요.",
+    "hissSlow": "피시식— 공기가 천천히 들어가요.",
+    "hissFast": "푸슉! 공기가 한꺼번에 들어가요.",
+    "valveShut": "밸브를 잠갔어요.",
+    "shieldOn": "방호 유리판을 세웠어요.",
+    "shieldOff": "방호 유리판을 치웠어요.",
+    "lift": "종을 들었어요.",
+    "cover": "종을 덮었어요.",
+    "connect": "낙하 통을 받침판 구멍에 꽂았어요.",
+    "restock": "선반에 두니 새것이 되었어요.",
+    "crackGone": "금 간 종은 깨져서 없어졌어요.",
+    "crackBack": "선반에 금 간 종이 다시 놓였어요.",
+    "reset": "실험대를 처음처럼 다시 차렸어요.",
+    "spill": "물이 쏟아졌어요.",
+    "lostHand": "제자리로 돌아갔어요.",
+    "thud": "실험대에 내려놓았어요.",
+    "noPrediction": "고르지 않음",
+    "stampAccidents": "사고 수집가",
+    "stampEncyclopedia": "도감 완성",
+    "freeStart": "선반에 새 물건이 놓였어요. 무엇이든 넣고 공기를 빼 봐요.",
+    "gaugeNames": ["바깥 공기", "조금 뺐다", "반쯤 뺐다", "많이 뺐다", "거의 다 뺐다", "바닥 가까이"],
+    "ui": {
+      "notebook": "실험 노트",
+      "close": "닫기",
+      "myPrediction": "내 예상",
+      "actual": "실제로는",
+      "happened": "일어난 일",
+      "cause": "까닭",
+      "accidents": "사고 기록",
+      "found": "찾아낸 것",
+      "next": "다음 의뢰로",
+      "tries": "해 본 것",
+      "pressure": "압력",
+      "temp": "온도",
+      "time": "시간",
+      "graphTitle": "끓는 동안 물 온도",
+      "boiling": "끓는 중",
+      "valve": "밸브",
+      "pump": "펌프질",
+      "shield": "방호 유리판",
+      "reset": "다시 차리기",
+      "strokes": "펌프질 횟수"
+    }
+  }
+}

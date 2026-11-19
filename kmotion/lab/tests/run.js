@@ -3,5 +3,7 @@ await import('./test_hands.js');
 await import('./test_thermal.js');
 await import('./test_rules.js');
 await import('./test_session.js');
+await import('./test_vacuum.js');
+await import('./test_session_vacuum.js');
 await import('./test_purity.js');
 await import('./test_syntax.js');
