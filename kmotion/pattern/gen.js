@@ -14,7 +14,7 @@ const uniq = a => [...new Set(a)];
 
 function repeat(unit, len){ const out = []; for (let i = 0; i < len; i++) out.push(unit[i % unit.length]); return out; }
 function build(full, hole, pool, n, rule, kind, r){
-  const answer = full[hole]; let wrong = shuffle(uniq(pool).filter(x => x !== answer), r).slice(0, n - 1);
+  const answer = full[hole]; const wrong = uniq(pool).filter(x => x !== answer).slice(0, n - 1); // pool 은 앞에서부터 씀(줄에 나온 것 먼저)
   const choices = shuffle([answer, ...wrong], r);
   return { cells: full.map((x, i) => i === hole ? null : x), hole, answer, choices, rule, kind };
 }
@@ -24,13 +24,13 @@ function picture(stage, r, middle){
   const unit = [...tpl].map(ch => set[ch.charCodeAt(0) - 65]); const u = unit.length;
   const len = Math.min(9, Math.max(7, 2 * u + 1)); const full = repeat(unit, len);
   const hole = middle ? u + Math.floor(r() * (len - 1 - u)) : len - 1;
-  const used = uniq(unit); const pool = used.concat(set.filter(x => !used.includes(x)));
+  const used = uniq(unit); const pool = shuffle(used, r).concat(set.filter(x => !used.includes(x))); // 보기는 줄에 나온 것부터, 모자랄 때만 다른 것
   return build(full, hole, pool, stage === 1 ? 2 : 3, unit.join(' ') + ' 가 되풀이돼요', 'pic', r);
 }
 function numberRepeat(r){
   const tpl = pick(['AB', 'AAB', 'ABB', 'ABC'], r); const ds = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], r);
   const unit = [...tpl].map(ch => ds[ch.charCodeAt(0) - 65]); const len = Math.max(7, 2 * unit.length + 1); const full = repeat(unit, len);
-  return build(full, len - 1, uniq(unit).concat(ds.slice(3, 6)), 3, unit.join(' ') + ' 가 되풀이돼요', 'num', r);
+  return build(full, len - 1, shuffle(uniq(unit), r).concat(ds.slice(4, 7)), 3, unit.join(' ') + ' 가 되풀이돼요', 'num', r);
 }
 function numberStep(step, r, middle){
   const len = 6, a = Math.abs(step); let start;

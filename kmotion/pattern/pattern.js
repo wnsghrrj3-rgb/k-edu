@@ -144,7 +144,7 @@ function drawSpots(ctx, t){
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fillStyle = picked ? (right ? '#c9f7d3' : '#ffc9c6') : (S.phase === 'gap' && right) ? '#c9f7d3' : 'rgba(255,255,255,.93)'; ctx.fill();
       ctx.lineWidth = 6; ctx.strokeStyle = picked ? (right ? '#1f9d4d' : '#d43b36') : `rgb(${TEAM[i].rgb})`; ctx.stroke();
-      if (S.q.kind === 'num') { ctx.font = `400 ${s.r * 1.05}px "Black Han Sans", sans-serif`; ctx.fillStyle = '#14251b'; } else { ctx.font = `${s.r * 1.15}px sans-serif`; ctx.fillStyle = '#000'; }
+      if (S.q.kind === 'num') { ctx.font = `400 ${s.r * 1.05}px "Black Han Sans", sans-serif`; ctx.fillStyle = '#14251b'; } else { ctx.font = `${s.r * 1.15}px "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`; ctx.fillStyle = '#000'; }
       ctx.fillText(String(v), s.x, s.y + s.r * .06);
       const h = S.hov[i]; if (S.phase === 'ask' && !S.ans[i] && h.k === n && h.ms > 0) { ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 9; ctx.beginPath(); ctx.arc(s.x, s.y, s.r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, h.ms / TOUCH_MS)); ctx.stroke(); }
       ctx.globalAlpha = 1; }); }
