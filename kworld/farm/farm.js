@@ -12,10 +12,10 @@ await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm'); 
 
 const W = 380, H = 240;
 const seed0 = +(new URLSearchParams(location.search).get('seed') || (Date.now() % 100000));
-const SEASONS = ['봄', '여름', '가을', '겨울'], SLEN = [80, 84, 124, 52], YEARS = 5;
+const SEASONS = ['봄', '여름', '가을', '겨울'], SLEN = [80, 96, 124, 52], YEARS = 5;
 const HOME = [46, 150], GRAN = [53, 145], SEED = [50, 157], NURS = [37, 161], TOBS = [43, 165], DOOR = [44, 147];
 const BO = [150, 47], LORD = [226, 66], TOWN = [250, 128], GWE = [271, 104], PAPER = [281, 110], OX = [263, 142], CLOTH = [240, 120];
-const PASS = [302, 128], NEXT = [346, 128], PORT = [262, 207], PEDD = [62, 138];
+const DUTY = [104, 142.5], PASS = [302, 128], NEXT = [346, 128], PORT = [262, 207], PEDD = [62, 138];
 /* 값 */
 const YIELD = 8, FOOD = 8, CAP = 6, CAP_OX = 18, P_OX = 80, P_NB = 120, P_LORD = 160, P_PAPER = 200, HELP = 4, FIXED = 3;
 const GUNPO = [15, 25, 35, 45, 45], GUNPO_WHY = ['장정 한 몫', '갓난아기 몫까지', '돌아가신 할아버지 몫까지', '달아난 이웃 몫까지', '달아난 이웃 몫까지'];
@@ -108,7 +108,7 @@ const boPile = putArt('stone_pile', BO[0] + 14, BO[1] + 5) || putArt('rock_big',
 const pads = {}; function pad(key, x, z, col = 0xffcf4d) { const m = new THREE.Mesh(new THREE.RingGeometry(1.3, 1.7, 28), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.09, z); m.visible = false; scene.add(m); pads[key] = { m, x, z }; return pads[key]; }
 pad('seed', ...SEED); pad('nurs', ...NURS, 0x7ad65a); pad('tobs', ...TOBS, 0x6a9a3a); pad('gran', ...GRAN); pad('granT', GRAN[0] + 4, GRAN[1] + 3, 0x6a9a3a); pad('door', ...DOOR, 0xffffff);
 pad('bo', BO[0], BO[1] + 4, 0x7ac8ff); pad('town', ...TOWN); pad('next', ...NEXT); pad('port', ...PORT); pad('pedd', ...PEDD); pad('gwe', GWE[0], GWE[1] + 2.4, 0xff6a4a); pad('paper', ...PAPER, 0xc8a0ff);
-pad('ox', ...OX); pad('cloth', ...CLOTH, 0x9ad0ff); pad('lordBuy', LORD[0], LORD[1] + 6, 0xc8a0ff); pad('work', LORD[0] - 8, LORD[1] + 6, 0xffffff);
+pad('duty', ...DUTY, 0xff6a4a); pad('ox', ...OX); pad('cloth', ...CLOTH, 0x9ad0ff); pad('lordBuy', LORD[0], LORD[1] + 6, 0xc8a0ff); pad('work', LORD[0] - 8, LORD[1] + 6, 0xffffff);
 const nurseryM = (() => { const g = new THREE.Group(); g.add(at(box(6, 0.12, 5, 0x6f8f9a), 0, 0.07, 0)); const im = new THREE.InstancedMesh(artGeo('rice_young'), artMat, 15); im.castShadow = false; for (let i = 0; i < 15; i++) { _o.position.set(-2.2 + (i % 5) * 1.1, 0.12, -1.6 + Math.floor(i / 5) * 1.6); _o.scale.set(0.42, 0.6, 0.42); _o.rotation.set(0, i * 1.7, 0); _o.updateMatrix(); im.setMatrixAt(i, _o.matrix); } g.add(im); g.userData.im = im; g.position.set(NURS[0], 0, NURS[1] + 4.6); scene.add(g); return g; })();   /* 못자리: 촘촘한 어린 모 */
 const oxM = putArt('ox', HOME[0] + 9, HOME[1] + 2, 1.2); if (oxM) oxM.visible = false; const cartM = putArt('cart', HOME[0] + 12, HOME[1] + 4, 1.2) || putArt('handcart', HOME[0] + 12, HOME[1] + 4); if (cartM) cartM.visible = false;
 putArt('ox', OX[0] + 3, OX[1] + 2, 0.6); putArt('ox', OX[0] + 5.5, OX[1] - 1, 2);
@@ -128,6 +128,7 @@ for (const k in NB) { const n = NB[k]; n.k = k; n.mesh = mkP({ shirt: n.col, hat
 const extras = [[LORD[0] + 4, LORD[1] + 7, { shirt: 0xdfe6f0, hat: 'gat' }, 3.4], [GWE[0] + 2.4, GWE[1] - 1, { shirt: 0x3a4a7a, hat: 'gat' }, 3.14], [OX[0] + 1.6, OX[1] - 2, { shirt: 0xb08a5a, hat: 'paeraengi' }, 0], [247, 121, { shirt: 0xc8b08a, hat: 'scarf' }, 0], [256, 122, { shirt: 0x9a8a68, hat: 'paeraengi' }, 0.4], [244, 135, { shirt: 0xd0b890, hat: 'scarf' }, 3], [346, 123, { shirt: 0xb89a70, hat: 'paeraengi' }, 0], [352, 134, { shirt: 0xc8b08a, hat: 'scarf' }, 3], [PORT[0] - 3, PORT[1] + 1, { shirt: 0x6a7a8a, hat: 'paeraengi' }, 1.2]].map(([x, z, o, ry]) => { const m = mkP(o); m.position.set(x, 0, z); m.rotation.y = ry; walkAnim(m, 0, false); return m; });
 const crowd = Array.from({ length: 7 }, (_, i) => ({ m: mkP({ shirt: [0xf2ead8, 0xd8c8a8, 0xc8d8e8, 0xe8d0c0][i % 4], hat: i % 3 ? 'scarf' : 'gat' }), a: i * 0.9, r: 7 + (i % 3) * 3, sp: 0.25 + (i % 4) * 0.06 }));
 const peddler = mkP({ shirt: 0xb07a4a, hat: 'paeraengi' }); peddler.visible = false; const peddlerPack = art('bundle'); if (peddlerPack) { peddlerPack.visible = false; scene.add(peddlerPack); }
+const ajeon = mkP({ shirt: 0x2a3a6a, hat: 'gat' }); ajeon.visible = false;
 const servant = mkP({ shirt: 0xa89878, hat: 'scarf' }); servant.visible = false;
 const tagBox = $('tags'), tags = Array.from({ length: 12 }, () => { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = '<span class="ic"></span>'; tagBox.appendChild(d); return d; });
 
@@ -154,14 +155,14 @@ const tobPrice = (where) => (where === 'next' ? 11 : where === 'port' ? 9 : wher
 function newGame() { R = rng(seed0 * 7 + 11);
   for (const p of plots) { p.owner = p.owner0; p.farmer = p.owner0 === 'lord' ? null : p.owner0; p.rent = null; resetPlot(p); }
   for (const k in NB) { const n = NB[k]; n.coin = k === 'B' ? 80 : 20; n.method = 'jik'; n.gone = false; n.trouble = false; n.mesh.visible = true; if (n.house) n.house.visible = true; n.x = n.home[0]; n.z = n.home[1]; }
-  Object.assign(S, { t: 0, st: 0, year: 1, season: 0, px: HOME[0], pz: HOME[1] + 2, rice: 2, coin: 10, tob: 0, debt: 0, favor: 1, ox: false, yangban: false, knowMo: false, nursery: false, bo: 0, carry: null, taxDue: 0, taxPaid: false, drought: false, good: false, workT: 0, log: [], lost: [], gone: [], goals: [], servant: null, labor: 0, nobi: false, fled: false, nobiNB: [], debtY: 0, seenTown: 0, clothY: 0, nextY: 0, portY: 0, tobY: 0, rentY: 0, boughtY: 0, stats: { rented: 0, bought: 0, helped: 0, mo: 0, farMarket: 0 } });
+  Object.assign(S, { t: 0, st: 0, year: 1, season: 0, px: HOME[0], pz: HOME[1] + 2, rice: 2, coin: 10, tob: 0, debt: 0, favor: 1, ox: false, yangban: false, knowMo: false, nursery: false, bo: 0, carry: null, taxDue: 0, taxPaid: false, drought: false, good: false, workT: 0, log: [], lost: [], gone: [], goals: [], servant: null, labor: 0, nobi: false, fled: false, nobiNB: [], slow: 0, flogN: 0, dutyN: 0, seizedN: 0, seizedOx: false, hwan: 0, duty: null, aj: null, debtY: 0, seenTown: 0, clothY: 0, nextY: 0, portY: 0, tobY: 0, rentY: 0, boughtY: 0, stats: { rented: 0, bought: 0, helped: 0, mo: 0, farMarket: 0 } });
   S.droughtYears = R() < 0.5 ? [3, 5] : [3, 4]; S.goodYear = 2;
   boG.children.forEach((c) => (c.visible = false)); canal.visible = canal2.visible = canal3.visible = false; if (oxM) oxM.visible = false; if (cartM) cartM.visible = false; servant.visible = false;
   if (mis) mis.reset(); startSeason(0, true); }
 function resetPlot(p) { p.sow = 'none'; p.weed = 0; p.grow = 0; p.ripe = false; p.cut = false; p.dead = false; p.stub = false; p.weedBad = false; p.yield = 0; }
 
 /* ───── 중간 저장(준호 11-19): 철이 바뀔 때마다 이 기기에 적어 둔다 → 첫 화면 「이어서 하기」 ───── */
-const SAVE_KEY = 'kworld_farm_save_v1', S_KEYS = ['year', 'season', 'rice', 'coin', 'tob', 'debt', 'favor', 'ox', 'yangban', 'knowMo', 'nursery', 'bo', 'taxDue', 'taxPaid', 'drought', 'good', 'droughtYears', 'goodYear', 'log', 'lost', 'gone', 'servant', 'labor', 'soldY', 'harvY', 'lordY', 'stats', 'clothY', 'nextY', 'portY', 'tobY', 'rentY', 'boughtY', 'goals', 'taxOnTime', 'boY', 'oxY', 'ybY', 'tripY', 'seenTown', 'debtY', 'nobi', 'fled', 'nobiNB'];
+const SAVE_KEY = 'kworld_farm_save_v1', S_KEYS = ['year', 'season', 'rice', 'coin', 'tob', 'debt', 'favor', 'ox', 'yangban', 'knowMo', 'nursery', 'bo', 'taxDue', 'taxPaid', 'drought', 'good', 'droughtYears', 'goodYear', 'log', 'lost', 'gone', 'servant', 'labor', 'soldY', 'harvY', 'lordY', 'stats', 'clothY', 'nextY', 'portY', 'tobY', 'rentY', 'boughtY', 'goals', 'taxOnTime', 'boY', 'oxY', 'ybY', 'tripY', 'seenTown', 'debtY', 'nobi', 'fled', 'nobiNB', 'slow', 'flogN', 'dutyN', 'seizedN', 'seizedOx', 'hwan'];
 const P_KEYS = ['owner', 'farmer', 'rent', 'sow', 'weed', 'grow', 'ripe', 'cut', 'dead', 'stub', 'weedBad', 'yield', 'keep'];
 function saveGame() { if (S.mode === 'title') return; try { const d = { v: 1, at: Date.now(), S: {}, plots: plots.map((p) => P_KEYS.map((k) => p[k])), nb: {} }; for (const k of S_KEYS) d.S[k] = S[k]; for (const k in NB) { const n = NB[k]; d.nb[k] = [n.coin, n.method, n.gone, n.trouble]; } localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} }
 function readSave() { try { const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return d && d.v === 1 && d.plots && d.plots.length === plots.length ? d : null; } catch (e) { return null; } }
@@ -179,12 +180,15 @@ function startSeason(sn, first) { S.season = sn; S.st = 0; S.workT = 0; S.said =
     /* 빌린 땅은 한 해 계약 — 봄마다 다시 */
     for (const p of plots) if (p.owner === 'lord') { if (p.farmer !== 'me' || !p.keep) { if (p.farmer === 'me') { /* 이어 짓기 */ p.keep = true; } } }
     if (S.year >= 2) for (const k in NB) { const n = NB[k]; if (k === 'B') n.method = 'mo'; if (k === 'A' && S.year >= 4) n.method = 'mo'; }
+    if (S.hwan) say('봄 — 관아가 묵은 쌀을 억지로 꾸어 주고 갔다. 가을에 10냥을 더 내야 한다', 'hwan', 4.2);
     say(S.year === 1 ? '봄 — 볍씨 자루를 지고 깃발 노란 우리 논 둘에 뿌리자' : S.drought ? '봄 — 지난겨울 눈이 적었다. 올해는 가물겠다는 말이 돈다' : `${S.year}번째 해의 봄 — ${S.nursery ? '못자리의 모가 자랐다. 모를 지고 논으로' : '씨를 뿌릴 철'}`, null, 4.2); }
-  if (sn === 1) { for (const p of plots) if (p.sow !== 'none') p.grow = 0.45;
+  S.duty = null; S.aj = null; ajeon.visible = false;
+  if (sn === 0 && S.year >= 3 && !S.yangban) { S.hwan = 10; S.rice += 1; S.log.push('관아가 겨 섞인 묵은 쌀 1섬을 억지로 꾸어 주었다 — 가을에 10냥으로 갚아야 한다'); } else if (sn === 0) S.hwan = 0;
+  if (sn === 1) { S.dutyAt = S.yangban ? 0 : 20 + R() * 16; for (const p of plots) if (p.sow !== 'none') p.grow = 0.45;
     if (S.drought) say(S.bo >= 6 ? '여름 — 가뭄이다! 하지만 보의 물이 개울가 논을 적신다' : '여름 — 가뭄이다! 논바닥이 갈라진다. 보가 없으면 옮겨 심은 모는 말라 죽는다', null, 4.4); else say('여름 — 김을 매자. 논 안에 가만히 서 있으면 맨다' + (S.bo < 6 ? ' · 개울에 보를 쌓아 두면 가뭄에 버틴다' : ''), null, 4); }
   if (sn === 2) { for (const p of plots) if (p.sow !== 'none') { grade(p); p.grow = 1; p.ripe = true; }
-    S.boY = 0; S.taxDue = (S.yangban ? 0 : GUNPO[S.year - 1]) + owned().filter((p) => p.kind === 'paddy').length * 5; S.taxPaid = S.taxDue === 0;
-    say(`가을 — 거두자. 관아 북이 울리기 전에 낼 것 ${S.taxDue}냥${S.yangban ? '(양반이라 군포는 없다)' : ` (군포는 ${GUNPO_WHY[S.year - 1]})`}`, null, 5); }
+    S.boY = 0; S.injing = S.yangban ? 0 : 15 * S.gone.length; S.taxDue = (S.yangban ? 0 : GUNPO[S.year - 1]) + S.injing + (S.hwan || 0) + owned().filter((p) => p.kind === 'paddy').length * 5; S.taxPaid = S.taxDue === 0;
+    say(`가을 — 거두자. 관아 북이 울리기 전에 낼 것 ${S.taxDue}냥${S.yangban ? '(양반이라 군포는 없다)' : ` (군포는 ${GUNPO_WHY[S.year - 1]}${S.injing ? ` · 떠난 이웃 몫 ${S.injing}냥도 남은 집이 문다` : ''}${S.hwan ? ' · 억지로 꾼 쌀 값 10냥' : ''})`}`, null, 5.5); }
   if (sn === 3) { for (const p of plots) if (p.sow !== 'none' && !p.cut) { p.dead = true; p.ripe = false; if (p.farmer === 'me') S.log.push('거두지 못한 논이 서리를 맞았다'); }
     settleTax(); neighborsYear(); if (S.year === 1 && !S.knowMo) { S.knowMo = true; }
     say(S.year === 1 ? '겨울 — 보부상 말로는 아랫녘에서는 모를 길러 옮겨 심는단다. 못자리(초록 고리)를 만들어 두자' : '겨울 — 남은 것으로 무엇을 할까. 소 · 논 · 임명장 · 이웃 돕기', null, 5); }
@@ -193,6 +197,14 @@ function startSeason(sn, first) { S.season = sn; S.st = 0; S.workT = 0; S.said =
 function grade(p) { if (p.sow === 'tob' || p.sow === 'bean') { p.yield = p.sow === 'tob' ? (p.weed >= 1 ? 5 : 3) : 3; return; }
   const mo = p.sow === 'mo', wf = mo ? [0.7, 1][Math.min(1, p.weed)] : [0.45, 0.75, 1][Math.min(2, p.weed)], watered = p.wet && S.bo >= 6;
   let y = YIELD * (mo ? 1.4 : 1) * wf; if (S.drought && !watered) y *= mo ? 0.3 : 0.75; if (S.good) y *= 1.2; p.weedBad = wf < 1; p.dead = S.drought && !watered && mo; p.yield = Math.round(y); }
+/* 긴장(준호 11-20 「시간 안에 못 하면 곤장을 맞거나 가진 걸 뺏긴다 — 실제로 그랬고 불공평했다」)
+   부역: 여름에 관아가 길 닦기에 불러낸다(양반은 안 나간다) · 아전: 가을에 세금을 안 낸 집으로 걸어온다 → 닿으면 소나 쌀을 헐값에 가져간다 · 곤장을 맞으면 한동안 느리다(때리는 모습은 없다) */
+function flog(why, sec) { S.slow = Math.max(S.slow || 0, sec); S.flogN = (S.flogN || 0) + 1; SFX.drum(0.5); SFX.bad(); $('vig').style.transition = 'none'; $('vig').style.background = 'rgba(160,20,10,.45)'; setTimeout(() => { $('vig').style.transition = 'background 1.2s'; $('vig').style.background = 'transparent'; }, 60); say(why, null, 4.6); S.log.push(why); }
+function seize() { let due = S.taxDue; const fromCoin = Math.min(S.coin, due); S.coin -= fromCoin; due -= fromCoin; let took = '';
+  if (due > 0 && S.ox) { S.ox = false; if (oxM) oxM.visible = false; if (cartM) cartM.visible = false; due = 0; took = '소를 끌고 갔다'; S.seizedOx = true; }
+  if (due > 0 && S.rice > 0) { const take = Math.min(S.rice, Math.ceil(due / 3)); S.rice -= take; due = Math.max(0, due - take * 3); took = `곳간에서 쌀 ${take}섬을 헐값(3냥씩)에 실어 갔다`; }
+  if (due > 0) { S.debt += Math.round(due * 1.2); took += `${took ? ' · ' : ''}모자란 ${due}냥은 빚 문서가 되었다`; }
+  S.taxPaid = true; S.seizedN = (S.seizedN || 0) + 1; flog(`아전이 들이닥쳤다 — ${took || '남은 엽전을 털어 갔다'}. 늦었다고 곤장까지 맞았다`, 34); hud(); }
 function settleTax() { if (S.taxPaid) return; let due = S.taxDue; const fromCoin = Math.min(S.coin, due); S.coin -= fromCoin; due -= fromCoin;
   if (due > 0 && S.rice > 0) { const needRice = Math.ceil(due / 3), take = Math.min(S.rice, needRice); S.rice -= take; due = Math.max(0, due - take * 3); S.log.push(`세금을 제때 못 내 관아가 곳간에서 쌀 ${take}섬을 헐값에 가져갔다`); }
   if (due > 0) { S.debt += Math.round(due * 1.2); S.log.push(`모자란 ${due}냥은 관아 빚(환곡)이 되었다`); } S.taxPaid = true; SFX.drum(0.4); }
@@ -227,19 +239,19 @@ function finish() { const r = rank(), names = [S.nobi ? '양반댁 노비가 된
   const why = []; why.push(S.stats.mo ? `모내기로 품을 아껴 한 해에 많게는 논 ${S.stats.maxFarm || m}배미를 지었다.` : '끝까지 씨를 바로 뿌려 지었다 — 김매는 품이 많이 들어 넓게 짓지 못했다.');
   if (S.bo >= 6) why.push('보를 쌓아 가뭄에도 개울가 논이 버텼다.'); else if (S.droughtYears.length) why.push('보가 없어 가뭄 든 해에 크게 잃었다.');
   if (S.stats.rented) why.push(`양반댁 논을 ${S.stats.rented}번 빌려 지었다 — 넓게 짓기.`); if (S.stats.farMarket) why.push(`값 좋은 먼 장까지 ${S.stats.farMarket}번 지고 갔다.`); if (S.ox) why.push('소를 들여 한 번에 세 곱절을 날랐다.');
-  if (S.yangban) why.push('이름 없는 임명장을 사서 양반이 되었다 — 군포를 내지 않는다.'); if (S.lost.length) why.push('빚 때문에 논을 잃었다.'); if (S.nobi) why.push(`${S.year}번째 해, 빚을 갚지 못하고 내줄 논도 없어 문서를 쓰고 양반댁 노비가 되었다.`); if (S.fled) why.push(`${S.year}번째 해, 빚을 갚지 못해 밤에 고을을 떠났다 — 떠돌며 품을 팔거나 화전을 일구게 된다.`); if (S.stats.bought) why.push(`어려운 이웃의 논을 ${S.stats.bought}배미 사들였다.`); if (S.stats.helped) why.push(`어려운 이웃에게 쌀을 ${S.stats.helped}번 꾸어 주었다.`);
+  if (S.yangban) why.push('이름 없는 임명장을 사서 양반이 되었다 — 군포를 내지 않는다.'); if (S.flogN) why.push(`곤장을 ${S.flogN}번 맞았다${S.seizedOx ? ' — 아전에게 소까지 뺏겼다' : S.seizedN ? ' — 아전에게 곳간을 털렸다' : ''}.`); if (S.dutyN) why.push(`품삯 없는 부역에 ${S.dutyN}번 나갔다${S.yangban ? '' : ' (양반댁은 한 번도 안 나왔다)'}.`); if (S.lost.length) why.push('빚 때문에 논을 잃었다.'); if (S.nobi) why.push(`${S.year}번째 해, 빚을 갚지 못하고 내줄 논도 없어 문서를 쓰고 양반댁 노비가 되었다.`); if (S.fled) why.push(`${S.year}번째 해, 빚을 갚지 못해 밤에 고을을 떠났다 — 떠돌며 품을 팔거나 화전을 일구게 된다.`); if (S.stats.bought) why.push(`어려운 이웃의 논을 ${S.stats.bought}배미 사들였다.`); if (S.stats.helped) why.push(`어려운 이웃에게 쌀을 ${S.stats.helped}번 꾸어 주었다.`);
   const goneN = S.gone.length;
   overlay(`<h1>${win ? '이겼다' : '졌다'} — ${names[r]}</h1><p style="font-size:30px;letter-spacing:6px;margin:2px 0">${'★'.repeat(r)}${'☆'.repeat(3 - r)}</p><p>${S.nobi || S.fled ? `${S.year}번째 해 겨울` : '다섯 해 뒤'}, 짓는 논 <b>${m}</b>배미 · 우리 논 <b>${o}</b>배미 · 곳간 ${S.rice}섬 · ${S.coin}냥${S.debt ? ` · 빚 ${S.debt}냥` : ''}${S.yangban ? ' · <b>양반</b>' : ''}</p>
     <div class="marks"><span class="${m >= 6 ? 'ok' : ''}">🌾 넓게 짓기 ${m}배미</span><span class="${S.bo >= 6 ? 'ok' : ''}">💧 보 ${S.bo >= 6 ? '쌓음' : '없음'}</span><span class="${S.ox ? 'ok' : ''}">🐂 소 ${S.ox ? '있음' : '없음'}</span><span class="${S.yangban ? 'ok' : ''}">📜 ${S.yangban ? '양반' : '상민'}</span></div>
     <p style="text-align:left;font-size:14px;line-height:1.6;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 12px"><b>이렇게 된 까닭</b><br>· ${why.join('<br>· ')}</p>
     <p>⭐ 해마다의 목표 ${S.goals.map((g) => (g ? '✅' : '▫️')).join('')}</p><p class="keys">그사이 고을에서는 ${goneN ? `<b>${S.gone.join(', ')}</b>네가 땅을 잃었다${(S.nobiNB || []).length ? ` (${S.nobiNB.join(', ')}네는 양반댁 노비가 되었다)` : ''}.` : '아무도 땅을 잃지 않았다.'} 누군가 넓게 지을수록, 누군가는 지을 땅을 잃었다.</p>
-    <div class="fact">📜 <b>모내기</b> — 모를 길러 옮겨 심으면 김매는 품이 크게 줄고 더 많이 거둔다. 가뭄에는 약해서 보와 저수지를 많이 만들었다.<br>📜 <b>넓게 짓기</b> — 품이 남자 남의 땅까지 빌려 넓게 짓는 집이 생겼고, 그 가운데 부농이 나왔다. 땅을 얻지 못한 사람들은 품을 팔거나 고을을 떠났다.<br>📜 <b>장과 돈</b> — 닷새마다 서는 장이 온 나라에 퍼졌고 엽전이 널리 쓰였다. 담배·목화처럼 팔려고 짓는 것도 늘었다.<br>📜 <b>빚과 노비</b> — 흉년과 빚에 몰려 스스로 몸을 팔아 노비가 되는 사람들이 있었다. 그때 쓴 문서를 자매문기라고 하는데, 조선 후기 것이 많이 남아 있다. 한편 돈을 내고 노비 신분에서 벗어나는 사람도 늘어, 노비는 전체로는 줄어 갔다.<br>📜 <b>군포와 신분</b> — 갓난아기와 죽은 사람 몫까지 군포를 물렸다. 곡식이나 돈을 내고 이름 없는 임명장을 사서 양반이 되는 사람이 늘었다.</div>`,
+    <div class="fact">📜 <b>모내기</b> — 모를 길러 옮겨 심으면 김매는 품이 크게 줄고 더 많이 거둔다. 가뭄에는 약해서 보와 저수지를 많이 만들었다.<br>📜 <b>넓게 짓기</b> — 품이 남자 남의 땅까지 빌려 넓게 짓는 집이 생겼고, 그 가운데 부농이 나왔다. 땅을 얻지 못한 사람들은 품을 팔거나 고을을 떠났다.<br>📜 <b>장과 돈</b> — 닷새마다 서는 장이 온 나라에 퍼졌고 엽전이 널리 쓰였다. 담배·목화처럼 팔려고 짓는 것도 늘었다.<br>📜 <b>빚과 노비</b> — 흉년과 빚에 몰려 스스로 몸을 팔아 노비가 되는 사람들이 있었다. 그때 쓴 문서를 자매문기라고 하는데, 조선 후기 것이 많이 남아 있다. 한편 돈을 내고 노비 신분에서 벗어나는 사람도 늘어, 노비는 전체로는 줄어 갔다.<br>📜 <b>불공평한 짐</b> — 길과 성을 고치는 부역은 품삯 없이 백성이 졌고, 양반은 빠졌다. 세금을 못 내면 매를 맞거나 소·솥 같은 살림을 빼앗겼고, 달아난 이웃 몫을 남은 집이 대신 물기도 했다. 관아가 곡식을 억지로 꾸어 주고 이자를 받는 일도 흔했다. 견디다 못한 농민들이 19세기에 곳곳에서 들고일어났다.<br>📜 <b>군포와 신분</b> — 갓난아기와 죽은 사람 몫까지 군포를 물렸다. 곡식이나 돈을 내고 이름 없는 임명장을 사서 양반이 되는 사람이 늘었다.</div>`,
     r < 3 ? '별 셋에 다시 도전' : '한 번 더', () => { newGame(); S.mode = 'play'; }); }
 
 /* ───── HUD ───── */
 function hud() { const m = mine().filter((p) => p.kind === 'paddy').length, o = owned().filter((p) => p.kind === 'paddy').length; S.stats.maxFarm = Math.max(S.stats.maxFarm || 0, m);
   $('hRice').textContent = `🌾 곳간 ${S.rice}섬${S.tob ? ` · 담배 ${S.tob}` : ''}`; $('hCoin').textContent = `🪙 ${S.coin}냥${S.debt ? ` (빚 ${S.debt})` : ''}`; $('hLand').textContent = `🚩 논 ${m}배미(내 것 ${o})${S.yangban ? ' · 양반' : ''}`;
-  const c = S.carry; $('hCarry').textContent = !c ? '빈손' : c.k === 'seed' ? '볍씨 자루' : c.k === 'mo' ? '모 다발' : c.k === 'tob' ? '담배 모종' : c.k === 'rice' ? `${c.n ? `쌀 ${c.n}섬` : ''}${c.tob ? ` 담배 ${c.tob}단` : ''} 지고 있음` : c.k === 'tobl' ? `담배 ${c.n}단` : c.k === 'cloth' ? `베 ${c.n}필` : c.k === 'stone' ? '돌' : '';
+  const c = S.carry; $('hCarry').textContent = (S.slow > 0 ? '🩹 곤장 맞음 · ' : '') + (!c ? '빈손' : c.k === 'seed' ? '볍씨 자루' : c.k === 'mo' ? '모 다발' : c.k === 'tob' ? '담배 모종' : c.k === 'rice' ? `${c.n ? `쌀 ${c.n}섬` : ''}${c.tob ? ` 담배 ${c.tob}단` : ''} 지고 있음` : c.k === 'tobl' ? `담배 ${c.n}단` : c.k === 'cloth' ? `베 ${c.n}필` : c.k === 'stone' ? '돌' : '');
   $('night').firstChild.textContent = `${S.year}번째 해 · ${SEASONS[S.season]} `; $('night').querySelector('i').style.width = clamp(1 - S.st / SLEN[S.season], 0, 1) * 100 + '%';
   drawTodo();
   $('nb').innerHTML = Object.values(NB).map((n) => `<span style="border-left:4px solid #${n.col.toString(16)}">${n.name} ${n.gone ? (S.servant === n.name ? '머슴' : (S.nobiNB || []).includes(n.name) ? '노비' : '떠남') : '논' + plots.filter((p) => p.farmer === n.k && p.kind === 'paddy').length + (n.trouble ? ' ⚠' : '')}</span>`).join(''); }
@@ -263,6 +275,7 @@ function tasks() { const sn = S.season, c = S.carry, P = paddies(), L = [], add 
     add({ id: 'sow', req: true, t: mo ? '모를 지고 가 옮겨 심기' : '볍씨를 지고 가 뿌리기', n: [sown, P.length], how: mo ? '못자리(초록 고리)에서 모 다발 → 깃발 노란 논 <b>안에</b> 가만히 서기' : '집 앞 볍씨 자루 → 깃발 노란 논 <b>안에</b> 가만히 서기', done: () => P.every((p) => p.sow !== 'none'), at: () => (c && c.k === want ? firstP((p) => p.sow === 'none') : mo ? NURS : SEED), tag: () => (c && c.k === want ? '🌱 논 안에 가만히' : mo ? '🌱 모 다발' : '볍씨 자루') });
     if (S.year >= 2 && fld) add({ id: 'tob', t: '밭에 담배 심기 — 팔려고 짓는 것', how: '집 남쪽 담배 모종 → 밭 안에 가만히 서기. 가을에 고개 너머 장이 값이 좋다', done: () => fld.sow !== 'none', at: () => (c && c.k === 'tob' ? [fld.cx, fld.cz] : TOBS), tag: () => (c && c.k === 'tob' ? '밭 안에 가만히' : '담배 모종') }); }
   if (sn === 1) { const G = mine().filter((p) => p.sow !== 'none'), J = G.filter((p) => p.sow === 'jik'), half = S.st > SLEN[1] * 0.5;
+    if (S.duty) add({ id: 'duty', req: true, t: '부역 — 관아가 부른 길 닦기', n: S.duty.done ? null : [Math.ceil(S.duty.left), 40], how: `마을 앞 큰길(장승 곁) 붉은 고리에 가만히 서기 · <b>${Math.ceil(S.duty.left)}초</b> 안에 못 가면 곤장을 맞고 벌금을 문다 · 품삯은 없고, 양반은 안 나간다`, gone: () => S.duty.miss, done: () => S.duty.done && !S.duty.miss, at: () => DUTY, tag: '⚠ 부역' });
     add({ id: 'wd1', req: true, t: '김매기', n: [G.filter((p) => p.weed >= 1).length, G.length], how: '벼가 자라는 우리 논 <b>안에</b> 가만히 서기', done: () => G.every((p) => p.weed >= 1), at: () => { const p = G.find((p) => p.weed < 1); return p ? [p.cx, p.cz] : null; }, tag: '🌿 김매기' });
     if (J.length) add({ id: 'wd2', req: true, t: '한여름 두 번째 김매기 (씨 뿌린 논)', n: [J.filter((p) => p.weed >= 2).length, J.length], how: half ? '씨를 뿌린 논은 한 번 더 — 모내기를 하면 이 일이 없다' : '한여름이 되면 한 번 더 매야 한다 — 그때까지 다른 일을', done: () => J.every((p) => p.weed >= 2), at: () => (half ? firstP((p) => p.sow === 'jik' && p.weed === 1) : null), wait: !half, tag: '🌿 한 번 더' });
     if (S.bo < 6 || S.boY) add({ id: 'bo', req: S.year <= 3, t: '개울에 보 쌓기 — 가뭄 대비', n: [Math.min(6, S.bo), 6], how: '북쪽 개울 파란 고리에 가만히 서기 · 다 쌓으면 개울가 논 여덟 배미에 물이 든다', done: () => S.bo >= 6, at: () => [BO[0], BO[1] + 4], tag: '💧 보 쌓기' });
@@ -272,7 +285,7 @@ function tasks() { const sn = S.season, c = S.carry, P = paddies(), L = [], add 
     const pr = `읍내 ${price('town')}냥${S.year >= 2 ? ` · 고개 너머 ${price('next')}냥` : ''}${shipIn() ? ` · 포구 ${price('port')}냥(배가 곧 떠난다)` : ''}${peddler.visible ? ` · 보부상 ${price('pedd')}냥(가깝다)` : ''}`;
     add({ id: 'cut', req: true, t: '거두기', n: [G.filter((p) => p.cut).length, G.length], how: '누렇게 익은 우리 논·밭 <b>안에</b> 가만히 서기', done: () => G.every((p) => p.cut), at: firstG, tag: '🌾 거두기' });
     add({ id: 'sell', req: true, t: '쌀을 지고 장에 가서 팔기', how: `곳간 고리에서 지고 장으로 — ${pr}`, done: () => S.tripY > 0 || (!canLoad() && !selling() && S.taxPaid), at: () => (selling() ? bestMarket() : canLoad() || S.rice > 0 ? GRAN : null), tag: () => (selling() ? '🪙 여기서 팔기' : '🌾 쌀 지기') });
-    add({ id: 'tax', req: true, t: `북이 울리기 전에 세금 ${S.taxDue}냥 내기`, n: S.coin < S.taxDue && !S.taxPaid ? [S.coin, S.taxDue] : null, how: (S.coin >= S.taxDue ? '읍내 북쪽 관아의 궤 앞 붉은 고리에 가만히 서기' : `엽전이 모자란다 — 쌀을 더 팔아 오자 (${pr})`) + (S.yangban ? '' : ` · 올해 군포는 ${GUNPO_WHY[S.year - 1]}`), done: () => S.taxPaid, at: () => (S.coin >= S.taxDue ? [GWE[0], GWE[1] + 2.4] : selling() ? bestMarket() : S.rice > 0 ? GRAN : null), tag: () => (S.coin >= S.taxDue ? '🥁 세금 내기' : selling() ? '🪙 여기서 팔기' : '🌾 쌀 지기') });
+    add({ id: 'tax', req: true, t: S.aj && !S.taxPaid ? `아전이 닿기 전에 세금 ${S.taxDue}냥 내기!` : `아전이 오기 전에 세금 ${S.taxDue}냥 내기`, n: S.coin < S.taxDue && !S.taxPaid ? [S.coin, S.taxDue] : null, how: (S.coin >= S.taxDue ? '읍내 북쪽 관아의 궤 앞 붉은 고리에 가만히 서기' : `엽전이 모자란다 — 쌀을 더 팔아 오자 (${pr})`) + (S.yangban ? '' : ` · 올해 군포는 ${GUNPO_WHY[S.year - 1]}`), done: () => S.taxPaid, at: () => (S.coin >= S.taxDue ? [GWE[0], GWE[1] + 2.4] : selling() ? bestMarket() : S.rice > 0 ? GRAN : null), tag: () => (S.coin >= S.taxDue ? '🥁 세금 내기' : selling() ? '🪙 여기서 팔기' : '🌾 쌀 지기') });
     if (S.debt > 0 || S.debtY === S.year) add({ id: 'debt', req: true, t: '빚 갚기 — 해를 넘기면 불어난다', n: [0, S.debt], how: '세금을 낸 뒤 관아 궤 앞 고리에 가만히 서기 · 못 갚으면 논이 넘어가고, 논도 없으면 몸을 팔게 된다', can: () => S.taxPaid && S.coin > 0, done: () => S.debt === 0, at: () => [GWE[0], GWE[1] + 2.4], tag: '빚 갚기' });
     add({ id: 'more', t: '남는 쌀 더 팔아 겨울 밑천 만들기', how: `먹을 ${FOOD}섬은 곳간에 남는다 — ${pr}. 겨울에 소·논·임명장을 살 수 있다`, can: () => selling() || canLoad(), done: () => S.taxPaid && !canLoad() && !selling(), at: () => (selling() ? bestMarket() : GRAN), tag: () => (selling() ? '🪙 여기서 팔기' : '🌾 쌀 지기') });
     if (S.year >= 2) add({ id: 'next', soft: true, t: `고개 너머 장에 팔아 보기 (${price('next')}냥)`, how: '멀어서 한 번 다녀오면 철이 훌쩍 간다', done: () => S.nextY > 0, at: () => NEXT });
@@ -313,6 +326,7 @@ function job() { const sn = S.season, c = S.carry, D = duro();
   if (sn === 1) {
     if (here && here.farmer === 'me' && here.sow !== 'none') { const max = here.sow === 'jik' ? 2 : 1, open = here.sow === 'jik' ? (S.st > SLEN[1] * 0.5 ? 2 : 1) : 1; if (here.weed < Math.min(max, open)) return { key: 'wd' + here.id + here.weed, need: (here.sow === 'jik' ? 3 : 2) * D, label: here.sow === 'jik' ? `김매기 ${here.weed + 1}/2` : '김매기', fn: () => { here.weed++; SFX.cut(); ring(here.cx, here.cz, 6, 0x7ad65a); if (here.sow === 'jik' && here.weed === 1) say('애벌매기 끝 — 한여름에 한 번 더 매야 한다', 'wd1', 3); } }; }
     if (S.bo < 6 && near([BO[0], BO[1] + 4], 2.4)) return { key: 'bo' + S.bo, need: 2.6, label: `보 쌓기 ${S.bo + 1}/6`, fn: () => { S.bo++; S.boY = 1; boG.children[S.bo - 1].visible = true; SFX.plant(); noise(0.2, 0.3, 200); if (S.bo >= 6) { canal.visible = canal2.visible = canal3.visible = true; S.favor++; SFX.good(); ring(BO[0], BO[1], 16, 0x7ac8ff); say('보가 섰다! 개울가 논 여덟 배미는 가뭄에도 물이 든다 — 이웃들이 고마워한다', null, 4.2); for (const p of plots) drawPlot(p); } } };
+    if (S.duty && !S.duty.done && near(DUTY, 2.6)) return { key: 'duty', need: 7, label: '부역 — 길 닦기', fn: () => { S.duty.done = true; S.dutyN = (S.dutyN || 0) + 1; SFX.plant(); say('부역을 마쳤다 — 품삯은 없다. 내 논일 할 시간만 줄었다', null, 3.6); } };
     if (S.labor < 3 && near([LORD[0] - 8, LORD[1] + 6])) return { key: 'lab' + S.labor, need: 3, label: '양반댁 품 팔기', fn: () => { S.labor++; S.coin += 5; SFX.coin(); say('하루 품을 팔아 5냥을 받았다', 'lab', 2.4); } };
   }
   if (sn === 2) { if (here && here.farmer === 'me' && here.ripe && !here.cut) return { key: 'cut' + here.id, need: 2.5 * D, label: '거두기', fn: () => harvest(here) };
@@ -367,6 +381,18 @@ function update(dt) {
   /* 철 마감 */
   if (S.st >= SLEN[S.season]) { if (S.season === 3) { endYear(); place(dt); return; } startSeason(S.season + 1); }
   if (S.season === 2) { const k = S.st / SLEN[2]; if (!S.taxPaid) { if (k > 0.6) say('둥 — 관아 북이 울린다. 낼 것을 못 내면 곳간을 헐값에 털린다', 'drum1', 3.4); if (k > 0.6 && !S.said.d1) { S.said.d1 = 1; SFX.drum(0.35); } if (k > 0.82 && !S.said.d2) { S.said.d2 = 1; SFX.drum(0.5); say('둥 둥 — 곧 마감이다!', null, 2.6); } } }
+  if (S.slow > 0) S.slow -= dt;
+  /* 부역(여름) */
+  if (S.season === 1) { if (!S.duty && S.dutyAt && S.st >= S.dutyAt) { S.dutyAt = 0; S.duty = { left: 40, done: false }; SFX.drum(0.45); say('둥 — 관아에서 부역을 부른다! 마을 앞 큰길 닦기 — 늦으면 곤장이다 (양반댁은 아무도 안 나온다)', null, 5); }
+    const d = S.duty; if (d && !d.done) { d.left -= dt; if (d.left <= 0) { d.done = true; d.miss = true; const fine = Math.min(S.coin, 10); S.coin -= fine; flog(`부역에 안 나왔다고 곤장을 맞았다${fine ? ` — 벌로 ${fine}냥도 뺏겼다` : ''}. 한동안 걸음이 느리다`, 40); } }
+    if (S.drought && S.bo < 6 && S.st > SLEN[1] * 0.45) say('논바닥이 갈라진다 — 여름이 가기 전에 보를 못 쌓으면 옮겨 심은 모는 말라 죽는다', 'dry', 4);
+    if (S.st > SLEN[1] * 0.68 && mine().some((p) => p.sow !== 'none' && p.weed < (p.sow === 'jik' ? 2 : 1))) say('풀이 벼를 덮는다! 여름이 가기 전에 못 매면 거둘 것이 크게 준다', 'weedy', 3.6); }
+  /* 아전(가을): 세금을 안 낸 집으로 걸어온다 */
+  if (S.season === 2) { const k = S.st / SLEN[2];
+    if (!S.aj && !S.taxPaid && k > 0.56) { S.aj = { x: GWE[0], z: GWE[1] + 5 }; ajeon.visible = true; SFX.drum(0.4); say('아전이 관아를 나섰다 — 세금 안 낸 집으로 온다. 닿기 전에 내야 한다!', null, 4.4); }
+    const a = S.aj; if (a) { const back = S.taxPaid, tx = back ? GWE[0] : DOOR[0] + 2, tz = back ? GWE[1] + 5 : DOOR[1] + 2, d = dist(a.x, a.z, tx, tz), leftT = Math.max(1, SLEN[2] * 0.94 - S.st), v = back ? 7 : Math.max(3.2, d / leftT);
+      if (d > 1) { a.x += (tx - a.x) / d * v * dt; a.z += (tz - a.z) / d * v * dt; ajeon.rotation.y = -Math.atan2(tz - a.z, tx - a.x) + Math.PI / 2; walkAnim(ajeon, S.t * 10, true); } else if (back) { S.aj = null; ajeon.visible = false; } else seize();
+      ajeon.position.set(a.x, 0, a.z); if (!back && !a.told && d < 70) { a.told = 1; SFX.drum(0.5); say('아전이 마을 어귀까지 왔다!', null, 3); } } }
   /* 자라기 */
   if (S.season <= 1) for (const p of plots) if (p.sow !== 'none') { const g0 = p.grow; p.grow = Math.min(S.season === 0 ? 0.42 : 0.95, p.grow + dt * 0.012); if (Math.floor(g0 * 12) !== Math.floor(p.grow * 12)) drawPlot(p); }
   if (S.season === 2 && S.year >= 3 && S.st > SLEN[2] * 0.6 && !S.said.ship) { S.said.ship = 1; say('포구의 한양 배가 닻을 올렸다 — 이제 읍내나 고개 너머 장으로', null, 3); }
@@ -375,7 +401,7 @@ function update(dt) {
   /* 나 */
   let { ix, iz, back } = ctl.read(dt); const il = Math.hypot(ix, iz); S.moving = il > 0.15; S.running = S.moving && ctl.running();
   if (S.moving) { ix /= Math.max(1, il); iz /= Math.max(1, il); const load = S.carry && (S.carry.k === 'rice' || S.carry.k === 'tobl' || S.carry.k === 'cloth');
-    const sp = (S.running ? 8.6 : 5.2) * (back ? 0.6 : 1) * (load ? (S.ox ? 0.86 : 0.8) : 1); let nx = clamp(S.px + ix * sp * dt, 8, 372), nz = clamp(S.pz + iz * sp * dt, 30, 211);
+    const sp = (S.running ? 8.6 : 5.2) * (S.slow > 0 ? 0.68 : 1) * (back ? 0.6 : 1) * (load ? (S.ox ? 0.86 : 0.8) : 1); let nx = clamp(S.px + ix * sp * dt, 8, 372), nz = clamp(S.pz + iz * sp * dt, 30, 211);
     if (S.year < 2 && nx > PASS[0] - 4) { nx = PASS[0] - 4; say('고갯길은 아직 눈사태로 막혀 있다 — 내년에 열린다', 'pass', 2.6); } if (S.year < 3 && nz > 168 && nx > 250 && nx < 272) { nz = 168; say('포구 가는 길 — 한양 배는 세 번째 해부터 들어온다', 'port', 2.6); }
     for (const [cx, cz, r] of COL) { const d = dist(nx, nz, cx, cz); if (d < r) { nx = cx + (nx - cx) / d * r; nz = cz + (nz - cz) / d * r; } }
     if (nz > 41.5 && nz < 51.5 && nx > 86 && nx < 244 && Math.abs(nx - 95) > 3 && Math.abs(nx - BO[0]) > 10) nz = S.pz < 46 ? 41.5 : 51.5;
@@ -393,8 +419,8 @@ function update(dt) {
   if (popT2 > 0) { popT2 -= dt; if (popT2 <= 0) { const pop = document.getElementById('mpop') || document.querySelector('.mpop'); if (pop) pop.classList.remove('on'); } }
   if (Math.floor(S.st * 4) !== Math.floor((S.st - dt) * 4)) { refreshTasks(); hud(); }
   /* 조임: 철이 끝나 가는데 못 한 일 */
-  const left = 1 - S.st / SLEN[S.season], mp = mine(), undone = S.season === 0 ? mp.some((p) => p.sow === 'none') : S.season === 2 ? (!S.taxPaid || mp.some((p) => p.ripe && !p.cut)) : S.season === 1 ? mp.some((p) => p.sow === 'jik' && p.weed < 2) : false;
-  const tension = clamp(undone ? (0.35 - left) * 3 : 0, 0, 1);
+  const left = 1 - S.st / SLEN[S.season], mp = mine(), undone = S.season === 0 ? mp.some((p) => p.sow === 'none') : S.season === 2 ? (!S.taxPaid || mp.some((p) => p.ripe && !p.cut)) : S.season === 1 ? mp.some((p) => p.sow !== 'none' && p.weed < (p.sow === 'jik' ? 2 : 1)) : false;
+  let tension = clamp(undone ? (0.35 - left) * 3 : 0, 0, 1); if (S.duty && !S.duty.done) tension = Math.max(tension, clamp(1 - S.duty.left / 40, 0.25, 1)); if (S.aj && !S.taxPaid) tension = Math.max(tension, clamp(1 - dist(S.aj.x, S.aj.z, DOOR[0], DOOR[1]) / 230, 0.3, 1));
   S.beatT -= dt; if (tension > 0.1 && S.beatT <= 0) { S.beatT = lerp(1.1, 0.4, tension); SFX.beat(0.06 + tension * 0.26); }
   $('vig').style.boxShadow = `inset 0 0 ${120 + tension * 120}px ${30 + tension * 60}px rgba(200,60,20,${tension * 0.4})`;
 }
@@ -418,7 +444,7 @@ function place(dt) { flushPlots(); pMesh.position.set(S.px, 0, S.pz); pMesh.rota
   pads.gran.m.visible = play && sn >= 2 && !c2 && (S.rice > FOOD || S.tob > 0 || (S.rice > 0 && !S.taxPaid && sn === 2)); pads.granT.m.visible = false; pads.door.m.visible = play && S.st > 8;
   pads.bo.m.visible = play && sn === 1 && S.bo < 6; pads.work.m.visible = play && sn === 1 && S.labor < 3; pads.cloth.m.visible = play && sn === 1 && S.year >= 2 && !c2;
   const selling = play && c2 && c2.k === 'rice'; pads.town.m.visible = selling; pads.next.m.visible = (selling || (c2 && c2.k === 'cloth')) && S.year >= 2; pads.port.m.visible = selling && shipIn(); pads.pedd.m.visible = selling && peddler.visible;
-  pads.gwe.m.visible = play && ((sn === 2 && !S.taxPaid) || (sn >= 2 && S.debt > 0 && S.coin > 0 && (S.taxPaid || sn === 3))); pads.ox.m.visible = play && sn === 3 && !S.ox; pads.paper.m.visible = play && sn === 3 && !S.yangban; pads.lordBuy.m.visible = play && sn === 3;
+  pads.gwe.m.visible = play && ((sn === 2 && !S.taxPaid) || (sn >= 2 && S.debt > 0 && S.coin > 0 && (S.taxPaid || sn === 3))); pads.duty.m.visible = play && !!S.duty && !S.duty.done; pads.ox.m.visible = play && sn === 3 && !S.ox; pads.paper.m.visible = play && sn === 3 && !S.yangban; pads.lordBuy.m.visible = play && sn === 3;
   for (const k in NB) { const n = NB[k], on = play && sn === 3 && n.trouble && !n.gone; n.sell.m.visible = on && plots.some((p) => p.owner === k); n.help.m.visible = on; }
   for (const p of plots) p.sign.visible = play && sn === 0 && p.owner === 'lord' && !p.farmer;
   for (const k in pads) if (pads[k].m.visible) pads[k].m.scale.setScalar(1 + Math.sin(S.t * 4) * 0.08);
@@ -434,6 +460,7 @@ function place(dt) { flushPlots(); pMesh.position.set(S.px, 0, S.pz); pMesh.rota
     lab('seed', '볍씨 자루'); lab('nurs', sn === 0 ? '🌱 모 다발' : '🌱 못자리 만들기'); lab('tobs', '담배 모종'); lab('gran', S.rice > FOOD ? `🌾 쌀 지기 (${Math.min(cap(), S.rice - FOOD)}섬 · 먹을 ${FOOD}섬은 남김)${S.tob ? ' + 담배' : ''}` : S.tob ? '담배 지기' : '🌾 먹을 쌀까지 지기'); lab('granT', '담배 지기'); lab('bo', `💧 보 쌓기 ${S.bo}/6`, true); lab('work', '품 팔기 5냥'); lab('cloth', '🧵 베 6냥');
     const tb = c2 && c2.tob ? (w) => ` · 담배 ${tobPrice(w)}냥` : () => '', rp = (w) => (c2 && c2.k === 'rice' && !c2.n ? '' : `${tb('x') ? '쌀 ' : ''}${price(w)}냥`);
     lab('town', `읍내 장 ${rp('town')}${tb('town')}`); lab('next', c2 && c2.k === 'cloth' ? '베 11냥' : `고개 너머 장 ${rp('next')}${tb('next')}`); lab('port', `⛵ 한양 배(곧 떠난다) ${rp('port')}${tb('port')}`); lab('pedd', `보부상 ${rp('pedd')}${tb('pedd')}`);
+    lab('duty', `⚠ 부역 — ${S.duty ? Math.ceil(S.duty.left) : 0}초 안에`, true); if (S.aj && !S.taxPaid) put(S.aj.x, 3.4, S.aj.z, '⚠ 아전 — 세금 독촉', true);
     lab('gwe', sn === 2 && !S.taxPaid ? `🥁 세금 ${S.taxDue}냥` : `빚 갚기 (남은 빚 ${S.debt}냥)`, true); lab('ox', `🐂 소 ${P_OX}냥`); lab('paper', `📜 임명장 ${P_PAPER}냥`); lab('lordBuy', `논 사기 ${P_LORD}냥`); lab('door', '철 넘기기');
     for (const k in NB) { const n = NB[k]; if (n.sell.m.visible) put(n.sell.x, 2.4, n.sell.z, `논 사기 ${P_NB}냥`); if (n.help.m.visible) put(n.help.x, 2.4, n.help.z, `쌀 ${HELP}섬 꾸어 주기`); if (!n.gone && n.trouble && sn === 3 && dist(S.px, S.pz, n.home[0], n.home[1]) < 60) put(n.home[0], 5, n.home[1] - 3, `🏚 ${n.name}네 — 먹을 것이 떨어졌다`, true); } }
   for (; ti < tags.length; ti++) tags[ti].style.display = 'none';
