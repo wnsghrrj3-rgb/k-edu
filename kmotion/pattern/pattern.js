@@ -67,7 +67,8 @@ function toMenu(){ clearTimers(); audio.stopMusic(); S.scr = 'menu'; S.phase = '
 
 async function begin(){
   audio.ensure(); clearTimers(); show('scrMenu', 0); show('scrEnd', 0);
-  if (!started) { try { await km.start(); started = true; } catch (e) { banner('카메라를 켤 수 없어요', '', '주소창의 카메라 권한을 허용해 주세요'); later(2500, toMenu); return; } }
+  if (!started) { try { await km.start(); started = true; } catch (e) { const n = e && e.name, why = n === 'NotAllowedError' ? '카메라 권한이 막혀 있어요 — 주소창 왼쪽 자물쇠에서 카메라를 「허용」으로' : n === 'NotReadableError' || n === 'AbortError' ? '다른 창이나 프로그램이 카메라를 쓰고 있어요 — 그 창을 닫고 다시' : n === 'NotFoundError' || n === 'OverconstrainedError' ? '연결된 카메라를 찾지 못했어요' : '인식 모델을 불러오지 못했어요 — 새로 고침 후 다시';
+      console.error('[pattern] start', e); banner('카메라를 켤 수 없어요', '', why + ` (${n || String(e).slice(0, 60)})`); later(6000, toMenu); return; } }
   km.resetDuo(); S.body = [null, null]; S.score = [0, 0]; S.lives = [LIVES, LIVES]; S.out = [false, false]; S.qn = 0; S.rown = 0; S.stage = S.start; S.q = null; S.row = null;
   S.ready = [null, null]; S.scr = 'ready'; S.phase = 'ready'; ev.forEach(e => e.setTarget(null));
   show('board', 1); show('strip', 1); $('board').classList.toggle('solo', S.solo); $('tn0').firstChild.textContent = S.solo ? '나' : '청팀'; setScore(); setLives(); setTimer(0); $('round').textContent = MODE_NAME[S.mode]; $('cells').innerHTML = ''; $('rule').textContent = S.solo ? '어깨까지 보이게 자리를 잡아요' : '둘 다 어깨까지 보이게 자리를 잡아요';
