@@ -7,6 +7,7 @@ import { POSE_BY_ID, gradeOf, PASS } from '../pose-hero/js/poses.js';
 import { PoseNormalizer, similarity } from '../pose-hero/js/evaluator.js';
 import { AudioManager } from '../pose-hero/js/audio.js';
 import { makeQuestion, makeRow } from './gen.js';
+import { layoutKind, spotsFor, radius } from './layout.js';
 
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search), DEV = Q.has('dev');
@@ -46,7 +47,7 @@ const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['pose'], duo:
 const ev = [new Ev(), new Ev()];
 let duo = [null, null], started = false;
 const S = { solo: Q.has('solo'), scr: 'menu', mode: 'next', start: 1, score: [0, 0], lives: [LIVES, LIVES], out: [false, false], phase: '', t0: 0, limit: 0, gameT0: 0, stage: 1,
-  q: null, qn: 0, ans: [null, null], picked: [-1, -1], first: -1, hov: [{ k: -1, ms: 0 }, { k: -1, ms: 0 }], spots: [[], []], key: [-1, -1],
+  q: null, qn: 0, ans: [null, null], picked: [-1, -1], first: -1, hov: [{ k: -1, ms: 0 }, { k: -1, ms: 0 }], spots: [[], []], key: [-1, -1], body: [null, null], kind: ['arc', 'arc'], armed: [false, false], clear: [0, 0],
   row: null, rown: 0, cell: -1, done: [null, null], ready: [null, null], pops: [], timers: [] };
 
 // ── 메뉴
@@ -54,9 +55,9 @@ document.querySelectorAll('.mode').forEach(b => b.onclick = () => { document.que
 $('start').querySelectorAll('button').forEach(b => b.onclick = () => { $('start').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); S.start = +b.dataset.v; });
 $('who').querySelectorAll('button').forEach(b => { b.classList.toggle('on', (b.dataset.v === 'solo') === S.solo); b.onclick = () => { $('who').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); S.solo = b.dataset.v === 'solo'; }; });
 $('btnGo').onclick = () => begin(); $('btnAgain').onclick = () => begin(); $('btnMenu').onclick = () => toMenu();
-const KEYS = { a: [0, 'L'], s: [0, 'T'], d: [0, 'R'], j: [1, 'L'], k: [1, 'T'], l: [1, 'R'] };
+const KEYS = { a: [0, 0], s: [0, 1], d: [0, 2], j: [1, 0], k: [1, 1], l: [1, 2] }; // 첫째·둘째·셋째 보기(보기 2개면 A·D / J·L)
 addEventListener('keydown', e => { if (e.key === 'Escape' && S.scr !== 'menu') return toMenu();
-  const k = KEYS[e.key.toLowerCase()]; if (k && S.phase === 'ask') { const idx = S.spots[k[0]].findIndex(s => s.pos === k[1]); if (idx >= 0) S.key[k[0]] = idx; }
+  const k = KEYS[e.key.toLowerCase()]; if (k && S.phase === 'ask') { const n = S.q.choices.length, idx = n === 2 ? (k[1] === 0 ? 0 : k[1] === 2 ? 1 : -1) : k[1]; if (idx >= 0) S.key[k[0]] = idx; }
   if (DEV && S.phase === 'body' && (e.key === '1' || e.key === '2')) ev[+e.key - 1].force = true; });
 
 function show(id, on){ $(id).classList.toggle('hidden', !on); }
@@ -67,9 +68,9 @@ function toMenu(){ clearTimers(); audio.stopMusic(); S.scr = 'menu'; S.phase = '
 async function begin(){
   audio.ensure(); clearTimers(); show('scrMenu', 0); show('scrEnd', 0);
   if (!started) { try { await km.start(); started = true; } catch (e) { banner('카메라를 켤 수 없어요', '', '주소창의 카메라 권한을 허용해 주세요'); later(2500, toMenu); return; } }
-  km.resetDuo(); S.score = [0, 0]; S.lives = [LIVES, LIVES]; S.out = [false, false]; S.qn = 0; S.rown = 0; S.stage = S.start; S.q = null; S.row = null;
+  km.resetDuo(); S.body = [null, null]; S.score = [0, 0]; S.lives = [LIVES, LIVES]; S.out = [false, false]; S.qn = 0; S.rown = 0; S.stage = S.start; S.q = null; S.row = null;
   S.ready = [null, null]; S.scr = 'ready'; S.phase = 'ready'; ev.forEach(e => e.setTarget(null));
-  show('board', 1); show('strip', 1); $('board').classList.toggle('solo', S.solo); $('tn0').firstChild.textContent = S.solo ? '나' : '청팀'; setScore(); setLives(); setTimer(0); $('round').textContent = MODE_NAME[S.mode]; $('cells').innerHTML = ''; $('rule').textContent = S.solo ? '자리에 서서 양팔이 보이게 해요' : '둘 다 자리에 서서 양팔이 보이게 해요';
+  show('board', 1); show('strip', 1); $('board').classList.toggle('solo', S.solo); $('tn0').firstChild.textContent = S.solo ? '나' : '청팀'; setScore(); setLives(); setTimer(0); $('round').textContent = MODE_NAME[S.mode]; $('cells').innerHTML = ''; $('rule').textContent = S.solo ? '어깨까지 보이게 자리를 잡아요' : '둘 다 어깨까지 보이게 자리를 잡아요';
 }
 
 // ── 화면 조각
@@ -88,10 +89,13 @@ function miss(i, why){ if (S.out[i]) return; S.lives[i]--; audio.hurt(); pop(i, 
 function overCheck(){ if (S.out[0] || S.out[1]) { S.phase = 'gap'; later(900, finish); return true; } if (left() <= 0) { S.phase = 'gap'; banner('시간 끝!'); later(1200, finish); return true; } return false; }
 let ticked = false; function tickLow(k){ if (k < .3 && !ticked) { ticked = true; audio.tick(); } if (k >= .3) ticked = false; }
 
+// 둘이 할 때: 자기 칸 가운데쯤에 서야 양옆 풍선 자리가 나옴(가운데 선에 붙으면 풍선이 얼굴에 겹침)
+function centered(i, p){ if (S.solo) return true; const z = zoneOf(i), zw = z.x1 - z.x0, cx = (p[11].x + p[12].x) / 2, sw = Math.abs(p[11].x - p[12].x);
+  return Math.abs(cx - (z.x0 + z.x1) / 2) <= Math.max(50, zw / 2 - (1.35 * sw + radius(sw) + 4)); }
 // ── 자리 잡기(겸 보정): 둘 다 어깨·양팔이 1.5초 보이면 각자 기준(어깨 높이·폭) 저장
 function stepReady(dt){
   for (let i = 0; i < 2; i++) { const p = duo[i]; const r = S.ready[i] || (S.ready[i] = { acc: 0, y: 0, w: 0, n: 0 });
-    const ok = p && p[11].v > .5 && p[12].v > .5 && p[15].v > .4 && p[16].v > .4;
+    const ok = p && p[11].v > .5 && p[12].v > .5 && centered(i, p); r.off = !!p && !ok;
     if (ok) { r.acc += dt; r.y += (p[11].y + p[12].y) / 2; r.w += Math.abs(p[11].x - p[12].x); r.n++; } else { r.acc = Math.max(0, r.acc - dt); if (!r.acc) { r.y = r.w = r.n = 0; } } if (S.solo && i === 1) r.acc = 1500; }
   setTimer(Math.min(S.ready[0].acc, S.ready[1].acc) / 1500);
   if (S.ready[0].acc >= 1500 && S.ready[1].acc >= 1500) {
@@ -103,23 +107,25 @@ function stepReady(dt){
 }
 
 // ══ 다음은 뭘까?
+const zoneOf = i => ({ x0: S.solo ? 0 : i * km.W / 2, x1: S.solo ? km.W : (i + 1) * km.W / 2, y0: km.H * .15, y1: km.H * .76 });
+const bodyOf = i => S.body[i] || { cx: midX(i), cy: km.H * .55, sw: S.solo ? 110 : 80 };
+const HAND = [15, 16, 17, 18, 19, 20, 21, 22]; // 손목·손끝
 function cellHTML(x, kind){ return x == null ? `<div class="cell hole">?</div>` : `<div class="cell${kind === 'num' ? ' num' : ''}">${x}</div>`; }
 function nextQ(){
   if (overCheck()) return; S.qn++; S.stage = S.start + Math.floor((S.qn - 1) / 2);
   const q = S.q = makeQuestion(S.stage); S.ans = [null, null]; S.picked = [-1, -1]; S.first = -1; S.key = [-1, -1]; S.hov = [{ k: -1, ms: 0 }, { k: -1, ms: 0 }];
   $('cells').className = 'cells'; $('cells').innerHTML = q.cells.map(x => cellHTML(x, q.kind)).join(''); $('rule').textContent = '빈칸에 올 것은?'; audio.appear(); setTimer(1); label();
-  // 보기 자리: 문제마다 각자 몸 기준으로 고정(왼쪽·머리 위·오른쪽). 보기 2개면 왼쪽·오른쪽
-  const W = km.W, H = km.H, pos = q.choices.length === 2 ? ['L', 'R'] : ['L', 'T', 'R'];
-  for (let i = 0; i < 2; i++) { const p = duo[i], b = ev[i].norm.base || { shY: H * .5, sw: 90 }; const sw = clamp(b.sw, 46, 150), r = clamp(sw * .55, 34, 62);
-    const ok = p && p[11].v > .5 && p[12].v > .5, cx = ok ? (p[11].x + p[12].x) / 2 : midX(i), cy = ok ? (p[11].y + p[12].y) / 2 : b.shY;
-    S.spots[i] = pos.map(k => ({ pos: k, r, x: clamp(cx + (k === 'L' ? -1.6 : k === 'R' ? 1.6 : 0) * sw, (S.solo ? 0 : i * W / 2) + r + 4, (S.solo ? W : (i + 1) * W / 2) - r - 4),
-      y: clamp(cy - (k === 'T' ? 1.8 : .55) * sw, H * .17 + r, H * .68) })); }
+  // 보기 자리: 지금 몸 크기(어깨 폭)로 정하고 몸을 천천히 따라감(layout.js). 손을 풍선 밖에 두었다가 대야 눌림(올려 둔 손으로 저절로 눌리지 않게)
+  for (let i = 0; i < 2; i++) { const b = bodyOf(i), z = zoneOf(i); S.kind[i] = layoutKind(q.choices.length, b.cy, b.sw, z); S.spots[i] = spotsFor(S.kind[i], q.choices.length, b.cx, b.cy, b.sw, z); S.armed[i] = false; S.clear[i] = 0; }
   S.limit = Math.max(7000, 13000 - S.qn * 350); S.phase = 'show'; later(700, () => { S.phase = 'ask'; S.t0 = performance.now(); });
 }
 function nextStep(t, dt){
   const k = 1 - (t - S.t0) / S.limit; setTimer(k); label(); tickLow(k);
-  for (let i = 0; i < 2; i++) { if (!alive(i) || S.ans[i]) continue; const p = duo[i], h = S.hov[i]; let on = -1;
-    if (p) S.spots[i].forEach((s, n) => { for (const j of [15, 16, 19, 20]) if (p[j] && p[j].v > .4 && Math.hypot(p[j].x - s.x, p[j].y - s.y) < s.r * 1.15) on = n; });
+  for (let i = 0; i < 2; i++) { if (!alive(i)) continue; const p = duo[i], h = S.hov[i]; let on = -1;
+    if (S.body[i]) { const b = S.body[i], to = spotsFor(S.kind[i], S.q.choices.length, b.cx, b.cy, b.sw, zoneOf(i)); S.spots[i].forEach((s, n) => { s.x += (to[n].x - s.x) * .12; s.y += (to[n].y - s.y) * .12; s.r += (to[n].r - s.r) * .12; }); }
+    if (S.ans[i]) continue;
+    if (p) S.spots[i].forEach((s, n) => { for (const j of HAND) if (p[j] && p[j].v > .3 && Math.hypot(p[j].x - s.x, p[j].y - s.y) < s.r * 1.2) on = n; });
+    if (!S.armed[i]) { if (on < 0) { S.clear[i] += dt; if (S.clear[i] >= 250) S.armed[i] = true; } else S.clear[i] = 0; on = -1; }
     if (on >= 0 && on === h.k) h.ms += dt; else { h.k = on; h.ms = 0; }
     if (S.key[i] >= 0) { choose(i, S.key[i], t); S.key[i] = -1; } else if (on >= 0 && h.ms >= TOUCH_MS) choose(i, on, t); }
   if ([0, 1].every(i => !alive(i) || S.ans[i]) || k <= 0) reveal(k <= 0);
@@ -140,7 +146,7 @@ function drawSpots(ctx, t){
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (let i = 0; i < 2; i++) { if (!alive(i)) continue;
     S.spots[i].forEach((s, n) => { const v = S.q.choices[n], right = v === S.q.answer, picked = S.picked[i] === n;
-      const gone = (S.ans[i] && !picked && !(S.phase === 'gap' && right)); ctx.globalAlpha = gone ? .25 : S.phase === 'show' ? .6 : 1;
+      const gone = (S.ans[i] && !picked && !(S.phase === 'gap' && right)); ctx.globalAlpha = gone ? .25 : (S.phase === 'show' || (S.phase === 'ask' && !S.armed[i] && !S.ans[i])) ? .55 : 1;
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fillStyle = picked ? (right ? '#c9f7d3' : '#ffc9c6') : (S.phase === 'gap' && right) ? '#c9f7d3' : 'rgba(255,255,255,.93)'; ctx.fill();
       ctx.lineWidth = 6; ctx.strokeStyle = picked ? (right ? '#1f9d4d' : '#d43b36') : `rgb(${TEAM[i].rgb})`; ctx.stroke();
@@ -193,7 +199,10 @@ function finish(){
 // ── 프레임
 let lastT = 0;
 km.onFrame = f => {
-  const t = f.t, dt = lastT ? Math.min(100, t - lastT) : 0; lastT = t; duo = f.duo || [null, null]; if (S.solo) duo = [duo[0] || duo[1], null];
+  const t = f.t, dt = lastT ? Math.min(100, t - lastT) : 0; lastT = t; duo = f.duo || [null, null]; if (DEV && window.__fakeDuo) duo = window.__fakeDuo(t);
+  if (S.solo) { const w = p => p ? Math.abs(p[11].x - p[12].x) : -1; duo = [w(duo[1]) > w(duo[0]) ? duo[1] : duo[0], null]; }
+  for (let i = 0; i < 2; i++) { const p = duo[i]; if (!p || p[11].v < .5 || p[12].v < .5) continue; const m = { cx: (p[11].x + p[12].x) / 2, cy: (p[11].y + p[12].y) / 2, sw: Math.max(30, Math.abs(p[11].x - p[12].x)) }, b = S.body[i];
+    if (!b || Math.abs(m.cx - b.cx) > m.sw * 2) S.body[i] = m; else { b.cx += (m.cx - b.cx) * .25; b.cy += (m.cy - b.cy) * .25; b.sw += (m.sw - b.sw) * .12; } }
   const ctx = f.ctx, W = f.W, H = f.H; km.drawCamera();
   if (!S.solo) { for (let i = 0; i < 2; i++) { ctx.fillStyle = S.out[i] ? 'rgba(20,20,20,.6)' : `rgba(${TEAM[i].rgb},.12)`; ctx.fillRect(i * W / 2, 0, W / 2, H); }
   ctx.save(); ctx.setLineDash([14, 12]); ctx.strokeStyle = 'rgba(244,241,226,.55)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke(); ctx.restore(); }
@@ -202,7 +211,7 @@ km.onFrame = f => {
     if (S.out[i]) { ctx.font = '400 64px "Black Han Sans", sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillText('탈락', cx, H * .5); continue; }
     if (!p) { if (S.scr !== 'menu' && S.scr !== 'end') { ctx.font = '400 32px "Black Han Sans", sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText(S.solo ? '자리에 서요' : `${TEAM[i].name} 자리에 서요`, cx, H * .5); } continue; }
     km.drawSkeleton(p, BONES, `rgba(${TEAM[i].rgb},.95)`, 5);
-    if (S.phase === 'ready') { const a = S.ready[i] ? S.ready[i].acc / 1500 : 0; ctx.font = '400 30px "Black Han Sans", sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(a >= 1 ? '준비 완료!' : '그대로!', cx, H * .2); }
+    if (S.phase === 'ready') { const a = S.ready[i] ? S.ready[i].acc / 1500 : 0; ctx.font = '400 30px "Black Han Sans", sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(a >= 1 ? '준비 완료!' : S.ready[i] && S.ready[i].off ? (i ? '오른쪽 칸 가운데로!' : '왼쪽 칸 가운데로!') : '그대로!', cx, H * .2); }
     if (S.mode === 'body' && (S.phase === 'body' || S.done[i]) && S.scr === 'play') { const prog = S.done[i] ? 1 : ev[i].progress;
       const hx = p[0].v > .5 ? p[0].x : (p[11].x + p[12].x) / 2, hy = Math.max(H * .2, (p[0].v > .5 ? p[0].y : p[11].y) - Math.abs(p[11].x - p[12].x) * .9);
       ctx.lineWidth = 9; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(hx, hy, 26, 0, Math.PI * 2); ctx.stroke();
