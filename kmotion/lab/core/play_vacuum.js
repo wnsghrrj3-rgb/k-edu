@@ -11,7 +11,7 @@ import { createFxBridge } from './fxbridge.js';
 import { createCards } from './cards.js?v=4';
 import { createNote } from './note.js?v=2';
 import { createVacSound } from './vac_sound.js';
-import { makePumpStroke, makeStrike, followK, lostAction, LOST_ASK_MS, clamp } from './hands.js?v=2';
+import { makePumpStroke, followK, lostAction, LOST_ASK_MS, clamp } from './hands.js?v=2';
 
 const DEG = Math.PI / 180;
 
@@ -46,14 +46,25 @@ export const ASSIST = {
   snapShelf: .16,     // 선반 칸 찾는 반경(화면)
   cardsAfter: .4,     // 예상 카드는 손이 기구를 놓고 이 시간(s) 뒤에 뜬다
   cardsGrace: 1,      // 카드가 뜨고 이 시간(s) 동안은 테두리가 차오르지 않는다(종을 덮던 손이 가운데 카드 밑에 그대로 있어 저절로 골라지지 않게). 손이 한 번(6%) 움직여야 하는 것은 cards.js 그대로
+  plateGap: .06,      // 받침판 위 둘·셋: 가운데에서 좌우로 이만큼(m) 벌려 놓는다(촛불과 흡착판이 겹치지 않게)
+  tubeStill: .6,      // 낙하 통: 든 손이 이보다 느리게(화면/s, 카메라 떨림 ±1.5% 는 0.4 쯤) …
+  tubeHold: .8,       // …이 시간(s) 가만히 있으면 저절로 뒤집혀 깃털과 쇠구슬이 떨어진다(휙 내리치는 정밀한 동작 대신)
+  tubeMove: 1,        // 한 번 뒤집은 뒤에는 손이 이보다 빠르게(화면/s) 한 번 움직여야 다시 뒤집힌다
+  retryDwell: 1,      // 「다시 차리기」 단추: 카메라 손을 이 시간(s) 대고 있으면 눌린다(터치·마우스는 바로)
+  retryAfter: .6,     // 엎어짐·쏟아짐·실패가 생기고 이 시간(s) 뒤에 단추가 나온다
+  smallItem: .16,     // 이보다 작은(가장 긴 변, m) 것을 들면 손이 작아지고 비켜서 반투명해진다(든 것이 보이게)
+  handFade: .4,       // …그때 손 불투명도
+  handShrink: .78,    // …그때 손 크기
   cutUp: .1, cutUpT: .3,      // 손을 화면 위 이 높이보다 올려 이 시간(s) → 컷 A(선반)
   cutDown: .72, cutDownT: .45, // 손이 모두 이 높이보다 아래로 이 시간(s) → 컷 B(실험대)
 };
 
 // 실험대 배치(m, 실험대 위). 받침판 가운데 · 펌프 왼쪽(호스로 이어짐) · 방호판은 오른쪽 끝에 옆으로 세워 둠
-const LAYOUT = { plate: [.02, -.06, 0, 1], pump: [-.42, -.2, .25, .8], shieldPark: [.74, -.3, -.55], shieldFront: [.02, .22, 0] };
-const BENCH_SPOTS = [['bench_L1', -.68, .02], ['bench_F1', -.40, .2], ['bench_R1', .36, .06], ['bench_F2', .42, .22]];
-const SEATS = [[0, 0], [-.062, .03], [.062, .03]];
+const LAYOUT = { plate: [.02, -.06, 0, 1], pump: [-.42, -.2, .25, .8], shieldPark: [.8, -.3, -.9], shieldFront: [.02, .22, 0] };
+const BENCH_SPOTS = [['bench_L1', -.68, .02], ['bench_F1', -.40, .2], ['bench_R1', .40, .10], ['bench_F2', .42, .22]];
+// 받침판 위 자리: 몇 개 놓였나에 따라 다시 벌려 놓는다(1 = 가운데 · 2 = 좌우 · 3 = 좌우 + 앞). 단위 = ASSIST.plateGap 배
+const PLATE_LAYOUT = { 0: [], 1: [[0, 0]], 2: [[-1, 0], [1.08, 0]], 3: [[-1.08, .45], [1.08, .45], [0, -.9]] };   // 셋이면 가장 큰 것(부푸는 풍선 등)이 뒤로
+const PLATE_YAW = { suction: Math.PI / 2, candle: Math.PI / 2 };   // 흡착판 받침은 옆으로 길다 → 앞뒤로 돌려 놓는다
 // 선반 칸 [칸, 좌우, 앞뒤, 돌림] — 맨 아래 단(컷 B 에서도 보임)에 첫 의뢰 것과 종 둘, 둘째 단에 ②·③ 것, 위 단에 자유 실험
 const SHELF = { bell: ['shelf_3_3', 0, 0, 0], bell_cracked: ['shelf_3_2', 0, 0, .4], marshmallow: ['shelf_3_4', 0, 0, 0], balloon_s: ['shelf_3_5', 0, 0, 0], droptube: ['shelf_3_1', 0, 0, 0],
   clock: ['shelf_2_3', 0, 0, .25], candle: ['shelf_2_4', 0, 0, 0], suction: ['shelf_2_5', 0, 0, -.2], beaker_water: ['shelf_2_1', 0, 0, 0], foam: ['shelf_2_2', 0, 0, 0],
@@ -113,7 +124,8 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
   for (const [n, x, z] of BENCH_SPOTS) addSpot(n, 'bench', x, benchY, z);
   for (const [n, o] of stage.slots) if (o.userData.kind === 'shelf') { o.getWorldPosition(_a); addSpot(n, 'shelf', _a.x, _a.y, _a.z); }
   plate.root.updateMatrixWorld(true); seatE.getWorldPosition(_a);
-  const seatSpots = SEATS.map((o, k) => addSpot('plate_' + k, 'plate', _a.x + o[0], _a.y, _a.z + o[1]));
+  const seat0 = _a.clone(), seatSpots = [0, 1, 2].map(k => addSpot('plate_' + k, 'plate', _a.x, _a.y, _a.z));
+  let plateCount = 0;
   const bellSeat = bellSeatE.getWorldPosition(new THREE.Vector3());
   const parkSpot = addSpot('shield_park', 'park', LAYOUT.shieldPark[0], benchY, LAYOUT.shieldPark[1]), frontSpot = addSpot('shield_front', 'front', LAYOUT.shieldFront[0], benchY, LAYOUT.shieldFront[1]);
   const spotOf = new Map(spots.map(s => [s.name, s]));
@@ -126,6 +138,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     it.model.traverse(o => { if (o.isMesh && o.material && /^glass_crack/.test(o.material.name || '')) { o.material.name = o.material.name.replace(/^glass_/, 'mark_'); o.renderOrder = 4; } });   /* 금은 유리로 바꾸지 않는다(하얀 금이 보여야) */
     glassUp(it.root, d.role === 'bell');
     it.mats.length = 0; it.model.traverse(o => { if (!o.isMesh) return; for (const m of [].concat(o.material)) if (m.emissive) { if (!m.userData.em0) m.userData.em0 = m.emissive.clone(); if (!it.mats.includes(m)) it.mats.push(m); } });
+    { const sz = it.box.getSize(new THREE.Vector3()); it.maxDim = Math.max(sz.x, sz.y, sz.z); }
     it.scale = 0; it.fadeTo = 0; it.wob = 0; it.flash = 0; it.emLast = -1; it.tilt = 0; it.zc = WORK_Z; it.slipT = 0;
     items.set(id, it); }
   const placeholders = [...VA.placeholder];
@@ -157,16 +170,22 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
   const smoke = Array.from({ length: 12 }, () => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeTex, transparent: true, depthWrite: false, opacity: 0 })); s.visible = false; s.userData = { life: 0, vx: 0 }; scene.add(s); return s; });
   let smokeLeft = 0;
   // 금 간 종이 터질 때의 조각(미리 만들어 둠)
-  const shardGroup = new THREE.Group(); const shardMat = new THREE.MeshStandardMaterial({ color: 0xdcefe6, roughness: .08, transparent: true, opacity: .45, side: THREE.DoubleSide, depthWrite: false });
-  { let s = 5; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647; for (let k = 0; k < 30; k++) { const a = rnd() * 6.283, y = .02 + rnd() * .27, w = .03 + rnd() * .04, h = .03 + rnd() * .05;
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([-w / 2, -h / 2, 0, w / 2, -h / 3, 0, (rnd() - .5) * w, h / 2, 0], 3)); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, shardMat); m.position.set(Math.sin(a) * .126, y, Math.cos(a) * .126); m.rotation.y = a; shardGroup.add(m); } }
+  // 조각 14개: 두께 6mm 로 밀어낸 굽은 유리 조각(가장자리가 초록빛으로 빛나는 두꺼운 유리) — 수가 적고 커서 보인다
+  const shardGroup = new THREE.Group(); const shardMat = new THREE.MeshPhysicalMaterial({ color: 0xcfeee0, roughness: .05, metalness: 0, transparent: true, opacity: .5, envMapIntensity: 2.2, clearcoat: 1, clearcoatRoughness: .05 });
+  const shardEdge = new THREE.LineBasicMaterial({ color: 0xbff5da, transparent: true, opacity: .8 });
+  { let s = 5; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647; for (let k = 0; k < 14; k++) { const a = k / 14 * 6.283 + rnd() * .3, y = .03 + rnd() * .24, w = .05 + rnd() * .045, hh = .05 + rnd() * .05;
+      const sh = new THREE.Shape(); sh.moveTo(-w / 2, -hh / 2); sh.lineTo(w / 2 * (.6 + rnd() * .4), -hh / 2 * (.5 + rnd() * .5)); sh.lineTo(w / 2, hh / 2 * rnd()); sh.lineTo((rnd() - .5) * w * .6, hh / 2); sh.lineTo(-w / 2 * (.7 + rnd() * .3), hh / 2 * (rnd() - .3)); sh.closePath();
+      const g = new THREE.ExtrudeGeometry(sh, { depth: .006, bevelEnabled: false }); g.translate(0, 0, -.003); g.computeVertexNormals();
+      const m = new THREE.Mesh(g, shardMat); m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), shardEdge)); m.position.set(Math.sin(a) * .124, y, Math.cos(a) * .124); m.rotation.y = a; m.castShadow = true; shardGroup.add(m); } }
   const shardSets = [];
 
   // ── 손(GLB)
-  const H3 = [HA.glb.hand_r ? makeHand(HA.glb.hand_r) : null, HA.glb.hand_l ? makeHand(HA.glb.hand_l) : null]; H3.forEach(h => { if (h) scene.add(h.group); });
+  const H3 = [HA.glb.hand_r ? makeHand(HA.glb.hand_r) : null, HA.glb.hand_l ? makeHand(HA.glb.hand_l) : null]; H3.forEach(h => { if (!h) return; scene.add(h.group); h.mats = []; h.model.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) if (!h.mats.includes(m)) h.mats.push(m); }); h.fade = 1; h.size = 1; });
+  // 작은 것을 든 손: 작아지고, 위·앞으로 비켜서고, 반투명 → 든 것이 가려지지 않는다(쥐는 느낌·판정은 그대로)
+  function handLook(h3, fade, size, dt){ const k = Math.min(1, dt * 10); h3.fade += (fade - h3.fade) * k; h3.size += (size - h3.size) * k; h3.group.scale.setScalar(h3.size);
+    const f = h3.fade > .985 ? 1 : h3.fade, tr = f < 1; for (const m of h3.mats) { if (m.transparent !== tr) { m.transparent = tr; m.depthWrite = !tr; m.needsUpdate = true; } m.opacity = f; } }
   const hs = [0, 1].map(i => ({ idx: i, held: null, ctl: null, hover: null, prevGrab: false, blockGrab: false, grabT: 0, lateTried: false, lostAt: null, openT: 0, hoverT: 0, target: null,
-    pumpOff: 0, valveMode: 'open', valveT: 0, valveSent: 0, yanked: false, hx: new Float32Array(8), hy: new Float32Array(8), ht: new Float64Array(8), hk: 0, bellY0: 0, bellIt: null, slipT: 0, strike: makeStrike(), po: 1, pp: 0, pg: 0, handPos: new THREE.Vector3() }));
+    pumpOff: 0, valveMode: 'open', valveT: 0, valveSent: 0, yanked: false, hx: new Float32Array(8), hy: new Float32Array(8), ht: new Float64Array(8), hk: 0, bellY0: 0, bellIt: null, slipT: 0, tubeStillT: 0, tubeArmed: true, po: 1, pp: 0, pg: 0, handPos: new THREE.Vector3() }));
   const stroke = makePumpStroke({ minAmp: ASSIST.pumpMinAmp, full: ASSIST.pumpFull });
   let pumpH = 0, pumpKick = 0, pShown = 1, valveShown = 0, valveOpen = 0, topTicked = false;
 
@@ -175,6 +194,11 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
 
   // ── 화면 글자
   const tTag = document.createElement('div'); tTag.className = 'ttag'; tTag.style.display = 'none'; els.hud.appendChild(tTag);
+  // 「다시 차리기」 단추: 엎어졌거나·쏟아졌거나·막 실패했을 때(자유 실험에서는 무엇이든 꺼내 놓았을 때)만 오른쪽 가운데에 나온다.
+  // 카메라 손은 카드처럼 1초 대고 있으면 눌림(나올 때 손 밑에 있었으면 한 번 비켜났다 와야) · 터치·마우스는 바로
+  const retryEl = document.createElement('button'); retryEl.className = 'retry'; retryEl.innerHTML = '<span class="ring"></span><span class="t"></span>'; retryEl.querySelector('.t').textContent = '↺ ' + (UI.reset || ''); retryEl.style.display = 'none'; els.hud.appendChild(retryEl);
+  const retry = { on: false, prog: 0, wantT: 0, armed: [false, false], first: true, failAt: -1e9 };
+  retryEl.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); if (retry.on) pressRetry(); });
   const noteEl = els.note, cards = createCards(els.hud), note = createNote(els.hud, UI);
   note.slots(exp.encyclopedia.map(e => ({ id: e.id, name: e.title })));
   if (els.bodySpot) els.bodySpot.classList.remove('show');
@@ -201,7 +225,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     const a = it.anim; a.from.copy(it.root.position); a.to.copy(pos); a.qf.copy(it.root.quaternion); a.qt.copy(q); a.t = 0; a.dur = dur; a.arc = arc; a.on = true; }
   function restAt(it, name, instant = false){ const sp = spotOf.get(name); if (!sp) return restAt(it, it.home.slot, instant);
     _a.copy(sp.pos); let yaw = 0; if (name === it.home.slot) { _a.x += it.home.dx; _a.z += it.home.dz; yaw = it.home.yaw; } else if (sp.kind === 'park') yaw = LAYOUT.shieldPark[2];
-    if (it.role === 'bell' && sp.kind === 'plate') _a.copy(bellSeat);
+    if (sp.kind === 'plate') { if (it.role === 'bell') _a.copy(bellSeat); else yaw = PLATE_YAW[it.id] || 0; }
     const q = restQuat(it, 'shelf', yaw, _q); pivotForRest(it, _a, q, _b); it.slot = name; it.after = sp.kind === 'park' || sp.kind === 'front' ? 'bench' : sp.kind;
     if (instant) { it.root.position.copy(_b); it.root.quaternion.copy(q); it.loc = it.after; if (it.anim) it.anim.on = false; } else { animTo(it, _b, q, sp.kind === 'shelf' ? .45 : .2, sp.kind === 'shelf' ? .08 : 0); it.loc = 'anim'; } }
   const goHome = (it, instant) => restAt(it, it.home.slot, instant);
@@ -240,7 +264,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
       case 'step': stepGlow = new Set(e.glow || []); break;
       case 'appear': e.ids.forEach((id, k) => { if (id === 'plate' || id === 'pump') { plate.root.visible = pump.root.visible = hose.visible = true; return; } const o = items.get(id); if (!o) return; goHome(o, true); o.scale = .02; o.appearDelay = k * .08; show(o, true); }); break;
       case 'restock': noteSay(e.text); for (const id of e.ids) { const o = items.get(id); if (o && o.loc === 'gone') { o.model.visible = true; if (crackBig && o === bellCr) crackBig.visible = false; goHome(o, true); o.scale = .02; show(o, true); } } break;
-      case 'reset': noteSay(e.text); for (const id of e.ids) { const o = items.get(id); if (o) { goHome(o); } } break;
+      case 'reset': noteSay(e.text); audio.ok(); for (const id of e.ids) { const o = items.get(id); if (o) { o.slot = null; goHome(o); o.tilt = 0; } } valveOpen = 0; retry.failAt = -1e9; break;
       case 'grab': audio.grab(it ? it.mat : 'glass'); break;
       case 'cover': audio.place('glass', .9); noteSay(e.text); break;
       case 'lift': audio.grab('glass'); break;
@@ -256,7 +280,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
       case 'accident': note.accident({ text: e.text, real: e.real, rule: e.rule, kind: e.show, first: e.first }); audio.alarm(); stage.shake(.6); break;
       case 'alarm': audio.alarm(); break;
       case 'lose': if (it) loseItem(it); noteSay(e.text); break;
-      case 'missionFail': break;
+      case 'missionFail': retry.failAt = stage.now(); break;
       case 'discover': note.find(e.id, e.title); audio.discover(); say(e.title, it || items.get(e.item), 'find'); break;
       case 'missionDone': missionOver = true; audio.ok(); cards.close(); stepGlow = new Set(); break;
       case 'cause': { const wow = batch.some(x => BIG_FX.has(x.outcome)); causeQueue = { text: e.text, left: wow ? 2.6 : .8 }; break; }
@@ -271,7 +295,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
       case 'candleOut': smokeLeft = Math.max(smokeLeft, .9); say(e.text, it, 'good'); break;
       case 'smoke': smokeLeft = Math.max(smokeLeft, 3); say(e.text, it); break;
       case 'pop': audio.pop(false); stage.shake(.3); say(e.text, it, 'good'); break;
-      case 'dropResult': if (droptube) droptube.dropAnim = { t: 0, key: e.result, tBall: e.tBall || .45, tFeather: e.tFeather || 1.2 }; say(e.text, it, e.result === 'together' ? 'good' : ''); break;
+      case 'dropResult': if (droptube) droptube.dropAnim = { t: -.45, key: e.result, tBall: e.tBall || .45, tFeather: e.tFeather || 1.2 }; say(e.text, it, e.result === 'together' ? 'good' : ''); break;
       case 'shielded': say(e.text, shieldIt, 'good'); break;
       case 'crackHeld': say(e.text, it); break;
       default: if (e.text && e.outcome) { say(e.text, it, e.grade === 'fail' ? '' : 'good'); }
@@ -295,12 +319,17 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     for (const sp of spots) { if (!kinds.includes(sp.kind)) continue; const home = sp.name === it.home.slot; if (!home && slotTaken(sp.name, it)) continue;
       stage.projectTo(sp.pos, sp.scr); const d = sdist(_s, sp.scr), r = sp.kind === 'bench' ? ASSIST.snapBench : ASSIST.snapShelf; if (d < r && d < bd) { bd = d; best = sp; } }
     return best; }
+  /** 받침판 위 시료를 개수에 맞게 다시 벌려 놓는다 */
+  function layoutPlate(){ const on = []; for (const it of items.values()) if (visible(it) && it.held == null && /^plate_/.test(it.slot || '')) on.push(it);
+    on.sort((a, b) => (a.plateOrder || 0) - (b.plateOrder || 0)); if (on.length === 3) { let big = 0; for (let k = 1; k < 3; k++) if (on[k].maxDim > on[big].maxDim) big = k; on.push(on.splice(big, 1)[0]); }
+    const L = PLATE_LAYOUT[Math.min(3, on.length)];
+    on.forEach((it, k) => { const sp = seatSpots[k]; sp.pos.set(seat0.x + L[k][0] * ASSIST.plateGap, seat0.y, seat0.z + L[k][1] * ASSIST.plateGap); it.slot = null; restAt(it, sp.name); }); }
   function freeSeat(it){ for (const sp of seatSpots) if (!slotTaken(sp.name, it)) return sp; return null; }
   /** 든 것이 지금 붙을 곳: { kind:'plate'|'front'|'spot'|'home', spot, d } */
   function targetOf(it){
     lowOf(it, _low); _a.set(_low.cx, _low.minY, _low.cz); stage.projectTo(_a, _s);
     if (it.role === 'shield') { stage.projectTo(frontSpot.pos, _s2); const d = sdist(_s, _s2); if (d < ASSIST.shieldSnap) return { kind: 'front', spot: frontSpot, d }; return { kind: 'home', spot: parkSpot, d: 9 }; }
-    stage.projectTo(it.role === 'bell' ? bellSeat : seatSpots[0].pos, _s2); const d = sdist(_s, _s2);
+    stage.projectTo(it.role === 'bell' ? bellSeat : seat0, _s2); const d = sdist(_s, _s2);
     if (it.noPlate && d > ASSIST.plateSnap * 1.3) it.noPlate = false;   /* 받침판에서 집어 든 것은 한 번 멀어진 뒤에야 「머물러 붙기」가 다시 켜진다(들자마자 도로 덮이지 않게). 손을 펴면 그 자리에 바로 놓인다(엎어진 것 다시 세우기) */
     if (d < ASSIST.plateSnap) { const noHover = !!it.noPlate; if (it.role === 'bell' && !V.bell) return { kind: 'plate', spot: seatSpots[0], d, noHover }; if (it.role !== 'bell' && !V.bell) { const sp = freeSeat(it); if (sp) return { kind: 'plate', spot: sp, d, noHover }; } }
     const sp = nearestSpot(it, ['bench', 'shelf']); if (sp) return { kind: 'spot', spot: sp, d: 0 };
@@ -311,7 +340,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     it.held = null; ring.visible = false;
     if (tgt.kind === 'plate') {
       if (it.role === 'bell') { const fx = send('place', it.id, 'plate'); if (fx.some(e => e.type === 'cover' && e.id === it.id)) { restAt(it, tgt.spot.name); it.slot = 'bell_on_plate'; return; } }
-      else { const fx = send('place', it.id, tgt.spot.name); if (fx.some(e => e.type === 'place' && e.id === it.id && e.where === 'plate')) { restAt(it, tgt.spot.name); return; } }
+      else { const fx = send('place', it.id, tgt.spot.name); if (fx.some(e => (e.type === 'place' && e.id === it.id && e.where === 'plate') || (e.type === 'connect' && e.id === it.id))) { it.slot = tgt.spot.name; it.plateOrder = ++plateCount; layoutPlate(); return; } }
       const b = benchFallback(it); restAt(it, b); send('place', it.id, b); return; }
     if (it.role === 'shield') { if (tgt.kind === 'front') { restAt(it, 'shield_front'); send('shield', true); } else { restAt(it, 'shield_park'); send('shield', false); } return; }
     const name = tgt.spot ? tgt.spot.name : it.home.slot; restAt(it, name); send('place', it.id, name); }
@@ -331,7 +360,9 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
       st.lostAt = null;
       if (!H.grab) { st.openT += dt; if (H.src !== 'cam' || st.openT >= ASSIST.releaseCam) { st.openT = 0; st.held = null; const tgt = targetOf(it); place(it, tgt); return; } } else st.openT = 0;
       carry(it, st, H, dt);
-      if (it.role === 'tube') { const r = st.strike.update(now, H.y); if (r) send('drop', it.id, 0, false); }   /* 낙하 통: 든 채로 아래로 휙 = 뒤집어 떨어뜨리기 */
+      if (it.role === 'tube') { const j = (st.hk + 8 - 4) % 8, dtw = (now - st.ht[j]) / 1000, sp = dtw > .02 ? Math.hypot((H.x - st.hx[j]) * aspect(), H.y - st.hy[j]) / dtw : 0;   /* 낙하 통: 든 채 잠깐 가만히 = 저절로 뒤집혀 떨어뜨림(정밀한 휙 대신) */
+        if (sp > ASSIST.tubeMove) st.tubeArmed = true; if (sp < ASSIST.tubeStill) st.tubeStillT += dt; else st.tubeStillT = 0;
+        if (st.tubeArmed && st.tubeStillT >= ASSIST.tubeHold && !(it.dropAnim)) { st.tubeArmed = false; st.tubeStillT = 0; send('drop', it.id, 0, false); } }
       return; }
     // ② 펌프·밸브·종 손잡이를 쥐고 있음
     if (st.ctl) {
@@ -363,7 +394,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     if (ctl === 'bell') { st.ctl = 'bell'; st.hover = null; st.bellY0 = H.y; st.bellIt = target; audio.grab('glass'); return; }
     const it = target; const fx = send('grab', it.id);
     if (!fx.some(e => e.type === 'grab' && e.id === it.id)) { it.wob = .5; st.blockGrab = true; return; }
-    it.noPlate = it.loc === 'plate' || (it.slot || '').startsWith('plate'); st.held = it; it.held = st.idx; it.loc = 'hand'; it.slot = null; if (it.anim) it.anim.on = false; it.zc = it.root.position.z; st.hover = null; st.hoverT = 0; st.target = null; it.tilt = 0;
+    it.noPlate = it.loc === 'plate' || (it.slot || '').startsWith('plate'); const wasOnPlate = (it.slot || '').startsWith('plate_'); st.held = it; it.held = st.idx; it.loc = 'hand'; it.slot = null; if (wasOnPlate) layoutPlate(); st.tubeStillT = 0; st.tubeArmed = true; if (it.anim) it.anim.on = false; it.zc = it.root.position.z; st.hover = null; st.hoverT = 0; st.target = null; it.tilt = 0;
   }
   function endCtl(st){ st.ctl = null; st.bellIt = null; }
   // 펌프: 손잡이 높이(0~1)를 화면 높이로 — 손잡이 바닥·꼭대기의 화면 자리 사이에서 손 높이를 읽는다(1:1)
@@ -462,15 +493,19 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     // 금 간 종의 큰 금
     if (crackBig) { const o = V.objects.bell_cracked || {}; crackBig.visible = (o.crackStage || 0) >= 1; if (crackSmall) crackSmall.visible = !crackBig.visible; }
     // 낙하 통(자유 실험)
-    if (droptube && droptube.dropAnim) { const d = droptube.dropAnim; d.t += dt; const ex = droptube.meta.extras || {}, top = ex.top || (ex.droptube && ex.droptube.top) || droptube.model.userData.top || .24, ball = droptube.E('ball'), fe = droptube.E('feather');
-      if (ball) { if (ball.userData.y0 == null) ball.userData.y0 = ball.position.y; ball.position.y = ball.userData.y0 + Math.max(0, top - ball.userData.y0) * Math.max(0, 1 - Math.pow(d.t / d.tBall, 2)); }
-      if (fe) { if (fe.userData.y0 == null) fe.userData.y0 = fe.position.y; fe.position.y = fe.userData.y0 + Math.max(0, top - fe.userData.y0) * Math.max(0, 1 - Math.pow(d.t / d.tFeather, 2)); }
+    if (droptube && droptube.dropAnim) { const d = droptube.dropAnim; d.t += dt;
+      // 먼저 쥔 점을 중심으로 한 바퀴 뒤집고(0.45초), 그다음 깃털과 쇠구슬이 위에서 떨어진다
+      const spin = d.t < 0 ? (1 + d.t / .45) * Math.PI * 2 : 0; droptube.model.rotation.z = spin; droptube.model.position.copy(droptube.gripLocal).multiplyScalar(-1).applyAxisAngle(AXZ, spin);
+      const fall = Math.max(0, d.t); const ex = droptube.meta.extras || {}, top = ex.top || (ex.droptube && ex.droptube.top) || droptube.model.userData.top || .24, ball = droptube.E('ball'), fe = droptube.E('feather');
+      if (ball) { if (ball.userData.y0 == null) ball.userData.y0 = ball.position.y; ball.position.y = ball.userData.y0 + Math.max(0, top - ball.userData.y0) * Math.max(0, 1 - Math.pow(fall / d.tBall, 2)); }
+      if (fe) { if (fe.userData.y0 == null) fe.userData.y0 = fe.position.y; fe.position.y = fe.userData.y0 + Math.max(0, top - fe.userData.y0) * Math.max(0, 1 - Math.pow(fall / d.tFeather, 2)); }
       if (d.t > Math.max(d.tBall, d.tFeather) + 1) droptube.dropAnim = null; }
     paintGlow(t, rdt);
     // 손 모델
     for (let i = 0; i < 2; i++) { const h3 = H3[i]; if (!h3) continue; const H = input.hands[i], st = hs[i];
       const vis = (H.present || (st.held && st.lostAt != null)) && stage.cut !== 'C'; h3.group.visible = !!vis; if (!vis) continue;
-      if (st.held) _a.copy(st.held.root.position).add(_b.set(0, 0, .02));
+      const small = st.held && st.held.maxDim < ASSIST.smallItem;
+      if (st.held) _a.copy(st.held.root.position).add(small ? _b.set(.035, .045, .05) : _b.set(0, 0, .02));
       else if (st.ctl === 'pump') pumpGripWorld(_a).add(_b.set(0, 0, .03));
       else if (st.ctl === 'valve') knob.getWorldPosition(_a).add(_b.set(0, .02, .03));
       else if (st.ctl === 'bell' && st.bellIt) _a.copy(st.bellIt.root.position).add(_b.set(0, 0, .03));
@@ -478,18 +513,32 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
       if (st.slipT > 0) { _a.x += Math.sin(t * 70) * .006 * st.slipT; }                        /* 안 들리는 종에서 미끄러진 손: 떨며 위로 빠진다 */
       h3.group.position.lerp(_a, st.slipT > 0 ? .25 : (H.src === 'cam' ? .55 : 1));
       const holding = st.held || st.ctl, wantO = holding ? 0 : st.hover ? .25 : (H.grab ? 0 : .9), wantP = holding ? .15 : st.hover ? .7 : 0, wantG = holding ? 1 : (H.grab ? .8 : 0), k = Math.min(1, dt * 14);
-      st.po += (wantO - st.po) * k; st.pp += (wantP - st.pp) * k; st.pg += (wantG - st.pg) * k; h3.pose(st.po, st.pp, st.pg); h3.group.rotation.set(-.12, 0, i ? .1 : -.1); }
+      st.po += (wantO - st.po) * k; st.pp += (wantP - st.pp) * k; st.pg += (wantG - st.pg) * k; h3.pose(st.po, st.pp, st.pg); h3.group.rotation.set(-.12, 0, i ? .1 : -.1); handLook(h3, small ? ASSIST.handFade : 1, small ? ASSIST.handShrink : 1, dt); }
     if (input.hands.some(h => h.present)) noHandSince = now; if (els.askHands) els.askHands(input.mode === 'cam' && now - noHandSince > LOST_ASK_MS);
     // 예상 카드: 기구를 쥐고 있는 동안은 미뤘다가 놓고 cardsAfter 초 뒤에
     if (pendingCards) { const busy = hs.some(s => s.held || s.ctl); pendingCards.wait = busy ? 0 : pendingCards.wait + rdt;
       if (pendingCards.wait >= ASSIST.cardsAfter && !missionOver) { const p = pendingCards; pendingCards = null; cards.show(p.q, p.cards, k => send('predict', k), { grace: ASSIST.cardsGrace }); } }
     freeHands[0] = hs[0].held || hs[0].ctl ? NOHAND : input.hands[0]; freeHands[1] = hs[1].held || hs[1].ctl ? NOHAND : input.hands[1];
-    cards.update(rdt, freeHands); note.update(rdt);
+    cards.update(rdt, freeHands); note.update(rdt); retryStep(rdt);
     if (noteSmallLeft > 0) { noteSmallLeft -= rdt; if (noteSmallLeft <= 0) { noteSmall = ''; renderNote(); } }
     if (causeQueue) { causeQueue.left -= rdt; if (causeQueue.left <= 0) { const txt = causeQueue.text; causeQueue = null; note.cause(txt, { sec: 6.5, done: openBook }); } }
     bridge.update(dt); bridge.sample(performance.now());
     cutRule(rdt);
   }
+  function retryWanted(){ if (missionOver || cards.open || note.isOpen || (V.phase !== 'do' && V.phase !== 'free')) return false; if (hs[0].held || hs[0].ctl || hs[1].held || hs[1].ctl) return false;
+    const O = V.objects; for (const id in O) if (O[id].knocked) return true; if (O.beaker_water && O.beaker_water.available && O.beaker_water.empty) return true;
+    if (stage.now() - retry.failAt < 15000) return true;
+    if (V.phase === 'free') for (const id in O) { const o = O[id]; if (o.role !== 'fixture' && o.role !== 'shield' && o.available && !o.lost && o.loc !== 'shelf') return true; }
+    return false; }
+  function retryStep(rdt){ retry.wantT = retryWanted() ? retry.wantT + rdt : 0; const show = retry.wantT >= ASSIST.retryAfter;
+    if (show !== retry.on) { retry.on = show; retryEl.style.display = show ? '' : 'none'; retry.prog = 0; retry.first = true; retry.armed[0] = retry.armed[1] = false; retryEl.style.setProperty('--p', '0'); }
+    if (!show) return; const r = retryEl.getBoundingClientRect(), W = innerWidth, Hh = innerHeight; let over = false, seen = false;
+    for (let k = 0; k < 2; k++) { const h = input.hands[k]; if (!h.present || h.src === 'mouse' || h.src === 'touch' || h.src === 'pen') continue; seen = true;
+      const inside = h.x * W >= r.left && h.x * W <= r.right && h.y * Hh >= r.top && h.y * Hh <= r.bottom; if (retry.first) retry.armed[k] = !inside; else if (!inside) retry.armed[k] = true; if (inside && retry.armed[k]) over = true; }
+    if (seen) retry.first = false;
+    retry.prog = over ? Math.min(1, retry.prog + rdt / ASSIST.retryDwell) : Math.max(0, retry.prog - rdt * 2.5); retryEl.style.setProperty('--p', retry.prog.toFixed(3)); retryEl.classList.toggle('hot', over);
+    if (retry.prog >= 1) pressRetry(); }
+  function pressRetry(){ retry.on = false; retry.wantT = -1; retryEl.style.display = 'none'; retry.prog = 0; send('retry'); }
   function openBook(){ note.open({ autoClose: Q.has('fast') ? 6 : 9, then: () => { if (session.phase === 'cause') send('next'); } }); }
 
   // 처음: 모두 숨겨 두고 첫 의뢰를 연다 → appear 효과가 기구를 선반·실험대에 놓는다
@@ -505,7 +554,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
       const it = items.get(id); if (!it) return null; if (part === 'grip') return scr(it.root.position); lowOf(it, _low); return scr(_a.set(_low.cx, part === 'low' ? _low.minY : part === 'top' ? _low.maxY : _low.cy, _low.cz)); },
     world(id){ const it = items.get(id); if (!it) return null; lowOf(it, _low); return new THREE.Vector3(_low.cx, _low.cy, _low.cz); },
     pumpScreen(){ pumpScreens(); return { bot: scr(pumpBot), top: scr(pumpTop), h: pumpH }; },
-    seatScreen(k = 0){ return scr(seatSpots[k].pos); }, bellSeatScreen(){ return scr(bellSeat); }, frontScreen(){ return scr(frontSpot.pos); },
+    seatScreen(){ return scr(seat0); }, retryScreen(){ if (!retry.on) return null; const r = retryEl.getBoundingClientRect(); return { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight }; }, get retryOn(){ return retry.on; }, bellSeatScreen(){ return scr(bellSeat); }, frontScreen(){ return scr(frontSpot.pos); },
     spotScreen(name, dy = 0){ const sp = spotOf.get(name); return sp ? scr(_a.copy(sp.pos).add(_b.set(0, dy, 0))) : null; },
     heldBy(i){ return hs[i].held ? hs[i].held.id : hs[i].ctl; }, loc(id){ const it = items.get(id); return it ? it.loc : null; },
     get pumpH(){ return pumpH; }, get missionOver(){ return missionOver; }, get causeOn(){ return note.causeOn; }, get bookOpen(){ return note.isOpen; },

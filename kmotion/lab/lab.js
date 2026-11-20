@@ -31,7 +31,7 @@ async function start(mode, expId = 'ln2'){
   // 그림 판 놀이(진짜 기구 + 실험 논리): 방이 올라왔고 ?grey=1 이 아니면. 못 올리면 회색 연습판으로 간다.
   let play = null;
   if (stage.pictured && !Q.has('grey')) {
-    try { const { createPlay } = await import(expId === 'vacuum' ? './core/play_vacuum.js?v=2' : './core/play.js?v=8');
+    try { const { createPlay } = await import(expId === 'vacuum' ? './core/play_vacuum.js?v=5' : './core/play.js?v=8');
       play = await createPlay({ stage, input, audio, mode, Q, els: { hud: $('hud'), note: $('note'), bodySpot: $('bodySpot'), goggle: $('goggle'), askHands: on => $('camBox').classList.toggle('big', !!on) } });
     } catch (e) { console.error('[lab] 그림 판 놀이를 못 올림 — 회색 연습판으로', e); play = null; }
   }
@@ -46,9 +46,9 @@ async function start(mode, expId = 'ln2'){
   if (play) {
     const lab = window.__lab = { stage, input, play, audio, mode, exp: expId };
     // ?auto=1 자동 맛보기 한 판(진짜 입력 길) · &fast=1 시간을 손으로 흘림 · &fr=n&ft=초 그 움직임에서 멈춤(화면 찍기) · &upto=이름 그 걸음 뒤 멈춤
-    lab.auto = async (opt) => expId === 'vacuum' ? (await import('./auto_vacuum.js?v=2')).autoVacuum(lab, opt) : (await import('./auto_play.js?v=2')).autoPlay(lab, opt);
+    lab.auto = async (opt) => expId === 'vacuum' ? (await import('./auto_vacuum.js?v=4')).autoVacuum(lab, opt) : (await import('./auto_play.js?v=2')).autoPlay(lab, opt);
     if (Q.has('auto')) setTimeout(async () => { if (Q.has('fast')) { window.__pause = true; stage.advance(.3); }
-      let r; try { r = await lab.auto({ freezeRun: +Q.get('fr') || 0, freezeT: +Q.get('ft') || 0, upto: Q.get('upto') || '', full: Q.has('full'), more: Q.has('more'), shots: Q.get('shots') ? Q.get('shots').split(',') : [] }); } catch (e) { r = e && e.freeze ? { frozen: true, at: e.at, log: e.log, overflow: e.overflow } : { error: String(e && e.stack || e) }; }
+      let r; try { r = await lab.auto({ freezeRun: +Q.get('fr') || 0, freezeT: +Q.get('ft') || 0, upto: Q.get('upto') || '', full: Q.has('full'), more: Q.has('more'), perf: Q.has('perf'), shots: Q.get('shots') ? Q.get('shots').split(',') : [] }); } catch (e) { r = e && e.freeze ? { frozen: true, at: e.at, log: e.log, overflow: e.overflow } : { error: String(e && e.stack || e) }; }
       input.freeze(); stage.advance(1 / 30); window.__pause = !!r.frozen; document.title = 'AUTO ' + JSON.stringify({ done: r.done, frozen: r.frozen, at: r.at, error: r.error, overflow: r.overflow, log: r.log }); console.log('[lab auto]', JSON.stringify(r)); }, 300);
     return lab;
   }

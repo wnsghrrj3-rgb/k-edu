@@ -14,7 +14,12 @@ export async function autoVacuum(lab, opt = {}){
   async function waitFor(pred, max, label){ const n = Math.round(max * 30); for (let k = 0; k < n; k++) { if (pred()) return true; if (paused()) stage.advance(1 / 30, 30, k % 8 === 0); else await new Promise(r => setTimeout(r, 33)); }
     const why = label + (P.debugWhy ? ' [' + P.debugWhy() + ']' : ''); log.push('기다림 넘침:' + why); overflow.push(why); return false; }
   const shots = new Map((opt.shots || []).map(s => { const [n, x] = String(s).split(/[+: ]/); return [n, +x || 0]; }));
-  async function mark(name){ log.push(name);
+  // &perf=1: 이 걸음에서 장면 한 장 그리는 데 드는 시간(그리기 포함 / 셈만)을 잰다
+  const PERF = new Set(['start', 'pumping', 'double', 'burst', 'boil', 'puffs']);
+  function perf(name){ const gl = stage.renderer.getContext(), N = 20, px = new Uint8Array(4), sync = () => gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); stage.advance(1 / 30); sync(); let t0 = performance.now(); for (let k = 0; k < N; k++) { stage.advance(1 / 30, 30, true); sync(); }   /* 한 점을 읽어 그리기가 정말 끝날 때까지 기다린다 */ const draw = (performance.now() - t0) / N;
+    t0 = performance.now(); for (let k = 0; k < N; k++) stage.advance(1 / 30, 30, false); const upd = (performance.now() - t0) / N; const inf = stage.renderer.info.render;
+    log.push(`perf:${name}:그리기${draw.toFixed(1)}ms/셈${upd.toFixed(2)}ms/호출${inf.calls}/삼각형${inf.triangles}/컷${stage.cut}`); }
+  async function mark(name){ log.push(name); if (opt.perf && paused() && PERF.has(name)) perf(name);
     if (shots.has(name) && paused()) { const x = shots.get(name); if (x) stage.advance(x); stage.advance(1 / 30); document.title = 'SHOT ' + name;
       await new Promise(res => { const iv = setInterval(() => { if (window.__shotDone === name) { clearInterval(iv); res(); } }, 100); }); document.title = 'run'; }
     if (opt.upto === name) { if (opt.freezeT) await wait(opt.freezeT); throw FREEZE(name); } }
@@ -97,9 +102,25 @@ export async function autoVacuum(lab, opt = {}){
     // (&more=1) 자유 실험: 촛불 + 흡착판을 받침판에 → 펌프질 → 불꽃이 꺼지고 흡착판이 툭 → 밸브 → 연기
     await valveOpen(); await bellLift('bench_R1');
     await pick('beaker_water'); await aim('beaker_water', 'low', () => P.spotScreen('shelf_2_1', .01), .8); await release();
-    for (const id of ['candle', 'suction']) { await fetchIt(id, true); await aim(id, 'low', () => P.seatScreen(id === 'candle' ? 1 : 2), .8); await release(); await waitFor(() => O(id).loc === 'plate', 2, '받침판 ' + id); }
+    for (const id of ['candle', 'suction']) { await fetchIt(id, true); await aim(id, 'low', () => P.seatScreen(), .8); await release(); await waitFor(() => O(id).loc === 'plate', 2, '받침판 ' + id); }
     await pick('bell'); await bellOn('bell', 'release');
     await pumpUntil(() => O('candle').lit === false && O('suction').stuck === false, 40, '촛불·흡착판', async () => { if (O('candle').lit === false && !log.includes('candleOut')) await mark('candleOut'); });
     await mark('suctionDrop'); await valveOpen(); await wait(.6); await mark('smoke');
+    // 과자 봉지 · 물 묻힌 스펀지 · 덜 분 풍선을 한꺼번에 → 펌프질 → 봉지가 빵빵하다 터지고, 스펀지가 보글보글, 풍선이 종 벽까지
+    const toHome = async id => { await pick(id); const h = P.items.get(id).home.slot; await aim(id, 'low', () => P.spotScreen(h, .01), .8); await release(); await toB(); };
+    await bellLift('bench_R1'); await toHome('candle'); await toHome('suction');
+    for (const id of ['chips', 'sponge', 'balloon_s']) { await fetchIt(id, id !== 'balloon_s'); await aim(id, 'low', () => P.seatScreen(), .8); await release(); await waitFor(() => O(id).loc === 'plate', 2, '받침판 ' + id); }
+    await mark('three');
+    await pick('bell'); await bellOn('bell', 'release');
+    await pumpUntil(() => O('chips').burst && O('balloon_s').full, 50, '봉지·풍선', async n => { if (n === 6) await mark('puffing'); }); await wait(.4); await mark('puffs');
+    await valveOpen(); await wait(.5); await mark('back'); await bellLift('bench_R1');
+    for (const id of ['chips', 'sponge', 'balloon_s']) await toHome(id);
+    // 낙하 통: 든 채 잠깐 가만히 → 저절로 뒤집힘(공기 있을 때 = 쇠구슬 먼저) → 받침판에 꽂고 공기를 빼고 → 다시 들어 가만히(같이 떨어짐)
+    const lastDrop = () => { const l = P.session.log.filter(e => e.type === 'dropResult'); return l.length ? l[l.length - 1].result : null; };
+    await fetchIt('droptube'); await go([{ dt: .4, y: cur.y - .05 }, { dt: 1.3 }]); await waitFor(() => lastDrop() != null, 2, '낙하 통 뒤집힘'); await wait(.3); await mark('tubeAir'); log.push('낙하(공기):' + lastDrop());
+    await aim('droptube', 'low', () => P.seatScreen(), .8); await release(); await waitFor(() => O('droptube').loc === 'plate', 2, '낙하 통 꽂음');
+    await pumpUntil(() => V().p < .045, 50, '낙하 통 공기 빼기');
+    { const g = P.screenOf('droptube'); const before = P.session.log.filter(e => e.type === 'dropResult').length; await go([{ dt: .45, x: g.x, y: g.y, grab: false }, { dt: .12, grab: true }, { dt: .4, y: g.y - .08 }, { dt: 1.3 }]);
+      await waitFor(() => P.session.log.filter(e => e.type === 'dropResult').length > before, 2, '낙하 통 다시 뒤집힘'); await wait(.5); await mark('tubeVac'); log.push('낙하(진공):' + lastDrop()); await release(); }
   }
 }
