@@ -7,7 +7,7 @@
  *   막힘       = 깨끗하지 못한 판 STUCK 연달아 → 틀이 길잡이를 일찍 · 작은 수부터 · 손으로 한 판(벌 없음). 2×STUCK 이면 고르는 화면에서 앞 깃발이 살짝 흔들림
  *   기록은 거꾸로 가지 않는다(딴 깃발은 내려가지 않는다).
  * 저장: localStorage `kedu_mathplay_map` 한 칸 — /kedu_scope.js 가 먼저 실려 있어야 기기에 남는다(정식 세션). 그 밖에는 화면이 열려 있는 동안만. 서버 호출 0. */
-import { CELLS } from './cells.js?v=1';
+import { BUILT } from './built.js?v=1';
 
 // ── 내가 정한 수치(정본 5-4절 기본안 — 준호가 바꾼다)
 export const RULE = { PASS_CLEAN: 2, KEEP_DAYS: 1, STUCK: 3 };
@@ -41,8 +41,8 @@ export const stuck = rec => !rec ? 0 : rec.stuckRun >= RULE.STUCK * 2 ? 2 : rec.
 /** 막힘이 막 시작됐는가(이 판으로 STUCK 의 배수가 됨) — 틀은 다음 판을 손으로 한 판 돌린다. */
 export const stuckNow = rec => !!rec && rec.stuckRun > 0 && rec.stuckRun % RULE.STUCK === 0;
 
-/** 내용 지도 차례에서 다음 낱칸(ids 를 주면 그 안에서). */
-export function next(id, ids = CELLS.map(c => c.id)){ const i = ids.indexOf(id); return i >= 0 && i < ids.length - 1 ? ids[i + 1] : null; }
+/** 다음 낱칸 — 만들어진 낱칸(built.js)만 따라간다(아직 없는 낱칸은 건너 잇는다 · T02). ids 를 주면 그 안에서. */
+export function next(id, ids = BUILT){ const i = ids.indexOf(id); return i >= 0 && i < ids.length - 1 ? ids[i + 1] : null; }
 /** 열려 있는 낱칸: ids 가운데 아직 통과하지 않은 첫 낱칸(다 통과했으면 null). 낱칸은 차례대로 열린다. */
 export function open(ids, m){ for (const id of ids) if (!passed(m[id])) return id; return null; }
 
