@@ -45,7 +45,7 @@ class Ev { // 포즈 히어로 판정기와 같은 방식 + custom(차렷)
 const audio = new AudioManager();
 const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['pose'], duo: true, numPoses: 3, activity: 'pattern-duo' });
 const ev = [new Ev(), new Ev()];
-let duo = [null, null], started = false;
+let duo = [null, null], started = false, starting = false;
 const S = { solo: Q.has('solo'), scr: 'menu', mode: 'next', start: 1, score: [0, 0], lives: [LIVES, LIVES], out: [false, false], phase: '', t0: 0, limit: 0, gameT0: 0, stage: 1,
   q: null, qn: 0, ans: [null, null], picked: [-1, -1], first: -1, hov: [{ k: -1, ms: 0 }, { k: -1, ms: 0 }], spots: [[], []], key: [-1, -1], body: [null, null], kind: ['arc', 'arc'], armed: [false, false], clear: [0, 0],
   row: null, rown: 0, cell: -1, done: [null, null], ready: [null, null], pops: [], timers: [] };
@@ -67,7 +67,8 @@ function toMenu(){ clearTimers(); audio.stopMusic(); S.scr = 'menu'; S.phase = '
 
 async function begin(){
   audio.ensure(); clearTimers(); show('scrMenu', 0); show('scrEnd', 0);
-  if (!started) { try { await km.start(); started = true; } catch (e) { const c = e && e.cause, n = (c && c.name) || (e && e.name) || '', why = n === 'NotReadableError' || n === 'AbortError' ? '다른 창이나 프로그램이 카메라를 쓰고 있어요. 그 창을 닫고 다시 눌러 주세요.' : (e && e.message) || String(e);
+  if (starting) return; // 단추를 두 번 누르면 카메라를 두 번 열다가 서로 끊김
+  if (!started) { starting = true; banner('카메라 켜는 중…'); try { try { await km.start(); } catch (e1) { console.warn('[pattern] start 1', e1); await new Promise(r => setTimeout(r, 900)); await km.start(); } started = true; starting = false; banner(''); } catch (e) { starting = false; const c = e && e.cause, n = (c && c.name) || (e && e.name) || '', why = n === 'NotReadableError' || n === 'AbortError' ? '다른 창이나 프로그램이 카메라를 쓰고 있어요. 그 창을 닫고 다시 눌러 주세요.' : (e && e.message) || String(e);
       console.error('[pattern] start', e, c); banner('카메라를 켤 수 없어요', '', `${why} (${n}${c && c.message ? ': ' + String(c.message).slice(0, 70) : ''})`); later(6000, toMenu); return; } }
   km.resetDuo(); S.body = [null, null]; S.score = [0, 0]; S.lives = [LIVES, LIVES]; S.out = [false, false]; S.qn = 0; S.rown = 0; S.stage = S.start; S.q = null; S.row = null;
   S.ready = [null, null]; S.scr = 'ready'; S.phase = 'ready'; ev.forEach(e => e.setTarget(null));
