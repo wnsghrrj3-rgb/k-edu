@@ -129,7 +129,7 @@ function makePile(n){ S.pile = Array.from({ length: n }, (_, i) => { const o = b
 /** 10 모으기 ②: 파란 배가 먼바다 ↔ 선착장. */
 async function sailBlue(inward){ S.far = !inward; const h = shipHome('blue'); await stage.tween(ships.blue.obj.position, { x: h.x, z: h.z }, T.SAIL_MS, t => 1 - (1 - t) ** 3); }
 function emptyShip(sh){ for (const b of sh.load) b.o.parent && b.o.parent.remove(b.o); sh.load = []; ghostsDraw(sh); }
-function wobble(sh){ const o = sh.obj; stage.tween(o.rotation, { z: .1 }, 110).then(() => stage.tween(o.rotation, { z: -.08 }, 150)).then(() => stage.tween(o.rotation, { z: 0 }, 200)); }
+function wobble(sh){ S.did = true; const o = sh.obj; stage.tween(o.rotation, { z: .1 }, 110).then(() => stage.tween(o.rotation, { z: -.08 }, 150)).then(() => stage.tween(o.rotation, { z: 0 }, 200)); }
 /** 넘침: 짐이 배까지 갔다가 기우뚱 — 선착장으로 튕겨 돌아온다. */
 async function bounce(b, sh){ toScene(b.o); b.where = 'fly'; const k = Math.min(sh.load.length, sh.slots.length - 1); await flyTo(b.o, slotWorld(sh, k).add(V(0, .25, 0)), sh.slotS * sh.obj.scale.x, T.FLY_MS * .8); wobble(sh); tone(220, .22, 'sine', .1, 0, 140); await toDock(b, T.FLY_MS * 1.1); }
 /** 빈 칸: 배에는 「보이는 칸」만큼 흐린 통 — 실린 칸은 가린다. */
@@ -182,18 +182,18 @@ function boatUnder(e){ const ray = stage.pointerRay(e); for (const side of ['red
   let best = null, d0 = T.BOAT_PX; for (const side of ['red', 'blue']) { const q = stage.screenOf(ships[side].obj.position.clone().add(V(0, .45, 0))), d = Math.hypot(q.x - e.clientX, q.y - e.clientY); if (d < d0) { d0 = d; best = side; } } return best; }
 function inWare(e){ const a = stage.screenOf(warePos(0)), b = stage.screenOf(warePos(wareCap() - 1)); return e.clientX > Math.min(a.x, b.x) - 60 && e.clientX < Math.max(a.x, b.x) + 60 && e.clientY > Math.min(a.y, b.y) - 70 && e.clientY < Math.max(a.y, b.y) + 40; }
 const loadable = () => dockLeft().filter(b => !(S.wave && S.wave.b === b));
-function select(b){ if (S.sel && S.sel !== b) { const o = S.sel; S.sel = null; if (o.where === 'dock') stage.tween(o.o.position, { y: T.DECK }, 120); } S.sel = b; if (b) { stage.tween(b.o.position, { y: T.DECK + .28 }, 140); tone(660, .06, 'triangle', .06); } }
-canvas.addEventListener('pointerdown', e => { audio(); if (!S.ready || S.gate || E.homeOpen()) return; S.lastAct = S.t; H.hide(); if (!S.active || S.busy) { S.log.push({ ignored: S.active ? 'busy' : 'idle' }); return; }
+function select(b){ S.did = true; if (S.sel && S.sel !== b) { const o = S.sel; S.sel = null; if (o.where === 'dock') stage.tween(o.o.position, { y: T.DECK }, 120); } S.sel = b; if (b) { stage.tween(b.o.position, { y: T.DECK + .28 }, 140); tone(660, .06, 'triangle', .06); } }
+canvas.addEventListener('pointerdown', e => { audio(); if (!S.ready || S.gate || E.homeOpen()) return; S.lastAct = S.t; H.hide(); S.did = false; if (!S.active || S.busy) { S.log.push({ ignored: S.active ? 'busy' : 'idle' }); ripple(e.clientX, e.clientY); return; }
   if (S.wave && S.wave.rolling) { const q = stage.screenOf(S.wave.b.o); if (Math.hypot(q.x - e.clientX, q.y - e.clientY) < 70) { catchWave(); return; } }
   const p = S.p;
-  if (p.kind === 'split' || p.kind === 'ways') { const b = nearest(loadable(), e.clientX, e.clientY, T.PICK_PX); if (b && !(S.fog && p.kind === 'split')) { S.drag = { b, x: e.clientX, y: e.clientY, moved: false }; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} return; } }
-  tap(e); });
+  if (p.kind === 'split' || p.kind === 'ways') { const b = nearest(loadable(), e.clientX, e.clientY, T.PICK_PX); if (b && !(S.fog && p.kind === 'split')) { S.drag = { b, x: e.clientX, y: e.clientY, moved: false }; S.did = true; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} return; } }
+  tap(e); if (!S.did) nudge(e); });   /* 준호 2026-11-20 「뭘 눌러도 반응도 없고」 — 헛누름에도 세계가 답한다 */
 canvas.addEventListener('pointermove', e => { const d = S.drag; if (!d) return; if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) > T.DRAG_PX) { d.moved = true; if (S.sel && S.sel !== d.b) select(null); S.sel = null; }
   if (d.moved) { const ray = stage.pointerRay(e), hit = V(); if (ray.ray.intersectPlane(new THREE.Plane(V(0, 1, 0), -(T.DECK + .5)), hit)) { d.b.o.position.set(hit.x, T.DECK + .5, hit.z); } } });
 canvas.addEventListener('pointercancel', () => { const d = S.drag; if (!d) return; S.drag = null; if (d.b.where === 'dock') toDock(d.b, 200); });
 canvas.addEventListener('pointerup', e => { const d = S.drag; if (!d) return; S.drag = null; if (!S.active || S.busy) { if (d.moved) toDock(d.b, 200); return; }
   if (d.moved) { const side = boatUnder(e); if (side) act('load', d.b, side); else toDock(d.b, 220); return; }
-  if (S.sel === d.b) { select(null); stage.tween(d.b.o.position, { y: T.DECK }, 120); } else select(d.b); });
+  if (S.sel === d.b) { select(null); stage.tween(d.b.o.position, { y: T.DECK }, 120); } else { select(d.b); if (S.p && S.p.kind === 'split') { const q = hintAt(); if (q) H.show(q.x, q.y); } } });   /* 들린 짐 → 어느 배로 갈지 손이 바로 짚는다(길잡이로 세지 않음) */
 /** 눌렀다(끌기가 아님): 배 · 배 위의 짐 · 창고 */
 function tap(e){ const p = S.p, side = boatUnder(e);
   if (p.kind === 'fill') { const red = ships.red, x = e.clientX, y = e.clientY, nearPile = nearest(S.pile, x, y, T.PICK_PX * 1.4);   /* 10 모으기: 빨간 배 짐을 먼저 내리고(배 · 짐 · 창고를 눌러) → ① 짐 더미에서 빈 칸을 채운다 */
@@ -207,7 +207,7 @@ function tap(e){ const p = S.p, side = boatUnder(e);
   const next = loadable().sort((a, b) => b.home - a.home)[0]; if (next) act('load', next, side); else if (p.kind === 'ways' && onBoat(sh)) act('back', sh.load[sh.load.length - 1]); else wobble(sh); }   /* 여러 가지로: 선착장이 비었으면 배를 눌러 맨 위 짐을 내린다(옮겨 싣기) */
 
 /** 손이 한 일 하나. load(짐 → 배) · back(배 → 선착장) · unload(배 → 창고) */
-async function act(kind, b, side){ if (!S.active || S.busy || S.closed) return; S.acting = (S.acting | 0) + 1; try { await act1(kind, b, side); } finally { S.acting = Math.max(0, S.acting - 1); } }   /* 마지막 손이 문제를 끝내면 다음 문제가 시작된 뒤에 풀린다 · abort 가 0 으로 되돌려도 음수가 되지 않게 */
+async function act(kind, b, side){ S.did = true; if (!S.active || S.busy || S.closed) return; S.acting = (S.acting | 0) + 1; try { await act1(kind, b, side); } finally { S.acting = Math.max(0, S.acting - 1); } }   /* 마지막 손이 문제를 끝내면 다음 문제가 시작된 뒤에 풀린다 · abort 가 0 으로 되돌려도 음수가 되지 않게 */
 async function act1(kind, b, side){ const p = S.p; S.lastAct = S.t; if (S.sel === b) S.sel = null; S.log.push({ act: kind, side, red: onBoat(ships.red), blue: onBoat(ships.blue) });
   if (kind === 'fillFrom') { if (S.ware.length >= wareCap()) return; S.pile.splice(S.pile.indexOf(b), 1); tone(560 + S.ware.length * 30, .08, 'square', .05); await toWare(b); if (S.ware.length >= wareCap() && S.active) await complete(); return; }   /* 다 차는 순간 닫힘 — 넘칠 일이 없다 */
   if (kind === 'unload') { b.from = b.where; if (p.kind === 'fill' && S.ware.length >= wareCap()) return;
@@ -221,7 +221,16 @@ async function act1(kind, b, side){ const p = S.p; S.lastAct = S.t; if (S.sel ==
     if (side === 'blue') { if (S.step === 2) { stage.tween(b.o.position, { y: T.DECK }, 120); popSign(onBoat(ships.red) < p.a ? 0 : 1); return; } if (onBoat(sh) + 1 > p.b) { S.busy = true; await bounce(b, sh); S.busy = false; return; } } }
   if (p.kind === 'ways' && onBoat(sh) + 1 > p.N - 1) { S.busy = true; await bounce(b, sh); S.busy = false; return; }
   tone(600 + onBoat(sh) * 40, .07, 'square', .05); await toShip(b, sh); check(); }
-function popSign(k){ const e = S.signs[k]; e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); tone(330, .08, 'triangle', .06); }
+/** 누른 자리에 물결(화면 위 표시). 아무 일도 안 일어나는 누름이 없게. */
+/** 한 줄 안내를 화면 아래쪽으로 — 띠 바로 아래에 두면 배 팻말(「빨간 배는 팻말만큼」의 그 팻말)을 가린다. */
+function tellLow(){ const tl = $('tell'); if (tl) { tl.style.top = 'auto'; tl.style.bottom = 'calc(54px + env(safe-area-inset-bottom,0px))'; } }
+function ripple(x, y){ const d = document.createElement('div'); d.className = 'ripple'; d.style.left = x + 'px'; d.style.top = y + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 650); }
+/** 헛누름: 물결 + (수 셋이 떠 있으면 수 셋이 들썩 · 아니면 손이 다음에 누를 곳을 짚고 한 줄 안내를 다시). 깨끗함에는 세지 않는다 — 답이 아니라 「어디를 누르는지」만 알려 준다. */
+function nudge(e){ ripple(e.clientX, e.clientY); S.log.push({ nudge: true }); tone(520, .07, 'triangle', .05);
+  if (S.choose) { const c = $('choose'); if (c.animate) c.animate([{ transform: 'translateX(-50%) scale(1)' }, { transform: 'translateX(-50%) scale(1.12)' }, { transform: 'translateX(-50%) scale(1)' }], { duration: 450 }); return; }   /* 수 셋이 들썩 — 여기를 눌러야 한다 */
+  const q = hintAt(); if (q) H.show(q.x, q.y);
+  const k = S.p.kind === 'fill' && S.step === 2 ? 'fill2' : S.p.kind; if (FIRST[k]) { H.tell('split.nudge', FIRST[k], { times: 1e9 }); tellLow(); } }
+function popSign(k){ S.did = true; const e = S.signs[k]; e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); tone(330, .08, 'triangle', .06); }
 
 /** 실린 수를 보고: 가르기 ① 다 실림 → 닫힘 · ② 빨간 배가 다 차면 수 셋 · 여러 가지로 다 실림 → 판정 */
 async function check(){ const p = S.p; if (!S.active || S.busy) return;
@@ -254,7 +263,8 @@ async function runProblem(p, ctx){ const my = S.oid; clearAll(); S.p = p; S.step
   if (p.kind === 'join') { S.keeper.obj.visible = true; S.keeper.obj.position.x = T.KEEPER_X; S.woodPile.forEach(w => { w.visible = true; }); loadShip(ships.red, p.a); loadShip(ships.blue, p.b); S.wareShow = ctx.step === 1 ? wareCap() : 0; wareGhostsDraw(); }
   else if (p.kind === 'fill') { S.keeper.obj.visible = true; S.keeper.obj.position.x = T.KEEPER_X_FILL; S.woodPile.forEach(w => { w.visible = false; }); loadShip(ships.red, p.a); S.wareShow = wareCap(); wareGhostsDraw(); if (ctx.step === 1) makePile(R.pileN(p)); else S.picks = R.picksFor(S.cell, p); }   /* 열 칸 틀은 처음부터 다 보인다 · 짐 더미는 걸음 ①에만 */
   else { S.keeper.obj.visible = p.kind === 'ways'; S.keeper.obj.position.x = T.KEEPER_X; S.woodPile.forEach(w => { w.visible = false; }); refillDock(); if (p.kind === 'split') { ships.red.showSlots = p.a; ghostsDraw(ships.red); } }
-  trayDraw(); E.marbles(ctx.j, 3, 0); const told = ctx.board === 0 && ctx.j === 0 && (p.kind === 'fill' && ctx.step === 2 ? H.tell('split.fill2', FIRST.fill2) : H.tell('split.' + p.kind, FIRST[p.kind])); await arrive(); if (S.oid !== my) return { abort: true };
+  trayDraw(); E.marbles(ctx.j, 3, 0); await arrive(); if (S.oid !== my) return { abort: true };
+  const told = ctx.board === 0 && ctx.j === 0 && (p.kind === 'fill' && ctx.step === 2 ? H.tell('split.fill2', FIRST.fill2, TELLS()) : H.tell('split.' + p.kind, FIRST[p.kind], TELLS())); if (told) tellLow();   /* 배가 다 들어온 뒤에 띄운다 — 느린 기기에서는 들어오는 동안 안내가 저절로 사라져 버렸다(2026-11-20) */
   if (ctx.surprise) { const pool = p.kind === 'join' ? [...ships.red.load, ...ships.blue.load] : p.kind === 'fill' ? (S.pile.length ? S.pile.slice(-p.b) : ships.red.load) : S.cargo, b = pick(pool); b.surprise = true; sparkle(b.o, true); S.log.push({ surprise: true }); }
   if (ctx.wave) S.waveAt = S.t + R.T.WAVE_AT[0] + Math.random() * (R.T.WAVE_AT[1] - R.T.WAVE_AT[0]); else S.waveAt = Infinity;
   if (S.ev.fog && S.step === 2 && p.kind !== 'fill') fogOn();   /* 10 모으기는 수 셋이 뜰 때 틀을 가린다 */
@@ -279,7 +289,7 @@ async function miss(){ if (!S.active || S.busy) return; S.busy = true; S.res.mis
 
 // ── 파도: 짐 하나가 굴러 물가로 → 눌러 잡는다(놓치면 물에 빠졌다가 떠올라 돌아옴 — 개수 그대로, 시간만 잃음)
 function waveStart(){ const cand = loadable().filter(b => b !== S.sel && !(S.drag && S.drag.b === b)); if (!cand.length || !S.active) return; const b = pick(cand); S.wave = { b, t0: S.t, rolling: true }; S.log.push({ wave: 'roll' }); tone(180, .4, 'sine', .07, 0, 120); }
-function catchWave(){ const w = S.wave; if (!w) return; w.rolling = false; S.log.push({ wave: 'caught' }); tone(740, .1, 'triangle', .08); w.b.o.rotation.x = 0; toDock(w.b, 260).then(() => { if (S.wave === w) S.wave = null; }); }
+function catchWave(){ S.did = true; const w = S.wave; if (!w) return; w.rolling = false; S.log.push({ wave: 'caught' }); tone(740, .1, 'triangle', .08); w.b.o.rotation.x = 0; toDock(w.b, 260).then(() => { if (S.wave === w) S.wave = null; }); }
 async function waveFall(){ const w = S.wave; w.rolling = false; S.log.push({ wave: 'fell' }); tone(200, .3, 'sine', .08, 0, 90); await stage.tween(w.b.o.position, { y: -.45, z: T.DZ + 1.6 }, 380); await sleep(1500); if (S.wave !== w || !S.active) return;
   w.b.o.rotation.x = 0; await stage.tween(w.b.o.position, { y: .05 }, 400); await toDock(w.b, 420); if (S.wave === w) S.wave = null; }
 
@@ -293,7 +303,8 @@ function fogPlace(){ const f = $('fog'); if (!S.p) return; let pts; if (S.p.kind
   Object.assign(f.style, { left: x0 + 'px', top: y0 + 'px', width: (x1 - x0) + 'px', height: (y1 - y0) + 'px' }); }
 
 // ── 나들이(판 셋) · 판(문제 셋)
-const FIRST = { split: '짐을 두 배에 나눠 실어 줘. 빨간 배는 팻말만큼!', join: '두 배의 짐을 창고에 모아 줘.', fill: '빨간 배 짐을 내리고, 짐 더미로 열 칸을 꽉 채워 줘.', fill2: '빨간 배 짐을 내리고, 파란 배가 몇 개를 싣고 올지 골라 줘.', ways: '아까와 다르게 나눠 실어 봐.' };
+const TELLS = () => ({ times: M.passed(M.get(S.cell || '')) ? 2 : 1e9 });   /* 깃발을 따기 전에는 나들이 첫 문제마다 한 줄 안내(준호 2026-11-20) */
+const FIRST = { split: '짐을 누르고 배를 눌러 실어 줘. 빨간 배는 팻말만큼!', join: '배에 실린 짐을 눌러 창고에 모아 줘.', fill: '빨간 배 짐을 내리고, 짐 더미로 열 칸을 꽉 채워 줘.', fill2: '빨간 배 짐을 내리고, 파란 배가 몇 개를 싣고 올지 골라 줘.', ways: '아까와 다르게 나눠 실어 봐.' };
 async function outing(id){ const my = ++S.oid; gateHide(); E.showBar(true); S.cell = id; S.kind = R.kindOf(id); S.streak = 0; S.outSent = []; S.back = false; S.surpriseCarry = false; const day = M.dayKey();
   let rec = M.get(id), q = R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1 }); E.lanterns(0); S.log.push({ outing: id, deal: q.map(R.key) });
   for (let b = 0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = S.kind !== 'ways' && (!rec.hand || S.back);
