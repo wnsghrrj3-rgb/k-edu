@@ -148,10 +148,13 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
   const morphRatio = (mesh, idx) => { const g = mesh.geometry, p = g.attributes.position, ma = g.morphAttributes.position && g.morphAttributes.position[idx]; if (!p || !ma) return 1;
     const b0 = new THREE.Box3(), b1 = new THREE.Box3(), v = new THREE.Vector3(); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); b0.expandByPoint(v); if (g.morphTargetsRelative) { v.x += ma.getX(i); v.y += ma.getY(i); v.z += ma.getZ(i); } else v.fromBufferAttribute(ma, i); b1.expandByPoint(v); }
     const s0 = b0.getSize(new THREE.Vector3()), s1 = b1.getSize(v); return Math.max(s1.x / Math.max(1e-6, s0.x), s1.y / Math.max(1e-6, s0.y), s1.z / Math.max(1e-6, s0.z)); };
+  const morphBox = (mesh, idx) => { const g = mesh.geometry, p = g.attributes.position, ma = idx >= 0 && g.morphAttributes.position ? g.morphAttributes.position[idx] : null, b = new THREE.Box3(), v = new THREE.Vector3(); if (!p) return null;
+    for (let i = 0; i < p.count; i++) { if (ma && !g.morphTargetsRelative) v.fromBufferAttribute(ma, i); else { v.fromBufferAttribute(p, i); if (ma) { v.x += ma.getX(i); v.y += ma.getY(i); v.z += ma.getZ(i); } } b.expandByPoint(v); } return b; };
   for (const [id, it] of items) { const vis = VIS[id]; if (!vis) continue; const node = it.E(vis.mesh); if (!node) continue; let mesh = null; node.traverse(o => { if (!mesh && o.isMesh) mesh = o; });
     const dict = mesh && mesh.morphTargetDictionary, gi = dict && dict[vis.grow] != null ? dict[vis.grow] : -1, si = dict && vis.shrink && dict[vis.shrink] != null ? dict[vis.shrink] : -1;
     let minY = 0; if (mesh) { mesh.geometry.computeBoundingBox(); minY = mesh.geometry.boundingBox.min.y; }
-    it.vis = { node, mesh, gi, si, gr: gi >= 0 ? morphRatio(mesh, gi) : 1, sr: si >= 0 ? morphRatio(mesh, si) : 1, y0: node.position.y, minY, shown: 1 }; }
+    it.vis = { node, mesh, gi, si, gr: gi >= 0 ? morphRatio(mesh, gi) : 1, sr: si >= 0 ? morphRatio(mesh, si) : 1, y0: node.position.y, minY, shown: 1 };
+    if (mesh) { it.vis.b0 = morphBox(mesh, -1); it.vis.bg = gi >= 0 ? morphBox(mesh, gi) : null; it.vis.bs = si >= 0 ? morphBox(mesh, si) : null; } }
   const clock = items.get('clock'), hammer = clock && clock.E('hammer'), hammerX = Object.assign({ amp: 14 }, (hammer && hammer.userData) || {});
   const beaker = items.get('beaker_water'), candle = items.get('candle'), suction = items.get('suction'), bellCr = items.get('bell_cracked'), shieldIt = items.get('shield'), droptube = items.get('droptube');
   let vessel = null, thermo = null, waterFill = .8;
@@ -216,6 +219,21 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
     let mnY = 1e9, mxY = -1e9, mnX = 1e9, mxX = -1e9, mnZ = 1e9, mxZ = -1e9; for (const c of corners) { if (c.y < mnY) mnY = c.y; if (c.y > mxY) mxY = c.y; if (c.x < mnX) mnX = c.x; if (c.x > mxX) mxX = c.x; if (c.z < mnZ) mnZ = c.z; if (c.z > mxZ) mxZ = c.z; }
     out.minY = mnY; out.maxY = mxY; out.cx = (mnX + mxX) / 2; out.cy = (mnY + mxY) / 2; out.cz = (mnZ + mxZ) / 2; out.rx = (mxX - mnX) / 2; return out; }
   const visible = it => it.root.visible && it.loc !== 'gone' && it.loc !== 'hidden';
+  // 종 안에서 부푸는 것(풍선·거품·마시멜로)은 종 안쪽 벽과 천장을 넘지 않게 — 넘칠 만큼은 눌려서 납작해진다(벽에 닿은 모습)
+  const _fb = new THREE.Box3(), _fc = new THREE.Box3(), _fv = new THREE.Vector3(), _fw = new THREE.Vector3(), _fm = new THREE.Matrix4();
+  function meshBoxWorld(vis, out){ const m = vis.mesh, inf = m.morphTargetInfluences || []; const ig = vis.gi >= 0 ? inf[vis.gi] || 0 : 0, is = vis.si >= 0 ? inf[vis.si] || 0 : 0;
+    _fc.copy(vis.b0); for (const k of ['min', 'max']) for (const ax of ['x', 'y', 'z']) { let v = vis.b0[k][ax]; if (vis.bg) v += (vis.bg[k][ax] - vis.b0[k][ax]) * ig; if (vis.bs) v += (vis.bs[k][ax] - vis.b0[k][ax]) * is; _fc[k][ax] = v; }
+    out.makeEmpty(); for (let i = 0; i < 8; i++) { _fv.set(i & 1 ? _fc.max.x : _fc.min.x, i & 2 ? _fc.max.y : _fc.min.y, i & 4 ? _fc.max.z : _fc.min.z).applyMatrix4(m.matrixWorld); out.expandByPoint(_fv); } return out; }
+  function fitInBell(it, vis, o, kx, ky){ const bell = V.bell && items.get(V.bell); if (!bell || !vis.mesh || !vis.b0 || o.loc !== 'plate' || it.held != null || it.tilt > .05) return;
+    const IN = (bell.meta.extras && bell.meta.extras.inner) || { r: .1115, h: .2635 }, bs = bell.root.scale.x || 1, R = IN.r * bs - .006;
+    bell.root.updateMatrixWorld(true); _fb.setFromObject(bell.model || bell.root); _fb.getCenter(_fw); const top = _fb.min.y + IN.h * bs - .006;
+    for (let pass = 0; pass < 3; pass++) { it.root.updateMatrixWorld(true); meshBoxWorld(vis, _box);
+      const cx = (_box.min.x + _box.max.x) / 2, cz = (_box.min.z + _box.max.z) / 2, rr = Math.max(_box.max.x - _box.min.x, _box.max.z - _box.min.z) / 2;
+      vis.node.getWorldPosition(_fv); const d = Math.hypot(_fv.x - _fw.x, _fv.z - _fw.z), dc = Math.hypot(cx - _fw.x, cz - _fw.z);
+      const fh = rr > 1e-4 && dc + rr > R ? Math.max(.2, (R - d) / Math.max(1e-4, rr + (dc - d))) : 1;
+      const hgt = _box.max.y - _box.min.y, fv = hgt > 1e-4 && _box.max.y > top ? Math.max(.2, (top - _box.min.y) / hgt) : 1;
+      if (fh >= .999 && fv >= .999) break;
+      kx *= Math.min(1, fh); ky *= Math.min(1, fv); vis.node.scale.set(kx, ky, kx); vis.node.position.y = vis.y0 - vis.minY * (ky - 1) * .8; } }
   const overBench = (x, z) => x > BR.xMin + .02 && x < BR.xMax - .02 && z > BR.zMin - .05 && z < BR.zMax + .02;
   function slotTaken(name, except){ for (const it of items.values()) if (it !== except && it.slot === name && visible(it)) return true; return false; }
   const pumpGripWorld = out => { gripA.getWorldPosition(out); gripB.getWorldPosition(_d); return out.add(_d).multiplyScalar(.5); };
@@ -469,7 +487,7 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
         if (VI.low) { const lo = VI.low(S); if (S < 1) { L = lo; Ly = lo; } }
         let mg = 1; if (vis.mesh && vis.gi >= 0) { const inf = clamp((Math.max(L, Ly) - 1) / Math.max(1e-3, vis.gr - 1), 0, 1); vis.mesh.morphTargetInfluences[vis.gi] = it.id === 'sponge' ? (o.pressure < .3 ? 1 : 0) : inf; mg = it.id === 'sponge' ? 1 : 1 + (vis.gr - 1) * inf; }
         let ms = 1; if (vis.mesh && vis.si >= 0) { const inf = clamp((1 - L) / Math.max(1e-3, 1 - 1 / Math.max(1.01, vis.sr)), 0, 1); vis.mesh.morphTargetInfluences[vis.si] = inf; ms = 1 - (1 - 1 / Math.max(1.01, vis.sr)) * inf; }
-        const kx = L / (mg * ms), ky = Ly / (mg * ms); vis.node.scale.set(kx, ky, kx); vis.node.position.y = vis.y0 - vis.minY * (ky - 1) * .8; }
+        const kx = L / (mg * ms), ky = Ly / (mg * ms); vis.node.scale.set(kx, ky, kx); vis.node.position.y = vis.y0 - vis.minY * (ky - 1) * .8; fitInBell(it, vis, o, kx, ky); }
     }
     // 자명종: 망치가 떨고(선반에 있을 때만 쉼), 소리 크기 = view().sound
     const ringing = clock && visible(clock) && clock.loc !== 'shelf' && clock.loc !== 'anim' && V.sound != null;
@@ -554,6 +572,10 @@ export async function createPlay({ stage, input, audio, els, mode, Q }){
       const it = items.get(id); if (!it) return null; if (part === 'grip') return scr(it.root.position); lowOf(it, _low); return scr(_a.set(_low.cx, part === 'low' ? _low.minY : part === 'top' ? _low.maxY : _low.cy, _low.cz)); },
     world(id){ const it = items.get(id); if (!it) return null; lowOf(it, _low); return new THREE.Vector3(_low.cx, _low.cy, _low.cz); },
     pumpScreen(){ pumpScreens(); return { bot: scr(pumpBot), top: scr(pumpTop), h: pumpH }; },
+    fitCheck(id){ const it = items.get(id), vis = it && it.vis, bell = V.bell && items.get(V.bell); if (!vis || !vis.b0 || !bell) return null; const IN = (bell.meta.extras && bell.meta.extras.inner) || { r: .1115, h: .2635 };
+      it.root.updateMatrixWorld(true); bell.root.updateMatrixWorld(true); const b = meshBoxWorld(vis, new THREE.Box3()), bb = new THREE.Box3().setFromObject(bell.model || bell.root), c = bb.getCenter(new THREE.Vector3());
+      const rr = Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2, dc = Math.hypot((b.min.x + b.max.x) / 2 - c.x, (b.min.z + b.max.z) / 2 - c.z);
+      return { sideMm: Math.round((dc + rr - IN.r) * 1000), topMm: Math.round((b.max.y - (bb.min.y + IN.h)) * 1000), wMm: Math.round(rr * 2000), hMm: Math.round((b.max.y - b.min.y) * 1000) }; },
     seatScreen(){ return scr(seat0); }, retryScreen(){ if (!retry.on) return null; const r = retryEl.getBoundingClientRect(); return { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight }; }, get retryOn(){ return retry.on; }, bellSeatScreen(){ return scr(bellSeat); }, frontScreen(){ return scr(frontSpot.pos); },
     spotScreen(name, dy = 0){ const sp = spotOf.get(name); return sp ? scr(_a.copy(sp.pos).add(_b.set(0, dy, 0))) : null; },
     heldBy(i){ return hs[i].held ? hs[i].held.id : hs[i].ctl; }, loc(id){ const it = items.get(id); return it ? it.loc : null; },

@@ -29,6 +29,8 @@ export async function autoVacuum(lab, opt = {}){
   const add = (a, b, c) => { const x = a.x + (b.x - c.x), y = a.y + (b.y - c.y); return Number.isFinite(x) && Number.isFinite(y) ? { x: Math.min(1.05, Math.max(-.05, x)), y: Math.min(1.05, Math.max(-.05, y)) } : { x: a.x, y: a.y }; };
   /** 쥔 것의 한 점(part 화면 자리)을 화면 자리 to 로 — 두 번 맞춘다(원근·컷이 바뀔 수 있으니) */
   async function aim(id, part, toFn, dur = .8){ for (let k = 0; k < 2; k++) { const p = P.screenOf(id, part), to = toFn(); const h = add(cur, to, p); await go([{ dt: k ? .3 : dur, x: h.x, y: h.y }]); await wait(.15); } }
+  // 종 안에서 부푼 것이 종 벽·천장을 넘지 않는지(3 mm 넘게 삐져나오면 넘침으로 적는다)
+  const fitGate = (ids) => { if (!P.fitCheck) return; for (const id of ids) { const f = P.fitCheck(id); if (!f) continue; log.push('맞춤 ' + id + ' 옆' + f.sideMm + ' 위' + f.topMm); if (f.sideMm > 3 || f.topMm > 3) overflow.push('종 밖으로 삐짐 ' + id + ' 옆' + f.sideMm + 'mm 위' + f.topMm + 'mm'); } };
   const V = () => P.view, O = id => P.view.objects[id] || {}, M = () => P.view.mission ? P.view.mission.id : null;
   async function steady(){ await waitFor(() => !stage.camMoving, 3, '카메라'); }
   async function pick(id, lift = .06){ await steady(); const g = P.screenOf(id); await go([{ dt: .45, x: g.x, y: g.y, grab: false }, { dt: .12, grab: true }, { dt: .4, y: g.y - lift }]); await wait(.15); }
@@ -63,7 +65,7 @@ export async function autoVacuum(lab, opt = {}){
   await fetchIt('bell'); await bellOn('bell', 'hover'); await mark('cover');
   await card(2); await mark('predicted');
   await pumpUntil(() => P.missionOver, 14, '두 배', async n => { if (n === 3) await mark('pumping'); });
-  await mark('double');
+  await wait(.8); fitGate(['marshmallow']); await mark('double');
   await finish('marsh');
   if (opt.full) await rest();
   return { done: overflow.length === 0, overflow, log, mission: M(), accidents: P.note.accidents.length, pages: P.note.pages.length, placeholders: P.placeholders };
@@ -112,7 +114,7 @@ export async function autoVacuum(lab, opt = {}){
     for (const id of ['chips', 'sponge', 'balloon_s']) { await fetchIt(id, id !== 'balloon_s'); await aim(id, 'low', () => P.seatScreen(), .8); await release(); await waitFor(() => O(id).loc === 'plate', 2, '받침판 ' + id); }
     await mark('three');
     await pick('bell'); await bellOn('bell', 'release');
-    await pumpUntil(() => O('chips').burst && O('balloon_s').full, 50, '봉지·풍선', async n => { if (n === 6) await mark('puffing'); }); await wait(.4); await mark('puffs');
+    await pumpUntil(() => O('chips').burst && O('balloon_s').full, 50, '봉지·풍선', async n => { if (n === 6) await mark('puffing'); }); await wait(1.2); fitGate(['balloon_s', 'chips', 'sponge']); await mark('puffs');
     await valveOpen(); await wait(.5); await mark('back'); await bellLift('bench_R1');
     for (const id of ['chips', 'sponge', 'balloon_s']) await toHome(id);
     // 낙하 통: 든 채 잠깐 가만히 → 저절로 뒤집힘(공기 있을 때 = 쇠구슬 먼저) → 받침판에 꽂고 공기를 빼고 → 다시 들어 가만히(같이 떨어짐)
