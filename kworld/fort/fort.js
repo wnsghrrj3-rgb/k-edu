@@ -124,6 +124,10 @@ const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.M
 const carryM = new THREE.Group(), carryK = { arrows: art('carry_arrows'), water: art('carry_water'), stone: art('carry_stone') }; for (const k in carryK) carryM.add(carryK[k]); carryM.scale.setScalar(1.35); carryM.visible = false; scene.add(carryM);   /* 머리에 이고 나르는 것: 화살 다발 · 물동이 · 성돌 */
 const guards = SEC_X.map((x) => [x - 1.2, x + 1.2].map((gx) => { const m = person({ shirt: 0x6a3a2a, pants: 0x3a2a24, hat: 'guard', mood: 'stern', skin: SKIN }); m.position.set(gx, 4.0, 9.6); m.rotation.y = Math.PI; return m; }));
 const helpers = [], fieldPeople = [];
+/* 넘어오는 적군(11-18 준호 「적군이 달려오는데 거기 있었다면 게임이 끝나야지」): 깃발이 꺾이기 직전엔 성벽 위로 보이고, 꺾이면 넷이 넘어와 가까운 나를 쫓는다. 붙잡히면 그 판 끝(싸우는 모습은 없음 — 어두워지며 끝). 놀이 난수(rnd)는 쓰지 않는다 */
+const FOE_OFF = [-3.2, -1.1, 1.1, 3.2];
+const foes = SEC_X.map((x) => FOE_OFF.map((o) => { const m = person({ shirt: 0x3a3a46, pants: 0xa82a2a, hat: 'band', mood: 'stern', skin: 0xe0b484 }); m.visible = false; return { m, x: x + o, z: 7.6, y: 4.0, st: 'off', t: 0, hx: x + o * 1.2, hz: 14.2 + Math.abs(o) * 0.3 };   /* 지키는 자리: 꺾인 성벽 바로 밑(우물·대장간에서 멀리) */ }));
+function foeReset() { foes.forEach((g, i) => g.forEach((f, k) => { f.st = 'off'; f.m.visible = false; f.x = SEC_X[i] + FOE_OFF[k]; f.z = 7.6; f.y = 4.0; f.t = 0; })); }
 function mkHelper(x, z, kind) { const m = person({ shirt: kind === 'field' ? 0xc8b08a : 0x9a8a68, pants: 0x6a5034, hat: 'top', skin: SKIN }); return { m, x, z, sec: -1, follow: false, inside: kind !== 'field', dir: 0 }; }
 const tagBox = $('tags'); const secTags = SEC_X.map(() => { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = '<span class="ic"></span><span class="fill"><i></i></span>'; tagBox.appendChild(d); return d; });
 
@@ -151,11 +155,12 @@ const S = { mode: 'title', round: 1, view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: 
   focus: 0, events: [], dawn: NIGHT, low: 1, workT: 0, workKey: '', endT: 0, shown: false, introT: 0, beatT: 0, stepT: 0, delivered: 0 };
 const { say, tick: sayTick } = sayLine(S);
 const ctl = controls(S, say), keys = ctl.keys;
-if (ctl.isTouch) $('keys').textContent = '왼쪽 동그라미로 걷기 · 가만히 서면 집고·쌓는다 · 깃발 아래로 가져가면 놓는다 · 땅을 누르면 도울 사람을 보낸다 · 「시점」 ⟲⟳';
+if (ctl.isTouch) $('keys').textContent = '왼쪽 동그라미로 걷기 · 가만히 서면 집고·쌓는다 · 깃발 아래로 가져가면 놓는다 · 땅을 누르면 도울 사람을 보낸다 · 「시점」 ⟲⟳'; if (ctl.isTouch) $('keys').innerHTML += '<br><b style="color:#ffb0a0">⚠ 깃발이 꺾이면 적군이 넘어온다 — 성벽 위에 적이 보이면 물러나고, 넘어오면 「뛰기」로 피하자</b>';
 const grid = new Uint8Array(W * H); for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) { const cx = x + 0.5, cz = z + 0.5; let b = cx < BX[0] || cx > BX[1] || cz < BZ[0] || cz > BZ[1]; for (const s of SOLID) if (inRect(cx, cz, s, 0.7)) b = true; grid[z * W + x] = b ? 1 : 0; }
 const findPath = gridPath(grid, W, H);
 
 function resetRound(full) {
+  S.caught = false; if (typeof foeReset === 'function') foeReset();
   if (full) { S.round = 1; S.low = 1; if (mis) { mis.reset(); misClear(); } }
   const r = rng(seed0 * 3 + S.round * 97);
   const pickSec = () => Math.floor(r() * 3);
@@ -190,7 +195,7 @@ addEventListener('keydown', (e) => { if (e.code === 'Space' && !e.repeat) act();
 $('bAct').addEventListener('pointerdown', (e) => { e.stopPropagation(); act(); });
 
 /* ───── 끝 ───── */
-function finish(win) { S.mode = win ? 'dawn' : 'fall'; S.endT = 0; S.endWin = win; SFX[win ? 'win' : 'sad'](); say(win ? (S.beacon ? '구원군이다! — 적이 물러간다' : '날이 샌다 — 적이 물러간다') : '깃발이 다 꺾였다 — 성을 비운다', null, 3); }
+function finish(win) { S.mode = win ? 'dawn' : 'fall'; S.endT = 0; S.endWin = win; SFX[win ? 'win' : 'sad'](); say(win ? (S.beacon ? '구원군이다! — 적이 물러간다' : '날이 샌다 — 적이 물러간다') : S.caught ? '넘어온 적군에게 붙잡혔다…' : '깃발이 다 꺾였다 — 성을 비운다', null, 3); if (!win && S.caught) $('fade').style.opacity = 0.55; }
 function endScreen() {
   const win = S.endWin, left = S.lost.filter((l) => !l).length;
   const marks = `<div class="marks"><span class="${left ? 'ok' : ''}">🚩 남은 깃발 ${left}/3</span><span class="${S.beacon ? 'ok' : ''}">🔥 ${S.beacon ? '봉수 올림' : '봉수 없음'}</span><span class="${S.forged ? 'ok' : ''}">⚒ ${S.forged ? '풀무질' : '대장간 그대로'}</span><span class="${S.rescued ? 'ok' : ''}">🏠 들인 사람 ${S.rescued}</span></div>`;
@@ -198,7 +203,7 @@ function endScreen() {
       <p class="keys">들을 비우고 성에 들어가 버틴다. 이 땅 사람들이 오래 써 온 방법이다.</p>
       <div class="fact">📜 <b>산성</b> — 고구려·백제·신라·가야는 험한 산에 성을 쌓고, 싸움이 나면 들을 비우고 들어가 지켰다.<br>📜 <b>쇠</b> — 쇠로 만든 무기와 갑옷이 싸움을 바꿨다. 가야는 쇠가 많이 나 이웃에 팔았다.<br>📜 <b>봉수</b> — 낮에는 연기, 밤에는 불로 먼 곳에 위급을 알렸다.<br>📜 <b>한강</b> — 세 나라는 땅이 기름지고 뱃길이 좋은 한강을 차지하려고 오래 다퉜다.</div>`,
       '한 번 더', () => { resetRound(true); S.mode = 'play'; });
-  else overlay(`<h1>성을 비웠다</h1><p>깃발 셋이 다 꺾였다. 사람들을 데리고 산 위 성으로 물러났다.</p>${marks}
+  else overlay(S.caught ? `<h1>붙잡혔다</h1><p>깃발이 꺾인 성벽 밑에 남아 있다가 넘어온 적군에게 붙잡혔다. 깃발이 꺾이기 전에 — 성벽 위에 적이 보이면 — 물러나야 한다.</p>${marks}` : `<h1>성을 비웠다</h1><p>깃발 셋이 다 꺾였다. 사람들을 데리고 산 위 성으로 물러났다.</p>${marks}
       <p>다음 싸움 — 무너진 데를 다 못 고쳐 <b>성벽이 낮다</b>. 띠가 더 빨리 찬다.</p><p class="keys">${S.round + 1}번째 밤 · 깃발은 다시 선다.</p>`,
       '다시 성벽으로', () => { S.round++; S.low *= 1.15; resetRound(false); S.mode = 'play'; say('성벽이 낮아졌다 — 화살이 떨어지기 전에 날라 두자', null, 3); });
 }
@@ -243,6 +248,22 @@ function update(dt) {
     if (S.fill[i] >= 1) { S.lost[i] = true; S.fire[i] = false; S.breach[i] = false; flags[i].rotation.z = 1.3; SFX.brk(); say(['서쪽', '가운데', '동쪽'][i] + ' 깃발이 꺾였다!', null, 2.6); for (const h of helpers) if (h.sec === i) h.sec = -1; hud(); }
     ladders[i].forEach((l, k) => (l.visible = S.fill[i] > k * 0.18 + 0.05)); mounds[i].scale.y = Math.max(0.01, S.fill[i] * 2.2); mounds[i].position.y = S.fill[i] * 1.1; }
   if (S.lost.every(Boolean)) return finish(false);
+  /* 적군: 띠가 82% 넘으면 성벽 위에 보인다(경고) → 꺾이면 넘어와서 가까운 나를 쫓는다 → 한동안 뒤 그 구간 성벽 밑을 지킨다 */
+  for (let i = 0; i < 3; i++) for (const f of foes[i]) {
+    if (f.st === 'off' && !S.lost[i] && S.fill[i] > 0.82) { f.st = 'peek'; f.m.visible = true; f.t = 0; say(['서쪽', '가운데', '동쪽'][i] + ' 성벽 위에 적군이! — 깃발이 꺾이면 넘어온다, 그 밑에서 물러나', 'peek' + i + '_' + S.round, 3.2); }
+    if (f.st === 'peek' && !S.lost[i] && S.fill[i] < 0.75) { f.st = 'off'; f.m.visible = false; }
+    if ((f.st === 'peek' || f.st === 'off') && S.lost[i]) { f.st = 'jump'; f.m.visible = true; f.t = 0; if (f === foes[i][0]) { SFX.brk(); say('적군이 넘어온다! — 뛰어서 피해 (' + (ctl.isTouch ? '「뛰기」' : 'Shift') + ')', null, 2.8); } }
+    f.t += dt;
+    if (f.st === 'peek') { f.y = 4.0; f.z = 7.6 + Math.sin(S.t * 3 + f.x) * 0.15; }
+    else if (f.st === 'jump') { const k = clamp(f.t / 0.9, 0, 1); f.z = lerp(7.6, 12.6, k); f.y = 4.0 * (1 - k * k) + Math.sin(k * Math.PI) * 0.8; if (k >= 1) { f.st = 'rush'; f.t = 0; f.y = 0; } }
+    else if (f.st === 'rush' || f.st === 'hold') {
+      const dp = dist(f.x, f.z, S.px, S.pz), chase = S.mode === 'play' && dp < (f.st === 'rush' ? 8 : 5);   /* 뛰면(4.9) 달아날 수 있다 — 서 있거나 걸으면(3.2) 붙잡힌다 */
+      const tx = chase ? S.px : f.hx, tz = chase ? S.pz : f.hz, d = dist(f.x, f.z, tx, tz), sp = chase ? 3.9 : 2.4;
+      if (d > 0.3) { const [nx, nz] = collideRects(SOLID, f.x + (tx - f.x) / d * Math.min(d, sp * dt), f.z + (tz - f.z) / d * Math.min(d, sp * dt), 0.42); f.x = clamp(nx, BX[0], BX[1]); f.z = clamp(nz, BZ[0], BZ[1]); f.m.rotation.y = -Math.atan2(tz - f.z, tx - f.x) + Math.PI / 2; }
+      walkAnim(f.m, S.t * 12, d > 0.3);
+      if (f.st === 'rush' && f.t > 7) f.st = 'hold';
+      if (S.mode === 'play' && dp < 1.15) { S.caught = true; SFX.sad(); return finish(false); } }
+    f.m.position.set(f.x, f.y, f.z); if (f.st === 'peek' || f.st === 'jump') f.m.rotation.y = 0; }
 
   /* 나 */
   let { ix, iz, back } = ctl.read(dt);
