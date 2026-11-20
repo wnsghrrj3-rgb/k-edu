@@ -45,3 +45,15 @@ t('쓰기: 「내 몸」 자리는 화면 아래 가운데', () => { assert.ok(i
 t('각도 감기: 350° − 10° = −20°', () => { assert.equal(wrapDeg(350 - 10), -20); assert.equal(wrapDeg(10 - 350), 20); });
 t('무게감: 무거운 통일수록 늦게 따라온다', () => { assert.ok(followK(1 / 30, 1.8) < followK(1 / 30, .6)); });
 console.log(`hands: ${n} 통과`);
+
+// ── 진공 펌프 손잡이(makePumpStroke): 올렸다 내려 누르면 한 번, 세기 = 폭
+{
+  const { makePumpStroke } = await import('../core/hands.js');
+  const assert = (await import('node:assert/strict')).default;
+  const P = makePumpStroke(); const fire = []; const feed = (a, b, n = 10) => { for (let k = 0; k <= n; k++) { const r = P.update(a + (b - a) * k / n); if (r) fire.push(r); } };
+  feed(0, 0, 3); feed(0, .9); feed(.9, 0); assert.equal(fire.length, 1, '크게 한 번 = 한 번'); assert.equal(fire[0].strength, 1);
+  feed(0, .4); feed(.4, .05); assert.equal(fire.length, 2); assert.ok(fire[1].strength > .3 && fire[1].strength < .6, '반만 = 약하게');
+  feed(.05, .12); feed(.12, .05); assert.equal(fire.length, 2, '아주 작은 떨림은 안 셈');
+  let jit = 0; for (let k = 0; k < 120; k++) { const r = P.update(.5 + (Math.sin(k * 7.3) * .015)); if (r) jit++; } assert.equal(jit, 0, '±1.5% 떨림만으로는 안 셈');
+  console.log('  ✓ 펌프 손잡이: 큰 왕복 한 번 = 한 번 · 세기 = 폭 · 떨림 무시');
+}

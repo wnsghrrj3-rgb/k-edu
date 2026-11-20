@@ -11,22 +11,22 @@ export function createCards(hudEl){
   return {
     get open(){ return !!cur; },
     /** question: 「어떻게 될까?」 · choices: ['시든다', '그대로다', '유리처럼 된다'] */
-    show(question, choices, onPick){
+    show(question, choices, onPick, opt = {}){
       close(); wrap.style.display = ''; const q = document.createElement('div'); q.className = 'q'; q.textContent = question; wrap.appendChild(q);
       const row = document.createElement('div'); row.className = 'row'; wrap.appendChild(row);
       const els = choices.map((c, i) => { const b = document.createElement('button'); b.className = 'card'; b.innerHTML = `<span class="ring"></span><span class="t"></span>`; b.querySelector('.t').textContent = c; b.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); pick(i); }); row.appendChild(b); return b; });
-      cur = { els, prog: choices.map(() => 0), onPick, picked: null, closeIn: 0, cb: null, start: [null, null], armed: [false, false] };   /* 카드가 뜬 뒤 손이 한 번 움직여야 고르기 시작(쉬던 손 밑에 카드가 떠서 저절로 골라지지 않게) */
+      cur = { els, prog: choices.map(() => 0), onPick, picked: null, closeIn: 0, cb: null, start: [null, null], armed: [false, false], grace: opt.grace || 0, grace0: opt.grace || 0, under: [null, null] };   /* 카드가 뜬 뒤 손이 한 번 움직여야 고르기 시작(쉬던 손 밑에 카드가 떠서 저절로 골라지지 않게) */
     },
     close,
     /** 매 프레임: hands = [{present, x, y}] 화면 비율. 손이 카드 위에 머무는 동안 테두리가 차오른다. */
     update(dt, hands){
       if (!cur) return;
       if (cur.picked != null) { cur.closeIn -= dt; if (cur.closeIn <= 0) { const cb = cur.cb; close(); cb && cb(); } return; }
-      const W = innerWidth, H = innerHeight;
-      hands.forEach((h, k) => { if (k > 1 || !h || !h.present) return; if (!cur.start[k]) cur.start[k] = { x: h.x, y: h.y }; else if (!cur.armed[k] && Math.hypot(h.x - cur.start[k].x, h.y - cur.start[k].y) > .06) cur.armed[k] = true; });
+      const W = innerWidth, H = innerHeight; if (cur.grace > 0) cur.grace -= dt;   /* opt.grace 초 동안은 테두리가 차오르지 않는다 */
+      hands.forEach((h, k) => { if (k > 1 || !h || !h.present) return; if (cur.grace0 && cur.under[k] == null) cur.under[k] = cur.els.findIndex(el => { const r = el.getBoundingClientRect(); return h.x * W >= r.left && h.x * W <= r.right && h.y * H >= r.top && h.y * H <= r.bottom; }); if (!cur.start[k] || cur.grace > 0) { cur.start[k] = { x: h.x, y: h.y }; return; }   /* grace: 카드가 뜰 때 손 밑에 있던 카드는 grace 뒤에 손이 움직여야, 다른 카드는 grace 만 지나면 고를 수 있다 */ else if (!cur.armed[k] && Math.hypot(h.x - cur.start[k].x, h.y - cur.start[k].y) > .06) cur.armed[k] = true; });
       cur.els.forEach((el, i) => { const r = el.getBoundingClientRect();
-        const over = hands.some((h, k) => h.present && cur.armed[k] && h.src !== 'mouse' && h.src !== 'touch' && h.src !== 'pen' && h.x * W >= r.left && h.x * W <= r.right && h.y * H >= r.top && h.y * H <= r.bottom);
-        cur.prog[i] = over ? Math.min(1, cur.prog[i] + dt / DWELL) : Math.max(0, cur.prog[i] - dt * 2.5);
+        const over = hands.some((h, k) => h.present && (cur.armed[k] || (cur.grace0 && cur.under[k] != null && cur.under[k] !== i)) && h.src !== 'mouse' && h.src !== 'touch' && h.src !== 'pen' && h.x * W >= r.left && h.x * W <= r.right && h.y * H >= r.top && h.y * H <= r.bottom);
+        cur.prog[i] = over && !(cur.grace > 0) ? Math.min(1, cur.prog[i] + dt / DWELL) : Math.max(0, cur.prog[i] - dt * 2.5);
         el.style.setProperty('--p', cur.prog[i].toFixed(3)); el.classList.toggle('hot', over);
         if (cur.prog[i] >= 1) pick(i); });
     },

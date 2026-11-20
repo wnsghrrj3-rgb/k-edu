@@ -15,6 +15,8 @@ export function createAudio({ muted = false } = {}){
   return {
     get on(){ return on; }, set on(v){ on = v; if (!v) Object.values(loops).forEach(L => L.g.gain.value = 0); },
     unlock: ensure,
+    /** 다른 모듈이 직접 소리를 만들 때(진공 실험의 자명종 울림 등): 소리가 꺼져 있으면 null */
+    get ctx(){ return ensure(); }, get out(){ return ensure() ? master : null; },
     grab(mat = 'glass'){ const [a, b] = MAT[mat] || MAT.glass; tone(a, .06, { type: 'triangle', vol: .18, f2: b }); },
     place(mat = 'glass', hard = .6){ const [a] = MAT[mat] || MAT.glass; burst(.08, { vol: .12 + hard * .25, freq: a * .5, q: 2 }); tone(a * .35, .09, { vol: .1 + hard * .1 }); },
     whoosh(){ burst(.25, { vol: .1, freq: 600, q: .6 }); },

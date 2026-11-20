@@ -8,7 +8,7 @@ import { kindOf } from '../sim/thermal.js';
 import { loadPropAssets, makeItem, restQuat, pivotForRest, makeHand, cloneOwn, SHELF_LAYOUT, FLIP_IN_TONGS } from './items.js';
 import { createFxBridge } from './fxbridge.js';
 import { createCards } from './cards.js?v=2';
-import { createNote } from './note.js';
+import { createNote } from './note.js?v=2';
 import { makeStrike, wrapDeg, followK, lostAction, inZone, BODY_ZONE, WEAR_LOST_Y, LOST_ASK_MS, GRAB_RADIUS, clamp } from './hands.js';
 
 const DEG = Math.PI / 180, G = 9.8;

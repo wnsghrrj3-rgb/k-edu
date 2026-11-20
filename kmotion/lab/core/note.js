@@ -18,10 +18,16 @@ export function createNote(hudEl, ui = {}){
       (pr ? `<p><b>${esc(L('myPrediction'))}</b> ${esc(pr.q)} → ${esc(pr.text)}</p><p><b>${esc(L('actual'))}</b> ${esc(pr.actual)}</p>` : '') +
       (p.happened ? `<p><b>${esc(L('happened'))}</b> ${esc(p.happened)}</p>` : '') +
       (p.tries && p.tries.length ? `<p class="tries"><b>${esc(L('tries'))}</b> ${p.tries.map(t => esc(t.text)).join(' · ')}</p>` : '') +
+      (p.graph && p.graph.points && p.graph.points.length > 1 ? graphHtml(p.graph) : '') +
       (p.cause ? `<p><b>${esc(L('cause'))}</b> ${esc(p.cause)}</p>` : '') +
       (p.whyNot ? `<p class="why"><b>${esc(p.whyTitle)}</b> ${esc(p.whyNot)}</p>` : '') +
       (p.whyLines ? `<div class="whyall"><b>${esc(p.whyLinesTitle)}</b>${p.whyLines.map(l => `<p>• ${esc(l)}</p>`).join('')}</div>` : '') + `</section>`;
   }
+  // 작은 그림(진공 실험 ③ 「끓는 동안 물 온도」): points = [[시간, 온도, 압력, 끓음 0/1], …] → 온도-시간 꺾은선, 끓는 동안은 빨간 선
+  function graphHtml(g){ const P = g.points, W = 260, H = 96, t0 = P[0][0], t1 = P[P.length - 1][0] || t0 + 1; let lo = 1e9, hi = -1e9; for (const q of P) { lo = Math.min(lo, q[1]); hi = Math.max(hi, q[1]); } lo = Math.floor(lo - 1); hi = Math.ceil(hi + .5);
+    const X = t => 30 + (t - t0) / Math.max(1e-6, t1 - t0) * (W - 38), Y = T => 8 + (hi - T) / Math.max(1e-6, hi - lo) * (H - 24);
+    let d = '', b = ''; P.forEach((q, i) => { const pt = `${X(q[0]).toFixed(1)},${Y(q[1]).toFixed(1)}`; d += (i ? ' L' : 'M') + pt; if (q[3] && i && P[i - 1][3]) b += ` M${X(P[i - 1][0]).toFixed(1)},${Y(P[i - 1][1]).toFixed(1)} L${pt}`; });
+    return `<div class="graph"><b>${esc(g.title)}</b><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"><path d="M30,6 V${H - 16} H${W - 6}" fill="none" stroke="#8a7f6c" stroke-width="1"/><text x="2" y="${Y(hi) + 4}" font-size="10" fill="#6b6152">${hi}℃</text><text x="2" y="${Y(lo) + 4}" font-size="10" fill="#6b6152">${lo}℃</text><path d="${d}" fill="none" stroke="#3a6ea5" stroke-width="2"/>${b ? `<path d="${b}" fill="none" stroke="#c0392b" stroke-width="3"/>` : ''}<text x="${W - 6}" y="${H - 3}" font-size="10" text-anchor="end" fill="#6b6152">${esc(L('time') || '')}</text></svg></div>`; }
   function render(){
     const order = pages.map((p, i) => i).reverse();
     book.innerHTML = `<div class="paper"><button class="x">${esc(L('close'))}</button><h2>${esc(L('notebook'))}</h2>` +

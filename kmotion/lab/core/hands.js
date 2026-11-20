@@ -84,3 +84,23 @@ export const followK = (dt, weight = 1) => 1 - Math.exp(-dt * 22 / Math.max(.3, 
 
 /** 손 놓침: 쥔 채 손이 사라진 뒤 지난 시간 → 'hold'(공중에 머묾) | 'return'(제자리로 사뿐히) */
 export const lostAction = ms => ms < LOST_HOVER_MS ? 'hold' : 'return';
+
+/** 진공 펌프 손잡이: 높이 h(0 = 끝까지 내림 ~ 1 = 끝까지 올림)를 매 프레임 넣는다.
+ *  올렸다가 내려 누르는 한 번이 끝나는 순간(바닥 가까이 오거나 다시 올라가기 시작) { strength } 를 한 번 돌려준다.
+ *  세기 = 이번에 내린 폭 / full (끝까지 다 안 내려도 인정, 폭이 minAmp 보다 작으면 안 셈) */
+export function makePumpStroke({ minAmp = 0.15, hyst = 0.05, full = 0.75, bottom = 0.12 } = {}){
+  let top = null, low = null, falling = false, count = 0;
+  return {
+    update(h){
+      if (top == null) { top = low = h; return null; }
+      if (!falling) { if (h > top) top = h; if (top - h > hyst) { falling = true; low = h; } return null; }
+      if (h < low) low = h;
+      if (!(low <= bottom || h - low > hyst)) return null;
+      const amp = top - low, t0 = top; falling = false; top = low = h;
+      if (amp < minAmp) return null;
+      count++; return { strength: Math.min(1, amp / full), amp: +amp.toFixed(3), top: +t0.toFixed(3) };
+    },
+    get count(){ return count; },
+    reset(){ top = low = null; falling = false; },
+  };
+}

@@ -131,7 +131,9 @@ export function createStage(host, opt = {}){
   }
 
   const stage = { THREE, scene, camera, renderer, room, slots, sun, BENCH_Y, WORK_Z, fps: 60, loadRoom, pictured: false,
-    setCut, closeUp, get cut(){ return cam.name; }, shake(v = 1){ cam.shake = Math.max(cam.shake, v); },
+    setCut, closeUp, get cut(){ return cam.name; },
+    /** 컷 자리를 실험마다 바꿀 때(진공 실험: 펌프 손잡이 꼭대기까지 보이게). 지금 그 컷이면 다음 setCut 부터 */
+    defineCut(name, pos, look, fov){ const c = CUTS[name]; if (!c) return; c.pos.set(pos[0], pos[1], pos[2]); c.look.set(look[0], look[1], look[2]); c.fov = fov; }, shake(v = 1){ cam.shake = Math.max(cam.shake, v); },
     slowMo(scale, sec){ timeScale = scale; slowUntil = stage.now() + sec * 1000; },
     screenToPlane, project, projectTo, projectView, ctrl, get camMoving(){ return cam.t < 1 || cr.t < 1; }, onTick: f => ticks.push(f), resize, advance, now: () => window.__pause && manualNow ? manualNow : performance.now() };
   return stage;

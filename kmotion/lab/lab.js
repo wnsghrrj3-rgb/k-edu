@@ -1,13 +1,13 @@
 // 케이모션 과학실 — 시작(입력 고르기) → 무대·입력·기구·흐름 켜기
 // L01 회색 판: 동사 여덟 개(집기·옮기기·놓기·기울여 붓기·담그기·내리치기·펌프질·쓰기)를 손에 익히는 판.
-import { createStage } from './core/stage.js';
+import { createStage } from './core/stage.js?v=2';
 import { createInput } from './core/input.js';
 import { createCamSetup } from './core/camsetup.js';
 import { createProps } from './core/props.js';
 import { createLiquid } from './core/liquid.js';
-import { createAudio } from './core/audio.js';
+import { createAudio } from './core/audio.js?v=2';
 import { createFlow } from './core/flow.js';
-import { BODY_ZONE, inZone } from './core/hands.js';
+import { BODY_ZONE, inZone } from './core/hands.js?v=2';
 
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
@@ -22,7 +22,7 @@ function makeHud(){
   };
 }
 
-async function start(mode){
+async function start(mode, expId = 'ln2'){
   $('ov').classList.add('wait'); $('err').textContent = '과학실 문을 여는 중…'; $('back').style.display = 'none';   /* 방 그림이 다 올라올 때까지 시작 화면을 덮어 둔다 */
   const audio = createAudio({ muted: Q.has('mute') }); audio.unlock();
   const stage = createStage($('app'), { capture: Q.has('capture') });
@@ -31,7 +31,7 @@ async function start(mode){
   // 그림 판 놀이(진짜 기구 + 실험 논리): 방이 올라왔고 ?grey=1 이 아니면. 못 올리면 회색 연습판으로 간다.
   let play = null;
   if (stage.pictured && !Q.has('grey')) {
-    try { const { createPlay } = await import('./core/play.js?v=7');
+    try { const { createPlay } = await import(expId === 'vacuum' ? './core/play_vacuum.js?v=2' : './core/play.js?v=8');
       play = await createPlay({ stage, input, audio, mode, Q, els: { hud: $('hud'), note: $('note'), bodySpot: $('bodySpot'), goggle: $('goggle'), askHands: on => $('camBox').classList.toggle('big', !!on) } });
     } catch (e) { console.error('[lab] 그림 판 놀이를 못 올림 — 회색 연습판으로', e); play = null; }
   }
@@ -44,11 +44,11 @@ async function start(mode){
   if (!audio.on) $('bSnd').textContent = '🔇 소리';
   $('bFs').onclick = () => { const d = document.documentElement; if (!document.fullscreenElement) d.requestFullscreen && d.requestFullscreen(); else document.exitFullscreen(); };
   if (play) {
-    const lab = window.__lab = { stage, input, play, audio, mode };
+    const lab = window.__lab = { stage, input, play, audio, mode, exp: expId };
     // ?auto=1 자동 맛보기 한 판(진짜 입력 길) · &fast=1 시간을 손으로 흘림 · &fr=n&ft=초 그 움직임에서 멈춤(화면 찍기) · &upto=이름 그 걸음 뒤 멈춤
-    lab.auto = async (opt) => (await import('./auto_play.js?v=2')).autoPlay(lab, opt);
+    lab.auto = async (opt) => expId === 'vacuum' ? (await import('./auto_vacuum.js?v=2')).autoVacuum(lab, opt) : (await import('./auto_play.js?v=2')).autoPlay(lab, opt);
     if (Q.has('auto')) setTimeout(async () => { if (Q.has('fast')) { window.__pause = true; stage.advance(.3); }
-      let r; try { r = await lab.auto({ freezeRun: +Q.get('fr') || 0, freezeT: +Q.get('ft') || 0, upto: Q.get('upto') || '', full: Q.has('full'), shots: Q.get('shots') ? Q.get('shots').split(',') : [] }); } catch (e) { r = e && e.freeze ? { frozen: true, at: e.at, log: e.log, overflow: e.overflow } : { error: String(e && e.stack || e) }; }
+      let r; try { r = await lab.auto({ freezeRun: +Q.get('fr') || 0, freezeT: +Q.get('ft') || 0, upto: Q.get('upto') || '', full: Q.has('full'), more: Q.has('more'), shots: Q.get('shots') ? Q.get('shots').split(',') : [] }); } catch (e) { r = e && e.freeze ? { frozen: true, at: e.at, log: e.log, overflow: e.overflow } : { error: String(e && e.stack || e) }; }
       input.freeze(); stage.advance(1 / 30); window.__pause = !!r.frozen; document.title = 'AUTO ' + JSON.stringify({ done: r.done, frozen: r.frozen, at: r.at, error: r.error, overflow: r.overflow, log: r.log }); console.log('[lab auto]', JSON.stringify(r)); }, 300);
     return lab;
   }
@@ -86,6 +86,16 @@ async function start(mode){
   return lab;
 }
 
-document.querySelectorAll('.pick').forEach(b => b.addEventListener('click', () => start(b.dataset.mode)));
-if (Q.has('mouse') || Q.has('auto')) start('touch');
-else if (Q.get('input')) start(Q.get('input'));
+// ── 실험 고르기: 입력을 고른 뒤 실험 카드 두 장(이름·한 줄은 각 exp.json 의 title·subtitle). ?exp=vacuum|ln2 이면 바로.
+const EXPS = [{ id: 'ln2', icon: '❄️' }, { id: 'vacuum', icon: '🔔' }];
+async function chooseExp(mode){
+  const want = Q.get('exp'); if (want && EXPS.some(e => e.id === want)) return start(mode, want);
+  const row = $('expRow'); $('modeRow').style.display = 'none'; $('ovLead').textContent = '어떤 실험을 해 볼까요?'; row.style.display = ''; row.innerHTML = '';
+  for (const e of EXPS) { const b = document.createElement('button'); b.className = 'pick exp'; b.dataset.exp = e.id; b.innerHTML = `<span class="ic">${e.icon}</span><b></b><small></small>`; row.appendChild(b);
+    b.addEventListener('click', () => { row.querySelectorAll('button').forEach(x => x.disabled = true); start(mode, e.id); });
+    fetch('./exp/' + e.id + '/exp.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { b.querySelector('b').textContent = j.title || ''; b.querySelector('small').textContent = j.subtitle || ''; }).catch(() => {}); }
+}
+document.querySelectorAll('.pick[data-mode]').forEach(b => b.addEventListener('click', () => chooseExp(b.dataset.mode)));
+if (Q.has('auto')) start('touch', Q.get('exp') === 'vacuum' ? 'vacuum' : 'ln2');   /* 자동 한 판: exp 가 없으면 영하 196도(예전 그대로) */
+else if (Q.has('mouse')) chooseExp('touch');
+else if (Q.get('input')) chooseExp(Q.get('input'));
