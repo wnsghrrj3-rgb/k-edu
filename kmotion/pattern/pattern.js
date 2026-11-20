@@ -199,9 +199,10 @@ function finish(){
 }
 
 // ── 프레임
-let lastT = 0;
+let lastT = 0, lastDuo = [null, null];
 km.onFrame = f => {
-  const t = f.t, dt = lastT ? Math.min(100, t - lastT) : 0; lastT = t; duo = f.duo || [null, null]; if (DEV && window.__fakeDuo) duo = window.__fakeDuo(t);
+  const t = f.t, dt = lastT ? Math.min(100, t - lastT) : 0; lastT = t; if (f.fresh || f.duo) lastDuo = f.duo || [null, null]; duo = lastDuo; // 화면은 초당 60번, 카메라는 30번 — 새 영상이 없는 프레임엔 직전 몸을 그대로 씀(안 그러면 몸이 한 프레임 걸러 사라져 자리 잡기·손 대기가 안 쌓임)
+  if (DEV && window.__fakeDuo) duo = window.__fakeDuo(t);
   if (S.solo) { const w = p => p ? Math.abs(p[11].x - p[12].x) : -1; duo = [w(duo[1]) > w(duo[0]) ? duo[1] : duo[0], null]; }
   for (let i = 0; i < 2; i++) { const p = duo[i]; if (!p || p[11].v < .5 || p[12].v < .5) continue; const m = { cx: (p[11].x + p[12].x) / 2, cy: (p[11].y + p[12].y) / 2, sw: Math.max(30, Math.abs(p[11].x - p[12].x)) }, b = S.body[i];
     if (!b || Math.abs(m.cx - b.cx) > m.sw * 2) S.body[i] = m; else { b.cx += (m.cx - b.cx) * .25; b.cy += (m.cy - b.cy) * .25; b.sw += (m.sw - b.sw) * .12; } }
