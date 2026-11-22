@@ -15,7 +15,7 @@ const seed0 = +(new URLSearchParams(location.search).get('seed') || (Date.now() 
 const SEASONS = ['봄', '여름', '가을', '겨울'], SLEN = [80, 96, 124, 52], YEARS = 5;
 const HOME = [46, 150], GRAN = [53, 145], SEED = [50, 157], NURS = [37, 161], TOBS = [43, 165], DOOR = [44, 147];
 const BO = [150, 47], LORD = [226, 66], TOWN = [250, 128], GWE = [271, 104], PAPER = [281, 110], OX = [263, 142], CLOTH = [240, 120];
-const DUTY = [104, 142.5], PASS = [302, 128], NEXT = [346, 128], PORT = [262, 207], PEDD = [62, 138];
+const DUTY = [104, 142.5]; const TOWN_PTS = [[242, 119], [250, 117], [258, 119], [242, 137], [252, 139], [238, 128], [264, 127]], NEXT_PTS = [[340, 121], [350, 121], [346, 137]], PASS = [302, 128], NEXT = [346, 128], PORT = [262, 207], PEDD = [62, 138];
 /* 값 */
 const YIELD = 8, FOOD = 8, CAP = 6, CAP_OX = 18, P_OX = 80, P_NB = 120, P_LORD = 160, P_PAPER = 200, HELP = 4, FIXED = 3;
 const GUNPO = [15, 25, 35, 45, 45], GUNPO_WHY = ['장정 한 몫', '갓난아기 몫까지', '돌아가신 할아버지 몫까지', '달아난 이웃 몫까지', '달아난 이웃 몫까지'];
@@ -132,6 +132,56 @@ const ajeon = mkP({ shirt: 0x2a3a6a, hat: 'gat' }); ajeon.visible = false;
 const servant = mkP({ shirt: 0xa89878, hat: 'scarf' }); servant.visible = false;
 const tagBox = $('tags'), tags = Array.from({ length: 12 }, () => { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = '<span class="ic"></span>'; tagBox.appendChild(d); return d; });
 
+/* ───── 사람들이 살아 있게(준호 11-23 「다른 캐릭터들도 각자 역할·움직임·반응 — 재밌는 반응도」)
+   말풍선: 다가가면 돌아보고 한마디(처지·철·내 형편에 따라 다름) · 양반은 등을 돌림 · 부역엔 이웃도 나옴 · 쌀 꾸어 준 이웃은 품앗이를 옴 · 논을 사들인 이웃은 싸늘 · 개와 닭 */
+const talkBox = $('tags'), talks = Array.from({ length: 7 }, () => { const d = document.createElement('div'); d.className = 'talk'; talkBox.appendChild(d); return d; }), TALKERS = [];
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+function talk(m, text, sec = 3.4, h = 3.3) { if (!m || !text) return; if (!TALKERS.includes(m)) TALKERS.push(m); m._talk = { text, t: sec, h }; if (dist(S.px, S.pz, m.position.x, m.position.z) < 30) tone(520 + Math.random() * 200, 700, 0.06, 'triangle', 0.05); }
+const nbCount = (k) => plots.filter((p) => p.farmer === k && p.kind === 'paddy').length;
+function nbLine(n) { const k = n.k, sn = S.season, my = paddies().length, his = nbCount(k);
+  if (n.rel < 0) return pick(['…', '흥.', '내 논이 자네 논이 됐구먼. 잘 지으시오.', '대대로 짓던 논이었소.']);
+  if (S.slow > 0) return pick(['아이고, 곤장 맞았다며? 엉덩이는 괜찮소?', '된장을 바르시오, 된장을.', '쯧쯧, 남 일 같지 않구먼.']);
+  if (sn === 3 && n.trouble) return k === 'B' ? '올해는 나도 빠듯하네그려.' : pick(['…솥에 넣을 것이 없소. 염치없지만 쌀 좀 꾸어 주겠나.', '올겨울을 어찌 나나…']);
+  if (n.rel > 0 && Math.random() < 0.5) return pick(['지난겨울 쌀, 잊지 않았소!', '자네 덕에 겨울을 났소. 품으로 갚으리다.']);
+  if (S.yangban && Math.random() < 0.5) return pick(['어이쿠, 양반 나리 납시었소?', '나리, 어제까지 같이 김매던 사이 아니오. 허허.']);
+  if (S.ox && Math.random() < 0.3) return pick(['소 좋네! 한번 쓰다듬어 봐도 되오?', '그 소, 하루만 빌려주면 안 되겠나?']);
+  if (S.duty && S.duty.nbT > 0) return pick(['양반댁은 오늘도 아무도 안 나왔구먼.', '품삯도 없는 일, 얼른 끝내고 논에 가야 하는데.', '내 논 풀은 누가 매 주나…']);
+  if (k === 'A') return pick(sn === 0 ? [n.method === 'mo' ? '나도 모내기를 해 보네. 허리는 아파도 풀이 덜 나!' : '올해도 볍씨나 뿌려야지. 모내기는 겁이 나서 원…', '봄볕이 좋소. 올해는 풍년이려나.'] : sn === 1 ? [S.drought ? '하늘도 무심하오. 비 한 방울을 안 주네.' : '김매다 허리가 부러지겠소.', S.bo >= 6 ? '자네가 쌓은 보 덕에 우리 논에도 물이 드오. 고맙소!' : '개울에 보라도 있으면 좋으련만.'] : sn === 2 ? ['올해 군포가 또 올랐다지? 우리 집 갓난쟁이도 군인이라오, 허허.', '아전 나리가 뜨기 전에 얼른 내야지.'] : ['긴 겨울이오. 새끼나 꼬아야지.', '내년엔 나도 못자리를 해 볼까…']);
+  if (k === 'B') return pick([my > his ? '허, 자네가 나보다 넓게 짓다니… 내년엔 두고 보세.' : `자네 논이 몇 배미지? 나는 ${['영', '한', '두', '세', '네', '다섯', '여섯', '일곱'][his] || his} 배미일세. 세어 보게.`, sn === 0 ? '양반댁 논? 좋은 건 내가 먼저 찜했네!' : sn === 2 ? '쌀은 고개 너머가 값이 좋지. 아, 이건 비밀인데.' : sn === 3 ? '논 팔 사람 없나 둘러보는 중이네.' : '모내기를 하니 일손이 남아. 남는 손으로 논을 더 짓지!', '부지런한 놈이 땅을 갖는 걸세. 허허.']);
+  return pick(sn === 0 ? ['모내기? 그거 하다 가물면 다 죽는다던데.', '씨 뿌리고 나면 낮잠이나 한숨 자야지.'] : sn === 1 ? ['잠깐 쉬는 중이오. 풀도 쉬어야 자라지.', S.drought ? '논바닥이 거북이 등짝 같소…' : '이놈의 풀은 뽑아도 뽑아도 나네.'] : sn === 2 ? ['아전 나리만 보면 다리가 후들거려.', '거둔 것의 반은 양반댁, 남은 건 관아… 내 몫은 어디 있나.'] : ['군불이나 때야지. 땔나무는 공짜니까.', '내년엔 좀 나아지려나.']); }
+const ACT = [
+  { m: extras[0], away: () => !S.yangban, line: () => (S.yangban ? pick(['…자네가 양반? 족보가 어디 있나, 족보가.', '돈 주고 산 갓이 머리에 맞던가?']) : paddies().some((p) => p.owner === 'lord') ? pick(['내 논 잘 짓고 있겠지? 반은 내 것이다.', '에헴. 올해 소출이 시원찮으면 논을 거둘 것이야.']) : pick(['에헴.', '어허, 길을 비켜라.', '부역? 그건 상것들 일이지.'])) },
+  { m: extras[1], line: () => (S.yangban ? '나리, 군포는 면제이옵니다.' : S.debt > 0 ? '빚 문서는 잘 있다. 이자도 무럭무럭 자라고.' : pick(['세금은 가을에. 한 푼도 깎아 줄 수 없다.', '갓난아기 몫? 장부에 이름이 있으면 내는 것이다.', '억울하면 양반으로 태어나든가.'])) },
+  { m: extras[2], line: () => (S.seizedOx && !S.ox ? '소를 뺏겼다고? 쯧쯧… 마침 한 마리 더 있는데.' : S.ox ? '그 녀석 잘 먹이고 있나? 내가 키운 소일세.' : pick([`소 한 마리 ${P_OX}냥! 이빨 좀 보게, 튼튼하지?`, '소가 있으면 달구지에 세 곱절을 싣는다네.', '겨울에 오게. 겨울에만 판다네.'])) },
+  { m: extras[3], line: () => pick([`쌀 사려! 읍내 쌀은 ${price('town')}냥!`, '저울은 속이지 않소. …많이는.', '오늘 장은 사람이 많구먼.']) },
+  { m: extras[4], line: () => pick(['담배 한 대 피워 보시게. 요즘 다들 이것만 찾아.', '담배 농사가 쌀농사보다 낫다는 사람도 있소.']) },
+  { m: extras[5], line: () => pick(['엿 사시오, 엿! 가위 소리 들리오?', '울릉도 호박엿은 아니지만 달기는 다오.', '베 한 필 6냥. 고개 너머 가면 11냥 받는다던데, 내가 왜 이걸 말하나.']) },
+  { m: extras[6], line: () => pick(['고개 넘어오느라 애썼소. 값은 잘 쳐 주리다.', '저 고개에 호랑이가 나온다던데, 못 봤소?']) },
+  { m: extras[7], line: () => pick(['여긴 담배가 귀하오. 있으면 다 주시오!', '읍내보다 값이 좋지? 소문내지는 마시오.']) },
+  { m: extras[8], line: () => (S.year < 3 ? '한양 배? 아직 물길이 안 열렸소.' : shipIn() ? '한양 가는 배요! 곧 닻을 올리니 서두르시오.' : pick(['배는 가을 한가운데 떠나오. 늦으면 헤엄쳐 오시게.', '한양 사람들은 쌀을 돈 주고 사 먹는다오. 신기하지?'])) },
+  { m: peddler, line: () => pick(['방방곡곡 안 가 본 장이 없지. 아랫녘에선 다들 모를 옮겨 심더이다.', '값은 좀 싸게 쳐도, 내가 여기까지 걸어온 값이오.', '짚신이 한 달에 세 켤레씩 닳는다오.']) },
+  { m: ajeon, r: 9, line: () => (S.taxPaid ? '흠, 냈군. 아쉽… 아니, 잘했다.' : '세금! 세금은 냈는가!') },
+  { m: servant, line: () => pick(['주인어른, 김은 제가 매겠습니다.', '…저 논이 원래 제 논이었지요.']) }];
+for (const a of ACT) { a.cool = 0; a.ry0 = a.m.rotation.y; }
+/* 개 한 마리 · 닭 네 마리 */
+const dog = { m: art('dog'), x: HOME[0] + 4, z: HOME[1] + 5, bark: 0 }; if (dog.m) { dog.m.rotation.order = 'YXZ'; scene.add(dog.m); }
+const hens = Array.from({ length: 4 }, (_, i) => { const m = art('chicken'); if (m) scene.add(m); return { m, x: HOME[0] + 8 + i * 1.6, z: HOME[1] + 9 + (i % 2) * 2, tx: HOME[0] + 9, tz: HOME[1] + 10, wait: i, run: 0, hx: HOME[0] + 9, hz: HOME[1] + 10 }; });
+function actorsUpdate(dt) {
+  for (const a of ACT) { a.cool -= dt; const m = a.m; if (!m.visible) continue; const d = dist(S.px, S.pz, m.position.x, m.position.z);
+    if (a.chat > 0) { a.chat -= dt; if (m !== ajeon && m !== servant) { const to = -Math.atan2(S.pz - m.position.z, S.px - m.position.x) + Math.PI / 2 + (a.away && a.away() ? Math.PI : 0); m.rotation.y += Math.atan2(Math.sin(to - m.rotation.y), Math.cos(to - m.rotation.y)) * Math.min(1, dt * 7); if (a.chat <= 0 && m !== peddler) a.back = 1; } }
+    else if (a.back) { m.rotation.y += Math.atan2(Math.sin(a.ry0 - m.rotation.y), Math.cos(a.ry0 - m.rotation.y)) * Math.min(1, dt * 4); }
+    if (d < (a.r || 5.5) && a.cool <= 0) { a.cool = 15; a.chat = 3.4; a.back = 0; talk(m, a.line()); } }
+  for (const k in NB) { const n = NB[k]; n.cool = (n.cool || 0) - dt; if (n.gone) continue; if (dist(S.px, S.pz, n.x, n.z) < 6 && n.cool <= 0 && !(n.chatT > 0)) { n.cool = 16; n.chatT = 3.4; if (S.yangban && n.rel >= 0) n.bowT = 1.2; talk(n.mesh, nbLine(n)); } }
+  if (dog.m) { const inV = S.px < 108 && S.pz > 96, tx = inV ? S.px - Math.cos(S.pdir) * 2.4 : HOME[0] + 4, tz = inV ? S.pz - Math.sin(S.pdir) * 2.4 + 1.2 : HOME[1] + 5, d = dist(dog.x, dog.z, tx, tz), mv = d > 1.2;
+    if (mv) { const v = Math.min(9.5, 3 + d * 1.6); dog.x += (tx - dog.x) / d * v * dt; dog.z += (tz - dog.z) / d * v * dt; dog.m.rotation.y = -Math.atan2(tz - dog.z, tx - dog.x) + Math.PI / 2; }
+    dog.m.position.set(dog.x, mv ? Math.abs(Math.sin(S.t * 14)) * 0.18 : 0, dog.z); dog.m.rotation.z = mv ? 0 : Math.sin(S.t * 9) * 0.08; dog.bark -= dt;
+    if (S.aj && !S.taxPaid && dist(dog.x, dog.z, S.aj.x, S.aj.z) < 34 && dog.bark <= 0) { dog.bark = 2.2; talk(dog.m, pick(['멍! 멍멍!', '으르르…', '멍!']), 1.4, 1.6); tone(420, 300, 0.09, 'square', 0.06); tone(440, 310, 0.09, 'square', 0.05, 0.14); dog.m.rotation.y = -Math.atan2(S.aj.z - dog.z, S.aj.x - dog.x) + Math.PI / 2; }
+    else if (inV && !mv && !S.moving && dog.bark <= 0 && Math.random() < dt * 0.05) { dog.bark = 6; talk(dog.m, pick(['멍?', '헥헥', '(꼬리를 흔든다)']), 1.6, 1.6); } }
+  for (const h of hens) { if (!h.m) continue; const d = dist(S.px, S.pz, h.x, h.z); if (d < 3.6 && S.moving) { if (h.run <= 0) talk(h.m, pick(['꼬꼬댁!', '꼬꼬꼬!', '꼬끼오?!']), 1.2, 1.3); h.run = 1.2; const a = Math.atan2(h.z - S.pz, h.x - S.px) + (Math.random() - 0.5); h.tx = h.x + Math.cos(a) * 6; h.tz = h.z + Math.sin(a) * 6; }
+    h.run -= dt; h.wait -= dt; if (h.run <= 0 && h.wait <= 0) { h.wait = 2 + Math.random() * 4; h.tx = h.hx + (Math.random() - 0.5) * 9; h.tz = h.hz + (Math.random() - 0.5) * 7; }
+    const dd = dist(h.x, h.z, h.tx, h.tz), v = h.run > 0 ? 7 : 1.4; if (dd > 0.3) { h.x += (h.tx - h.x) / dd * v * dt; h.z += (h.tz - h.z) / dd * v * dt; h.m.rotation.y = -Math.atan2(h.tz - h.z, h.tx - h.x) + Math.PI / 2; }
+    h.m.position.set(h.x, dd > 0.3 ? Math.abs(Math.sin(S.t * (h.run > 0 ? 22 : 9) + h.hx)) * (h.run > 0 ? 0.3 : 0.06) : 0, h.z); h.m.rotation.x = dd > 0.3 ? 0 : Math.max(0, Math.sin(S.t * 3 + h.x)) * 0.5; } }
+
 /* ───── 소리 ───── */
 const SFX = { pick: () => tone(660, 990, 0.12, 'triangle', 0.15), plant: () => { noise(0.06, 0.25, 900); tone(330, 440, 0.1, 'triangle', 0.08); }, coin: () => { tone(1320, 1760, 0.09, 'triangle', 0.14); tone(1760, 2100, 0.1, 'triangle', 0.1, 0.07); },
   drum: (v = 0.3) => { tone(70, 45, 0.5, 'sine', v); noise(0.18, v, 120); }, bad: () => { tone(300, 160, 0.5, 'sawtooth', 0.1); }, good: () => { [523, 659, 784].forEach((f, i) => tone(f, f, 0.3, 'triangle', 0.13, i * 0.1)); },
@@ -154,7 +204,7 @@ const tobPrice = (where) => (where === 'next' ? 11 : where === 'port' ? 9 : wher
 
 function newGame() { R = rng(seed0 * 7 + 11);
   for (const p of plots) { p.owner = p.owner0; p.farmer = p.owner0 === 'lord' ? null : p.owner0; p.rent = null; resetPlot(p); }
-  for (const k in NB) { const n = NB[k]; n.coin = k === 'B' ? 80 : 20; n.method = 'jik'; n.gone = false; n.trouble = false; n.mesh.visible = true; if (n.house) n.house.visible = true; n.x = n.home[0]; n.z = n.home[1]; }
+  for (const k in NB) { const n = NB[k]; n.coin = k === 'B' ? 80 : 20; n.method = 'jik'; n.gone = false; n.trouble = false; n.rel = 0; n.helpY = 0; n.chatT = 0; n.mesh.visible = true; if (n.house) n.house.visible = true; n.x = n.home[0]; n.z = n.home[1]; }
   Object.assign(S, { t: 0, st: 0, year: 1, season: 0, px: HOME[0], pz: HOME[1] + 2, rice: 2, coin: 10, tob: 0, debt: 0, favor: 1, ox: false, yangban: false, knowMo: false, nursery: false, bo: 0, carry: null, taxDue: 0, taxPaid: false, drought: false, good: false, workT: 0, log: [], lost: [], gone: [], goals: [], servant: null, labor: 0, nobi: false, fled: false, nobiNB: [], slow: 0, flogN: 0, dutyN: 0, seizedN: 0, seizedOx: false, hwan: 0, duty: null, aj: null, debtY: 0, seenTown: 0, clothY: 0, nextY: 0, portY: 0, tobY: 0, rentY: 0, boughtY: 0, stats: { rented: 0, bought: 0, helped: 0, mo: 0, farMarket: 0 } });
   S.droughtYears = R() < 0.5 ? [3, 5] : [3, 4]; S.goodYear = 2;
   boG.children.forEach((c) => (c.visible = false)); canal.visible = canal2.visible = canal3.visible = false; if (oxM) oxM.visible = false; if (cartM) cartM.visible = false; servant.visible = false;
@@ -164,11 +214,11 @@ function resetPlot(p) { p.sow = 'none'; p.weed = 0; p.grow = 0; p.ripe = false; 
 /* ───── 중간 저장(준호 11-19): 철이 바뀔 때마다 이 기기에 적어 둔다 → 첫 화면 「이어서 하기」 ───── */
 const SAVE_KEY = 'kworld_farm_save_v1', S_KEYS = ['year', 'season', 'rice', 'coin', 'tob', 'debt', 'favor', 'ox', 'yangban', 'knowMo', 'nursery', 'bo', 'taxDue', 'taxPaid', 'drought', 'good', 'droughtYears', 'goodYear', 'log', 'lost', 'gone', 'servant', 'labor', 'soldY', 'harvY', 'lordY', 'stats', 'clothY', 'nextY', 'portY', 'tobY', 'rentY', 'boughtY', 'goals', 'taxOnTime', 'boY', 'oxY', 'ybY', 'tripY', 'seenTown', 'debtY', 'nobi', 'fled', 'nobiNB', 'slow', 'flogN', 'dutyN', 'seizedN', 'seizedOx', 'hwan'];
 const P_KEYS = ['owner', 'farmer', 'rent', 'sow', 'weed', 'grow', 'ripe', 'cut', 'dead', 'stub', 'weedBad', 'yield', 'keep'];
-function saveGame() { if (S.mode === 'title') return; try { const d = { v: 1, at: Date.now(), S: {}, plots: plots.map((p) => P_KEYS.map((k) => p[k])), nb: {} }; for (const k of S_KEYS) d.S[k] = S[k]; for (const k in NB) { const n = NB[k]; d.nb[k] = [n.coin, n.method, n.gone, n.trouble]; } localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} }
+function saveGame() { if (S.mode === 'title') return; try { const d = { v: 1, at: Date.now(), S: {}, plots: plots.map((p) => P_KEYS.map((k) => p[k])), nb: {} }; for (const k of S_KEYS) d.S[k] = S[k]; for (const k in NB) { const n = NB[k]; d.nb[k] = [n.coin, n.method, n.gone, n.trouble, n.rel || 0, n.helpY || 0]; } localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} }
 function readSave() { try { const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return d && d.v === 1 && d.plots && d.plots.length === plots.length ? d : null; } catch (e) { return null; } }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
 function loadGame(d) { newGame(); Object.assign(S, JSON.parse(JSON.stringify(d.S))); d.plots.forEach((a, i) => P_KEYS.forEach((k, j) => (plots[i][k] = a[j])));
-  for (const k in NB) { const n = NB[k], a = d.nb[k]; if (!a) continue; [n.coin, n.method, n.gone, n.trouble] = a; n.mesh.visible = !n.gone; n.x = n.home[0]; n.z = n.home[1]; n.wait = 0; }
+  for (const k in NB) { const n = NB[k], a = d.nb[k]; if (!a) continue; [n.coin, n.method, n.gone, n.trouble] = a; n.rel = a[4] || 0; n.helpY = a[5] || 0; n.mesh.visible = !n.gone; n.x = n.home[0]; n.z = n.home[1]; n.wait = 0; }
   R = rng(seed0 * 7 + 11 + S.year * 10 + S.season); boG.children.forEach((c, i) => (c.visible = i < S.bo)); canal.visible = canal2.visible = canal3.visible = S.bo >= 6; if (oxM) oxM.visible = S.ox; if (cartM) cartM.visible = S.ox;
   S.st = 0; S.workT = 0; S.said = {}; S.carry = null; S.px = HOME[0]; S.pz = HOME[1] + 2; skyKey = ''; for (const p of plots) drawPlot(p); refreshTasks(); hud();
   say(`${S.year}번째 해 ${SEASONS[S.season]} — 이어서 한다`, null, 3.4); }
@@ -199,7 +249,7 @@ function grade(p) { if (p.sow === 'tob' || p.sow === 'bean') { p.yield = p.sow =
   let y = YIELD * (mo ? 1.4 : 1) * wf; if (S.drought && !watered) y *= mo ? 0.3 : 0.75; if (S.good) y *= 1.2; p.weedBad = wf < 1; p.dead = S.drought && !watered && mo; p.yield = Math.round(y); }
 /* 긴장(준호 11-20 「시간 안에 못 하면 곤장을 맞거나 가진 걸 뺏긴다 — 실제로 그랬고 불공평했다」)
    부역: 여름에 관아가 길 닦기에 불러낸다(양반은 안 나간다) · 아전: 가을에 세금을 안 낸 집으로 걸어온다 → 닿으면 소나 쌀을 헐값에 가져간다 · 곤장을 맞으면 한동안 느리다(때리는 모습은 없다) */
-function flog(why, sec) { S.slow = Math.max(S.slow || 0, sec); S.flogN = (S.flogN || 0) + 1; SFX.drum(0.5); SFX.bad(); $('vig').style.transition = 'none'; $('vig').style.background = 'rgba(160,20,10,.45)'; setTimeout(() => { $('vig').style.transition = 'background 1.2s'; $('vig').style.background = 'transparent'; }, 60); say(why, null, 4.6); S.log.push(why); }
+function flog(why, sec) { for (const k in NB) { const n = NB[k]; if (!n.gone && dist(S.px, S.pz, n.x, n.z) < 80) { n.chatT = 3; n.cool = 10; talk(n.mesh, n.rel < 0 ? '…쌤통이오.' : pick(['아이고, 저런…', '쯧쯧, 남 일 같지 않구먼.', '엉덩이에 된장을 바르시오.', '저 나리는 사람을 왜 저리 치나.'])); } } S.slow = Math.max(S.slow || 0, sec); S.flogN = (S.flogN || 0) + 1; SFX.drum(0.5); SFX.bad(); $('vig').style.transition = 'none'; $('vig').style.background = 'rgba(160,20,10,.45)'; setTimeout(() => { $('vig').style.transition = 'background 1.2s'; $('vig').style.background = 'transparent'; }, 60); say(why, null, 4.6); S.log.push(why); }
 function seize() { let due = S.taxDue; const fromCoin = Math.min(S.coin, due); S.coin -= fromCoin; due -= fromCoin; let took = '';
   if (due > 0 && S.ox) { S.ox = false; if (oxM) oxM.visible = false; if (cartM) cartM.visible = false; due = 0; took = '소를 끌고 갔다'; S.seizedOx = true; }
   if (due > 0 && S.rice > 0) { const take = Math.min(S.rice, Math.ceil(due / 3)); S.rice -= take; due = Math.max(0, due - take * 3); took = `곳간에서 쌀 ${take}섬을 헐값(3냥씩)에 실어 갔다`; }
@@ -325,7 +375,7 @@ function job() { const sn = S.season, c = S.carry, D = duro();
   }
   if (sn === 1) {
     if (here && here.farmer === 'me' && here.sow !== 'none') { const max = here.sow === 'jik' ? 2 : 1, open = here.sow === 'jik' ? (S.st > SLEN[1] * 0.5 ? 2 : 1) : 1; if (here.weed < Math.min(max, open)) return { key: 'wd' + here.id + here.weed, need: (here.sow === 'jik' ? 3 : 2) * D, label: here.sow === 'jik' ? `김매기 ${here.weed + 1}/2` : '김매기', fn: () => { here.weed++; SFX.cut(); ring(here.cx, here.cz, 6, 0x7ad65a); if (here.sow === 'jik' && here.weed === 1) say('애벌매기 끝 — 한여름에 한 번 더 매야 한다', 'wd1', 3); } }; }
-    if (S.bo < 6 && near([BO[0], BO[1] + 4], 2.4)) return { key: 'bo' + S.bo, need: 2.6, label: `보 쌓기 ${S.bo + 1}/6`, fn: () => { S.bo++; S.boY = 1; boG.children[S.bo - 1].visible = true; SFX.plant(); noise(0.2, 0.3, 200); if (S.bo >= 6) { canal.visible = canal2.visible = canal3.visible = true; S.favor++; SFX.good(); ring(BO[0], BO[1], 16, 0x7ac8ff); say('보가 섰다! 개울가 논 여덟 배미는 가뭄에도 물이 든다 — 이웃들이 고마워한다', null, 4.2); for (const p of plots) drawPlot(p); } } };
+    if (S.bo < 6 && near([BO[0], BO[1] + 4], 2.4)) return { key: 'bo' + S.bo, need: 2.6, label: `보 쌓기 ${S.bo + 1}/6`, fn: () => { S.bo++; S.boY = 1; boG.children[S.bo - 1].visible = true; SFX.plant(); noise(0.2, 0.3, 200); if (S.bo >= 6) { canal.visible = canal2.visible = canal3.visible = true; S.favor++; SFX.good(); ring(BO[0], BO[1], 16, 0x7ac8ff); for (const k in NB) { const n = NB[k]; if (n.gone) continue; n.hopT = 2.2; n.cool = 8; talk(n.mesh, pick(['물이다! 물이 든다!', '보가 섰다! 고맙소!', '이제 가뭄도 무섭지 않소!']), 3.6); } say('보가 섰다! 개울가 논 여덟 배미는 가뭄에도 물이 든다 — 이웃들이 고마워한다', null, 4.2); for (const p of plots) drawPlot(p); } } };
     if (S.duty && !S.duty.done && near(DUTY, 2.6)) return { key: 'duty', need: 7, label: '부역 — 길 닦기', fn: () => { S.duty.done = true; S.dutyN = (S.dutyN || 0) + 1; SFX.plant(); say('부역을 마쳤다 — 품삯은 없다. 내 논일 할 시간만 줄었다', null, 3.6); } };
     if (S.labor < 3 && near([LORD[0] - 8, LORD[1] + 6])) return { key: 'lab' + S.labor, need: 3, label: '양반댁 품 팔기', fn: () => { S.labor++; S.coin += 5; SFX.coin(); say('하루 품을 팔아 5냥을 받았다', 'lab', 2.4); } };
   }
@@ -339,8 +389,8 @@ function job() { const sn = S.season, c = S.carry, D = duro();
     if (!S.yangban && near(PAPER)) return { key: 'paper', need: 1.4, label: `이름 없는 임명장 ${P_PAPER}냥`, fn: () => { if (S.coin >= P_PAPER) { S.coin -= P_PAPER; S.yangban = true; S.ybY = S.year; SFX.good(); ring(PAPER[0], PAPER[1], 5, 0xc8a0ff); say('이름 칸이 빈 임명장을 샀다 — 이제 양반이다. 군포를 내지 않는다', null, 4); } else { SFX.bad(); say(`엽전이 모자란다 (${S.coin}/${P_PAPER}냥)`, null, 2.2); S.workKey = 'x'; } } };
     if (near([LORD[0], LORD[1] + 6])) { const p = plots.find((p) => p.owner === 'lord' && p.farmer === 'me' && p.kind === 'paddy') || plots.find((p) => p.owner === 'lord' && !p.farmer && p.kind === 'paddy'); if (p) return { key: 'lbuy' + p.id, need: 1.4, label: `양반댁 논 사기 ${P_LORD}냥`, fn: () => { if (S.coin >= P_LORD) { S.coin -= P_LORD; S.boughtY++; p.owner = 'me'; p.farmer = 'me'; p.rent = null; S.stats.boughtLord = (S.stats.boughtLord || 0) + 1; SFX.good(); ring(p.cx, p.cz, 10, 0xffcf4d); say('논 한 배미가 우리 것이 되었다', null, 3); drawPlot(p); } else { SFX.bad(); say(`엽전이 모자란다 (${S.coin}/${P_LORD}냥)`, null, 2.2); S.workKey = 'x'; } } }; }
     for (const k in NB) { const n = NB[k]; if (n.gone || !n.trouble) continue;
-      if (near([n.sell.x, n.sell.z], 1.8)) { const p = plots.find((p) => p.owner === k); if (p) return { key: 'nbuy' + k, need: 1.4, label: `${n.name}네 논 사기 ${P_NB}냥`, fn: () => { if (S.coin >= P_NB) { S.coin -= P_NB; S.boughtY++; p.owner = 'me'; p.farmer = 'me'; p.rent = null; n.trouble = false; n.coin = 30; S.favor = Math.max(0, S.favor - 1); S.stats.bought++; SFX.coin(); ring(p.cx, p.cz, 10, 0xffcf4d); say(`${n.name}네 논을 샀다 — ${n.name}은 지을 땅이 한 배미 줄었다`, null, 3.6); drawPlot(p); } else { SFX.bad(); say(`엽전이 모자란다 (${S.coin}/${P_NB}냥)`, null, 2.2); S.workKey = 'x'; } } }; }
-      if (near([n.help.x, n.help.z], 1.8)) return { key: 'nhelp' + k, need: 1.4, label: `쌀 ${HELP}섬 꾸어 주기`, fn: () => { if (S.rice >= HELP + FOOD) { S.rice -= HELP; n.coin = 15; n.trouble = false; S.favor++; S.stats.helped++; SFX.good(); ring(n.home[0], n.home[1], 5, 0x7ad65a); say(`${n.name}네에 쌀을 꾸어 주었다 — 이웃이 품으로 갚는다(일이 빨라진다)`, null, 3.6); } else { SFX.bad(); say('우리 먹을 것도 빠듯하다', null, 2.2); S.workKey = 'x'; } } }; } }
+      if (near([n.sell.x, n.sell.z], 1.8)) { const p = plots.find((p) => p.owner === k); if (p) return { key: 'nbuy' + k, need: 1.4, label: `${n.name}네 논 사기 ${P_NB}냥`, fn: () => { if (S.coin >= P_NB) { S.coin -= P_NB; S.boughtY++; p.owner = 'me'; p.farmer = 'me'; p.rent = null; n.trouble = false; n.coin = 30; n.rel = -1; n.chatT = 4; n.cool = 12; talk(n.mesh, pick(['…잘 지으시오. 대대로 짓던 논이오.', '돈은 받았소만… 속이 쓰리구먼.']), 4); S.favor = Math.max(0, S.favor - 1); S.stats.bought++; SFX.coin(); ring(p.cx, p.cz, 10, 0xffcf4d); say(`${n.name}네 논을 샀다 — ${n.name}은 지을 땅이 한 배미 줄었다`, null, 3.6); drawPlot(p); } else { SFX.bad(); say(`엽전이 모자란다 (${S.coin}/${P_NB}냥)`, null, 2.2); S.workKey = 'x'; } } }; }
+      if (near([n.help.x, n.help.z], 1.8)) return { key: 'nhelp' + k, need: 1.4, label: `쌀 ${HELP}섬 꾸어 주기`, fn: () => { if (S.rice >= HELP + FOOD) { S.rice -= HELP; n.coin = 15; n.trouble = false; n.rel = 1; n.chatT = 4; n.bowT = 2.4; n.cool = 12; talk(n.mesh, pick(['이 은혜는 꼭 갚으리다! 여름에 품으로 갚겠소.', '살았소… 자네 논 김은 내가 매 주리다.']), 4); S.favor++; S.stats.helped++; SFX.good(); ring(n.home[0], n.home[1], 5, 0x7ad65a); say(`${n.name}네에 쌀을 꾸어 주었다 — 이웃이 품으로 갚는다(일이 빨라진다)`, null, 3.6); } else { SFX.bad(); say('우리 먹을 것도 빠듯하다', null, 2.2); S.workKey = 'x'; } } }; } }
   if (near(DOOR, 1.6) && S.st > 8) return { key: 'door', need: 2.2, label: `집에 들어가 ${SEASONS[S.season]}을 넘긴다`, fn: () => { S.st = SLEN[S.season]; } };
   return null; }
 function payDebt() { const pay = Math.min(S.coin, S.debt); return { key: 'debt' + S.debt, need: 1.2, label: `빚 ${pay}냥 갚기`, fn: () => { S.coin -= pay; S.debt -= pay; SFX.coin(); ring(GWE[0], GWE[1], 4, 0x7ad65a); say(S.debt ? `빚 ${pay}냥을 갚았다 — 아직 ${S.debt}냥 남았다` : '빚을 다 갚았다! 빚 문서를 돌려받았다', null, 3); } }; }
@@ -383,7 +433,8 @@ function update(dt) {
   if (S.season === 2) { const k = S.st / SLEN[2]; if (!S.taxPaid) { if (k > 0.6) say('둥 — 관아 북이 울린다. 낼 것을 못 내면 곳간을 헐값에 털린다', 'drum1', 3.4); if (k > 0.6 && !S.said.d1) { S.said.d1 = 1; SFX.drum(0.35); } if (k > 0.82 && !S.said.d2) { S.said.d2 = 1; SFX.drum(0.5); say('둥 둥 — 곧 마감이다!', null, 2.6); } } }
   if (S.slow > 0) S.slow -= dt;
   /* 부역(여름) */
-  if (S.season === 1) { if (!S.duty && S.dutyAt && S.st >= S.dutyAt) { S.dutyAt = 0; S.duty = { left: 40, done: false }; SFX.drum(0.45); say('둥 — 관아에서 부역을 부른다! 마을 앞 큰길 닦기 — 늦으면 곤장이다 (양반댁은 아무도 안 나온다)', null, 5); }
+  if (S.season === 1) { if (!S.duty && S.dutyAt && S.st >= S.dutyAt) { S.dutyAt = 0; S.duty = { left: 40, done: false, nbT: 50 }; SFX.drum(0.45); say('둥 — 관아에서 부역을 부른다! 마을 앞 큰길 닦기 — 늦으면 곤장이다 (양반댁은 아무도 안 나온다)', null, 5); }
+    if (S.duty) S.duty.nbT -= dt;
     const d = S.duty; if (d && !d.done) { d.left -= dt; if (d.left <= 0) { d.done = true; d.miss = true; const fine = Math.min(S.coin, 10); S.coin -= fine; flog(`부역에 안 나왔다고 곤장을 맞았다${fine ? ` — 벌로 ${fine}냥도 뺏겼다` : ''}. 한동안 걸음이 느리다`, 40); } }
     if (S.drought && S.bo < 6 && S.st > SLEN[1] * 0.45) say('논바닥이 갈라진다 — 여름이 가기 전에 보를 못 쌓으면 옮겨 심은 모는 말라 죽는다', 'dry', 4);
     if (S.st > SLEN[1] * 0.68 && mine().some((p) => p.sow !== 'none' && p.weed < (p.sow === 'jik' ? 2 : 1))) say('풀이 벼를 덮는다! 여름이 가기 전에 못 매면 거둘 것이 크게 준다', 'weedy', 3.6); }
@@ -424,15 +475,24 @@ function update(dt) {
   S.beatT -= dt; if (tension > 0.1 && S.beatT <= 0) { S.beatT = lerp(1.1, 0.4, tension); SFX.beat(0.06 + tension * 0.26); }
   $('vig').style.boxShadow = `inset 0 0 ${120 + tension * 120}px ${30 + tension * 60}px rgba(200,60,20,${tension * 0.4})`;
 }
-function neighborsMove(dt) { for (const k in NB) { const n = NB[k]; if (n.gone) continue; n.wait -= dt;
-    if (n.wait <= 0) { const ps = plots.filter((p) => p.farmer === k); if (S.season === 3 || !ps.length) { n.tx = n.home[0] + 2; n.tz = n.home[1] + 2; n.wait = 6; } else { const p = ps[Math.floor(R() * ps.length)]; n.tx = p.x0 + 3 + R() * (p.w - 6); n.tz = p.z0 + 3 + R() * (p.d - 6); n.wait = 7 + R() * 5; n.p = p; } }
-    const d = dist(n.x, n.z, n.tx, n.tz); let mv = false; if (d > 0.6) { n.x += (n.tx - n.x) / d * 4.4 * dt; n.z += (n.tz - n.z) / d * 4.4 * dt; n.mesh.rotation.y = -Math.atan2(n.tz - n.z, n.tx - n.x) + Math.PI / 2; mv = true; }
+function neighborsMove(dt) { for (const k in NB) { const n = NB[k]; if (n.gone) continue; n.wait -= dt; n.hopT = (n.hopT || 0) - dt; n.bowT = (n.bowT || 0) - dt; const hop = n.hopT > 0 ? Math.abs(Math.sin(S.t * 11)) * 0.7 : 0;
+    if (n.chatT > 0) { n.chatT -= dt; const to = -Math.atan2(S.pz - n.z, S.px - n.x) + Math.PI / 2 + (n.rel < 0 ? Math.PI : 0); n.mesh.rotation.y += Math.atan2(Math.sin(to - n.mesh.rotation.y), Math.cos(to - n.mesh.rotation.y)) * Math.min(1, dt * 7); n.mesh.rotation.x = n.bowT > 0 ? 0.55 : 0; n.mesh.position.set(n.x, hop, n.z); walkAnim(n.mesh, 0, false); continue; }
+    let ov = null; if (S.duty && S.duty.nbT > 0) ov = [DUTY[0] + (k === 'A' ? -5 : k === 'B' ? 5 : 0.5), DUTY[1] + (k === 'C' ? 4.5 : -3.5), 'duty'];
+    else if (S.season === 1 && n.rel > 0 && n.helpY !== S.year && S.st > 8) { const p = mine().find((p) => p.sow !== 'none' && p.weed < (p.sow === 'jik' ? 2 : 1)); if (p) ov = [p.cx + 4, p.cz + 3, 'help', p]; }
+    if (ov) { n.tx = ov[0]; n.tz = ov[1]; n.wait = 1; n.p = null; }
+    else if (n.wait <= 0) { const ps = plots.filter((p) => p.farmer === k); if (S.season === 3 || !ps.length) { n.tx = n.home[0] + 2; n.tz = n.home[1] + 2; n.wait = 6; } else { const p = ps[Math.floor(R() * ps.length)]; n.tx = p.x0 + 3 + R() * (p.w - 6); n.tz = p.z0 + 3 + R() * (p.d - 6); n.wait = 7 + R() * 5; n.p = p; } }
+    const d = dist(n.x, n.z, n.tx, n.tz); let mv = false; if (d > 0.6) { const v = ov ? 6.4 : 4.4; n.x += (n.tx - n.x) / d * v * dt; n.z += (n.tz - n.z) / d * v * dt; n.mesh.rotation.y = -Math.atan2(n.tz - n.z, n.tx - n.x) + Math.PI / 2; mv = true; }
+    else if (ov && ov[2] === 'help') { const p = ov[3]; if (!n.hw) talk(n.mesh, pick(['품앗이요! 지난겨울 쌀 값이오.', '자네 논 김은 내가 매 주리다!'])); n.hw = (n.hw || 0) + dt; if (n.hw > 5) { n.hw = 0; n.helpY = S.year; p.weed++; drawPlot(p); ring(p.cx, p.cz, 6, 0x7ad65a); SFX.good(); say(`${n.name}이 품앗이로 우리 논 김을 매 주고 갔다`, null, 3); hud(); } }
     else if (n.p && S.season < 3) { const p = n.p; if (S.season === 0 && p.sow === 'none' && S.st > 12) { p.sow = n.method; p.grow = n.method === 'mo' ? 0.3 : 0.15; drawPlot(p); } if (S.season === 1 && p.weed < 2) p.weed = 2; if (S.season === 2 && p.ripe && !p.cut && S.st > 18) { p.cut = true; p.ripe = false; p.stub = true; drawPlot(p); } }
-    n.mesh.rotation.x = !mv && S.season < 3 && n.p ? 0.22 + Math.sin(S.t * 4.5 + n.x) * 0.2 : 0; n.mesh.position.set(n.x, 0, n.z); walkAnim(n.mesh, S.t * 10 + n.x, mv); }
+    n.mesh.rotation.x = !mv && (ov || (S.season < 3 && n.p)) ? 0.22 + Math.sin(S.t * 4.5 + n.x) * 0.2 : 0; n.mesh.position.set(n.x, hop, n.z); walkAnim(n.mesh, S.t * 10 + n.x, mv); }
   for (const p of plots) { const n = NB[p.farmer]; if (!n || n.gone) continue; const ph = (p.id * 7) % 16; if (S.season === 0 && p.sow === 'none' && S.st > 14 + ph) { p.sow = n.method; p.grow = n.method === 'mo' ? 0.3 : 0.15; drawPlot(p); } if (S.season === 2 && p.ripe && !p.cut && S.st > 26 + ph * 2) { p.cut = true; p.ripe = false; p.stub = true; drawPlot(p); } }
   /* 박 서방: 봄에 양반댁 논을 노린다(내가 먼저 빌리면 다른 논으로) */
-  const B = NB.B; if (!B.gone && S.season === 0 && S.year >= 2 && S.st > 26 && !S.said.brent) { S.said.brent = 1; const free = plots.filter((p) => p.owner === 'lord' && !p.farmer && p.kind === 'paddy'); if (free.length && plots.filter((p) => p.farmer === 'B').length < 6) { const p = free[0]; p.farmer = 'B'; drawPlot(p); ring(p.cx, p.cz, 10, 0xd6564a); say('박 서방이 양반댁 논 한 배미를 먼저 빌렸다!', null, 3); } }
-  crowd.forEach((c, i) => { const cx = i < 5 ? TOWN[0] : NEXT[0], cz = i < 5 ? TOWN[1] : NEXT[1]; c.a += dt * c.sp; const x = cx + Math.cos(c.a) * c.r, z = cz + Math.sin(c.a) * c.r * 0.7; c.m.position.set(x, 0, z); c.m.rotation.y = -(c.a + Math.PI / 2) + Math.PI / 2; walkAnim(c.m, S.t * 8 + i, true); }); }
+  const B = NB.B; if (!B.gone && S.season === 0 && S.year >= 2 && S.st > 26 && !S.said.brent) { S.said.brent = 1; const free = plots.filter((p) => p.owner === 'lord' && !p.farmer && p.kind === 'paddy'); if (free.length && plots.filter((p) => p.farmer === 'B').length < 6) { const p = free[0]; p.farmer = 'B'; drawPlot(p); ring(p.cx, p.cz, 10, 0xd6564a); say('박 서방이 양반댁 논 한 배미를 먼저 빌렸다!', null, 3); talk(B.mesh, '한발 늦었네, 허허!', 4); } }
+  crowd.forEach((c, i) => { const P = i < 5 ? TOWN_PTS : NEXT_PTS; if (c.x === undefined) { const q = P[i % P.length]; c.x = q[0] + 2; c.z = q[1] + (q[1] < 130 ? 3 : -3); c.tx = c.x; c.tz = c.z; c.wait = i * 0.8; c.face = 0; }
+    const d = dist(c.x, c.z, c.tx, c.tz); if (d > 0.5) { c.x += (c.tx - c.x) / d * 2.8 * dt; c.z += (c.tz - c.z) / d * 2.8 * dt; c.m.rotation.y = -Math.atan2(c.tz - c.z, c.tx - c.x) + Math.PI / 2; walkAnim(c.m, S.t * 8 + i, true); c.m.rotation.x = 0; }
+    else { if (!c.at) { c.at = 1; c.m.rotation.y = c.face; if (Math.random() < 0.45 && dist(S.px, S.pz, c.x, c.z) < 40) talk(c.m, pick(['조금만 깎아 주시오!', '안 되오, 밑지는 장사요!', '이거 얼마요?', '어제보다 올랐네그려.', '덤으로 하나 더 주시오.', '아이고, 비싸다 비싸.', '구경만 하고 가오.', '우리 애가 엿을 좋아해서…']), 2.6); }
+      walkAnim(c.m, 0, false); c.m.rotation.x = Math.max(0, Math.sin(S.t * 2.4 + i)) * 0.16; c.wait -= dt; if (c.wait <= 0) { const q = P[Math.floor(Math.random() * P.length)]; c.tx = q[0] + (Math.random() - 0.5) * 4; c.tz = q[1] + (q[1] < 130 ? 2.6 : -2.6) + (Math.random() - 0.5); c.face = q[1] < 130 ? Math.PI : 0; c.wait = 3 + Math.random() * 5; c.at = 0; } }
+    c.m.position.set(c.x, 0, c.z); }); actorsUpdate(dt); }
 function place(dt) { flushPlots(); pMesh.position.set(S.px, 0, S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; walkAnim(pMesh, S.t * (S.running ? 16 : 10), S.moving); pMesh.rotation.x = !S.moving && S.workT > 0.1 ? 0.22 + Math.sin(S.t * 6) * 0.2 : 0; pRing.position.set(S.px, 0.11, S.pz); pRing.scale.setScalar(S.view === 3 ? 9 : 1); pMesh.scale.setScalar(S.view === 3 ? 4 : 1);
   for (const k in carryM) if (carryM[k]) carryM[k].visible = false; const c = S.carry; if (c && carryM[c.k]) { const m = carryM[c.k]; m.visible = true; m.position.set(S.px - Math.cos(S.pdir) * 0.5, 1.5, S.pz - Math.sin(S.pdir) * 0.5); m.rotation.y = pMesh.rotation.y; }
   if (S.ox && oxM && cartM) { const load = c && (c.k === 'rice' || c.k === 'tobl' || c.k === 'cloth'); if (load) { oxM.position.set(S.px + Math.cos(S.pdir) * 2.4, 0, S.pz + Math.sin(S.pdir) * 2.4); oxM.rotation.y = pMesh.rotation.y; cartM.position.set(S.px - Math.cos(S.pdir) * 2.6, 0, S.pz - Math.sin(S.pdir) * 2.6); cartM.rotation.y = pMesh.rotation.y; } else { oxM.position.set(HOME[0] + 9, 0, HOME[1] + 2); cartM.position.set(HOME[0] + 12, 0, HOME[1] + 4); } }
@@ -464,6 +524,7 @@ function place(dt) { flushPlots(); pMesh.position.set(S.px, 0, S.pz); pMesh.rota
     lab('gwe', sn === 2 && !S.taxPaid ? `🥁 세금 ${S.taxDue}냥` : `빚 갚기 (남은 빚 ${S.debt}냥)`, true); lab('ox', `🐂 소 ${P_OX}냥`); lab('paper', `📜 임명장 ${P_PAPER}냥`); lab('lordBuy', `논 사기 ${P_LORD}냥`); lab('door', '철 넘기기');
     for (const k in NB) { const n = NB[k]; if (n.sell.m.visible) put(n.sell.x, 2.4, n.sell.z, `논 사기 ${P_NB}냥`); if (n.help.m.visible) put(n.help.x, 2.4, n.help.z, `쌀 ${HELP}섬 꾸어 주기`); if (!n.gone && n.trouble && sn === 3 && dist(S.px, S.pz, n.home[0], n.home[1]) < 60) put(n.home[0], 5, n.home[1] - 3, `🏚 ${n.name}네 — 먹을 것이 떨어졌다`, true); } }
   for (; ti < tags.length; ti++) tags[ti].style.display = 'none';
+  { let bi = 0; for (const m of TALKERS) { const tk = m._talk; if (!tk || tk.t <= 0 || !m.visible) continue; tk.t -= dt || 0.016; const d = talks[bi]; if (!d) break; const q = v3.set(m.position.x, tk.h, m.position.z).project(cam); if (!play || q.z > 1 || Math.abs(q.x) > 1 || Math.abs(q.y) > 1 || dist(S.px, S.pz, m.position.x, m.position.z) > 60) continue; bi++; d.style.display = 'block'; d.style.left = ((q.x + 1) / 2) * innerWidth + 'px'; d.style.top = ((1 - q.y) / 2) * innerHeight + 'px'; d.style.opacity = Math.min(1, tk.t * 3); if (d._h !== tk.text) { d.textContent = tk.text; d._h = tk.text; } } for (; bi < talks.length; bi++) talks[bi].style.display = 'none'; }
   $('jobl').textContent = play ? (S.jobLabel || '') : ''; $('jobl').style.display = play && S.jobLabel ? 'block' : 'none';
 }
 function view() {
@@ -485,7 +546,7 @@ $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode 
     b.onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'play'; loadGame(d); SFX.season(); }; } }
 canvas.addEventListener('pointerdown', () => { if (S.mode === 'intro') S.introT = 99; });
 runLoop((dt) => { update(dt); mis.update(dt, S.mode === 'play'); misHead(); }, view, () => renderer.render(scene, cam));
-window.__scene = { S, update, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, get cur() { return curTask; }, get TL() { return TL; }, saveGame, readSave, loadGame,
+window.__scene = { S, update, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, get TL() { return TL; }, saveGame, readSave, loadGame,
   go() { $('go').click(); S.introT = 99; update(0.01); }, view(n) { S.view = n; }, step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   next() { const b = document.querySelector('#ov button'); if (b && $('ov').style.display !== 'none') b.click(); },
   const: { HOME, GRAN, SEED, NURS, TOBS, DOOR, BO, LORD, TOWN, GWE, PAPER, OX, CLOTH, NEXT, PORT, PEDD, SLEN, P_OX, P_NB, P_LORD, P_PAPER } };
