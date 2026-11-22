@@ -8,7 +8,7 @@
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 우리 마을 → 가운데 들 → 동쪽 읍내 → 고개 너머 이웃 고을 장. 남쪽 강과 포구. */
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, ringsFx, people, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, loadArt, art, artGeo, artMat, artInst, scatter, missions } from '../scene/kit.js?v=5';
-await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm');   /* farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
+await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset');   /* farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
 
 const W = 380, H = 240;
 const seed0 = +(new URLSearchParams(location.search).get('seed') || (Date.now() % 100000));
@@ -63,6 +63,48 @@ artInst(scene, 'stall', [[340, 0, 120, 1, 0], [350, 0, 120, 1, 0], [346, 0, 138,
 putArt('dock', PORT[0], PORT[1] + 5); const ship = putArt('ferry', PORT[0] + 6, PORT[1] + 12, 0.3, 1.4); putArt('sack_pile', PORT[0] - 5, PORT[1] - 1); putArt('barrel', PORT[0] + 5, PORT[1] - 1);
 scatter(scene, drnd, { area: [0, 20, 380, 212], n: 150, names: ['tree_a', 'tree_b', 'pine_a', 'bush', 'rock_a', 'pine_k', 'bush', 'tree_a'], avoid: (x, z) => (x > 96 && x < 222 && z > 40 && z < 200) || (x > 14 && x < 96 && z > 96 && z < 206) || (x > 216 && x < 296 && z > 52 && z < 212) || (x > 324 && x < 372 && z > 98 && z < 156) || Math.abs(z - 128.5) < 7 || Math.abs(z - 142.5) < 5, scale: [1.0, 1.7], minGap: 6, shadow: true });
 artInst(scene, 'reed', Array.from({ length: 60 }, () => [90 + drnd() * 150, 0, 41 + drnd() * 2.5 + (drnd() < 0.5 ? 9 : 0), 1, drnd() * 6]), {}, { shadow: false });
+
+/* ───── 고을 꾸미기(준호 11-23 「블렌더로 디자인 해 보자」) — farmset.glb(tools/blender/make_farmset.py).
+   집마다 마당(흙바닥·돌담·싸리울·사립문·장독대·텃밭·외양간·감나무), 마을 어귀 정자나무와 평상·서낭당, 개울에 섶다리와 물레방아,
+   읍내에 주막·차일 가게·관아 담과 삼문·방 붙이는 판. 낮은 담(돌담·싸리울)은 넘어간다(느려짐), 관아·양반댁 높은 담은 막힌다(WALLS) — 문으로 다닌다. 놀이 규칙은 그대로. ───── */
+const WALLS = [], _runs = {};
+function wallRun(name, x0, z0, x1, z1, block = true) { const along = Math.abs(x1 - x0) >= Math.abs(z1 - z0), L = along ? Math.abs(x1 - x0) : Math.abs(z1 - z0), n = Math.max(1, Math.round(L / 4)), k = L / (n * 4);
+  for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; (_runs[name] = _runs[name] || []).push([lerp(x0, x1, t), 0, lerp(z0, z1, t), along ? [k, 1, 1] : [k, 1, 1], along ? 0 : Math.PI / 2]); }
+  if (block) WALLS.push([Math.min(x0, x1) - (along ? 0 : 0.45), Math.max(x0, x1) + (along ? 0 : 0.45), Math.min(z0, z1) - (along ? 0.45 : 0), Math.max(z0, z1) + (along ? 0.45 : 0), name !== 'gwana_dam']); }   /* 다섯째 = 낮은 담(넘어간다 — 느려질 뿐 막히지 않는다) */
+const yard = (x0, z0, x1, z1, c = 0xcdb684) => flat(x0, z0, x1, z1, c, 0.025);
+const SEASON_LEAF = [], SEASON_FRUIT = [];
+function gam(x, z, s = 1, ry = 0) { const a = putArt('gam_trunk', x, z, ry, s), b = putArt('gam_leaf', x, z, ry, s), c = putArt('gam_fruit', x, z, ry, s); if (b) SEASON_LEAF.push(b); if (c) SEASON_FRUIT.push(c); }
+/* 우리 집 */
+yard(33, 136, 61, 162); wallRun('dam_stone', 33, 136, 61, 136); wallRun('dam_stone2', 33, 136, 33, 160); wallRun('ul_ssari', 61, 136, 61, 139.5); wallRun('ul_ssari', 61, 149, 61, 157);
+putArt('sarip', 61, 147.6, Math.PI / 2); putArt('jangdokdae', 37.5, 139.5, 0); putArt('oeyanggan', 57, 153.5, -Math.PI / 2); putArt('namutdan', 42, 137.4, 0); putArt('teotbat', 57, 167, 0, 0.9); gam(36, 157.5, 1.05, 1);
+/* 김 서방네 · 박 서방네(넉넉하다) · 최 서방네(빠듯하다) */
+yard(19, 105, 41, 124); wallRun('dam_stone', 19, 105, 41, 105); wallRun('ul_ssari', 19, 105, 19, 121); putArt('jangdokdae', 23, 109, 0, 0.9); putArt('teotbat', 24, 129, 0, 0.85); gam(38.5, 108, 0.95, 2); putArt('namutdan', 36, 106.4, 0);
+yard(60, 95, 86, 114); wallRun('dam_stone2', 60, 95, 86, 95); wallRun('dam_stone', 60, 95, 60, 111); wallRun('dam_stone', 86, 95, 86, 107); putArt('jangdokdae', 64, 99, 0, 1.1); putArt('oeyanggan', 81.5, 100, 0); gam(63, 110, 1.15, 0.5); gam(83, 110.5, 0.9, 3); putArt('namutdan', 70, 96.4, 0); putArt('namutdan', 73.5, 96.4, 0); putArt('teotbat', 66, 119, 0, 0.9);
+yard(73, 145, 91, 162, 0xc4ac7c); wallRun('ul_ssari', 73, 145, 73, 159); wallRun('ul_ssari', 73, 145, 81, 145); putArt('teotbat', 86, 166, 0, 0.7); putArt('namutdan', 76, 146.4, 0);
+/* 마을 어귀: 정자나무와 평상 · 서낭당 */
+{ const a = putArt('jeongja_trunk', 82, 128), b = putArt('jeongja_leaf', 82, 128); if (b) SEASON_LEAF.push(b); putArt('pyeongsang', 85.5, 130.5, 0.3); putArt('pyeongsang', 79, 131.5, -0.4); putArt('seonang', 101.5, 151, 1.2); }
+/* 개울: 섶다리(큰길이 건너는 곳) · 물레방아 */
+putArt('seopdari', 95, 46.5, Math.PI / 2); putArt('mulle_house', 118, 41.4, 0); const mulleWheel = putArt('mulle_wheel', 118, 41.4); if (mulleWheel) mulleWheel.position.set(118, 1.5, 41.9);
+putArt('didimdol', 176, 46.5, Math.PI / 2, 1.6);
+/* 읍내: 장터 바닥 · 주막 · 차일 가게 · 관아 담과 삼문 · 방 */
+yard(232, 112, 270, 146, 0xd2bc8c); putArt('jumak', 224, 139.5, Math.PI); putArt('chail_w', 264, 139, Math.PI); putArt('chail_b', 236, 138.5, Math.PI); putArt('chail_b', 264.5, 118, 0); putArt('chail_w', 236, 118.5, 0);
+yard(261, 84, 295, 112, 0xd8c8a0); wallRun('gwana_dam', 261, 112, 267, 112); wallRun('gwana_dam', 275, 112, 295, 112); wallRun('gwana_dam', 295, 84, 295, 112); wallRun('gwana_dam', 261, 84, 261, 112); wallRun('gwana_dam', 261, 84, 295, 84);
+putArt('sammun', 271, 112, 0); putArt('bang_pan', 263.5, 116.5, Math.PI);
+/* 양반댁 담 */
+wallRun('gwana_dam', 208, 46, 244, 46); wallRun('gwana_dam', 244, 46, 244, 68); wallRun('gwana_dam', 208, 46, 208, 68); wallRun('gwana_dam', 208, 68, 220, 68); wallRun('gwana_dam', 232, 68, 244, 68); yard(208, 46, 244, 68, 0xd8c8a0); gam(240, 63, 1.2, 1); gam(212, 50, 1.1, 4);
+for (const k in _runs) artInst(scene, k, _runs[k], {}, {});
+/* 풀 포기와 들꽃: 길가 · 담 밑 · 논두렁 */
+{ const P = [], F = []; for (let i = 0; i < 520; i++) { const x = 10 + drnd() * 360, z = 34 + drnd() * 174; if (WALLS.some((w) => x > w[0] - 1 && x < w[1] + 1 && z > w[2] - 1 && z < w[3] + 1)) continue; if (x > 110 && x < 214 && z > 60 && z < 180) { const gx = (x - 112) % 26, gz = (z - 62) % 30; if (gx < 22.6 && gz < 26.6) continue; } if ((Math.abs(z - 142.5) < 2.4 && x > 40 && x < 214) || (Math.abs(z - 128.5) < 3 && x > 214) || (Math.abs(x - 95) < 3.4) || (z > 43 && z < 50 && x > 86 && x < 244)) continue; (i % 6 ? P : F).push([x, 0, z, 0.8 + drnd() * 0.9, drnd() * 6]); }
+  artInst(scene, 'pul', P, {}, { shadow: false }); artInst(scene, 'deulkkot', F, {}, { shadow: false }); }
+/* 길잡이가 담을 돌아가게: 관아 안팎이 갈리면 삼문을 먼저 가리킨다 */
+const BLOCKS = [[261, 295, 84, 112], [208, 244, 46, 68]];   /* 높은 담으로 두른 곳: 관아 · 양반댁 */
+const inGwana = (x, z) => x > 260.5 && x < 295.5 && z > 83.5 && z < 112.5;
+function segHits(ax, az, bx, bz, r, pad) { const x0 = r[0] - pad, x1 = r[1] + pad, z0 = r[2] - pad, z1 = r[3] + pad; let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
+  for (const [p, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - z0], [dz, z1 - az]]) { if (p === 0) { if (q < 0) return false; } else { const t = q / p; if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } } } return t0 < t1; }
+function routeTo(p) { if (!p) return p; const a = inGwana(S.px, S.pz), b = inGwana(p[0], p[1]); if (a && !b) return [271, 116]; if (!a && b) { if (Math.abs(S.px - 271) < 2.6 && S.pz < 119) return p; p = [271, 116]; }
+  for (const r of BLOCKS) { if (!segHits(S.px, S.pz, p[0], p[1], r, 0.8)) continue; let best = null, bd = 1e9; for (const c of [[r[0] - 2.5, r[2] - 2.5], [r[1] + 2.5, r[2] - 2.5], [r[0] - 2.5, r[3] + 2.5], [r[1] + 2.5, r[3] + 2.5]]) { if (dist(S.px, S.pz, c[0], c[1]) < 1.6 || segHits(S.px, S.pz, c[0], c[1], r, 0.6)) continue; const d = dist(S.px, S.pz, c[0], c[1]) + dist(c[0], c[1], p[0], p[1]) + (segHits(c[0], c[1], p[0], p[1], r, 0.8) ? 400 : 0); if (d < bd) { bd = d; best = c; } } if (best) return best; }
+  return p; }
+function dressTick() { const sn = S.season; for (const m of SEASON_LEAF) m.visible = sn !== 3; for (const m of SEASON_FRUIT) m.visible = sn === 2; if (mulleWheel) mulleWheel.rotation.z = -S.t * 0.9; }
 
 /* ───── 논 열넷 + 밭 둘 ───── */
 const COLX = [112, 138, 164, 190], ROWZ = [62, 92, 122, 152], PW = 22, PD = 26;
@@ -426,7 +468,7 @@ function lightFor() { const sn = S.season, d = S.drought && sn >= 1 && sn <= 2;
     groundM.material.color.set([0x8fbf5a, d ? 0xb8b060 : 0x7ab84a, 0xb8b25a, 0xe6e8e2][sn]); sun.intensity = [2.2, d ? 2.8 : 2.4, 2.0, 1.4][sn]; hemi.intensity = [1.3, 1.3, 1.2, 1.5][sn]; wx.m.visible = sn === 3; } }
 
 /* ───── 한 걸음 ───── */
-const COL = [[HOME[0], HOME[1] - 6, 4.6], [LORD[0], LORD[1] - 8, 6.5], [278, 94, 7], [NB.A.home[0], NB.A.home[1] - 5, 4], [NB.B.home[0], NB.B.home[1] - 5, 4.2], [NB.C.home[0], NB.C.home[1] - 5, 4], [64, 122, 1.6], [304, 86, 21], [304, 172, 21]];
+const COL = [[224, 139.5, 4.2], [118, 40, 2.6], [82, 128, 1.3], [57, 153.8, 0.1], [HOME[0], HOME[1] - 6, 4.6], [LORD[0], LORD[1] - 8, 6.5], [278, 94, 7], [NB.A.home[0], NB.A.home[1] - 5, 4], [NB.B.home[0], NB.B.home[1] - 5, 4.2], [NB.C.home[0], NB.C.home[1] - 5, 4], [64, 122, 1.6], [304, 86, 21], [304, 172, 21]];
 function update(dt) {
   S.t += dt; sayTick(dt); ringsUpdate(dt);
   if (wx.m.visible) { wx.m.position.set(S.px, 0, S.pz); for (let i = 0; i < wx.N; i++) { wx.p[i * 3 + 1] -= 5 * dt; wx.p[i * 3] += Math.sin(S.t + i) * dt * 0.8; if (wx.p[i * 3 + 1] < 0) wx.p[i * 3 + 1] = 40; } wx.m.geometry.attributes.position.needsUpdate = true; }
@@ -445,8 +487,8 @@ function update(dt) {
     if (S.st > SLEN[1] * 0.68 && mine().some((p) => p.sow !== 'none' && p.weed < (p.sow === 'jik' ? 2 : 1))) say('풀이 벼를 덮는다! 여름이 가기 전에 못 매면 거둘 것이 크게 준다', 'weedy', 3.6); }
   /* 아전(가을): 세금을 안 낸 집으로 걸어온다 */
   if (S.season === 2) { const k = S.st / SLEN[2];
-    if (!S.aj && !S.taxPaid && k > 0.56) { S.aj = { x: GWE[0], z: GWE[1] + 5 }; ajeon.visible = true; SFX.drum(0.4); say('아전이 관아를 나섰다 — 세금 안 낸 집으로 온다. 닿기 전에 내야 한다!', null, 4.4); }
-    const a = S.aj; if (a) { const back = S.taxPaid, tx = back ? GWE[0] : DOOR[0] + 2, tz = back ? GWE[1] + 5 : DOOR[1] + 2, d = dist(a.x, a.z, tx, tz), leftT = Math.max(1, SLEN[2] * 0.94 - S.st), v = back ? 7 : Math.max(3.2, d / leftT);
+    if (!S.aj && !S.taxPaid && k > 0.56) { S.aj = { x: GWE[0], z: GWE[1] + 12 }; ajeon.visible = true; SFX.drum(0.4); say('아전이 관아를 나섰다 — 세금 안 낸 집으로 온다. 닿기 전에 내야 한다!', null, 4.4); }
+    const a = S.aj; if (a) { const back = S.taxPaid, tx = back ? GWE[0] : DOOR[0] + 2, tz = back ? GWE[1] + 12 : DOOR[1] + 2, d = dist(a.x, a.z, tx, tz), leftT = Math.max(1, SLEN[2] * 0.94 - S.st), v = back ? 7 : Math.max(3.2, d / leftT);
       if (d > 1) { a.x += (tx - a.x) / d * v * dt; a.z += (tz - a.z) / d * v * dt; ajeon.rotation.y = -Math.atan2(tz - a.z, tx - a.x) + Math.PI / 2; walkAnim(ajeon, S.t * 10, true); } else if (back) { S.aj = null; ajeon.visible = false; } else seize();
       ajeon.position.set(a.x, 0, a.z); if (!back && !a.told && d < 70) { a.told = 1; SFX.drum(0.5); say('아전이 마을 어귀까지 왔다!', null, 3); } } }
   /* 자라기 */
@@ -457,9 +499,10 @@ function update(dt) {
   /* 나 */
   let { ix, iz, back } = ctl.read(dt); const il = Math.hypot(ix, iz); S.moving = il > 0.15; S.running = S.moving && ctl.running();
   if (S.moving) { ix /= Math.max(1, il); iz /= Math.max(1, il); const load = S.carry && (S.carry.k === 'rice' || S.carry.k === 'tobl' || S.carry.k === 'cloth');
-    const sp = (S.running ? 8.6 : 5.2) * (S.slow > 0 ? 0.68 : 1) * (back ? 0.6 : 1) * (load ? (S.ox ? 0.86 : 0.8) : 1); let nx = clamp(S.px + ix * sp * dt, 8, 372), nz = clamp(S.pz + iz * sp * dt, 30, 211);
+    S.hopT = (S.hopT || 0) - dt; const sp = (S.running ? 8.6 : 5.2) * (S.hopT > 0 ? 0.5 : 1) * (S.slow > 0 ? 0.68 : 1) * (back ? 0.6 : 1) * (load ? (S.ox ? 0.86 : 0.8) : 1); let nx = clamp(S.px + ix * sp * dt, 8, 372), nz = clamp(S.pz + iz * sp * dt, 30, 211);
     if (S.year < 2 && nx > PASS[0] - 4) { nx = PASS[0] - 4; say('고갯길은 아직 눈사태로 막혀 있다 — 내년에 열린다', 'pass', 2.6); } if (S.year < 3 && nz > 168 && nx > 250 && nx < 272) { nz = 168; say('포구 가는 길 — 한양 배는 세 번째 해부터 들어온다', 'port', 2.6); }
     for (const [cx, cz, r] of COL) { const d = dist(nx, nz, cx, cz); if (d < r) { nx = cx + (nx - cx) / d * r; nz = cz + (nz - cz) / d * r; } }
+    { const hit = (x, z) => WALLS.some((w) => !w[4] && x > w[0] && x < w[1] && z > w[2] && z < w[3]); if (WALLS.some((w) => w[4] && nx > w[0] && nx < w[1] && nz > w[2] && nz < w[3])) S.hopT = 0.22; if (hit(nx, nz) && !hit(S.px, S.pz)) { if (!hit(nx, S.pz)) nz = S.pz; else if (!hit(S.px, nz)) nx = S.px; else { nx = S.px; nz = S.pz; } } }
     if (nz > 41.5 && nz < 51.5 && nx > 86 && nx < 244 && Math.abs(nx - 95) > 3 && Math.abs(nx - BO[0]) > 10) nz = S.pz < 46 ? 41.5 : 51.5;
     S.px = nx; S.pz = nz; S.pdir = Math.atan2(iz, ix); S.stepT -= dt * (S.running ? 2 : 1); if (S.stepT <= 0) { S.stepT = 0.4; noise(0.05, 0.05, 300); } }
   S.backT = dist(S.px, S.pz, GRAN[0], GRAN[1]) > 6 ? 9 : (S.backT || 0); if (S.carry && S.carry.k === 'rice' && near(GRAN, 3)) S.backT = Math.max(0, (S.backT || 0));
@@ -501,7 +544,7 @@ function neighborsMove(dt) { for (const k in NB) { const n = NB[k]; if (n.gone) 
     else { if (!c.at) { c.at = 1; c.m.rotation.y = c.face; if (Math.random() < 0.45 && dist(S.px, S.pz, c.x, c.z) < 40) talk(c.m, pick(['조금만 깎아 주시오!', '안 되오, 밑지는 장사요!', '이거 얼마요?', '어제보다 올랐네그려.', '덤으로 하나 더 주시오.', '아이고, 비싸다 비싸.', '구경만 하고 가오.', '우리 애가 엿을 좋아해서…']), 2.6); }
       walkAnim(c.m, 0, false); c.m.rotation.x = Math.max(0, Math.sin(S.t * 2.4 + i)) * 0.16; c.wait -= dt; if (c.wait <= 0) { const q = P[Math.floor(Math.random() * P.length)]; c.tx = q[0] + (Math.random() - 0.5) * 4; c.tz = q[1] + (q[1] < 130 ? 2.6 : -2.6) + (Math.random() - 0.5); c.face = q[1] < 130 ? Math.PI : 0; c.wait = 3 + Math.random() * 5; c.at = 0; } }
     c.m.position.set(c.x, 0, c.z); }); actorsUpdate(dt); }
-function place(dt) { flushPlots(); pMesh.position.set(S.px, 0, S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; walkAnim(pMesh, S.t * (S.running ? 16 : 10), S.moving); pMesh.rotation.x = !S.moving && S.workT > 0.1 ? 0.22 + Math.sin(S.t * 6) * 0.2 : 0; pRing.position.set(S.px, S.view === 3 ? 0.6 : 0.11, S.pz); pRing.scale.setScalar(S.view === 3 ? Math.max(9, (S.mapH || 700) / 55) : 1); pMesh.scale.setScalar(S.view === 3 ? 5 : 1);
+function place(dt) { flushPlots(); dressTick(); pMesh.position.set(S.px, S.hopT > 0 ? 0.55 + Math.sin(S.t * 14) * 0.12 : 0, S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; walkAnim(pMesh, S.t * (S.running ? 16 : 10), S.moving); pMesh.rotation.x = !S.moving && S.workT > 0.1 ? 0.22 + Math.sin(S.t * 6) * 0.2 : 0; pRing.position.set(S.px, S.view === 3 ? 0.6 : 0.11, S.pz); pRing.scale.setScalar(S.view === 3 ? Math.max(9, (S.mapH || 700) / 55) : 1); pMesh.scale.setScalar(S.view === 3 ? 5 : 1);
   for (const k in carryM) if (carryM[k]) carryM[k].visible = false; const c = S.carry; if (c && carryM[c.k]) { const m = carryM[c.k]; m.visible = true; m.position.set(S.px - Math.cos(S.pdir) * 0.5, 1.5, S.pz - Math.sin(S.pdir) * 0.5); m.rotation.y = pMesh.rotation.y; }
   if (S.ox && oxM && cartM) { const load = c && (c.k === 'rice' || c.k === 'tobl' || c.k === 'cloth'); if (load) { oxM.position.set(S.px + Math.cos(S.pdir) * 2.4, 0, S.pz + Math.sin(S.pdir) * 2.4); oxM.rotation.y = pMesh.rotation.y; cartM.position.set(S.px - Math.cos(S.pdir) * 2.6, 0, S.pz - Math.sin(S.pdir) * 2.6); cartM.rotation.y = pMesh.rotation.y; } else { oxM.position.set(HOME[0] + 9, 0, HOME[1] + 2); cartM.position.set(HOME[0] + 12, 0, HOME[1] + 4); } }
   nurseryM.userData.im.visible = S.nursery; nurseryM.visible = S.knowMo;
@@ -559,7 +602,7 @@ function view() {
 }
 
 /* ───── 미션 카드: 「지금 할 일」 하나를 kit 의 카드·빛기둥·화살표로 비춘다(목록은 위 tasks) ───── */
-const proxy = { get t() { return curTask ? curTask.t : '철이 바뀌기를 기다린다'; }, how: () => (curTask ? curTask.how : '') + '<i hidden>' + (curTask ? curTask.id + S.season + S.year : '') + '</i>', n: () => (curTask && curTask.n ? TL.find((t) => t.id === curTask.id).n : null), done: () => false, at: () => (curTask ? curTask.at() : null), tag: () => { const g = curTask && curTask.tag; return typeof g === 'function' ? g() : g || '여기!'; } };
+const proxy = { get t() { return curTask ? curTask.t : '철이 바뀌기를 기다린다'; }, how: () => (curTask ? curTask.how : '') + '<i hidden>' + (curTask ? curTask.id + S.season + S.year : '') + '</i>', n: () => (curTask && curTask.n ? TL.find((t) => t.id === curTask.id).n : null), done: () => false, at: () => (curTask ? routeTo(curTask.at()) : null), tag: () => { const g = curTask && curTask.tag; return typeof g === 'function' ? g() : g || '여기!'; } };
 const mis = missions(scene, cam, [proxy], {});
 function misHead() { if (innerWidth <= 640 && mis.card.style.display === 'none') { const td = $('todo'); if (td.style.top !== '134px') td.style.top = '134px'; }   /* 좁은 화면: 카드가 없을 때 kit 이 목록을 60px 로 올려 알약 줄을 덮던 것 */
   const h = mis.card.firstElementChild, req = TL.filter((t) => t.req), txt = `${S.year}번째 해 ${SEASONS[S.season]} · ${curTask && !curTask.req && curTask.id !== 'door' ? '골라서 할 일' : `꼭 할 일 ${req.filter((t) => t.ok).length}/${req.length}`}`; if (h.textContent !== txt) h.textContent = txt; }
@@ -570,7 +613,7 @@ $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode 
     b.onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'play'; loadGame(d); SFX.season(); }; } }
 canvas.addEventListener('pointerdown', () => { if (S.mode === 'intro') S.introT = 99; });
 runLoop((dt) => { update(dt); mis.update(dt, S.mode === 'play'); misHead(); }, view, () => renderer.render(scene, cam));
-window.__scene = { S, update, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, get TL() { return TL; }, saveGame, readSave, loadGame,
+window.__scene = { S, update, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, guideAt() { return curTask ? routeTo(curTask.at()) : null; }, get TL() { return TL; }, saveGame, readSave, loadGame,
   go() { $('go').click(); S.introT = 99; update(0.01); }, view(n) { S.view = n; }, step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   next() { const b = document.querySelector('#ov button'); if (b && $('ov').style.display !== 'none') b.click(); },
   const: { HOME, GRAN, SEED, NURS, TOBS, DOOR, BO, LORD, TOWN, GWE, PAPER, OX, CLOTH, NEXT, PORT, PEDD, SLEN, P_OX, P_NB, P_LORD, P_PAPER } };
