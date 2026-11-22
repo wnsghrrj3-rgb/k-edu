@@ -349,6 +349,29 @@ def make_tomato():
     shade(o); uv_sphere_proj(o)
     return o, cal
 
+def make_watermelon():
+    # 추격용 큰 수박(지름 25cm → 10): 줄무늬를 위아래 방향으로 굽는다
+    o = obj_from(bpy.ops.mesh.primitive_uv_sphere_add, 'watermelon', segments=48, ring_count=28, radius=1)
+    for v in o.data.vertices: v.co.x *= 1.0; v.co.y *= 1.12
+    o.scale = (12.5 * G,) * 3
+    m, nt, bs = node_mat('melon_proc'); tc = N(nt, 'ShaderNodeTexCoord')
+    # 줄무늬: 각도(atan2) 기반 + 노이즈로 들쭉날쭉
+    sep = N(nt, 'ShaderNodeSeparateXYZ'); L(nt, tc.outputs['Object'], sep.inputs['Vector'])
+    at = N(nt, 'ShaderNodeMath', operation='ARCTAN2'); L(nt, sep.outputs['Z'], at.inputs[0]); L(nt, sep.outputs['X'], at.inputs[1])
+    nz = N(nt, 'ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 4.0; nz.inputs['Detail'].default_value = 6; L(nt, tc.outputs['Object'], nz.inputs['Vector'])
+    ad = N(nt, 'ShaderNodeMath', operation='MULTIPLY_ADD'); ad.inputs[1].default_value = .9; L(nt, nz.outputs['Fac'], ad.inputs[0]); L(nt, at.outputs['Value'], ad.inputs[2])
+    sn = N(nt, 'ShaderNodeMath', operation='SINE'); mul = N(nt, 'ShaderNodeMath', operation='MULTIPLY'); mul.inputs[1].default_value = 8.0
+    L(nt, ad.outputs['Value'], mul.inputs[0]); L(nt, mul.outputs['Value'], sn.inputs[0])
+    st = ramp(nt, [(0.0, hexc('1f4d1a')), (0.45, hexc('24561c')), (0.62, hexc('5e9a3a')), (1.0, hexc('6fae45'))]); 
+    mr = N(nt, 'ShaderNodeMapRange'); mr.inputs['From Min'].default_value = -1; L(nt, sn.outputs['Value'], mr.inputs['Value']); L(nt, mr.outputs['Result'], st.inputs['Fac'])
+    fine = N(nt, 'ShaderNodeTexNoise'); fine.inputs['Scale'].default_value = 25; fine.inputs['Detail'].default_value = 4; L(nt, tc.outputs['Object'], fine.inputs['Vector'])
+    hv = N(nt, 'ShaderNodeHueSaturation'); L(nt, st.outputs['Color'], hv.inputs['Color'])
+    vm = N(nt, 'ShaderNodeMapRange'); vm.inputs['To Min'].default_value = .85; vm.inputs['To Max'].default_value = 1.1; L(nt, fine.outputs['Fac'], vm.inputs['Value']); L(nt, vm.outputs['Result'], hv.inputs['Value'])
+    L(nt, hv.outputs['Color'], bs.inputs['Base Color']); bs.inputs['Roughness'].default_value = .35; bs.inputs['Coat Weight'].default_value = .3
+    b = N(nt, 'ShaderNodeBump'); b.inputs['Strength'].default_value = .12; L(nt, fine.outputs['Fac'], b.inputs['Height']); L(nt, b.outputs['Normal'], bs.inputs['Normal'])
+    o.data.materials.append(m); uv_sphere_proj(o); shade(o)
+    return o
+
 def make_plate():
     # 접시: 단면 회전
     prof = [(0, 0), (8.5, 0), (9.2, .35), (11.5, 1.6), (13.5, 2.1), (13.6, 2.4), (11.4, 1.95), (9.0, .75), (0, .62)]
@@ -528,6 +551,7 @@ def build_props():
     j, lid = make_jar(); bake(lid, 256, 'lid'); out.append(finish(j, [lid]))
     sh, cap, salt = make_shaker(); out.append(finish(sh, [cap, salt]))
     o = make_napkin(); bake(o, 512, 'napkin'); out.append(finish(o))
+    o = make_watermelon(); bake(o, 1024, 'watermelon'); out.append(finish(o))
     # 나란히 놓아 미리보기용으로도 쓸 수 있게 x 로 벌림
     x = 0
     for o in out: o.location.x = x; x += 14
