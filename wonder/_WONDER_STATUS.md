@@ -1,7 +1,7 @@
 # 케이원더 현황 (신호: 「케이원더 이어서」)
 
 정본 설계 = `wonder/_design/kedu_wonder_design_v1.md` (핸드오프 레포에 못 올려 k-edu 안에 둠. 옮기면 이 줄을 고친다)
-블렌더 스크립트 = `wonder/blender/` · 시험 = `node wonder/tests/test_fireworks_logic.mjs`
+블렌더 스크립트 = `wonder/blender/` · 시험 = `node wonder/tests/test_fireworks_logic.mjs` · `node wonder/tests/test_blackhole_logic.mjs`
 
 ## 장면 1 불꽃놀이 공장 (`/wonder/fireworks/`)
 | 묶음 | 상태 |
@@ -18,6 +18,9 @@
 - 자동 쇼에 피날레(바지선 분수 다섯 → 연달아 열네 발 → 금빛 폭포)
 - 도시: 다리 위 차 불빛, 강 위의 배 셋, 깜박이는 붉은 등, 초승달, 창문 불빛 다듬음, 둑에 관광 망원경
 - 시험 16 통과
+
+## 장면 4 블랙홀 (`/wonder/blackhole/`)
+- ㄱ 손잡이 판: 🟡 2026-11-23 논리만 — `blackhole/logic.js`(표 열 줄·의뢰 셋 판정·까닭), 시험 14 통과(표 한 줄 = 시험 하나). 화면 판은 아직. 놀이로 줄인 것: 길은 뉴턴 끌림, 검은 원 1.5배 안이면 못 돌아옴, 시계 = 끌림 × 빠르기 — 그래서 의뢰 ②(시계 절반 궤도, 0.4~0.6배)가 실제로 된다(진짜 상대론이면 그 거리에 안정 궤도가 없다).
 
 ## 아직 확인 못 한 것
 - 실제 크롬북 프레임(여기서는 소프트웨어 렌더라 못 잼). 화질 등급 자동 내림은 넣어 둠(`?q=high|mid|low` 로 고정).
