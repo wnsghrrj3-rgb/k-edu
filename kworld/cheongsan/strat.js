@@ -6,9 +6,9 @@ import { MAP_W, MAP_H } from './map.js';
 export const NODES = [[548, 258], [478, 288], [420, 300], [360, 312], [300, 302], [240, 308], [180, 310], [120, 302], [82, 316], [48, 330], [26, 352]];
 export const NODE_NAME = ['어랑촌 남쪽', '고동하 어귀', '물굽이', '맹개골', '바위 여울', '만기구', '자작 숲', '쉬구', '갈대 늪', '천보산 아래', '안도 가는 길'];
 export const ROUTES = {
-  road: { name: '골짜기 큰길', icon: '🛤', col: '#c8a060', net: 5, hunger: 4, troop: 0, note: '빠르다 · 들키기 쉽다 · 포위망 +4' },
-  ridge: { name: '능선 길', icon: '⛰', col: '#7ab070', net: 2, hunger: 10, troop: 0, note: '느리고 배고프다 · 멀리 살핀다(적 두 갈래)' },
-  river: { name: '물길(고동하)', icon: '💧', col: '#6aa0d0', net: 1, hunger: 5, troop: -1, note: '발자국이 안 남는다 · 춥다(부대 −1)' } };
+  road: { name: '골짜기 큰길', icon: '🛤', col: '#c8a060', net: 5, hunger: 1, troop: 0, note: '빠르다 · 들키기 쉽다 · 포위망 +4' },
+  ridge: { name: '능선 길', icon: '⛰', col: '#7ab070', net: 2, hunger: 6, troop: 0, note: '느리고 배고프다 · 멀리 살핀다(적 두 갈래)' },
+  river: { name: '물길(고동하)', icon: '💧', col: '#6aa0d0', net: 1, hunger: 2, troop: -1, note: '발자국이 안 남는다 · 춥다(부대 −1)' } };
 
 export function makeStrat(img, { onPick }) {
   const cv = document.createElement('canvas'); cv.id = 'strat'; cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:4;display:none;cursor:pointer'; document.body.appendChild(cv);

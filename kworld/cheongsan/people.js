@@ -29,7 +29,7 @@ export function makePeople(scene, { mute = false } = {}) {
   /* 사람 하나: o = { shirt, pants, hat:'fur'|'jcap'|그 밖 kit 머리, rifle, pack, scope } */
   function mk(o) {
     const kh = o.hat === 'fur' || o.hat === 'jcap' ? 'crop' : o.hat;
-    const m = person({ shirt: o.shirt, pants: o.pants, hat: kh, mood: o.mood || 'soft', skin: o.skin || 0xf0c48e, style: o.coat ? 'coat' : null, chima: !!o.chima }); if (o.small) m.scale.setScalar(o.small);
+    const m = person({ shirt: o.shirt, pants: o.pants, hat: kh, mood: o.mood || 'soft', skin: o.skin || 0xf0c48e, style: o.coat ? 'coat' : null, chima: !!o.chima, torch: !!o.torch }); if (o.small) m.scale.setScalar(o.small);
     m.rotation.order = 'YXZ';
     const add = (n) => { if (!ART[n]) return null; const a = art(n); m.add(a); return a; };
     if (o.hat === 'fur') add('cs_hat_fur'); if (o.hat === 'jcap') add('cs_hat_jcap');

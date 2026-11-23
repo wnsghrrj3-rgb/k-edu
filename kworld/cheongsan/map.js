@@ -146,7 +146,7 @@ export function plantForest(scene, { avoid = () => false, seed = 1920, lite = fa
   const r = rng(seed), near = { cs_birch: [], cs_birch_b: [], cs_larch: [], cs_spruce: [], cs_spruce_snow: [], cs_bush_dry: [], cs_grass_dry: [] }, far = { gold: [], dark: [], grey: [] }, put = [];
   const okTree = (x, z) => { const h = Hq(x, z), [d, vp] = mainD(x, z), w = Math.abs(d); if (w < Math.max(12, vp[2] + 3) && x < 650) return false; { const [dg, gp] = nearest(VSEG.godong, x, z); if (Math.abs(dg) < gp[2] + 2) return false; } if (h > 50) return false; if (slopeAt(x, z) > 1.5) return false; if (avoid(x, z)) return false; return true; };
   /* 가까운 숲: 놀이 터(백운평 · 어랑촌 고지 …) — 블렌더 나무 */
-  const NEAR = [[-20, 90, 300, 260, lite ? 800 : 1500], [470, 40, 660, 268, lite ? 400 : 800], [-10, 262, 600, 390, lite ? 600 : 1300]];
+  const NEAR = [[-20, 90, 300, 260, lite ? 800 : 1500], [470, 40, 660, 268, lite ? 400 : 800], [-10, 262, 600, 390, lite ? 600 : 1300], [372, 18, 512, 172, lite ? 380 : 750]];
   const inNear = (x, z) => NEAR.some((q) => x > q[0] && x < q[2] && z > q[1] && z < q[3]);
   for (const [nx0, nz0, nx1, nz1, nNear] of NEAR) for (let i = 0, tries = 0; i < nNear && tries < nNear * 8; tries++) { const x = nx0 + r() * (nx1 - nx0), z = nz0 + r() * (nz1 - nz0); if (!okTree(x, z)) continue; const h = Hq(x, z), up = h - floorAt(x, z), cl = fbm(x / 30, z / 30);
     if (up < 3 && r() < 0.8) continue; if (cl < 0.42 && r() < 0.75) continue;   /* 숲은 덩어리지게 */

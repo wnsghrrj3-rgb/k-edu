@@ -40,7 +40,7 @@ export default function ch5(c) {
     go(kind, skip) { const R = ROUTES[kind], from = NODES[st.at], to2 = skip ? st.at + 2 : st.at + 1; if (skip) st.shortcut = false;
       let dn = R.net + (st.lure > 0 ? -4 : 0) + (st.slow > 0 ? -2 : 0); if (st.lure > 0) st.lure--; if (st.slow > 0) st.slow--; if (st.lure === 0) st.branches.forEach((b) => (b.lured = false));
       band('net', dn, R.name); band('hunger', R.hunger, R.name); if (R.troop) band('troop', R.troop, '물길 — 추위');
-      if (S.band.hunger > 80) band('troop', -3, '배고픔 — 지친 사람을 뒤로 보냈다');
+      if (S.band.hunger > 80) band('troop', -2, '배고픔 — 지친 사람을 뒤로 보냈다');
       if (kind === 'ridge') { const un = st.branches.filter((b) => !st.seen[b.k]).slice(0, 2); for (const b of un) { st.seen[b.k] = 1; S.tags['seen_' + b.k] = 1; } }
       st.taken[st.at] = kind; if (skip) st.taken[st.at + 1] = kind; st.log.push(kind + (skip ? '+' : ''));
       SFX.page(); strat.show(ch.state(), [], `${R.icon} ${R.name}으로 간다…`);

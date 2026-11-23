@@ -21,7 +21,7 @@ export default function ch1(c) {
   const P = {};
   let N0 = null, S0 = null;
   const ch = {
-    id: 1, title0: '첫날 · 10월 21일 백운평', title: '꾀어서 가두기', when: '1920년 10월 21일 아침', place: '백운평', len: 600, region: [24, 104, 300, 224], zones: [], yaw: -Math.PI / 2,
+    id: 1, sameDay: true, title0: '첫날 · 10월 21일 백운평', title: '꾀어서 가두기', when: '1920년 10월 21일 아침', place: '백운평', len: 600, region: [24, 104, 300, 224], zones: [], yaw: -Math.PI / 2,
     goal: '추격대를 골짜기에 다 가두고, 본대가 오기 전에 빠진다', idle: '숨죽이고 기다린다',
     K: { TRACES, SIGNAL, LOOK_A, PASS, PICK, MARKER_X, LATE_X },
     get st() { return st; },
