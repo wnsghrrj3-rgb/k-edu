@@ -13,7 +13,7 @@ const CSS = `
 @media (max-width:520px){#choose button.dot{height:110px;gap:6px;font-size:2.4rem}#choose button.dot .dots u{width:11px;height:11px}#choose button.dot .dots,#choose button.dot .dots i{gap:3px}}
 #tray b.hole.ask{animation:holeask 1s infinite}@keyframes holeask{50%{background:rgba(255,211,77,.55);transform:scale(1.08)}}`;
 export const GAP = 14;   /* 띠와 수 셋 사이(px) */
-let cssIn = false; function css(){ if (cssIn) return; cssIn = true; const s = document.createElement('style'); s.id = 'choose-css'; s.textContent = CSS; document.head.appendChild(s); }
+let cssIn = false; function css(){ if (cssIn || typeof document === 'undefined') return; cssIn = true;   /* node(하네스)에서 점 무늬만 그릴 때는 건너뜀 */ const s = document.createElement('style'); s.id = 'choose-css'; s.textContent = CSS; document.head.appendChild(s); }
 const box = () => { css(); let e = document.getElementById('choose'); if (!e) { e = document.createElement('div'); e.id = 'choose'; document.body.appendChild(e); } return e; };
 /** 점 무늬(정본 5-10절 — 다섯씩 한 줄 · 6~9 는 윗줄 다섯 + 아랫줄 · T02 의 열 칸 틀과 같은 눈). 줄마다 다섯 칸(빈 칸은 테두리만) · lit 개가 켜짐. */
 export function dotsHtml(n, lit = n){ css(); const rows = Math.max(1, Math.ceil(n / 5)); let h = '<span class="dots">'; for (let r = 0; r < rows; r++) { h += '<i>'; for (let k = 0; k < 5; k++) { const j = r * 5 + k; h += `<u class="${j < lit ? 'on' : ''}"></u>`; } h += '</i>'; } return h + '</span>'; }
