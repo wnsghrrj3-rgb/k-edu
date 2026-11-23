@@ -77,13 +77,13 @@ export const clean = r => !!r && !(r.barred || r.retreat || r.hinted || r.missed
 
 /** 쟁반 위 물고기 자리(쟁반 지름 1 기준 · 가운데 0): rows = 다섯씩 한 줄(윗줄 다섯 + 아랫줄 · 점 무늬와 같은 눈 · 몸은 옆으로) · 아니면 흩어 놓음(겹치지 않음).
  *  물고기 한 마리 = 길이 LEN · 너비 WID 의 둥근 막대(캡슐) — 흩어 놓을 때 막대끼리 GAP 보다 가까우면 다시 뽑는다. ry = 몸의 방향(0 이면 +z 를 봄 — 모형과 같게). */
-export const FISH = { LEN: .32, WID: .13, GAP: .025, JIT: .04, ROW_LEN: .19, DX: .2, DZ: .23 };
-const seg = q => { const h = (q.len || FISH.LEN) / 2, dx = Math.sin(q.ry) * h, dz = Math.cos(q.ry) * h; return [q.x - dx, q.z - dz, q.x + dx, q.z + dz]; };
+export const FISH = { LEN: .32, WID: .13, GAP: .025, JIT: .04, ROW_LEN: .18, DX: .19, DZ: .23 };
+const seg = q => { const h = Math.max(0, ((q.len || FISH.LEN) - FISH.WID) / 2),   /* 캡슐 끝까지가 몸 길이 */ dx = Math.sin(q.ry) * h, dz = Math.cos(q.ry) * h; return [q.x - dx, q.z - dz, q.x + dx, q.z + dz]; };
 function segDist(a, b){ const [ax, az, bx, bz] = a, [cx, cz, dx, dz] = b, d = (px, pz, x1, z1, x2, z2) => { const vx = x2 - x1, vz = z2 - z1, L2 = vx * vx + vz * vz, t = L2 ? Math.max(0, Math.min(1, ((px - x1) * vx + (pz - z1) * vz) / L2)) : 0; return Math.hypot(px - (x1 + t * vx), pz - (z1 + t * vz)); };
   const cr = (o1x, o1z, o2x, o2z, p1x, p1z, p2x, p2z) => { const s = (ax2, az2, bx2, bz2, cx2, cz2) => Math.sign((bx2 - ax2) * (cz2 - az2) - (bz2 - az2) * (cx2 - ax2)); return s(o1x, o1z, o2x, o2z, p1x, p1z) * s(o1x, o1z, o2x, o2z, p2x, p2z) < 0 && s(p1x, p1z, p2x, p2z, o1x, o1z) * s(p1x, p1z, p2x, p2z, o2x, o2z) < 0; };
   if (cr(ax, az, bx, bz, cx, cz, dx, dz)) return 0; return Math.min(d(ax, az, cx, cz, dx, dz), d(bx, bz, cx, cz, dx, dz), d(cx, cz, ax, az, bx, bz), d(dx, dz, ax, az, bx, bz)); }
 /** 두 물고기가 겹치는가(캡슐) — 하네스도 쓴다. */
-export const overlap = (a, b) => segDist(seg(a), seg(b)) < FISH.WID + FISH.GAP * .5;
+export const overlap = (a, b) => segDist(seg(a), seg(b)) < FISH.WID - 1e-6;
 /** 흩어 놓는 틀(가운데 0 · 지름 1 기준): 수마다 대충의 자리 — 통째로 돌리고 조금씩 흔들고, 몸 방향은 마음대로(겹치면 다시). */
 const SCATTER = { 1: [[0, 0]], 2: [[-.17, .02], [.17, -.02]], 3: [[0, -.2], [-.19, .13], [.19, .13]], 4: [[-.2, -.17], [.2, -.17], [-.2, .17], [.2, .17]], 5: [[0, -.27], [.26, -.08], [.16, .23], [-.16, .23], [-.26, -.08]] };
 export function layout(n, rows, rnd = Math.random){ if (rows || !SCATTER[n]) { const out = []; for (let k = 0; k < n; k++) { const r = Math.floor(k / 5), c = k % 5; out.push({ x: (c - 2) * FISH.DX, z: (r - (n > 5 ? .5 : 0)) * FISH.DZ, ry: Math.PI / 2, len: FISH.ROW_LEN }); } return out; }

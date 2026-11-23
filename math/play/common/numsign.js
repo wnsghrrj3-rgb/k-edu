@@ -36,7 +36,7 @@ export function paint(c, n, opt = {}){ const px = opt.px || 96, z = size(px), r 
   return c; }
 
 function rr(x, a, b, w, h, k){ x.beginPath(); x.moveTo(a + k, b); x.arcTo(a + w, b, a + w, b + h, k); x.arcTo(a + w, b + h, a, b + h, k); x.arcTo(a, b + h, a, b, k); x.arcTo(a, b, a + w, b, k); x.closePath(); }
-/** 나무 판: 둥근 네모 · 나뭇결 · 테두리 · 위의 못 둘(걸려 있다). */
+/** 나무 판: 둥근 네모 · 나무 무늬 줄 · 테두리 · 위의 못 둘(걸려 있다). */
 function board(x, z, px){ const top = px * NS.TOP, k = px * .14, g = x.createLinearGradient(0, top, 0, z.h);
   g.addColorStop(0, NS.WOOD[0]); g.addColorStop(1, NS.WOOD[1]);
   x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = px * .08; x.shadowOffsetY = px * .05; rr(x, 2, top, z.w - 4, z.h - top - px * .07, k); x.fillStyle = g; x.fill(); x.restore();

@@ -39,7 +39,8 @@ export function drag(el, o){ const R = () => (typeof o.R === 'function' ? o.R() 
   const setHover = id => { if (id === hoverId) return; hoverId = id; if (o.onHover) o.onHover(id); };
   el.addEventListener('pointerdown', e => { if (e.button > 0) return; const x = e.clientX, y = e.clientY;
     if (o.enabled && !o.enabled()) { cur = null; if (o.onBusy) o.onBusy({ x, y }); return; }
-    const s = sourceAt(o.sources() || [], x, y);
+    const s = sourceAt(o.sources() || [], x, y), tl = o.targets() || [], inRect = armedId != null && tl.some(t => t && t.rect && x >= t.rect.left && x <= t.rect.right && y >= t.rect.top && y <= t.rect.bottom);
+    if (inRect) { const t = targetAt(tl, x, y, R()), from = armedId; armedId = null; cur = null; if (o.onDisarm) o.onDisarm(from); o.onDrop({ from, to: t.id, how: 'tap', x, y }); return; }   /* 든 채로 놓을 곳(네모 안)을 누르면 — 집을 것과 겹쳐도 놓는다 */
     if (s) { cur = { id: s.id, x0: x, y0: y, moved: false, pid: e.pointerId }; try { el.setPointerCapture(e.pointerId); } catch (_) {} return; }
     cur = null; const t = targetAt(o.targets() || [], x, y, R());
     if (armedId != null && t) { const from = armedId; armedId = null; if (o.onDisarm) o.onDisarm(from); o.onDrop({ from, to: t.id, how: 'tap', x, y }); return; }
