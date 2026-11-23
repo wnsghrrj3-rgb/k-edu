@@ -8,7 +8,7 @@
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 우리 마을 → 가운데 들 → 동쪽 읍내 → 고개 너머 이웃 고을 장. 남쪽 강과 포구. */
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, ringsFx, people, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, loadArt, art as kitArt, artGeo, artMat, artInst as kitInst, scatter, missions } from '../scene/kit.js?v=5';
-await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset', 'beasts', 'farmtree');   /* beasts = 움직이는 개·닭·소(tools/blender/make_beasts.py) */
+await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset');   /* 개·닭·소·나무는 이제 구워 입힌 묶음(fbeasts·fyard) */   /* beasts = 움직이는 개·닭·소(tools/blender/make_beasts.py) */
 import { beastKit } from './beasts.js?v=2';
 import { makeLand, dikes, hAt, lineDist, STREAM } from './land.js?v=2';
 import { airKit, sunAt } from './air.js?v=1';
