@@ -51,6 +51,9 @@ export function H(x, z) {
   for (const b of BUMPS) { const d2 = ((x - b[0]) ** 2 + (z - b[1]) ** 2) / (b[3] * b[3]); if (d2 < 4) h += b[2] * Math.exp(-d2 * 1.6); }
   return eorang(x, z, h);
 }
+/* 갑산촌 집 아홉(장 3 — 문 연 집 셋은 0 할머니 · 3 나무꾼 · 5 겁먹은 집): [x, z, 돌림] · 천수평 기병 야영지 */
+export const GAPSAN = [[332, 190, 0.2], [340, 197, -0.1], [350, 190, 0.1], [358, 196, 0.3], [336, 181, 0], [347, 182, 0.2], [356, 183, -0.2], [328, 197, 0.4], [364, 189, 0]];
+export const CAMP3 = [440, 179];
 /* 어랑촌 뒤 고지(장 4): 우묵한 지휘소에서 부채꼴로 뻗은 능선 셋(왼·가운데·오른). 능선 사이는 골로 낮춘다. */
 export const EORANG = { hq: [565, 104], spurs: [[[549, 114], [518, 142]], [[565, 118], [565, 146]], [[581, 114], [612, 142]]] };
 function segD(x, z, a, b) { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz; let t = ((x - a[0]) * dx + (z - a[1]) * dz) / L2; t = clamp(t, 0, 1); return [Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t), t]; }

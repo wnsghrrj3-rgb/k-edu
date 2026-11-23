@@ -6,18 +6,19 @@
    한 줄 가운데 슬래시 두 개 주석 금지(블록 주석만). */
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, sayLine, controls, overBar, missions, loadArt, ART, art, artInst, tone, noise, resumeAudio, glowSprite, remember } from '../scene/kit.js';
-import { EORANG } from './map.js';
+import { EORANG, GAPSAN } from './map.js';
 import { MAP_W, MAP_H, H, Hq, floorAt, mainD, losClear, slopeAt, ZONES, buildTerrain, farRing, plantForest, mapImage, groundRing, groundFan } from './map.js';
 import { makeArmy, makeFx, smokeColumn, path } from './enemy.js';
 import { makePeople } from './people.js';
 import ch0 from './ch0.js';
 import ch1 from './ch1.js';
+import ch3 from './ch3.js';
 import ch4 from './ch4.js';
 
 const Q = new URLSearchParams(location.search);
 const MUTE = Q.get('mute') === '1', SEED = +(Q.get('seed') || 1920), LITE = Q.get('lite') === '1' || (navigator.hardwareConcurrency || 8) <= 4;
 /* 장은 이야기 차례(0 앞날 · 1 백운평 · 2 완루구 · 3 천수평 · 4 어랑촌 · 5 쫓기는 길 · 6 고동하). 아직 없는 장은 null — 건너뛴다 */
-const CHAPTERS = [ch0, ch1, null, null, ch4], TITLES = ['앞날 · 10월 20일', '첫날 · 10월 21일 백운평', '첫날 밤 · 완루구', '둘째 날 새벽 · 천수평', '둘째 날 · 어랑촌', '셋째~넷째 날 · 쫓기는 길', '닷새째 밤 · 고동하'], SAVE_KEY = 'kworld_cheongsan_save_v1';
+const CHAPTERS = [ch0, ch1, null, ch3, ch4], TITLES = ['앞날 · 10월 20일', '첫날 · 10월 21일 백운평', '첫날 밤 · 완루구', '둘째 날 새벽 · 천수평', '둘째 날 · 어랑촌', '셋째~넷째 날 · 쫓기는 길', '닷새째 밤 · 고동하'], SAVE_KEY = 'kworld_cheongsan_save_v1';
 
 /* ───── 화면 ───── */
 const { canvas, renderer, scene, cam, resize } = stage({ fog: [0xd8d0bc, 120, 520], exposure: 1.05, fov: 40 });
@@ -44,7 +45,8 @@ const forestAt = (x, z) => { const i = Math.floor(x / 8), j = Math.floor(z / 8);
 
 /* 먼 마을(갑산촌·어랑촌) — 지도에 보이는 큰 판의 나머지 */
 const putArt = (n, x, z, ry = 0, s = 1, tints) => { const m = art(n, tints); if (!m || (m.isMesh && !m.geometry.attributes.position)) return null; m.position.set(x, Hq(x, z) - 0.1, z); m.rotation.y = ry; m.scale.setScalar(s); scene.add(m); return m; };
-{ const r = rng(51); for (const [vx, vz, n] of [[345, 192, 9], [566, 212, 12]]) for (let i = 0; i < n; i++) { const x = vx + (r() - 0.5) * 34, z = vz + (r() - 0.5) * 18; putArt(i % 3 ? 'cs_loghouse' : 'cs_loghouse_b', x, z, (r() - 0.5) * 0.6); } }
+{ const r = rng(51); for (const [vx, vz, n] of [[566, 212, 12]]) for (let i = 0; i < n; i++) { const x = vx + (r() - 0.5) * 34, z = vz + (r() - 0.5) * 18; putArt(i % 3 ? 'cs_loghouse' : 'cs_loghouse_b', x, z, (r() - 0.5) * 0.6); }
+  GAPSAN.forEach(([x, z, ry], i) => { putArt(i % 3 === 1 ? 'cs_loghouse_b' : 'cs_loghouse', x, z, ry); if (i % 2 === 0) putArt('cs_fence', x + 3.5, z + 3.2, ry + 0.2); }); }
 
 /* ───── 군대 · 효과 · 사람 ───── */
 const army = makeArmy(scene), fx = makeFx(scene, cam), ppl = makePeople(scene, { mute: MUTE });
@@ -210,12 +212,12 @@ function endChapter(res) {
   if (S.mode !== 'play') return; S.mode = 'result'; $('spot').style.display = 'none'; setScope(false); setCrouch(false); closeChoice(); $('det').style.display = 'none'; LAST = res;
   let next = S.ch + 1; while (next < CHAPTERS.length && !CHAPTERS[next]) next++; const more = next < CHAPTERS.length && !res.lose, skipped = more ? TITLES.slice(S.ch + 1, next) : [];
   /* 밤이 지난다: 하루가 가면 배고픔 +22 · 포위망 +12(설계 v2 1-1) — 다음 장이 있을 때만 */
-  const b0 = { ...S.band }; if (more) { S.band.hunger = clamp(S.band.hunger + 22, 0, 100); S.band.net = clamp(S.band.net + 12, 0, 100); }
+  const b0 = { ...S.band }, night1 = more && !CH.sameDay; if (night1) { S.band.hunger = clamp(S.band.hunger + 22, 0, 100); S.band.net = clamp(S.band.net + 12, 0, 100); }
   saveGame(more ? next : 0); if (!more) S.tags.done1 = 1;
   const delta = (k) => { const d = Math.round(S.band[k] - res.b0[k]); return d ? `<b class="${((k === 'troop' || k === 'ammo') ? d < 0 : d > 0) ? 'dn' : 'up'}">${d > 0 ? '+' : ''}${d}</b>` : ''; };
   const bands = `<div class="bands">${['troop', 'net', 'ammo', 'hunger'].map((k) => `<span>${BAND_NAME[k]} ${Math.round(S.band[k])} ${delta(k)}</span>`).join('')}</div>`;
   const marks = res.marks ? `<div class="marks">${res.marks.map((m) => `<span class="${m.ok ? 'ok' : ''}">${m.ok ? '✔' : '✘'} ${m.t}</span>`).join('')}</div>` : '';
-  const night = more ? `<p style="font-size:15px;color:#c8d0e8">🌙 밤이 지난다 — 배고픔 +${Math.round(S.band.hunger - b0.hunger)} · 포위망 +${Math.round(S.band.net - b0.net)}${res.night ? ' · ' + res.night : ''}${skipped.length ? `<br><small>(${skipped.join(' · ')} 장은 만드는 중이라 건너뛴다)</small>` : ''}</p>` : '';
+  const night = more && !night1 ? `<p style="font-size:15px;color:#c8d0e8">☀ 같은 날 — 곧바로 이어진다${res.night ? ' · ' + res.night : ''}</p>` : more ? `<p style="font-size:15px;color:#c8d0e8">🌙 밤이 지난다 — 배고픔 +${Math.round(S.band.hunger - b0.hunger)} · 포위망 +${Math.round(S.band.net - b0.net)}${res.night ? ' · ' + res.night : ''}${skipped.length ? `<br><small>(${skipped.join(' · ')} 장은 만드는 중이라 건너뛴다)</small>` : ''}</p>` : '';
   const html = `<h1>${res.head}<small>${CH.when} · ${CH.place}</small></h1>${marks}${bands}<ul class="why">${res.lines.map((l) => `<li>${l}</li>`).join('')}</ul>${night}${res.hist ? `<div class="hist">${res.hist}</div>` : ''}`;
   setTimeout(() => {
     const o = $('ov'); o.firstElementChild.innerHTML = html + `<div class="row">${more ? `<button id="go">다음 장 — ${TITLES[next]}</button>` : `<button id="go">처음부터 다시</button><button id="re1" class="sec">이 장만 다시</button>`}</div>`;

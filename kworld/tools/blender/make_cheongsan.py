@@ -332,6 +332,18 @@ for s in (-1, 1):
         b.box((0.04, 0.04, 0.18), (s * 1.28, y, 0.05), 'wood', rot=(0, s * 0.3, 0))
 b.done('cs_tent', smooth=0, shade=(0.74, 1.08), under=0.25)
 
+# 적 천막(반듯한 것 — 같은 크기, 무늬 없이 한 빛깔) — 11-23 장 3 천수평
+mat('canvas_jp', 0x7c7a5c); mat('canvas_jpd', 0x5c5a44)
+b = B()
+b.prism([(-1.15, 0), (1.15, 0), (0, 1.8)], 3.0, (0, 0, 0), 'canvas_jp', jit=0.01)
+b.prism([(-0.42, 0), (0.42, 0), (0, 1.25)], 0.02, (0, -1.505, 0), 'canvas_jpd', jit=0)
+limb(b, (0, -1.68, 1.81), (0, 1.68, 1.81), 0.035, 0.035, 'pole', seg=5)
+for s in (-1, 1):
+    limb(b, (0, s * 1.56, 0), (0, s * 1.56, 1.95), 0.035, 0.03, 'pole', seg=5)
+    limb(b, (0, s * 1.56, 1.9), (0, s * 2.45, 0.02), 0.008, 0.008, 'rope', seg=3)
+    b.box((0.05, 0.05, 0.22), (0, s * 2.47, 0.06), 'wood', rot=(s * 0.3, 0, 0))
+b.done('cs_tent_jp', smooth=0, shade=(0.74, 1.08), under=0.25)
+
 # 지휘 천막(벽 천막) — 앞 자락을 걷어 묶었고 안에 접이 탁자·걸상
 b = B()
 W2, D2, WH, RH = 1.8, 2.3, 1.5, 2.6
@@ -750,37 +762,41 @@ for s in (-1, 1):
 rifle(b, (0.3, -0.22, 0.99), (0.33, 0.53, 1.97), (1, 0, 0), lite=True)
 b.done('cs_jp', shade=(0.8, 1.08), under=0.2)
 
+def horse_body(b, saddle=True, graze=0.0):
+    Fh = frame((0, 0.72, 1.18), (0, -0.66, 1.22))
+    fbox(b, Fh, 0, 1, 0.56, 0.6, 'horse', bevel=0.13, dtaper=0.04, jit=0.03)
+    b.ball(0.31, (0, 0.52, 1.24), 'horse', sub=1, scale=(0.95, 1, 1), jit=0.03)
+    b.ball(0.3, (0, -0.52, 1.2), 'horse', sub=1, scale=(0.95, 1, 1.02), jit=0.03)
+    NK = ((0, -0.58, 1.3), (0, -0.92, 1.86))
+    Fn = frame(*NK)
+    fbox(b, Fn, 0, 1, 0.22, 0.38, 'horse', taper=-0.2, dtaper=-0.25, bevel=0.05, jit=0.03)
+    fbox(b, Fn, 0.12, 1.04, 0.06, 0.08, 'horse_d', oy=0.17, jit=0.06)
+    Fhd = frame((0, -0.86, 1.98), (0, -1.22, 1.62))
+    fbox(b, Fhd, 0, 1, 0.2, 0.26, 'horse', taper=-0.25, dtaper=-0.15, bevel=0.05, jit=0.03)
+    fbox(b, Fhd, 0.6, 0.7, 0.21, 0.24, 'saddle', jit=0)
+    for s in (-1, 1):
+        b.cone(0.04, 0.008, 0.13, (s * 0.06, -0.82, 2.05), 'horse', seg=4, rot=(-0.2, s * 0.25, 0))
+        b.box((0.02, 0.04, 0.04), (s * 0.08, -1.0, 1.84), 'ink', jit=0)
+    limb(b, (0, 0.76, 1.38), (0, 0.98, 0.78), 0.075, 0.045, 'horse_d', seg=5, jit=0.06)
+    limb(b, (0, 0.98, 0.78), (0, 1.02, 0.6), 0.045, 0.02, 'horse_d', seg=5, jit=0.06)
+    for x, y, dk, dh in [(-0.16, -0.5, -0.12, -0.1), (0.16, -0.5, 0.05, 0.03), (-0.16, 0.5, 0.08, 0.02), (0.16, 0.5, -0.06, -0.1)]:
+        back = y > 0
+        top = (x, y, 1.05)
+        kn = (x, y + dk + (0.1 if back else 0), 0.55)
+        ft = (x, y + dh, 0.12)
+        limb(b, top, kn, 0.085, 0.058, 'horse', seg=6, jit=0.03)
+        limb(b, kn, ft, 0.055, 0.045, 'horse', seg=5, jit=0.03)
+        b.cone(0.07, 0.06, 0.12, (ft[0], ft[1] - 0.01, 0.06), 'hoof', seg=6)
+    b.box((0.64, 0.66, 0.32), (0, -0.04, 1.4), 'saddlecloth', bevel=0.03, jit=0.03)
+    b.box((0.4, 0.5, 0.1), (0, -0.04, 1.58), 'saddle', bevel=0.04, jit=0.03)
+    for s in (-1, 1):
+        limb(b, (s * 0.1, -1.1, 1.68), (s * 0.14, -0.4, 1.73), 0.008, 0.008, 'saddle', seg=3)
+        limb(b, (s * 0.31, -0.04, 1.42), (s * 0.33, -0.14, 1.0), 0.01, 0.01, 'saddle', seg=3)
+
+
 # 19 말 탄 장교
 b = B()
-Fh = frame((0, 0.72, 1.18), (0, -0.66, 1.22))
-fbox(b, Fh, 0, 1, 0.56, 0.6, 'horse', bevel=0.13, dtaper=0.04, jit=0.03)
-b.ball(0.31, (0, 0.52, 1.24), 'horse', sub=1, scale=(0.95, 1, 1), jit=0.03)
-b.ball(0.3, (0, -0.52, 1.2), 'horse', sub=1, scale=(0.95, 1, 1.02), jit=0.03)
-NK = ((0, -0.58, 1.3), (0, -0.92, 1.86))
-Fn = frame(*NK)
-fbox(b, Fn, 0, 1, 0.22, 0.38, 'horse', taper=-0.2, dtaper=-0.25, bevel=0.05, jit=0.03)
-fbox(b, Fn, 0.12, 1.04, 0.06, 0.08, 'horse_d', oy=0.17, jit=0.06)
-Fhd = frame((0, -0.86, 1.98), (0, -1.22, 1.62))
-fbox(b, Fhd, 0, 1, 0.2, 0.26, 'horse', taper=-0.25, dtaper=-0.15, bevel=0.05, jit=0.03)
-fbox(b, Fhd, 0.6, 0.7, 0.21, 0.24, 'saddle', jit=0)
-for s in (-1, 1):
-    b.cone(0.04, 0.008, 0.13, (s * 0.06, -0.82, 2.05), 'horse', seg=4, rot=(-0.2, s * 0.25, 0))
-    b.box((0.02, 0.04, 0.04), (s * 0.08, -1.0, 1.84), 'ink', jit=0)
-limb(b, (0, 0.76, 1.38), (0, 0.98, 0.78), 0.075, 0.045, 'horse_d', seg=5, jit=0.06)
-limb(b, (0, 0.98, 0.78), (0, 1.02, 0.6), 0.045, 0.02, 'horse_d', seg=5, jit=0.06)
-for x, y, dk, dh in [(-0.16, -0.5, -0.12, -0.1), (0.16, -0.5, 0.05, 0.03), (-0.16, 0.5, 0.08, 0.02), (0.16, 0.5, -0.06, -0.1)]:
-    back = y > 0
-    top = (x, y, 1.05)
-    kn = (x, y + dk + (0.1 if back else 0), 0.55)
-    ft = (x, y + dh, 0.12)
-    limb(b, top, kn, 0.085, 0.058, 'horse', seg=6, jit=0.03)
-    limb(b, kn, ft, 0.055, 0.045, 'horse', seg=5, jit=0.03)
-    b.cone(0.07, 0.06, 0.12, (ft[0], ft[1] - 0.01, 0.06), 'hoof', seg=6)
-b.box((0.64, 0.66, 0.32), (0, -0.04, 1.4), 'saddlecloth', bevel=0.03, jit=0.03)
-b.box((0.4, 0.5, 0.1), (0, -0.04, 1.58), 'saddle', bevel=0.04, jit=0.03)
-for s in (-1, 1):
-    limb(b, (s * 0.1, -1.1, 1.68), (s * 0.14, -0.4, 1.73), 0.008, 0.008, 'saddle', seg=3)
-    limb(b, (s * 0.31, -0.04, 1.42), (s * 0.33, -0.14, 1.0), 0.01, 0.01, 'saddle', seg=3)
+horse_body(b)
 JO = dict(head=(0, -0.04, 2.28), pel=(0, 0.0, 1.62), neck=(0, -0.02, 2.09), flap=False, shin='boot', rings=False,
           shL=(-0.27, -0.02, 2.0), elL=(-0.31, -0.2, 1.8), haL=(-0.14, -0.4, 1.73),
           shR=(0.27, -0.02, 2.0), elR=(0.31, -0.2, 1.8), haR=(0.14, -0.4, 1.73),
@@ -788,6 +804,11 @@ JO = dict(head=(0, -0.04, 2.28), pel=(0, 0.0, 1.62), neck=(0, -0.02, 2.09), flap
           hipR=(0.13, -0.02, 1.64), knR=(0.33, -0.26, 1.42), anR=(0.33, -0.16, 1.03), toeR=(0.33, -0.36, 0.99))
 jp_body(b, JO)
 b.done('cs_jp_off', shade=(0.74, 1.08), under=0.25)
+
+# 말(매어 둔 것 · 안장만) — 11-23 장 3 천수평
+b = B()
+horse_body(b)
+b.done('cs_horse', shade=(0.74, 1.08), under=0.25)
 
 # 20 독립군(서 있음, 총은 등에 비스듬히 · 허리에 천 주머니)
 JI = dict(head=(0, -0.01, 1.43), pel=(0, 0, 0.66), neck=(0, 0, 1.24),
@@ -890,7 +911,7 @@ b.done('cs_mg', smooth=0, shade=(0.74, 1.08), under=0.2)
 
 NAMES = ['cs_birch', 'cs_birch_b', 'cs_larch', 'cs_spruce', 'cs_spruce_snow', 'cs_tree_far', 'cs_bush_dry', 'cs_grass_dry', 'cs_crag', 'cs_boulder', 'cs_rocks', 'cs_marker_rock',
          'cs_tent', 'cs_tent_cmd', 'cs_fire', 'cs_fire_cold', 'cs_pack_drop', 'cs_stretcher', 'cs_crate', 'cs_crate_pile', 'cs_pot', 'cs_flag', 'cs_loghouse', 'cs_loghouse_b', 'cs_fence',
-         'cs_hat_fur', 'cs_hat_jcap', 'cs_rifle', 'cs_pack', 'cs_scope', 'cs_jp', 'cs_jp_off', 'cs_ia', 'cs_ia_prone', 'cs_ia_kneel', 'cs_crow', 'cs_gun', 'cs_mg']
+         'cs_hat_fur', 'cs_hat_jcap', 'cs_rifle', 'cs_pack', 'cs_scope', 'cs_jp', 'cs_jp_off', 'cs_ia', 'cs_ia_prone', 'cs_ia_kneel', 'cs_crow', 'cs_gun', 'cs_mg', 'cs_tent_jp', 'cs_horse']
 have = {o.name for o in bpy.context.scene.objects}
 print('MISSING', [n for n in NAMES if n not in have], 'EXTRA', [n for n in have if n not in NAMES])
 for o in bpy.context.scene.objects:
