@@ -120,7 +120,11 @@ export function buildTerrain(scene, { x0 = -90, z0 = -90, x1 = MAP_W + 90, z1 = 
   m.receiveShadow = true; m.frustumCulled = false; scene.add(m);
   /* 고동하 물낯 · 빈터 옆 샘 */
   const wm = new THREE.MeshStandardMaterial({ color: 0x6f93b4, roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.85 });
-  const river = []; for (const P of [VALLEYS.godong]) for (let i = 0; i < P.length - 1; i++) { const a = P[i], b = P[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]); const pl = new THREE.Mesh(new THREE.PlaneGeometry(9, L + 6), wm); pl.rotation.x = -Math.PI / 2; pl.rotation.z = -Math.atan2(b[0] - a[0], b[1] - a[1]); pl.position.set((a[0] + b[0]) / 2, (a[3] + b[3]) / 2 + 0.35, (a[1] + b[1]) / 2); scene.add(pl); river.push(pl); }
+  /* 고동하 물낯: 물줄기 꺾은선을 따라 띠 하나(땅 높이를 따라) */
+  const river = []; { const P = VALLEYS.godong, pos = [], idx = []; let n = 0;
+    for (let i = 0; i < P.length - 1; i++) { const a = P[i], b = P[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]), steps = Math.ceil(L / 3), nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
+      for (let j = (i ? 1 : 0); j <= steps; j++) { const t = j / steps, x = lerp(a[0], b[0], t), z = lerp(a[1], b[1], t), y = H(x, z) + 0.22; pos.push(x + nx * 4.2, y, z + nz * 4.2, x - nx * 4.2, y, z - nz * 4.2); if (n) { const q = (n - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); } n++; } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); wm.side = THREE.DoubleSide; const m = new THREE.Mesh(g, wm); m.receiveShadow = true; scene.add(m); river.push(m); }
   return { mesh: m, grid: GRID };
 }
 
@@ -140,22 +144,24 @@ export function groundFan(scene, x, z, r, a0, a1, color, opacity = 0.3) {
 /* ───── 숲: 가까운 곳(백운평)은 블렌더 나무, 먼 곳은 값싼 나무 ───── */
 export function plantForest(scene, { avoid = () => false, seed = 1920, lite = false } = {}) {
   const r = rng(seed), near = { cs_birch: [], cs_birch_b: [], cs_larch: [], cs_spruce: [], cs_spruce_snow: [], cs_bush_dry: [], cs_grass_dry: [] }, far = { gold: [], dark: [], grey: [] }, put = [];
-  const okTree = (x, z) => { const h = Hq(x, z), [d, vp] = mainD(x, z), w = Math.abs(d); if (w < Math.max(12, vp[2] + 3) && x < 650) return false; if (h > 50) return false; if (slopeAt(x, z) > 1.5) return false; if (avoid(x, z)) return false; return true; };
+  const okTree = (x, z) => { const h = Hq(x, z), [d, vp] = mainD(x, z), w = Math.abs(d); if (w < Math.max(12, vp[2] + 3) && x < 650) return false; { const [dg, gp] = nearest(VSEG.godong, x, z); if (Math.abs(dg) < gp[2] + 2) return false; } if (h > 50) return false; if (slopeAt(x, z) > 1.5) return false; if (avoid(x, z)) return false; return true; };
   /* 가까운 숲: 놀이 터(백운평 · 어랑촌 고지 …) — 블렌더 나무 */
-  const NEAR = [[-20, 90, 300, 260, lite ? 900 : 1700], [470, 40, 660, 268, lite ? 450 : 900]];
+  const NEAR = [[-20, 90, 300, 260, lite ? 800 : 1500], [470, 40, 660, 268, lite ? 400 : 800], [-10, 262, 600, 390, lite ? 600 : 1300]];
   const inNear = (x, z) => NEAR.some((q) => x > q[0] && x < q[2] && z > q[1] && z < q[3]);
   for (const [nx0, nz0, nx1, nz1, nNear] of NEAR) for (let i = 0, tries = 0; i < nNear && tries < nNear * 8; tries++) { const x = nx0 + r() * (nx1 - nx0), z = nz0 + r() * (nz1 - nz0); if (!okTree(x, z)) continue; const h = Hq(x, z), up = h - floorAt(x, z), cl = fbm(x / 30, z / 30);
     if (up < 3 && r() < 0.8) continue; if (cl < 0.42 && r() < 0.75) continue;   /* 숲은 덩어리지게 */
     const nm = h > 34 ? (r() < 0.6 ? 'cs_spruce_snow' : 'cs_spruce') : up > 14 ? ['cs_spruce', 'cs_larch', 'cs_birch', 'cs_larch'][Math.floor(r() * 4)] : ['cs_birch', 'cs_birch_b', 'cs_larch', 'cs_birch'][Math.floor(r() * 4)];
-    near[nm].push([x, h - 0.15, z, 0.75 + r() * 0.5, r() * 6.28]); put.push([x, z]); i++; }
-  for (let i = 0, tries = 0; i < (lite ? 650 : 1400) && tries < 12000; tries++) { const q = r() < 0.8 ? [-10, 100, 290, 150] : [480, 60, 160, 110], x = q[0] + r() * q[2], z = q[1] + r() * q[3]; if (avoid(x, z)) continue; const [d] = mainD(x, z); if (Math.abs(d) < 4.5) continue; const h = Hq(x, z); if (h > 40) continue; (r() < 0.62 ? near.cs_grass_dry : near.cs_bush_dry).push([x, h - 0.05, z, 0.7 + r() * 0.7, r() * 6.28]); }
+    near[nm].push([x, h - 0.15, z, 0.75 + r() * 0.5, r() * 6.28, NEAR.findIndex((q) => x > q[0] && x < q[2] && z > q[1] && z < q[3])]); put.push([x, z]); i++; }
+  for (let i = 0, tries = 0; i < (lite ? 650 : 1400) && tries < 12000; tries++) { const q = r() < 0.8 ? [-10, 100, 290, 150] : [480, 60, 160, 110], x = q[0] + r() * q[2], z = q[1] + r() * q[3]; if (avoid(x, z)) continue; const [d] = mainD(x, z); if (Math.abs(d) < 4.5) continue; const h = Hq(x, z); if (h > 40) continue; (r() < 0.62 ? near.cs_grass_dry : near.cs_bush_dry).push([x, h - 0.05, z, 0.7 + r() * 0.7, r() * 6.28, -1]); }
   /* 먼 숲: 나머지 판 전체(그림자 없음) */
   for (let i = 0, tries = 0; i < (lite ? 2600 : 5200) && tries < 40000; tries++) { const x = -60 + r() * 760, z = -60 + r() * 480; if (inNear(x, z)) continue; if (!okTree(x, z)) continue; const h = Hq(x, z), cl = fbm(x / 34 + 5, z / 34); if (cl < 0.4 && r() < 0.8) continue;
     const k = h > 32 ? 'dark' : r() < 0.45 ? 'gold' : r() < 0.6 ? 'grey' : 'dark'; far[k].push([x, h - 0.2, z, 1.6 + r() * 1.4, r() * 6.28]); i++; }
   const out = {};
-  for (const nm in near) if (near[nm].length) { const shadow = !nm.includes('grass') && !nm.includes('bush'); out[nm] = artInst(scene, nm, near[nm], {}, { shadow }); }
+  /* 터마다 따로 그려 화면 밖 터는 건너뛴다(크롬북) — 인스턴스 경계 구를 다시 셈 */
+  const cull = (m) => { if (!m) return m; m.computeBoundingSphere(); m.frustumCulled = true; if (m.userData.glow) { m.userData.glow.computeBoundingSphere(); m.userData.glow.frustumCulled = true; } return m; };
+  for (const nm in near) { const shadow = !nm.includes('grass') && !nm.includes('bush'); const by = {}; for (const t of near[nm]) { const key = t[5] >= 0 ? 'r' + t[5] : 'g' + Math.floor(t[0] / 160) + '_' + Math.floor(t[2] / 120); (by[key] = by[key] || []).push(t); } for (const key in by) out[nm + key] = cull(artInst(scene, nm, by[key], {}, { shadow })); }
   const FT = { gold: { leaf: 0xd4a040, bark: 0x6a4a30 }, dark: { leaf: 0x2e4a3a, bark: 0x4a3a2a }, grey: { leaf: 0x8a8070, bark: 0x9a948a } };
-  for (const k in far) if (far[k].length) { const m = artInst(scene, 'cs_tree_far', far[k], FT[k], { shadow: false }); if (!m) { const g = new THREE.ConeGeometry(1.4, 5, 5); g.translate(0, 3, 0); const im = new THREE.InstancedMesh(g, new THREE.MeshLambertMaterial({ color: FT[k].leaf, flatShading: true }), far[k].length); const d = new THREE.Object3D(); far[k].forEach((t, i) => { d.position.set(t[0], t[1], t[2]); d.scale.setScalar(t[3]); d.rotation.set(0, t[4], 0); d.updateMatrix(); im.setMatrixAt(i, d.matrix); }); im.frustumCulled = false; scene.add(im); } }
+  for (const k in far) if (far[k].length) { const tiles = {}; for (const t of far[k]) { const key = Math.floor(t[0] / 200) + '_' + Math.floor(t[2] / 160); (tiles[key] = tiles[key] || []).push(t); } let m = null; for (const key in tiles) m = cull(artInst(scene, 'cs_tree_far', tiles[key], FT[k], { shadow: false })); if (!m) { const g = new THREE.ConeGeometry(1.4, 5, 5); g.translate(0, 3, 0); const im = new THREE.InstancedMesh(g, new THREE.MeshLambertMaterial({ color: FT[k].leaf, flatShading: true }), far[k].length); const d = new THREE.Object3D(); far[k].forEach((t, i) => { d.position.set(t[0], t[1], t[2]); d.scale.setScalar(t[3]); d.rotation.set(0, t[4], 0); d.updateMatrix(); im.setMatrixAt(i, d.matrix); }); im.frustumCulled = false; scene.add(im); } }
   return { near, far, put, out };
 }
 

@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, sayLine, controls, overBar, missions, loadArt, ART, art, artInst, tone, noise, resumeAudio, glowSprite, remember } from '../scene/kit.js';
 import { EORANG, GAPSAN } from './map.js';
+import { NODES } from './strat.js';
 import { MAP_W, MAP_H, H, Hq, floorAt, mainD, losClear, slopeAt, ZONES, buildTerrain, farRing, plantForest, mapImage, groundRing, groundFan } from './map.js';
 import { makeArmy, makeFx, smokeColumn, path } from './enemy.js';
 import { makePeople } from './people.js';
@@ -14,11 +15,12 @@ import ch0 from './ch0.js';
 import ch1 from './ch1.js';
 import ch3 from './ch3.js';
 import ch4 from './ch4.js';
+import ch5 from './ch5.js';
 
 const Q = new URLSearchParams(location.search);
 const MUTE = Q.get('mute') === '1', SEED = +(Q.get('seed') || 1920), LITE = Q.get('lite') === '1' || (navigator.hardwareConcurrency || 8) <= 4;
 /* 장은 이야기 차례(0 앞날 · 1 백운평 · 2 완루구 · 3 천수평 · 4 어랑촌 · 5 쫓기는 길 · 6 고동하). 아직 없는 장은 null — 건너뛴다 */
-const CHAPTERS = [ch0, ch1, null, ch3, ch4], TITLES = ['앞날 · 10월 20일', '첫날 · 10월 21일 백운평', '첫날 밤 · 완루구', '둘째 날 새벽 · 천수평', '둘째 날 · 어랑촌', '셋째~넷째 날 · 쫓기는 길', '닷새째 밤 · 고동하'], SAVE_KEY = 'kworld_cheongsan_save_v1';
+const CHAPTERS = [ch0, ch1, null, ch3, ch4, ch5], TITLES = ['앞날 · 10월 20일', '첫날 · 10월 21일 백운평', '첫날 밤 · 완루구', '둘째 날 새벽 · 천수평', '둘째 날 · 어랑촌', '셋째~넷째 날 · 쫓기는 길', '닷새째 밤 · 고동하'], SAVE_KEY = 'kworld_cheongsan_save_v1';
 
 /* ───── 화면 ───── */
 const { canvas, renderer, scene, cam, resize } = stage({ fog: [0xd8d0bc, 120, 520], exposure: 1.05, fov: 40 });
@@ -37,8 +39,9 @@ const sky = farRing(scene, 7);
 const CLEAR = [[40, 150, 92, 194], [166, 173, 194, 198], [229, 126, 244, 140], [249, 130, 263, 144]];   /* 빈터 · 신호 자리에서 길까지 · 망바위 · 옆 바위 */   /* 빈터(야영지) — 나무를 두지 않는다 */
 const NO_TREE = [];
 const segDist = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / L2, 0, 1); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+const godongClear = (x, z) => [3, 5, 7, 9].some((i) => dist(x, z, NODES[i][0], NODES[i][1] - 14) < 20) || (x > 222 && x < 262 && z > 318 && z < 348);   /* 장 5 사이 장면 자리 · 거짓 불 자리 */
 const eorangClear = (x, z) => dist(x, z, EORANG.hq[0], EORANG.hq[1]) < 24 || EORANG.spurs.some(([a, b]) => segDist(x, z, a, b) < 9) || (x > 552 && x < 580 && z > 150 && z < 170);   /* 어랑촌 고지: 지휘소·능선 등성이·주먹밥 길 */   /* 장이 비워 둘 자리 [x, z, r] — 아래에서 장이 채운다 */
-const forest = plantForest(scene, { seed: SEED, lite: LITE, avoid: (x, z) => CLEAR.some((r) => x > r[0] && x < r[2] && z > r[1] && z < r[3]) || NO_TREE.some((p) => dist(x, z, p[0], p[1]) < p[2]) || eorangClear(x, z) || [[110, 148, 0], [136, 148.5, 0], [222, 148, 0], [120, 192, 0], [176, 192, 0], [226, 192, 0], [236, 133, 0], [256, 137, 0], [248, 176, 0], [176, 189, 0]].some((p) => dist(x, z, p[0], p[1]) < 4.2) });
+const forest = plantForest(scene, { seed: SEED, lite: LITE, avoid: (x, z) => CLEAR.some((r) => x > r[0] && x < r[2] && z > r[1] && z < r[3]) || NO_TREE.some((p) => dist(x, z, p[0], p[1]) < p[2]) || eorangClear(x, z) || godongClear(x, z) || [[110, 148, 0], [136, 148.5, 0], [222, 148, 0], [120, 192, 0], [176, 192, 0], [226, 192, 0], [236, 133, 0], [256, 137, 0], [248, 176, 0], [176, 189, 0]].some((p) => dist(x, z, p[0], p[1]) < 4.2) });
 /* 숲 그늘: 8 m 칸마다 나무 수(들킴이 덜 오른다) */
 const FG = new Uint8Array(Math.ceil(MAP_W / 8) * Math.ceil(MAP_H / 8)); for (const [x, z] of forest.put) { const i = Math.floor(x / 8), j = Math.floor(z / 8); if (i >= 0 && j >= 0 && i < MAP_W / 8 && j < MAP_H / 8) FG[j * Math.ceil(MAP_W / 8) + i] = Math.min(255, FG[j * Math.ceil(MAP_W / 8) + i] + 1); }
 const forestAt = (x, z) => { const i = Math.floor(x / 8), j = Math.floor(z / 8); return i >= 0 && j >= 0 && i < MAP_W / 8 && j < MAP_H / 8 ? FG[j * Math.ceil(MAP_W / 8) + i] : 0; };
@@ -196,7 +199,7 @@ function misHead() { const h = mis.card.firstElementChild, req = TL.filter((t) =
 
 /* ───── 장 넘기기 · 저장 ───── */
 function ctxFor() { return { THREE, scene, cam, S, H: Hq, floorAt, mainD, losClear, slopeAt, forestAt, say, cmd, card, band, pad, pads, put, choose, closeChoice, SFX, army, fx, ppl, me, path, smokeColumn, groundRing, groundFan, art, artInst, putArt, ART, exposure, setCrouch, sky, sun, hemi, MUTE, NO_TREE,
-  addTarget: (g) => { targets.push(g); return g; }, endChapter, choosing: () => !!choiceFns, get targets() { return targets; } }; }
+  mapImg: MIMG, SEED, addTarget: (g) => { targets.push(g); return g; }, endChapter, choosing: () => !!choiceFns, get targets() { return targets; } }; }
 function startChapter(i, fromSave) {
   S.ch = i; S.cht = 0; S.det = 0; S.detOn = false; S.said = {}; S.chLog = []; S.workT = 0; S.workKey = ''; S.camLift = 0; S.view = 0; S.zoom = 1; setCrouch(false); setScope(false); closeChoice();
   army.reset(); ppl.clear(); clearPads(); targets = []; $('spot').style.display = 'none'; S.mode = 'play'; if (CH && CH.dispose) CH.dispose();
@@ -254,6 +257,8 @@ function update(dt) {
   S.jobLabel = j ? (S.moving ? j.label + ' — 가만히 서기' : j.label) : '';
   overBar($('work'), cam, S.px, Hq(S.px, S.pz) + 2.6, S.pz, j && S.workT > 0.05 ? S.workT / j.need : null);
   if (j && S.workT >= j.need) { S.workT = 0; S.workKey = ''; j.fn(); refreshTasks(); }
+  /* 배고픔 80 넘음: 부대 띠가 샌다(설계 1-1) */
+  if (S.band.hunger > 80) { S.leakT = (S.leakT || 0) + dt; if (S.leakT > 40) { S.leakT = 0; band('troop', -1, '배고픔', true); } }
   /* 들킴 */
   const de = $('det'); de.style.display = S.detOn ? 'block' : 'none'; if (S.detOn) { de.querySelector('i').style.width = clamp(S.det, 0, 100) + '%'; de.className = S.det > 75 ? 'hot' : S.det > 50 ? 'warn' : ''; de.querySelector('.l').textContent = S.det >= 100 ? '! 들켰다' : S.det > 50 ? '? 적이 이쪽을 본다 — 엎드려!' : S.crouch ? '들킴 — 엎드려 있다' : '들킴'; }
   /* 심장 박자: 조임 */
