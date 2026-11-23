@@ -12,6 +12,32 @@ for n, c in [('stone', 0x9a968c), ('stone_d', 0x7c786e), ('stone_l', 0xb4b0a4), 
              ('plaster', 0xe8dcc0), ('red', 0xb0302a), ('cloth', 0xf0e8d4), ('cloth_b', 0x3a5a9a), ('paper', 0xf4ecd6), ('ink', 0x2a2a2a), ('water', 0x5aa6e0), ('rope', 0x7a5a32), ('flower', 0xf4d04a), ('flower_p', 0xe888b0)]:
     mat(n, c)
 R = random.Random(23)
+mat('dark', 0x2a2420)
+
+
+def sgnpow(v, p):
+    return math.copysign(abs(v) ** p, v)
+
+
+def thatch_roof(b, w, d, z0, h, over=0.5, m='straw', m2='straw_d', seg=18, y0=0.0):
+    """둥근 우진각 초가지붕(make_build 의 초가와 같은 결): 처마는 처지고 용마루는 x 로 길다, 이엉을 묶은 새끼줄, 처마 밑 그늘."""
+    prof = [(0.0, -0.16), (0.1, 0.0), (0.45, 0.5), (0.8, 0.86), (1.0, 1.0)]
+    ridge = max(0.25, (w - d) / 2 + 0.25)
+
+    def fn(u, v):
+        a = u * 2 * math.pi
+        i = min(int(v * (len(prof) - 1)), len(prof) - 2)
+        t = v * (len(prof) - 1) - i
+        k = prof[i][0] + (prof[i + 1][0] - prof[i][0]) * t
+        zz = prof[i][1] + (prof[i + 1][1] - prof[i][1]) * t
+        rx = (w / 2 + over) * (1 - k) + ridge * k
+        ry = (d / 2 + over) * (1 - k) + 0.12 * k
+        return (rx * sgnpow(math.cos(a), 0.62), y0 + ry * sgnpow(math.sin(a), 0.62), z0 + h * zz)
+    b.grid(seg, 8, fn, m, jit=0.1)
+    b.box((ridge * 2 + 0.5, 0.34, 0.16), (0, y0, z0 + h + 0.02), m2, bevel=0.05, jit=0.06)
+    for i in range(-2, 3):
+        b.box((0.07, d * 0.9, 0.05), (i * ridge * 0.42, y0, z0 + h * 0.99), m2, jit=0.05, f=lambda v: Vector((v.x, v.y, v.z - 1.1 * h * (abs(v.y - y0) / (d / 2 + over)) ** 1.6 * 0.35)))
+    b.box((w + over * 1.5, d + over * 1.5, 0.06), (0, y0, z0 - 0.08), 'dark')
 
 
 # ── 돌담 한 칸(4m) · 모서리 돌 ──
@@ -79,8 +105,7 @@ for (x, y) in [(-1.7, -1.2), (1.7, -1.2), (-1.7, 1.2), (1.7, 1.2)]:
     b.cone(0.1, 0.09, 2.0, (x, y, 1.0), 'wood_d', seg=6)
 b.box((3.5, 0.12, 1.5), (0, 1.2, 0.85), 'mud', bevel=0.03); b.box((0.12, 2.4, 1.5), (-1.7, 0, 0.85), 'mud', bevel=0.03)
 b.box((3.4, 0.08, 0.08), (0, -1.2, 0.9), 'wood'); b.box((3.4, 0.08, 0.08), (0, -1.2, 0.45), 'wood')
-b.prism([(-2.2, 1.95), (0, 2.75), (2.2, 1.95), (2.2, 2.1), (0, 2.95), (-2.2, 2.1)], 3.2, (0, 0, 0), 'straw', jit=0.08)
-b.box((4.5, 3.3, 0.1), (0, 0, 2.0), 'straw_d', bevel=0.03)
+thatch_roof(b, 3.5, 2.5, 1.95, 1.0, over=0.4)
 b.box((1.4, 0.5, 0.3), (0.6, -0.6, 0.3), 'wood', bevel=0.04); b.box((1.2, 0.34, 0.1), (0.6, -0.6, 0.45), 'straw')
 b.done('oeyanggan', smooth=0, shade=(0.7, 1.08))
 
@@ -91,25 +116,7 @@ for row in range(3):
         b.cone(0.11, 0.11, 1.5, (-0.6 + i * 0.24 + row * 0.12, 0, 0.12 + row * 0.2), 'wood' if (i + row) % 2 else 'wood_l', seg=6, rot=(1.5708, 0, 0), jit=0.12)
 b.done('namutdan', smooth=0, shade=(0.74, 1.08))
 
-# ── 감나무(가을엔 감이 달린다 — 잎과 감은 따로: 철마다 켜고 끈다) ──
-def trunk(b, h, r, bend=0.25, m='wood_d'):
-    for i in range(5):
-        t = i / 5; b.cone(r * (1 - t * 0.5), r * (1 - (t + 0.2) * 0.5), h / 5 + 0.05, (math.sin(t * 2.2) * bend, math.cos(t * 3) * bend * 0.4, h * (t + 0.1)), m, seg=6, rot=(0.0, 0.12 * math.cos(t * 2.2), 0))
-b = B(); trunk(b, 2.6, 0.22)
-BR = [(0.9, 0.3, 3.0), (-0.8, 0.5, 3.2), (0.2, -0.9, 3.3), (-0.3, 0.1, 3.9), (0.9, -0.6, 3.7)]
-for (x, y, z) in BR:
-    b.cone(0.09, 0.05, 1.3, (x * 0.55, y * 0.55, z - 0.5), 'wood_d', seg=5, rot=(-y * 0.6, x * 0.6, 0))
-b.done('gam_trunk', smooth=0, shade=(0.7, 1.05))
-b = B()
-for (x, y, z) in BR:
-    b.ball(0.95, (x, y, z), 'leaf' if (x > 0) else 'leaf_d', sub=1, scale=(1.1, 1.1, 0.75), jit=0.14)
-b.ball(0.8, (0.1, 0.0, 4.3), 'leaf_l', sub=1, scale=(1, 1, 0.7), jit=0.14)
-b.done('gam_leaf', smooth=0, shade=(0.72, 1.12))
-b = B()
-for i in range(22):
-    (x, y, z) = BR[i % 5]; a = R.random() * 6.28; rr = 0.5 + R.random() * 0.55
-    b.ball(0.2, (x + math.cos(a) * rr, y + math.sin(a) * rr, z - 0.2 - R.random() * 0.5), 'persim', sub=1, jit=0.1)
-b.done('gam_fruit', smooth=30, shade=(0.85, 1.1))
+# (감나무는 make_farmtree.py — 가지와 잎 뭉치가 보이게 다시 만듦)
 
 # ── 정자나무(큰 느티나무) · 평상 ──
 b = B()
@@ -122,7 +129,9 @@ for (x, y, z) in ZB:
 b.done('jeongja_trunk', smooth=0, shade=(0.68, 1.05))
 b = B()
 for i, (x, y, z) in enumerate(ZB):
-    b.ball(2.1, (x, y, z), ['leaf', 'leaf_d', 'leaf_l'][i % 3], sub=1, scale=(1.15, 1.15, 0.7), jit=0.16)
+    b.ball(1.5, (x, y, z), ['leaf', 'leaf_d', 'leaf_l'][i % 3], sub=1, scale=(1.15, 1.15, 0.72), jit=0.16)
+    for k in range(4):
+        a = k * 1.57 + i; b.ball(0.95, (x + math.cos(a) * 1.15, y + math.sin(a) * 1.15, z - 0.15 + (k % 2) * 0.35), ['leaf_d', 'leaf_l', 'leaf'][(i + k) % 3], sub=1, scale=(1.1, 1.1, 0.7), jit=0.16)   # 잎 뭉치 사이로 가지가 비치게
 b.done('jeongja_leaf', smooth=0, shade=(0.66, 1.14))
 b = B()
 b.box((2.6, 1.8, 0.08), (0, 0, 0.5), 'wood_l', bevel=0.02)
@@ -157,7 +166,7 @@ b.done('seopdari', smooth=0, shade=(0.7, 1.08))
 # ── 물레방아(바퀴는 따로 — 돌린다) ──
 b = B()
 b.box((3.2, 2.8, 2.0), (0, 1.6, 1.0), 'mud', bevel=0.05); b.box((3.0, 0.1, 1.2), (0, 0.18, 1.0), 'wood', bevel=0.02)
-b.prism([(-2.1, 2.0), (0, 3.1), (2.1, 2.0), (2.1, 2.16), (0, 3.3), (-2.1, 2.16)], 3.4, (0, 1.6, 0), 'straw', jit=0.08)
+thatch_roof(b, 3.2, 2.8, 2.0, 1.15, over=0.45, y0=1.6)
 b.cone(0.14, 0.14, 1.6, (0, -0.5, 1.5), 'wood_d', seg=8, rot=(1.5708, 0, 0))
 for y in (-1.25, -0.25):
     b.box((0.22, 0.22, 1.5), (0, y, 0.75), 'wood_d', bevel=0.03)
@@ -179,8 +188,7 @@ b.box((6.0, 3.6, 2.1), (0, 0, 1.35), 'plaster', bevel=0.04)
 for x in (-3.0, -1.0, 1.0, 3.0):
     b.box((0.2, 0.2, 2.2), (x, -1.82, 1.4), 'wood_d', bevel=0.02)
 b.box((1.5, 0.06, 1.5), (-1.9, -1.84, 1.25), 'wood', bevel=0.02); b.box((1.5, 0.06, 1.0), (1.9, -1.84, 1.6), 'paper', bevel=0.02)
-b.prism([(-3.8, 2.3), (0, 3.9), (3.8, 2.3), (3.8, 2.5), (0, 4.15), (-3.8, 2.5)], 5.0, (0, 0, 0), 'straw', jit=0.08)
-b.box((7.8, 5.2, 0.12), (0, 0, 2.36), 'straw_d', bevel=0.04)
+thatch_roof(b, 6.0, 3.6, 2.3, 1.55, over=0.6, seg=22)
 b.box((2.4, 1.6, 0.5), (3.9, -1.4, 0.25), 'mud', bevel=0.08); b.lathe([(0.3, 0), (0.62, 0.2), (0.66, 0.45), (0.5, 0.5)], (3.9, -1.4, 0.45), 'ink', seg=10)   # 아궁이와 가마솥
 b.cone(0.06, 0.05, 4.4, (-3.9, -2.6, 2.2), 'wood_d', seg=6); b.box((0.04, 0.9, 1.3), (-3.9, -2.14, 3.6), 'cloth', jit=0.03); b.box((0.05, 0.5, 0.5), (-3.9, -2.14, 3.6), 'red')   # 술 깃발
 b.done('jumak', smooth=0, shade=(0.72, 1.08))

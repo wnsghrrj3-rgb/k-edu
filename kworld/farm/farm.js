@@ -8,9 +8,9 @@
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 우리 마을 → 가운데 들 → 동쪽 읍내 → 고개 너머 이웃 고을 장. 남쪽 강과 포구. */
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, ringsFx, people, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, loadArt, art, artGeo, artMat, artInst, scatter, missions } from '../scene/kit.js?v=5';
-await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset', 'beasts');   /* beasts = 움직이는 개·닭·소(tools/blender/make_beasts.py) */
+await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset', 'beasts', 'farmtree');   /* beasts = 움직이는 개·닭·소(tools/blender/make_beasts.py) */
 import { beastKit } from './beasts.js?v=1';
-import { makeLand, dikes, hAt } from './land.js?v=1';
+import { makeLand, dikes, hAt, lineDist, STREAM } from './land.js?v=2';
 /* 읽어 들인 farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
 
 const W = 380, H = 240;
@@ -41,9 +41,17 @@ const ROADS = [], YARDS = [];
 const road = (x0, z0, x1, z1) => ROADS.push([Math.min(x0, x1), Math.min(z0, z1), Math.max(x0, x1), Math.max(z0, z1)]);
 road(40, 140.5, 96, 144.5); road(92, 30, 98, 200); road(96, 140.5, 214, 144.5); road(214, 126, 380, 131); road(210, 60, 216, 144.5); road(258, 131, 264, 208);
 /* 판 밖 세 겹: 언덕 · 먼 마을 · 산 능선 */
-{ const g = new THREE.ConeGeometry(1, 1, 5); g.translate(0, 0.5, 0);
-  for (const [c, r0, n, h0] of [[0x8ea6b8, 300, 30, 34], [0xb7c6d6, 350, 22, 56]]) { const im = new THREE.InstancedMesh(g, new THREE.MeshLambertMaterial({ color: c, flatShading: true, fog: false }), n); for (let i = 0; i < n; i++) { const a = -3.4 + (i / (n - 1)) * 4.6 + drnd() * 0.05, r = r0 + drnd() * 18; _o.position.set(W / 2 + Math.cos(a) * r, -4, H / 2 + Math.sin(a) * r * 0.8); _o.scale.set(54 + drnd() * 30, h0 + drnd() * 30, 44 + drnd() * 20); _o.rotation.set(0, drnd() * 3, 0); _o.updateMatrix(); im.setMatrixAt(i, _o.matrix); } im.frustumCulled = false; scene.add(im); }
-  artInst(scene, 'thatch_a', [[-30, 60, 1.2, 1], [-44, 74, 1.2, 0.4], [150, -30, 1.2, 0], [170, -40, 1.2, 2], [410, 180, 1.2, 1]].map(([x, z, k, r]) => [x, hAt(x, z) - 0.3, z, k, r]), { wall: 0xd9c6a2 }, { shadow: false }); }
+/* 먼 산(준호 11-23 「배경도 실감 나게」): 능선 세 겹 — 가까울수록 짙고 멀수록 하늘빛에 묻힌다. 밑자락은 안개빛(골짜기 안개). 하늘 둥근 지붕 안쪽 */
+const RIDGES = []; { const ridge = (r, h0, h1, col, seed, n = 128) => { const pos = [], colr = [], idx = [], c0 = new THREE.Color(col); let h = (h0 + h1) / 2;
+    for (let i = 0; i <= n; i++) { const a = (i / n) * Math.PI * 2; h = clamp(h + (Math.sin(i * 0.9 + seed) * 0.6 + Math.sin(i * 0.23 + seed * 2) * 0.9 + (drnd() - 0.5) * 1.2) * (h1 - h0) * 0.12, h0, h1); const hh = i === n ? pos[4] : h;
+      pos.push(190 + Math.cos(a) * r, -20, 110 + Math.sin(a) * r, 190 + Math.cos(a) * r, hh, 110 + Math.sin(a) * r); colr.push(1, 1, 1, 0, 0, 0); if (i < n) { const b = i * 2; idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3)); g.setIndex(idx);
+    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false })); m.userData = { c0, r }; m.renderOrder = -1; scene.add(m); RIDGES.push(m); return m; };
+  ridge(1000, 60, 170, 0xa8b8c4, 3); ridge(860, 40, 120, 0x8ea4a8, 7); ridge(720, 24, 80, 0x6f8c78, 11); }
+/* 능선 빛: 철·하늘빛에 맞춰 — 멀수록 하늘(안개)빛, 밑자락은 안개 */
+function paintRidges(haze) { RIDGES.forEach((m, k) => { const ca = m.geometry.attributes.color, top = m.userData.c0.clone().lerp(haze, [0.55, 0.38, 0.22][k]), bot = haze.clone(); for (let i = 0; i < ca.count; i += 2) { ca.setXYZ(i, bot.r, bot.g, bot.b); ca.setXYZ(i + 1, top.r, top.g, top.b); } ca.needsUpdate = true; }); }
+paintRidges(new THREE.Color(0xdfe8e4));
+{ artInst(scene, 'thatch_a', [[-30, 60, 1.2, 1], [-44, 74, 1.2, 0.4], [150, -30, 1.2, 0], [170, -40, 1.2, 2], [410, 180, 1.2, 1]].map(([x, z, k, r]) => [x, hAt(x, z) - 0.3, z, k, r]), { wall: 0xd9c6a2 }, { shadow: false }); }
 /* 고개(이웃 고을 가는 길): 양쪽 언덕 사이 좁은 길 */
 /* (고개 양쪽 언덕은 land.js 지형이 솟아서 만든다) */
 const passGate = art('hongsal') || box(8, 5, 0.4, 0xb0302a); passGate.position.set(PASS[0], 0, PASS[1] + 0.5); passGate.rotation.y = Math.PI / 2; scene.add(passGate);
@@ -61,7 +69,27 @@ artInst(scene, 'shop', [[234, 0, 128, 1, 1.57], [268, 0, 126, 1, -1.57]], {}, {}
 artInst(scene, 'thatch_b', [[232, 0, 150, 1, 0.3], [272, 0, 148, 1, -0.4], [284, 0, 130, 1, 1.2], [226, 0, 110, 1, 0.8], [290, 0, 150, 1, 0.2]], { wall: 0xd9c6a2 }, {});
 artInst(scene, 'stall', [[340, 0, 120, 1, 0], [350, 0, 120, 1, 0], [346, 0, 138, 1, 3.14]], {}, {}); artInst(scene, 'thatch_a', [[334, 0, 108, 1, 0.5], [360, 0, 112, 1, -0.3], [362, 0, 140, 1, 0.9], [332, 0, 148, 1, 0.2]], { wall: 0xd2bc94 }, {}); putArt('goods_tob', 350, 121.5); putArt('goods_cloth', 340, 121.5);
 putArt('dock', PORT[0], PORT[1] + 5); const ship = putArt('ferry', PORT[0] + 6, PORT[1] + 12, 0.3, 1.4); putArt('sack_pile', PORT[0] - 5, PORT[1] - 1); putArt('barrel', PORT[0] + 5, PORT[1] - 1);
-scatter(scene, drnd, { area: [0, 20, 380, 212], n: 150, names: ['tree_a', 'tree_b', 'pine_a', 'bush', 'rock_a', 'pine_k', 'bush', 'tree_a'], avoid: (x, z) => (x > 96 && x < 222 && z > 40 && z < 200) || (x > 14 && x < 96 && z > 96 && z < 206) || (x > 216 && x < 296 && z > 52 && z < 212) || (x > 324 && x < 372 && z > 98 && z < 156) || Math.abs(z - 128.5) < 7 || Math.abs(z - 142.5) < 5, scale: [1.0, 1.7], minGap: 6, shadow: true, y: (x, z) => hAt(x, z) - 0.05 });
+/* 나무(준호 11-23 「좀 더 정교하게」): 고르게 흩던 것을 숲 덩이로 모아 심는다 — 소나무 숲(가지·솔잎 구름이 보이는 farmtree 모델), 느티나무·떨기 섞임,
+   개울가엔 버드나무 줄, 놀이 넓이 밖 산비탈엔 숲(멀어서 가벼운 모델·그림자 없음). 잎이 따로인 나무는 철마다 물들고 겨울엔 잎이 진다(LEAFS). */
+const treeAvoid = (x, z) => (x > 96 && x < 222 && z > 40 && z < 200) || (x > 14 && x < 96 && z > 96 && z < 206) || (x > 216 && x < 296 && z > 52 && z < 212) || (x > 324 && x < 372 && z > 98 && z < 156) || Math.abs(z - 128.5) < 7 || Math.abs(z - 142.5) < 5 || lineDist(x, z, STREAM)[0] < 6.5 || (Math.abs(x - 95) < 4);
+const LEAFS = [];
+{ const T = { ft_pine: [], ft_pine2: [], zel: [], ft_bush: [], rock_a: [], wil: [] }, put = [];
+  const ok = (x, z, gap) => !treeAvoid(x, z) && !put.some((q) => Math.abs(q[0] - x) < gap && Math.abs(q[1] - z) < gap);
+  for (let c = 0; c < 17; c++) { const cx = 4 + drnd() * 372, cz = 20 + drnd() * 190, pineLand = cz < 60 || cx > 296 || cx < 14; let n = 3 + Math.floor(drnd() * 5);
+    for (let i = 0; i < n * 3 && n > 0; i++) { const a = drnd() * 6.28, r = Math.sqrt(drnd()) * 11, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (!ok(x, z, 3.6)) continue; n--; put.push([x, z]);
+      const k = drnd(), nm = pineLand ? (k < 0.45 ? 'ft_pine' : k < 0.8 ? 'ft_pine2' : k < 0.92 ? 'ft_bush' : 'rock_a') : (k < 0.3 ? 'ft_pine' : k < 0.5 ? 'zel' : k < 0.62 ? 'ft_pine2' : k < 0.86 ? 'ft_bush' : 'rock_a');
+      T[nm].push([x, hAt(x, z) - 0.05, z, (nm === 'zel' ? 0.75 : nm === 'rock_a' ? 1.2 : 0.85) + drnd() * 0.4, drnd() * 6.28]); } }
+  /* 개울가 버드나무: 물가를 따라 드문드문 */
+  for (let x = 66; x < 250; x += 9 + drnd() * 12) { const z = drnd() < 0.5 ? 39.4 - drnd() * 1.5 : 53.6 + drnd() * 1.5; if ((Math.abs(x - 95) < 6) || Math.abs(x - 150) < 9 || Math.abs(x - 118) < 5 || (z > 52 && x > 104 && x < 216)) continue; T.wil.push([x, hAt(x, z), z, 0.85 + drnd() * 0.35, drnd() * 6.28]); }
+  T.wil.push([60, 0, 126, 1, 0.4], [100, 0, 120, 0.95, 2]);
+  for (const nm of ['ft_pine', 'ft_pine2', 'ft_bush', 'rock_a']) artInst(scene, nm, T[nm], {}, { shadow: true });
+  artInst(scene, 'ft_zel_trunk', T.zel, {}, { shadow: true }); const zl = artInst(scene, 'ft_zel_leaf', T.zel, {}, { shadow: true }); if (zl) LEAFS.push([zl, 'ft_zel_leaf', 'zel']);
+  artInst(scene, 'ft_wil_trunk', T.wil, {}, { shadow: true }); const wl = artInst(scene, 'ft_wil_leaf', T.wil, {}, { shadow: true }); if (wl) LEAFS.push([wl, 'ft_wil_leaf', 'wil']);
+  /* 판 밖 산비탈 숲: 언덕마다 덩이로 */
+  const F = { pine_a: [], pine_b: [], tree_b: [] };
+  for (let c = 0; c < 46; c++) { let cx, cz; const side = c % 4; if (side === 0) { cx = -150 + drnd() * 680; cz = -150 + drnd() * 150; } else if (side === 1) { cx = -200 + drnd() * 190; cz = drnd() * 260; } else if (side === 2) { cx = 392 + drnd() * 200; cz = drnd() * 260; } else { cx = -150 + drnd() * 680; cz = 292 + drnd() * 120; }
+    const n = 5 + Math.floor(drnd() * 8); for (let i = 0; i < n; i++) { const a = drnd() * 6.28, r = Math.sqrt(drnd()) * 16, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; const k = drnd(), nm = k < 0.5 ? 'pine_a' : k < 0.8 ? 'pine_b' : 'tree_b'; F[nm].push([x, hAt(x, z) - 0.2, z, 1.4 + drnd() * 1.1, drnd() * 6.28]); } }
+  for (const nm in F) artInst(scene, nm, F[nm], { leaf: 0x4e7a3a, bark: 0x5a4636 }, { shadow: false }); }
 artInst(scene, 'reed', Array.from({ length: 110 }, () => { const x = 70 + drnd() * 180, z = 40.4 + drnd() * 2.6 + (drnd() < 0.5 ? 9.2 : 0); return [x, hAt(x, z), z, 0.8 + drnd() * 0.6, drnd() * 6]; }), {}, { shadow: false });
 
 /* ───── 고을 꾸미기(준호 11-23 「블렌더로 디자인 해 보자」) — farmset.glb(tools/blender/make_farmset.py).
@@ -73,7 +101,7 @@ function wallRun(name, x0, z0, x1, z1, block = true) { const along = Math.abs(x1
   if (block) WALLS.push([Math.min(x0, x1) - (along ? 0 : 0.45), Math.max(x0, x1) + (along ? 0 : 0.45), Math.min(z0, z1) - (along ? 0.45 : 0), Math.max(z0, z1) + (along ? 0.45 : 0), name !== 'gwana_dam']); }   /* 다섯째 = 낮은 담(넘어간다 — 느려질 뿐 막히지 않는다) */
 const yard = (x0, z0, x1, z1, c) => YARDS.push([x0, z0, x1, z1, c]);
 const SEASON_LEAF = [], SEASON_FRUIT = [];
-function gam(x, z, s = 1, ry = 0) { const a = putArt('gam_trunk', x, z, ry, s), b = putArt('gam_leaf', x, z, ry, s), c = putArt('gam_fruit', x, z, ry, s); if (b) SEASON_LEAF.push(b); if (c) SEASON_FRUIT.push(c); }
+function gam(x, z, s = 1, ry = 0) { const a = putArt('gam_trunk', x, z, ry, s), b = putArt('gam_leaf', x, z, ry, s), c = putArt('gam_fruit', x, z, ry, s); if (b) LEAFS.push([b, 'gam_leaf', 'gam']); if (c) SEASON_FRUIT.push(c); }
 /* 우리 집 */
 yard(33, 136, 61, 162); wallRun('dam_stone', 33, 136, 61, 136); wallRun('dam_stone2', 33, 136, 33, 160); wallRun('ul_ssari', 61, 136, 61, 139.5); wallRun('ul_ssari', 61, 149, 61, 157);
 putArt('sarip', 61, 147.6, Math.PI / 2); putArt('jangdokdae', 37.5, 139.5, 0); putArt('oeyanggan', 57, 153.5, -Math.PI / 2); putArt('namutdan', 42, 137.4, 0); putArt('teotbat', 57, 167, 0, 0.9); gam(36, 157.5, 1.05, 1);
@@ -84,7 +112,7 @@ yard(73, 145, 91, 162, 0xc4ac7c); wallRun('ul_ssari', 73, 145, 73, 159); wallRun
 /* 마을 어귀: 정자나무와 평상 · 서낭당 */
 { const a = putArt('jeongja_trunk', 82, 128), b = putArt('jeongja_leaf', 82, 128); if (b) SEASON_LEAF.push(b); putArt('pyeongsang', 85.5, 130.5, 0.3); putArt('pyeongsang', 79, 131.5, -0.4); putArt('seonang', 101.5, 151, 1.2); }
 /* 개울: 섶다리(큰길이 건너는 곳) · 물레방아 */
-putArt('seopdari', 95, 46.5, Math.PI / 2); putArt('mulle_house', 118, 41.4, 0); const mulleWheel = putArt('mulle_wheel', 118, 41.4); if (mulleWheel) mulleWheel.position.set(118, 1.5, 41.9);
+putArt('seopdari', 95, 46.5, Math.PI / 2); putArt('mulle_house', 118, 41.4, 0); const mulleWheel = putArt('mulle_wheel', 118, 41.4); if (mulleWheel) mulleWheel.position.set(118, 1.05, 43.0);   /* 바퀴 아래가 개울물에 잠기게 */
 { const d = putArt('didimdol', 176, 46.5, Math.PI / 2, 1.6); if (d) { d.position.y = -0.3; d.scale.set(1.6, 4, 1.6); } }
 /* 읍내: 장터 바닥 · 주막 · 차일 가게 · 관아 담과 삼문 · 방 */
 yard(232, 112, 270, 146, 0xd2bc8c); putArt('jumak', 224, 139.5, Math.PI); putArt('chail_w', 264, 139, Math.PI); putArt('chail_b', 236, 138.5, Math.PI); putArt('chail_b', 264.5, 118, 0); putArt('chail_w', 236, 118.5, 0);
@@ -105,7 +133,11 @@ function routeTo(p) { if (!p) return p; const a = inGwana(S.px, S.pz), b = inGwa
   if (a && !b) return atGate ? [271, 116.5] : [271, 108]; if (!a && b) { if (atGate) return S.pz > 110.4 ? [271, 107.5] : p; p = [271, 116]; }
   for (const r of BLOCKS) { if (!segHits(S.px, S.pz, p[0], p[1], r, 0.8)) continue; let best = null, bd = 1e9; for (const c of [[r[0] - 2.5, r[2] - 2.5], [r[1] + 2.5, r[2] - 2.5], [r[0] - 2.5, r[3] + 2.5], [r[1] + 2.5, r[3] + 2.5]]) { if (dist(S.px, S.pz, c[0], c[1]) < 1.6 || segHits(S.px, S.pz, c[0], c[1], r, 0.6)) continue; const d = dist(S.px, S.pz, c[0], c[1]) + dist(c[0], c[1], p[0], p[1]) + (segHits(c[0], c[1], p[0], p[1], r, 0.8) ? 400 : 0); if (d < bd) { bd = d; best = c; } } if (best) return best; }
   return p; }
-function dressTick() { const sn = S.season; for (const m of SEASON_LEAF) m.visible = sn !== 3; for (const m of SEASON_FRUIT) m.visible = sn === 2; if (mulleWheel) mulleWheel.rotation.z = -S.t * 0.9; }
+/* 철마다 잎: 봄 연두 · 여름 짙은 초록(모델 색) · 가을 단풍(느티 붉은 갈색 · 감 주황 · 버들 노랑) · 겨울 잎 짐 */
+const LEAF_T = { zel: [{ leaf: 0x80c04c, leafd: 0x62a03c, leafl: 0xa4d468 }, {}, { leaf: 0xc8702c, leafd: 0xa25424, leafl: 0xe0a040 }], gam: [{ leaf: 0x7ab84a, leafd: 0x5c9a3a, leafl: 0x9ccc60 }, {}, { leaf: 0xd4642a, leafd: 0xb04a22, leafl: 0xe89a3a }], wil: [{ wil: 0xb4d868, wild: 0x94bc50 }, {}, { wil: 0xdccc58, wild: 0xc0aa44 }] };
+let leafSn = -1;
+function leafSeason(sn) { if (sn === leafSn) return; leafSn = sn; for (const [m, nm, k] of LEAFS) { m.visible = sn !== 3; if (sn < 3) { const g = artGeo(nm, LEAF_T[k][sn]); if (g) m.geometry = g; } } }
+function dressTick() { const sn = S.season; leafSeason(sn); for (const m of SEASON_LEAF) m.visible = sn !== 3; for (const m of SEASON_FRUIT) m.visible = sn === 2; if (mulleWheel) mulleWheel.rotation.z = -S.t * 0.9; }
 
 /* ───── 논 열넷 + 밭 둘 ───── */
 const COLX = [112, 138, 164, 190], ROWZ = [62, 92, 122, 152], PW = 22, PD = 26;
@@ -494,7 +526,7 @@ function touch() { const sn = S.season, c = S.carry;
 const cT = new THREE.Color(), cL = new THREE.Color(), tc = new THREE.Color(); 
 function lightFor() { const sn = S.season, d = S.drought && sn >= 1 && sn <= 2;
   const key = sn + '|' + d; if (key !== skyKey) { skyKey = key; const top = [0x6aa6e8, d ? 0x9ab0d0 : 0x5a9ae6, 0x6f9fe0, 0x9aa8ba][sn], low = [0xeaf2e0, d ? 0xf2e2b0 : 0xe6f0ea, 0xffe6b8, 0xe8ecf0][sn]; sky.paint(cT.set(top), cL.set(low)); scene.fog.color.set(low);
-    groundM.material.color.set([0xffffff, d ? 0xf0dc98 : 0xe4f0d8, 0xf8e0a4, 0xffffff][sn]); land.setSeason(sn); dikeM.userData.snow(sn === 3); waterSky.copy(cL).lerp(cT, 0.35); sun.intensity = [2.2, d ? 2.8 : 2.4, 2.0, 1.4][sn]; hemi.intensity = [1.3, 1.3, 1.2, 1.5][sn]; wx.m.visible = sn === 3; } }
+    groundM.material.color.set([0xffffff, d ? 0xf0dc98 : 0xe4f0d8, 0xf8e0a4, 0xffffff][sn]); land.setSeason(sn); dikeM.userData.snow(sn === 3); waterSky.copy(cL).lerp(cT, 0.35); paintRidges(cL.clone().lerp(cT, 0.15)); sun.intensity = [2.2, d ? 2.8 : 2.4, 2.0, 1.4][sn]; hemi.intensity = [1.3, 1.3, 1.2, 1.5][sn]; wx.m.visible = sn === 3; } }
 
 /* ───── 한 걸음 ───── */
 const COL = [[224, 139.5, 4.2], [118, 40, 2.6], [82, 128, 1.3], [57, 153.8, 0.1], [HOME[0], HOME[1] - 6, 4.6], [LORD[0], LORD[1] - 8, 6.5], [278, 94, 7], [NB.A.home[0], NB.A.home[1] - 5, 4], [NB.B.home[0], NB.B.home[1] - 5, 4.2], [NB.C.home[0], NB.C.home[1] - 5, 4], [64, 122, 1.6], [304, 86, 21], [304, 172, 21]];
@@ -633,12 +665,12 @@ function view() {
   if (S.mode === 'title' || S.mode === 'intro') { const k = S.mode === 'intro' ? clamp(S.introT / 4.4, 0, 1) : 0, e = k * k * (3 - 2 * k); cam.position.set(lerp(300, HOME[0] + 6, e), lerp(60, 26, e), lerp(190, HOME[1] + 36, e)); cam.lookAt(lerp(200, HOME[0], e), 2, lerp(110, HOME[1] - 10, e)); if (cam.fov !== 50) { cam.fov = 50; cam.updateProjectionMatrix(); } }
   else { /* 「기울어 보인다」(준호 11-20, 11-23 다시): 화각이 넓으면(46°·62°) 화면 가장자리의 논두렁·집·나무가 바깥으로 비스듬히 눕는다.
        위에서(기본) = 약 68° 내려다보기를 화각 24°로, 멀리서 — 보이는 넓이는 그대로. 지도(V 셋째) = 화각 22°로 아주 높이서 거의 바로 위(약 6°) — 온 고을이 화면에 꽉 차게 높이를 화면 비율로 셈 */
-    let farC = 400;
+    let farC = 1400;   /* 먼 능선(720~1000)까지 */
     if (S.view === 3) { const fov = 22, t = Math.tan(fov * Math.PI / 360), h = Math.max(272 / (2 * t), 404 / (2 * t * cam.aspect)); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } cam.position.lerp(v3.set(W / 2, h, H / 2 + 4 + h * 0.1), 0.12); cam.lookAt(W / 2, 0, H / 2 + 4); farC = h * 1.4; S.mapH = h; }
     const nearC = S.view === 3 ? Math.max(0.5, (S.mapH || 700) * 0.3) : 0.5; if (cam.near !== nearC) { cam.near = nearC; cam.updateProjectionMatrix(); }   /* 아주 높이서 볼 때 앞면 깊이를 넉넉히 — 강·모래톱이 줄무늬로 깜빡이던 것 */
     else followCam(cam, S, S.view === 4 ? { W, H, clampX: [-40, W + 40], clampZ: [0, H + 10], farH: [94, 118], farBk: [38, 48], farFov: 24 } : { W, H, clampX: [-40, W + 40], clampZ: [0, H + 10], farH: CAMV.h, farBk: CAMV.bk, farFov: CAMV.fov });   /* 11-23 준호 「좀 더 정교하게」: 기본은 비스듬히 낮게(집 옆면·처마·담 높이가 보이게) */
     if (cam.far !== farC) { cam.far = farC; cam.updateProjectionMatrix(); }
-    for (const m of skyMeshes) m.scale.setScalar(S.view === 3 ? Math.max(8, farC / 280) : 1.6); scene.fog.near = S.view === 3 ? farC : 175; scene.fog.far = S.view === 3 ? farC * 1.6 : 470;
+    for (const m of skyMeshes) m.scale.setScalar(S.view === 3 ? Math.max(8, farC / 280) : 4.2); scene.fog.near = S.view === 3 ? farC : 175; scene.fog.far = S.view === 3 ? farC * 1.6 : 470;
     const fx = Math.round(S.px / 4) * 4, fz = Math.round(S.pz / 4) * 4; sun.position.set(fx - 40, 64, fz + 30); sun.target.position.set(fx, 0, fz); }
   edgeGoal($('goal'), cam, v3.set(0, 0, 0).clone(), false, 0.82);
 }
@@ -655,7 +687,7 @@ $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode 
     b.onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'play'; loadGame(d); SFX.season(); }; } }
 canvas.addEventListener('pointerdown', () => { if (S.mode === 'intro') S.introT = 99; });
 runLoop((dt) => { update(dt); mis.update(dt, S.mode === 'play'); misHead(); }, view, () => renderer.render(scene, cam));
-window.__scene = { S, update, CAMV, redraw() { for (const p of plots) drawPlot(p); }, beasts: { dog, hens, oxS, oxM, cartM }, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, guideAt() { return curTask ? routeTo(curTask.at()) : null; }, get TL() { return TL; }, saveGame, readSave, loadGame,
+window.__scene = { S, update, CAMV, scene, redraw() { for (const p of plots) drawPlot(p); }, beasts: { dog, hens, oxS, oxM, cartM }, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, guideAt() { return curTask ? routeTo(curTask.at()) : null; }, get TL() { return TL; }, saveGame, readSave, loadGame,
   go() { $('go').click(); S.introT = 99; update(0.01); }, snap(n = 240) { const m = S.mode; if (m === 'title' || m === 'intro') S.mode = 'hold'; for (let i = 0; i < n; i++) view(); S.mode = m; }, info() { renderer.render(scene, cam); const r = renderer.info.render; return { calls: r.calls, tris: r.triangles }; }, view(n) { S.view = n; }, step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   next() { const b = document.querySelector('#ov button'); if (b && $('ov').style.display !== 'none') b.click(); },
   const: { HOME, GRAN, SEED, NURS, TOBS, DOOR, BO, LORD, TOWN, GWE, PAPER, OX, CLOTH, NEXT, PORT, PEDD, SLEN, P_OX, P_NB, P_LORD, P_PAPER } };
