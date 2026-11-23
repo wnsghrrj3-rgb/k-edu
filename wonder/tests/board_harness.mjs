@@ -25,7 +25,9 @@ async function open(viewport) {
   });
   page.on('console', m => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(`[${viewport.width}] ${m.text()}`); });
   page.on('pageerror', e => errors.push(`[${viewport.width}] ${e.message}`));
-  await page.goto(`http://wonder.test/wonder/${scene}/`); await page.waitForTimeout(700);
+  // 그림 판이 선 장면은 회색 판이 board.html 로 옮겨져 있다
+  const { existsSync } = await import('node:fs'); const hasBoard = existsSync(new URL(`../${scene}/board.html`, import.meta.url));
+  await page.goto(`http://wonder.test/wonder/${scene}/${hasBoard ? 'board.html' : ''}`); await page.waitForTimeout(700);
   return page;
 }
 let fail = 0;
