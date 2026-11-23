@@ -8,7 +8,8 @@
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 우리 마을 → 가운데 들 → 동쪽 읍내 → 고개 너머 이웃 고을 장. 남쪽 강과 포구. */
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, ringsFx, people, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, loadArt, art, artGeo, artMat, artInst, scatter, missions } from '../scene/kit.js?v=5';
-await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset');   /* farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
+await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset', 'beasts');   /* beasts = 움직이는 개·닭·소(tools/blender/make_beasts.py) */
+import { beastKit } from './beasts.js?v=1';   /* farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
 
 const W = 380, H = 240;
 const seed0 = +(new URLSearchParams(location.search).get('seed') || (Date.now() % 100000));
@@ -98,10 +99,11 @@ for (const k in _runs) artInst(scene, k, _runs[k], {}, {});
   artInst(scene, 'pul', P, {}, { shadow: false }); artInst(scene, 'deulkkot', F, {}, { shadow: false }); }
 /* 길잡이가 담을 돌아가게: 관아 안팎이 갈리면 삼문을 먼저 가리킨다 */
 const BLOCKS = [[261, 295, 84, 112], [208, 244, 46, 68]];   /* 높은 담으로 두른 곳: 관아 · 양반댁 */
-const inGwana = (x, z) => x > 260.5 && x < 295.5 && z > 83.5 && z < 112.5;
+const inGwana = (x, z) => x > 261.4 && x < 294.6 && z > 84.4 && z < 111.6;   /* 담 안쪽만(담 두께에 선 것을 안으로 보면 길잡이가 담 모서리에 걸렸다) */
 function segHits(ax, az, bx, bz, r, pad) { const x0 = r[0] - pad, x1 = r[1] + pad, z0 = r[2] - pad, z1 = r[3] + pad; let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
   for (const [p, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - z0], [dz, z1 - az]]) { if (p === 0) { if (q < 0) return false; } else { const t = q / p; if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } } } return t0 < t1; }
-function routeTo(p) { if (!p) return p; const a = inGwana(S.px, S.pz), b = inGwana(p[0], p[1]); if (a && !b) return [271, 116]; if (!a && b) { if (Math.abs(S.px - 271) < 2.6 && S.pz < 119) return p; p = [271, 116]; }
+function routeTo(p) { if (!p) return p; const a = inGwana(S.px, S.pz), b = inGwana(p[0], p[1]), atGate = Math.abs(S.px - 271) < 2.4 && S.pz > 106 && S.pz < 119;   /* 안팎이 갈리면 삼문 안쪽 앞(271,108)과 바깥 앞(271,116)을 거쳐 간다 — 담 모서리로 곧장 가다 막히던 것 */
+  if (a && !b) return atGate ? [271, 116.5] : [271, 108]; if (!a && b) { if (atGate) return S.pz > 110.4 ? [271, 107.5] : p; p = [271, 116]; }
   for (const r of BLOCKS) { if (!segHits(S.px, S.pz, p[0], p[1], r, 0.8)) continue; let best = null, bd = 1e9; for (const c of [[r[0] - 2.5, r[2] - 2.5], [r[1] + 2.5, r[2] - 2.5], [r[0] - 2.5, r[3] + 2.5], [r[1] + 2.5, r[3] + 2.5]]) { if (dist(S.px, S.pz, c[0], c[1]) < 1.6 || segHits(S.px, S.pz, c[0], c[1], r, 0.6)) continue; const d = dist(S.px, S.pz, c[0], c[1]) + dist(c[0], c[1], p[0], p[1]) + (segHits(c[0], c[1], p[0], p[1], r, 0.8) ? 400 : 0); if (d < bd) { bd = d; best = c; } } if (best) return best; }
   return p; }
 function dressTick() { const sn = S.season; for (const m of SEASON_LEAF) m.visible = sn !== 3; for (const m of SEASON_FRUIT) m.visible = sn === 2; if (mulleWheel) mulleWheel.rotation.z = -S.t * 0.9; }
@@ -153,8 +155,11 @@ pad('seed', ...SEED); pad('nurs', ...NURS, 0x7ad65a); pad('tobs', ...TOBS, 0x6a9
 pad('bo', BO[0], BO[1] + 4, 0x7ac8ff); pad('town', ...TOWN); pad('next', ...NEXT); pad('port', ...PORT); pad('pedd', ...PEDD); pad('gwe', GWE[0], GWE[1] + 2.4, 0xff6a4a); pad('paper', ...PAPER, 0xc8a0ff);
 pad('duty', ...DUTY, 0xff6a4a); pad('ox', ...OX); pad('cloth', ...CLOTH, 0x9ad0ff); pad('lordBuy', LORD[0], LORD[1] + 6, 0xc8a0ff); pad('work', LORD[0] - 8, LORD[1] + 6, 0xffffff);
 const nurseryM = (() => { const g = new THREE.Group(); g.add(at(box(6, 0.12, 5, 0x6f8f9a), 0, 0.07, 0)); const im = new THREE.InstancedMesh(artGeo('rice_young'), artMat, 15); im.castShadow = false; for (let i = 0; i < 15; i++) { _o.position.set(-2.2 + (i % 5) * 1.1, 0.12, -1.6 + Math.floor(i / 5) * 1.6); _o.scale.set(0.42, 0.6, 0.42); _o.rotation.set(0, i * 1.7, 0); _o.updateMatrix(); im.setMatrixAt(i, _o.matrix); } g.add(im); g.userData.im = im; g.position.set(NURS[0], 0, NURS[1] + 4.6); scene.add(g); return g; })();   /* 못자리: 촘촘한 어린 모 */
-const oxM = putArt('ox', HOME[0] + 9, HOME[1] + 2, 1.2); if (oxM) oxM.visible = false; const cartM = putArt('cart', HOME[0] + 12, HOME[1] + 4, 1.2) || putArt('handcart', HOME[0] + 12, HOME[1] + 4); if (cartM) cartM.visible = false;
-putArt('ox', OX[0] + 3, OX[1] + 2, 0.6); putArt('ox', OX[0] + 5.5, OX[1] - 1, 2);
+/* 움직이는 짐승(beasts.js): 개 한 마리 · 닭 넷(흰 둘·누런 둘) · 소 셋(우리 소 · 읍내 소 장수의 둘) */
+const BK = beastKit(scene), dogH = BK.herd('dog', 1), henW = BK.herd('hen', 2, { fur: 0xf4f0e6, tail: 0x3a3a34 }), henB = BK.herd('hen', 2, { fur: 0xb8743a, tail: 0x4a2414 }), oxH = BK.herd('ox', 3);
+const oxM = oxH.rigs[0].root; oxM.position.set(HOME[0] + 9, 0, HOME[1] + 2); oxM.rotation.y = 1.2; oxM.visible = false; const oxS = { x: HOME[0] + 9, z: HOME[1] + 2, face: 1.2, sp: 0, on: false, cx: 0, cz: 0 }; const cartM = putArt('cart', HOME[0] + 12, HOME[1] + 4, 1.2) || putArt('handcart', HOME[0] + 12, HOME[1] + 4); if (cartM) cartM.visible = false;
+const cartLoad = cartM && art('sack_pile'); if (cartLoad) { cartLoad.position.set(0, 0.8, 0.1); cartLoad.scale.setScalar(0.75); cartLoad.visible = false; cartM.add(cartLoad); }   /* 소가 실어 가는 짐은 달구지 위에 */
+oxH.rigs[1].root.position.set(OX[0] + 3, 0, OX[1] + 2); oxH.rigs[1].root.rotation.y = 0.6; oxH.rigs[2].root.position.set(OX[0] + 5.5, 0, OX[1] - 1); oxH.rigs[2].root.rotation.y = 2;
 /* 지고 가는 것 */
 const carryM = { seed: art('sack'), mo: art('mo_bundle'), tob: art('pk_tob') || art('bundle'), rice: art('pk_rice') || art('sack'), tobl: art('goods_tob') || art('bundle'), cloth: art('pk_cloth') || art('bundle'), stone: art('rock_a'), coin: art('coins') };
 for (const k in carryM) if (carryM[k]) { carryM[k].visible = false; scene.add(carryM[k]); }
@@ -162,7 +167,8 @@ for (const k in carryM) if (carryM[k]) { carryM[k].visible = false; scene.add(ca
 const wx = (() => { const N = 700, p = new Float32Array(N * 3); for (let i = 0; i < N; i++) { p[i * 3] = drnd() * 120 - 60; p[i * 3 + 1] = drnd() * 40; p[i * 3 + 2] = drnd() * 120 - 60; } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3)); const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.34, transparent: true, opacity: 0.85, depthWrite: false })); m.visible = false; m.frustumCulled = false; scene.add(m); return { m, p, N }; })();
 
 /* ───── 사람들 ───── */
-const mkP = (o, sc) => { const m = person({ pants: 0xe8e2d2, skin: 0xf0c48e, ...o }); m.rotation.order = 'YXZ'; if (sc) m.scale.setScalar(sc); return m; };
+const { workPose, hipify, dogPose, henPose, oxPose } = BK;
+const mkP = (o, sc) => { const m = hipify(person({ pants: 0xe8e2d2, skin: 0xf0c48e, ...o })); m.rotation.order = 'YXZ'; if (sc) m.scale.setScalar(sc); return m; };
 const pMesh = mkP({ shirt: 0xf2ead8, hat: 'scarf' });
 const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
 const NB = { A: { name: '김 서방', home: [30, 118], col: 0x4a8ad6 }, B: { name: '박 서방', home: [72, 108], col: 0xd6564a }, C: { name: '최 서방', home: [82, 156], col: 0x4ab07a } };
@@ -210,8 +216,8 @@ const ACT = [
   { m: servant, line: () => pick(['주인어른, 김은 제가 매겠습니다.', '…저 논이 원래 제 논이었지요.']) }];
 for (const a of ACT) { a.cool = 0; a.ry0 = a.m.rotation.y; }
 /* 개 한 마리 · 닭 네 마리 */
-const dog = { m: art('dog'), x: HOME[0] + 4, z: HOME[1] + 5, bark: 0 }; if (dog.m) { dog.m.rotation.order = 'YXZ'; scene.add(dog.m); }
-const hens = Array.from({ length: 4 }, (_, i) => { const m = art('chicken'); if (m) scene.add(m); return { m, x: HOME[0] + 8 + i * 1.6, z: HOME[1] + 9 + (i % 2) * 2, tx: HOME[0] + 9, tz: HOME[1] + 10, wait: i, run: 0, hx: HOME[0] + 9, hz: HOME[1] + 10 }; });
+const dog = { m: dogH.rigs[0].root, x: HOME[0] + 4, z: HOME[1] + 5, bark: 0, barkT: 0, sp: 0, idle: 0, sit: 0, lie: 0, face: 0 };
+const hens = Array.from({ length: 4 }, (_, i) => { const r = (i % 2 ? henB : henW).rigs[i >> 1]; return { r, m: r.root, sp: 0, pk: 0, pkT: i * 1.3, x: HOME[0] + 8 + i * 1.6, z: HOME[1] + 9 + (i % 2) * 2, tx: HOME[0] + 9, tz: HOME[1] + 10, wait: i, run: 0, hx: HOME[0] + 9, hz: HOME[1] + 10 }; });
 function actorsUpdate(dt) {
   for (const a of ACT) { a.cool -= dt; const m = a.m; if (!m.visible) continue; const d = dist(S.px, S.pz, m.position.x, m.position.z);
     if (a.chat > 0) { a.chat -= dt; if (m !== ajeon && m !== servant) { const to = -Math.atan2(S.pz - m.position.z, S.px - m.position.x) + Math.PI / 2 + (a.away && a.away() && a.chat < 2.7 ? Math.PI : 0);   /* 등 돌리기: 처음 0.7초는 흘끗 보고, 그다음 돌아선다 */ m.rotation.y += Math.atan2(Math.sin(to - m.rotation.y), Math.cos(to - m.rotation.y)) * Math.min(1, dt * 7); if (a.chat <= 0 && m !== peddler) a.back = 1; } }
@@ -220,14 +226,25 @@ function actorsUpdate(dt) {
   for (const k in NB) { const n = NB[k]; n.cool = (n.cool || 0) - dt; if (n.gone) continue; if (dist(S.px, S.pz, n.x, n.z) < 6 && n.cool <= 0 && !(n.chatT > 0)) { n.cool = 16; n.chatT = 3.4; if (S.yangban && n.rel >= 0) n.bowT = 1.2; talk(n.mesh, nbLine(n)); } }
   /* 개: 마을 안에서는 내 뒤 오른쪽에 붙어 따라온다(바로 뒤면 가까이 시점에서 화면 밖으로 빠진다) */
   if (dog.m) { const inV = S.px < 108 && S.pz > 96, cx = Math.cos(S.pdir), sz = Math.sin(S.pdir), tx = inV ? S.px - cx * 2.1 - sz * 1.4 : HOME[0] + 4, tz = inV ? S.pz - sz * 2.1 + cx * 1.4 : HOME[1] + 5, d = dist(dog.x, dog.z, tx, tz), mv = d > 1.2;
-    if (mv) { const v = Math.min(9.5, 3 + d * 1.6); dog.x += (tx - dog.x) / d * v * dt; dog.z += (tz - dog.z) / d * v * dt; dog.m.rotation.y = -Math.atan2(tz - dog.z, tx - dog.x) + Math.PI / 2; }
-    dog.m.position.set(dog.x, mv ? Math.abs(Math.sin(S.t * 14)) * 0.18 : 0, dog.z); dog.m.rotation.z = mv ? 0 : Math.sin(S.t * 9) * 0.08; dog.bark -= dt;
-    if (S.aj && !S.taxPaid && dist(dog.x, dog.z, S.aj.x, S.aj.z) < 34 && dog.bark <= 0) { dog.bark = 2.2; talk(dog.m, pick(['멍! 멍멍!', '으르르…', '멍!']), 1.4, 1.6); tone(420, 300, 0.09, 'square', 0.06); tone(440, 310, 0.09, 'square', 0.05, 0.14); dog.m.rotation.y = -Math.atan2(S.aj.z - dog.z, S.aj.x - dog.x) + Math.PI / 2; }
-    else if (inV && !mv && !S.moving && dog.bark <= 0 && Math.random() < dt * 0.05) { dog.bark = 6; talk(dog.m, pick(['멍?', '헥헥', '(꼬리를 흔든다)']), 1.6, 1.6); } }
-  for (const h of hens) { if (!h.m) continue; const d = dist(S.px, S.pz, h.x, h.z); if (d < 3.6 && S.moving) { if (h.run <= 0) talk(h.m, pick(['꼬꼬댁!', '꼬꼬꼬!', '꼬끼오?!']), 1.2, 1.3); h.run = 1.2; const a = Math.atan2(h.z - S.pz, h.x - S.px) + (Math.random() - 0.5); h.tx = h.x + Math.cos(a) * 6; h.tz = h.z + Math.sin(a) * 6; }
+    const x0 = dog.x, z0 = dog.z; let face = dog.face;
+    if (mv) { const v = Math.min(9.5, 3 + d * 1.6); dog.x += (tx - dog.x) / d * v * dt; dog.z += (tz - dog.z) / d * v * dt; face = Math.atan2(tx - dog.x, tz - dog.z); }
+    else if (inV) face = Math.atan2(S.px - dog.x, S.pz - dog.z) + (dog.sit > 0.5 ? 0 : 0.6);
+    dog.sp += (Math.hypot(dog.x - x0, dog.z - z0) / Math.max(dt, 1e-3) - dog.sp) * Math.min(1, dt * 8); dog.idle = mv ? 0 : dog.idle + dt; dog.bark -= dt; dog.barkT -= dt;
+    const ajNear = S.aj && !S.taxPaid && dist(dog.x, dog.z, S.aj.x, S.aj.z) < 34;
+    if (ajNear && dog.bark <= 0) { dog.bark = 2.2; dog.barkT = 0.8; talk(dog.m, pick(['멍! 멍멍!', '으르르…', '멍!']), 1.4, 1.6); tone(420, 300, 0.09, 'square', 0.06); tone(440, 310, 0.09, 'square', 0.05, 0.14); }
+    else if (inV && !mv && !S.moving && dog.bark <= 0 && Math.random() < dt * 0.05) { dog.bark = 6; if (Math.random() < 0.5) { dog.barkT = 0.4; talk(dog.m, pick(['멍?', '멍!']), 1.6, 1.6); } else talk(dog.m, pick(['헥헥', '(꼬리를 흔든다)']), 1.6, 1.6); }
+    if (ajNear) face = Math.atan2(S.aj.x - dog.x, S.aj.z - dog.z);
+    dog.face += Math.atan2(Math.sin(face - dog.face), Math.cos(face - dog.face)) * Math.min(1, dt * (mv ? 9 : 4));
+    dog.sit += ((inV && dog.idle > 0.7 && !ajNear ? 1 : 0) - dog.sit) * Math.min(1, dt * 5); dog.lie += ((!inV && dog.idle > 2.5 ? 1 : 0) - dog.lie) * Math.min(1, dt * 2.5);
+    const lk = inV && !mv ? Math.atan2(Math.sin(Math.atan2(S.px - dog.x, S.pz - dog.z) - dog.face), Math.cos(Math.atan2(S.px - dog.x, S.pz - dog.z) - dog.face)) : 0;
+    dogPose(dogH.rigs[0], { sp: dog.sp, sit: dog.sit, lie: dog.lie, wag: ajNear ? 0.06 : inV && !mv ? (S.moving ? 0.5 : 0.75) : 0.3, tuck: ajNear && dog.barkT <= 0, bark: dog.barkT > 0 ? 1 : 0, look: clamp(lk, -0.9, 0.9), t: S.t, dt });
+    dog.m.position.set(dog.x, 0, dog.z); dog.m.rotation.y = dog.face; }
+  for (const h of hens) { const d = dist(S.px, S.pz, h.x, h.z); if (d < 3.6 && S.moving) { if (h.run <= 0) talk(h.m, pick(['꼬꼬댁!', '꼬꼬꼬!', '꼬끼오?!']), 1.2, 1.3); h.run = 1.2; const a = Math.atan2(h.z - S.pz, h.x - S.px) + (Math.random() - 0.5); h.tx = h.x + Math.cos(a) * 6; h.tz = h.z + Math.sin(a) * 6; }
     h.run -= dt; h.wait -= dt; if (h.run <= 0 && h.wait <= 0) { h.wait = 2 + Math.random() * 4; h.tx = h.hx + (Math.random() - 0.5) * 9; h.tz = h.hz + (Math.random() - 0.5) * 7; }
-    const dd = dist(h.x, h.z, h.tx, h.tz), v = h.run > 0 ? 7 : 1.4; if (dd > 0.3) { h.x += (h.tx - h.x) / dd * v * dt; h.z += (h.tz - h.z) / dd * v * dt; h.m.rotation.y = -Math.atan2(h.tz - h.z, h.tx - h.x) + Math.PI / 2; }
-    h.m.position.set(h.x, dd > 0.3 ? Math.abs(Math.sin(S.t * (h.run > 0 ? 22 : 9) + h.hx)) * (h.run > 0 ? 0.3 : 0.06) : 0, h.z); h.m.rotation.x = dd > 0.3 ? 0 : Math.max(0, Math.sin(S.t * 3 + h.x)) * 0.5; } }
+    const dd = dist(h.x, h.z, h.tx, h.tz), v = h.run > 0 ? 7 : 1.4, x0 = h.x, z0 = h.z; if (dd > 0.3) { h.x += (h.tx - h.x) / dd * v * dt; h.z += (h.tz - h.z) / dd * v * dt; const f = Math.atan2(h.tx - h.x, h.tz - h.z); h.m.rotation.y += Math.atan2(Math.sin(f - h.m.rotation.y), Math.cos(f - h.m.rotation.y)) * Math.min(1, dt * 12); }
+    h.sp += (Math.hypot(h.x - x0, h.z - z0) / Math.max(dt, 1e-3) - h.sp) * Math.min(1, dt * 10);
+    h.pkT -= dt; if (dd <= 0.3 && h.pkT <= 0) { h.pkT = 1.2 + Math.random() * 2.6; h.pkOn = 0.5 + Math.random() * 0.9; } h.pkOn = (h.pkOn || 0) - dt; h.pk += ((h.pkOn > 0 && dd <= 0.3 ? 1 : 0) - h.pk) * Math.min(1, dt * 10);
+    henPose(h.r, { sp: h.sp, flee: h.run > 0 && dd > 0.3, peck: h.pk, t: S.t + h.hx * 0, dt }); h.m.position.set(h.x, 0, h.z); } }
 
 /* ───── 소리 ───── */
 const SFX = { pick: () => tone(660, 990, 0.12, 'triangle', 0.15), plant: () => { noise(0.06, 0.25, 900); tone(330, 440, 0.1, 'triangle', 0.08); }, coin: () => { tone(1320, 1760, 0.09, 'triangle', 0.14); tone(1760, 2100, 0.1, 'triangle', 0.1, 0.07); },
@@ -412,6 +429,8 @@ function drawTodo() { const el = $('todo'), g = YEAR_GOAL[S.year - 1], req = TL.
 
 /* ───── 가만히 서서 하는 일: 지금 자리에서 할 수 있는 일 하나 ───── */
 const near = (a, r = 2.2) => dist(S.px, S.pz, a[0], a[1]) < r, inPlot = (p) => S.px > p.x0 + 1 && S.px < p.x0 + p.w - 1 && S.pz > p.z0 + 1 && S.pz < p.z0 + p.d - 1;
+/* 지금 하는 일 → 몸짓(beasts.js workPose) */
+const jobKind = (k) => (!k ? null : /^(pm|pt|pb)/.test(k) ? 'plant' : /^pj/.test(k) ? 'sow' : /^wd/.test(k) ? 'weed' : /^cut/.test(k) ? 'cut' : /^(bo|duty|lab|nurs)/.test(k) ? 'dig' : null);
 function job() { const sn = S.season, c = S.carry, D = duro();
   const here = plots.find(inPlot);
   if (sn === 0) {
@@ -513,7 +532,7 @@ function update(dt) {
   overBar($('work'), cam, S.px, 2.8, S.pz, j && S.workT > 0.05 ? S.workT / j.need : null);
   if (j && S.workT >= j.need) { S.workT = 0; S.workKey = ''; j.fn(); const h = plots.find(inPlot); if (h) drawPlot(h); hud(); }
   /* 머슴: 김매기를 대신 한다 */
-  if (S.servant && S.season === 1) { const p = mine().find((p) => p.sow !== 'none' && p.weed < (p.sow === 'jik' ? 2 : 1)); servant.visible = true; if (p) { const d = dist(servant.position.x, servant.position.z, p.cx, p.cz); if (d > 1) { servant.position.x += (p.cx - servant.position.x) / d * 4 * dt; servant.position.z += (p.cz - servant.position.z) / d * 4 * dt; walkAnim(servant, S.t * 10, true); } else { p.sv = (p.sv || 0) + dt; walkAnim(servant, 0, false); servant.rotation.x = 0.25 + Math.sin(S.t * 5) * 0.2; if (p.sv > 6) { p.sv = 0; p.weed++; drawPlot(p); } } } }
+  if (S.servant && S.season === 1) { const p = mine().find((p) => p.sow !== 'none' && p.weed < (p.sow === 'jik' ? 2 : 1)); servant.visible = true; if (p) { const d = dist(servant.position.x, servant.position.z, p.cx, p.cz); if (d > 1) { servant.position.x += (p.cx - servant.position.x) / d * 4 * dt; servant.position.z += (p.cz - servant.position.z) / d * 4 * dt; walkAnim(servant, S.t * 10, true); workPose(servant, null, S.t, dt); } else { p.sv = (p.sv || 0) + dt; walkAnim(servant, 0, false); workPose(servant, 'weed', S.t, dt); if (p.sv > 6) { p.sv = 0; p.weed++; drawPlot(p); } } } }
   neighborsMove(dt); place(dt);
   if (popT2 > 0) { popT2 -= dt; if (popT2 <= 0) { const pop = document.getElementById('mpop') || document.querySelector('.mpop'); if (pop) pop.classList.remove('on'); } }
   if (Math.floor(S.st * 4) !== Math.floor((S.st - dt) * 4)) { refreshTasks(); hud(); }
@@ -524,7 +543,7 @@ function update(dt) {
   $('vig').style.boxShadow = `inset 0 0 ${120 + tension * 120}px ${30 + tension * 60}px rgba(200,60,20,${tension * 0.4})`;
 }
 function neighborsMove(dt) { for (const k in NB) { const n = NB[k]; if (n.gone) continue; n.wait -= dt; n.hopT = (n.hopT || 0) - dt; n.bowT = (n.bowT || 0) - dt; const hop = n.hopT > 0 ? Math.abs(Math.sin(S.t * 11)) * 0.7 : 0;
-    if (n.chatT > 0) { n.chatT -= dt; const to = -Math.atan2(S.pz - n.z, S.px - n.x) + Math.PI / 2 + (n.rel < 0 ? Math.PI : 0); n.mesh.rotation.y += Math.atan2(Math.sin(to - n.mesh.rotation.y), Math.cos(to - n.mesh.rotation.y)) * Math.min(1, dt * 7); n.mesh.rotation.x = n.bowT > 0 ? 0.55 : 0; n.mesh.position.set(n.x, hop, n.z); walkAnim(n.mesh, 0, false); continue; }
+    if (n.chatT > 0) { n.chatT -= dt; const to = -Math.atan2(S.pz - n.z, S.px - n.x) + Math.PI / 2 + (n.rel < 0 ? Math.PI : 0); n.mesh.rotation.y += Math.atan2(Math.sin(to - n.mesh.rotation.y), Math.cos(to - n.mesh.rotation.y)) * Math.min(1, dt * 7); n.mesh.position.set(n.x, hop, n.z); walkAnim(n.mesh, 0, false); workPose(n.mesh, n.bowT > 0 ? 'bow' : null, S.t, dt); continue; }
     n.cheer = (n.cheer || 0) - dt; let ov = null;
     if (n.cheer > 0 && n.rel >= 0) ov = [BO[0] + (k === 'A' ? -6 : k === 'B' ? 6 : -12), BO[1] + 5.6, 'cheer'];   /* 보가 서면 달려와 팔짝 */
     else if (S.duty && S.duty.nbT > 0) ov = [DUTY[0] + (k === 'A' ? -5 : k === 'B' ? 5 : 0.5), DUTY[1] + (k === 'C' ? 4.5 : -3.5), 'duty'];
@@ -535,18 +554,28 @@ function neighborsMove(dt) { for (const k in NB) { const n = NB[k]; if (n.gone) 
     else if (ov && ov[2] === 'cheer') { n.hopT = Math.max(n.hopT, 0.3); if (!n.cheerSaid) { n.cheerSaid = 1; talk(n.mesh, { A: '물이 들어온다! 물이!', B: '허허, 이제 가뭄도 겁 안 나네!', C: '자네 덕일세! 얼쑤!' }[k], 3.4, k === 'B' ? 4.8 : 3.3); } n.cheer -= dt * 2; }
     else if (ov && ov[2] === 'help') { const p = ov[3]; if (!n.hw) talk(n.mesh, pick(['품앗이요! 지난겨울 쌀 값이오.', '자네 논 김은 내가 매 주리다!']), 5.6); n.hw = (n.hw || 0) + dt; if (n.hw > 5) { n.hw = 0; n.helpY = S.year; p.weed++; drawPlot(p); ring(p.cx, p.cz, 6, 0x7ad65a); SFX.good(); say(`${n.name}이 품앗이로 우리 논 김을 매 주고 갔다`, null, 3); hud(); } }
     else if (n.p && S.season < 3) { const p = n.p; if (S.season === 0 && p.sow === 'none' && S.st > 12) { p.sow = n.method; p.grow = n.method === 'mo' ? 0.3 : 0.15; drawPlot(p); } if (S.season === 1 && p.weed < 2) p.weed = 2; if (S.season === 2 && p.ripe && !p.cut && S.st > 18) { p.cut = true; p.ripe = false; p.stub = true; drawPlot(p); } }
-    n.mesh.rotation.x = !mv && (ov || (S.season < 3 && n.p)) ? 0.22 + Math.sin(S.t * 4.5 + n.x) * 0.2 : 0; n.mesh.position.set(n.x, hop, n.z); walkAnim(n.mesh, S.t * 10 + n.x, mv); }
+    n.mesh.position.set(n.x, hop, n.z); walkAnim(n.mesh, S.t * 10 + n.x, mv); workPose(n.mesh, mv ? null : ov ? (ov[2] === 'duty' ? 'dig' : ov[2] === 'help' ? 'weed' : null) : S.season < 3 && n.p ? ['plant', 'weed', 'cut'][S.season] : null, S.t + n.x, dt); }
   for (const p of plots) { const n = NB[p.farmer]; if (!n || n.gone) continue; const ph = (p.id * 7) % 16; if (S.season === 0 && p.sow === 'none' && S.st > 14 + ph) { p.sow = n.method; p.grow = n.method === 'mo' ? 0.3 : 0.15; drawPlot(p); } if (S.season === 2 && p.ripe && !p.cut && S.st > 26 + ph * 2) { p.cut = true; p.ripe = false; p.stub = true; drawPlot(p); } }
   /* 박 서방: 봄에 양반댁 논을 노린다(내가 먼저 빌리면 다른 논으로) */
   const B = NB.B; if (!B.gone && S.season === 0 && S.year >= 2 && S.st > 26 && !S.said.brent) { S.said.brent = 1; const free = plots.filter((p) => p.owner === 'lord' && !p.farmer && p.kind === 'paddy'); if (free.length && plots.filter((p) => p.farmer === 'B').length < 6) { const p = free[0]; p.farmer = 'B'; drawPlot(p); ring(p.cx, p.cz, 10, 0xd6564a); say('박 서방이 양반댁 논 한 배미를 먼저 빌렸다!', null, 3); talk(B.mesh, '한발 늦었네, 허허!', 4); } }
   crowd.forEach((c, i) => { const P = i < 5 ? TOWN_PTS : NEXT_PTS; if (c.x === undefined) { const q = P[i % P.length]; c.x = q[0] + 2; c.z = q[1] + (q[1] < 130 ? 3 : -3); c.tx = c.x; c.tz = c.z; c.wait = i * 0.8; c.face = 0; }
-    const d = dist(c.x, c.z, c.tx, c.tz); if (d > 0.5) { c.x += (c.tx - c.x) / d * 2.8 * dt; c.z += (c.tz - c.z) / d * 2.8 * dt; c.m.rotation.y = -Math.atan2(c.tz - c.z, c.tx - c.x) + Math.PI / 2; walkAnim(c.m, S.t * 8 + i, true); c.m.rotation.x = 0; }
+    const d = dist(c.x, c.z, c.tx, c.tz); if (d > 0.5) { c.x += (c.tx - c.x) / d * 2.8 * dt; c.z += (c.tz - c.z) / d * 2.8 * dt; c.m.rotation.y = -Math.atan2(c.tz - c.z, c.tx - c.x) + Math.PI / 2; walkAnim(c.m, S.t * 8 + i, true); workPose(c.m, null, S.t, dt); }
     else { if (!c.at) { c.at = 1; c.m.rotation.y = c.face; if (Math.random() < 0.45 && dist(S.px, S.pz, c.x, c.z) < 40) talk(c.m, pick(['조금만 깎아 주시오!', '안 되오, 밑지는 장사요!', '이거 얼마요?', '어제보다 올랐네그려.', '덤으로 하나 더 주시오.', '아이고, 비싸다 비싸.', '구경만 하고 가오.', '우리 애가 엿을 좋아해서…']), 2.6); }
-      walkAnim(c.m, 0, false); c.m.rotation.x = Math.max(0, Math.sin(S.t * 2.4 + i)) * 0.16; c.wait -= dt; if (c.wait <= 0) { const q = P[Math.floor(Math.random() * P.length)]; c.tx = q[0] + (Math.random() - 0.5) * 4; c.tz = q[1] + (q[1] < 130 ? 2.6 : -2.6) + (Math.random() - 0.5); c.face = q[1] < 130 ? Math.PI : 0; c.wait = 3 + Math.random() * 5; c.at = 0; } }
+      walkAnim(c.m, 0, false); workPose(c.m, i % 2 && c.at ? 'haggle' : null, S.t + i, dt); c.wait -= dt; if (c.wait <= 0) { const q = P[Math.floor(Math.random() * P.length)]; c.tx = q[0] + (Math.random() - 0.5) * 4; c.tz = q[1] + (q[1] < 130 ? 2.6 : -2.6) + (Math.random() - 0.5); c.face = q[1] < 130 ? Math.PI : 0; c.wait = 3 + Math.random() * 5; c.at = 0; } }
     c.m.position.set(c.x, 0, c.z); }); actorsUpdate(dt); }
-function place(dt) { flushPlots(); dressTick(); pMesh.position.set(S.px, S.hopT > 0 ? 0.55 + Math.sin(S.t * 14) * 0.12 : 0, S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; walkAnim(pMesh, S.t * (S.running ? 16 : 10), S.moving); pMesh.rotation.x = !S.moving && S.workT > 0.1 ? 0.22 + Math.sin(S.t * 6) * 0.2 : 0; pRing.position.set(S.px, S.view === 3 ? 0.6 : 0.11, S.pz); pRing.scale.setScalar(S.view === 3 ? Math.max(9, (S.mapH || 700) / 55) : 1); pMesh.scale.setScalar(S.view === 3 ? 5 : 1);
-  for (const k in carryM) if (carryM[k]) carryM[k].visible = false; const c = S.carry; if (c && carryM[c.k]) { const m = carryM[c.k]; m.visible = true; m.position.set(S.px - Math.cos(S.pdir) * 0.5, 1.5, S.pz - Math.sin(S.pdir) * 0.5); m.rotation.y = pMesh.rotation.y; }
-  if (S.ox && oxM && cartM) { const load = c && (c.k === 'rice' || c.k === 'tobl' || c.k === 'cloth'); if (load) { oxM.position.set(S.px + Math.cos(S.pdir) * 2.4, 0, S.pz + Math.sin(S.pdir) * 2.4); oxM.rotation.y = pMesh.rotation.y; cartM.position.set(S.px - Math.cos(S.pdir) * 2.6, 0, S.pz - Math.sin(S.pdir) * 2.6); cartM.rotation.y = pMesh.rotation.y; } else { oxM.position.set(HOME[0] + 9, 0, HOME[1] + 2); cartM.position.set(HOME[0] + 12, 0, HOME[1] + 4); } }
+function place(dt) { flushPlots(); dressTick(); pMesh.position.set(S.px, S.hopT > 0 ? 0.55 + Math.sin(S.t * 14) * 0.12 : 0, S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; walkAnim(pMesh, S.t * (S.running ? 16 : 10), S.moving); pMesh.rotation.x = 0; workPose(pMesh, !S.moving && S.workT > 0.1 ? jobKind(S.workKey) : null, S.t, dt || 0.016); pRing.position.set(S.px, S.view === 3 ? 0.6 : 0.11, S.pz); pRing.scale.setScalar(S.view === 3 ? Math.max(9, (S.mapH || 700) / 55) : 1); pMesh.scale.setScalar(S.view === 3 ? 5 : 1);
+  for (const k in carryM) if (carryM[k]) carryM[k].visible = false; const c = S.carry; if (cartLoad) cartLoad.visible = oxS.on; if (c && carryM[c.k] && !oxS.on) { const m = carryM[c.k]; m.visible = true; m.position.set(S.px - Math.cos(S.pdir) * 0.5, 1.5, S.pz - Math.sin(S.pdir) * 0.5); m.rotation.y = pMesh.rotation.y; }
+  /* 우리 소: 짐을 실으면 멍에를 메고 내 앞 오른쪽에서 걷고, 달구지는 소 뒤에 매달려 끌려온다(전엔 소·나·달구지가 한 줄로 붙어 미끄러졌다) */
+  { const r0 = oxH.rigs[0], load = S.ox && c && (c.k === 'rice' || c.k === 'tobl' || c.k === 'cloth'), fx = Math.cos(S.pdir), fz = Math.sin(S.pdir), x0 = oxS.x, z0 = oxS.z;
+    if (load) { const tx = S.px + fx * 1.9 - fz * 1.7, tz = S.pz + fz * 1.9 + fx * 1.7;
+      if (!oxS.on) { oxS.on = true; oxS.x = tx; oxS.z = tz; oxS.face = Math.atan2(fx, fz); oxS.cx = tx - fx * 3.1; oxS.cz = tz - fz * 3.1; }
+      oxS.x += (tx - oxS.x) * Math.min(1, (dt || 0.016) * 5); oxS.z += (tz - oxS.z) * Math.min(1, (dt || 0.016) * 5); }
+    else if (oxS.on || !S.ox) { oxS.on = false; oxS.x = HOME[0] + 9; oxS.z = HOME[1] + 2; oxS.face = 1.2; oxS.cx = HOME[0] + 12; oxS.cz = HOME[1] + 4; oxS.sp = 0; }
+    const v = Math.hypot(oxS.x - x0, oxS.z - z0) / Math.max(dt || 0.016, 1e-3); oxS.sp += (Math.min(v, 12) - oxS.sp) * Math.min(1, (dt || 0.016) * 6);
+    if (oxS.on && v > 0.4) { const f = Math.atan2(oxS.x - x0, oxS.z - z0); oxS.face += Math.atan2(Math.sin(f - oxS.face), Math.cos(f - oxS.face)) * Math.min(1, (dt || 0.016) * 5); }
+    oxM.position.set(oxS.x, 0, oxS.z); oxM.rotation.y = oxS.face; r0.yoke = oxS.on;
+    if (cartM) { if (oxS.on) { const hx = oxS.x - Math.sin(oxS.face) * 0.2, hz = oxS.z - Math.cos(oxS.face) * 0.2, dx = hx - oxS.cx, dz = hz - oxS.cz, l = Math.hypot(dx, dz) || 1; oxS.cx = hx - dx / l * 3.05; oxS.cz = hz - dz / l * 3.05; cartM.position.set(oxS.cx, 0, oxS.cz); cartM.rotation.y = Math.atan2(dx, dz); } else { cartM.position.set(oxS.cx, 0, oxS.cz); cartM.rotation.y = 1.2; } }
+    oxPose(r0, { sp: oxS.on ? oxS.sp : 0, t: S.t, dt: dt || 0.016 }); oxPose(oxH.rigs[1], { sp: 0, t: S.t, dt: dt || 0.016, look: Math.sin(S.t * 0.2) * 0.4 }); oxPose(oxH.rigs[2], { sp: 0, t: S.t + 3, dt: dt || 0.016 }); }
   nurseryM.userData.im.visible = S.nursery; nurseryM.visible = S.knowMo;
   passBar.visible = S.year < 2; portBar.visible = S.year < 3; if (ship) ship.visible = S.year >= 3 && (S.season !== 2 || shipIn());
   /* 고리 · 팻말 */
@@ -585,9 +614,11 @@ function place(dt) { flushPlots(); dressTick(); pMesh.position.set(S.px, S.hopT 
         const t = `${gx < -0.3 ? '◀ ' : ''}⚠ 아전 · 우리 집까지 ${Math.round(dist(S.aj.x, S.aj.z, DOOR[0], DOOR[1]))}걸음${gx > 0.3 ? ' ▶' : Math.abs(gx) <= 0.3 ? (gy > 0 ? ' ▲' : ' ▼') : ''}`; if (ajMark._h !== t) { ajMark.textContent = t; ajMark._h = t; } ajMark.style.display = 'block';
         const hw = (ajMark.offsetWidth || 260) / 2 + 10, hh = (ajMark.offsetHeight || 34) / 2 + 10; ajMark.style.left = clamp(((gx * k + 1) / 2) * innerWidth, hw, innerWidth - hw) + 'px'; ajMark.style.top = clamp(((1 - gy * k) / 2) * innerHeight, hh + 60, innerHeight - hh - 60) + 'px'; } }
     ajMark.style.display = show ? 'block' : 'none'; }
+  BK.flushAll();
   $('jobl').textContent = play ? (S.jobLabel || '') : ''; $('jobl').style.display = play && S.jobLabel ? 'block' : 'none';
 }
 function view() {
+  if (window.__camAt) { const c = window.__camAt; cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); if (cam.fov !== (c[6] || 40)) { cam.fov = c[6] || 40; cam.updateProjectionMatrix(); } return; }   /* 시험용(화면 찍기) */
   if (S.mode === 'title' || S.mode === 'intro') { const k = S.mode === 'intro' ? clamp(S.introT / 4.4, 0, 1) : 0, e = k * k * (3 - 2 * k); cam.position.set(lerp(300, HOME[0] + 6, e), lerp(60, 26, e), lerp(190, HOME[1] + 36, e)); cam.lookAt(lerp(200, HOME[0], e), 2, lerp(110, HOME[1] - 10, e)); if (cam.fov !== 50) { cam.fov = 50; cam.updateProjectionMatrix(); } }
   else { /* 「기울어 보인다」(준호 11-20, 11-23 다시): 화각이 넓으면(46°·62°) 화면 가장자리의 논두렁·집·나무가 바깥으로 비스듬히 눕는다.
        위에서(기본) = 약 68° 내려다보기를 화각 24°로, 멀리서 — 보이는 넓이는 그대로. 지도(V 셋째) = 화각 22°로 아주 높이서 거의 바로 위(약 6°) — 온 고을이 화면에 꽉 차게 높이를 화면 비율로 셈 */
@@ -613,7 +644,7 @@ $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode 
     b.onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'play'; loadGame(d); SFX.season(); }; } }
 canvas.addEventListener('pointerdown', () => { if (S.mode === 'intro') S.introT = 99; });
 runLoop((dt) => { update(dt); mis.update(dt, S.mode === 'play'); misHead(); }, view, () => renderer.render(scene, cam));
-window.__scene = { S, update, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, guideAt() { return curTask ? routeTo(curTask.at()) : null; }, get TL() { return TL; }, saveGame, readSave, loadGame,
-  go() { $('go').click(); S.introT = 99; update(0.01); }, view(n) { S.view = n; }, step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
+window.__scene = { S, update, beasts: { dog, hens, oxS, oxM, cartM }, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, guideAt() { return curTask ? routeTo(curTask.at()) : null; }, get TL() { return TL; }, saveGame, readSave, loadGame,
+  go() { $('go').click(); S.introT = 99; update(0.01); }, snap(n = 240) { const m = S.mode; if (m === 'title' || m === 'intro') S.mode = 'hold'; for (let i = 0; i < n; i++) view(); S.mode = m; }, info() { renderer.render(scene, cam); const r = renderer.info.render; return { calls: r.calls, tris: r.triangles }; }, view(n) { S.view = n; }, step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   next() { const b = document.querySelector('#ov button'); if (b && $('ov').style.display !== 'none') b.click(); },
   const: { HOME, GRAN, SEED, NURS, TOBS, DOOR, BO, LORD, TOWN, GWE, PAPER, OX, CLOTH, NEXT, PORT, PEDD, SLEN, P_OX, P_NB, P_LORD, P_PAPER } };
