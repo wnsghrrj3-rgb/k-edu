@@ -37,7 +37,7 @@ export default function ch3(c) {
       for (let i = 0; i < 14; i++) { const x = C3[0] - 13 + i * 2, z = C3[1] - 9 + Math.sin(i) * 0.5; const m = c.putArt('cs_horse', x, z, Math.PI / 2 + (i % 2 ? 0.15 : -0.1), 0.92); if (m) st.horses.push({ m, x, z, ph: i }); }
       for (const [x, z] of SENT) st.sentries.push({ u: army.jp.add({ x, z, ry: Math.atan2(x - C3[0], z - C3[1]) }), x, z, a0: Math.atan2(x - C3[0], z - C3[1]), ph: Math.random() * 6 });
       /* 개울: 들 가운데를 남북으로 */
-      { const g = new c.THREE.PlaneGeometry(3.4, 96, 1, 24); g.rotateX(-Math.PI / 2); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const z = C3[1] + p.getZ(i), x = 446 + Math.sin(z * 0.08) * 3 + p.getX(i); p.setX(i, x); p.setZ(i, z); p.setY(i, H(x, z) + 0.12); } const m = new c.THREE.Mesh(g, new c.THREE.MeshStandardMaterial({ color: 0x4a6a8a, roughness: 0.2, metalness: 0.1 })); c.scene.add(m); st.creek = m; }
+      { const g = new c.THREE.PlaneGeometry(3.4, 96, 1, 24); g.rotateX(-Math.PI / 2); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const z = C3[1] + p.getZ(i), x = 446 + Math.sin(z * 0.08) * 3 + p.getX(i); p.setX(i, x); p.setZ(i, z); p.setY(i, H(x, z) + 0.12); } const m = new c.THREE.Mesh(g, new c.THREE.MeshStandardMaterial({ color: 0x3a4e66, roughness: 0.75, metalness: 0 })); c.scene.add(m); st.creek = m; }
       /* 갑산촌 사람들 */
       const d0 = DOOR(HOUSES.gran), d1 = DOOR(HOUSES.wood);
       P.gran = ppl.cast('vil2', d0[0], d0[1] + 0.6, 0); P.wood = ppl.cast('wood', d1[0] + 0.8, d1[1] + 0.6, 0); P.gran.look = P.wood.look = 'me'; P.gran.m.visible = P.wood.m.visible = false;

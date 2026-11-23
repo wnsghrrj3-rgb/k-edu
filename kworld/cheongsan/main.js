@@ -29,7 +29,7 @@ const CHAPTERS = [ch0, ch1, ch2, ch3, ch4, ch5, ch6], TITLES = ['앞날 · 10월
 const { canvas, renderer, scene, cam, resize } = stage({ fog: [0xd8d0bc, 120, 520], exposure: 1.05, fov: 40 });
 cam.far = 1400; cam.updateProjectionMatrix();
 const hemi = new THREE.HemisphereLight(0xeef0ff, 0x8a7a5a, 1.25); scene.add(hemi);
-const sun = sunLight(scene, { color: 0xfff0d0, intensity: 2.3, box: [70, 70], far: 260, pos: [60, 90, 230], target: [100, 0, 170] });
+const sun = sunLight(scene, { color: 0xfff0d0, intensity: 2.3, box: [52, 52], far: 260, pos: [60, 90, 230], target: [100, 0, 170] });
 addEventListener('resize', resize); resize();
 
 /* 그림: 블렌더 모델(없으면 네모로 대신) */
@@ -215,6 +215,7 @@ function startChapter(i, fromSave) {
   army.reset(); ppl.clear(); clearPads(); targets = []; $('spot').style.display = 'none'; S.mode = 'play'; if (CH && CH.dispose) CH.dispose();
   /* 앞 장이 세운 것(천막·연기·고리·횃불)을 걷는다 — 처음 장을 열기 전의 무대만 남긴다. 빛·안개도 낮의 처음 값으로 */
   if (!BASE) BASE = new Set(scene.children); else for (const o of [...scene.children]) if (!BASE.has(o)) scene.remove(o);
+  $('panel').style.display = 'none'; $('cmd').style.opacity = 0; cmdT = 0;
   S.frozen = false; scene.fog.color.set(0xd8d0bc); scene.fog.near = 120; scene.fog.far = 520; hemi.color.set(0xeef0ff); hemi.intensity = 1.25; sun.color.set(0xfff0d0); sun.intensity = 2.3; sky.paint(0x8fb4dc, 0xe8e2d4, 0xffe2b0);
   CH = CHAPTERS[i](ctxFor()); CH.start(fromSave);
   S.yaw = S.yawT = CH.yaw != null ? CH.yaw : -Math.PI / 2; $('time').firstChild.textContent = CH.when + ' ';
@@ -323,7 +324,7 @@ function place(dt) {
   $('jobl').textContent = play ? S.jobLabel : ''; $('jobl').style.display = play && S.jobLabel ? 'block' : 'none';
   /* 해 · 그림자 */
   const fxp = Math.round(S.px / 6) * 6, fzp = Math.round(S.pz / 6) * 6; sun.position.set(fxp + (CH && CH.sunOff ? CH.sunOff[0] : -50), py + (CH && CH.sunOff ? CH.sunOff[1] : 80), fzp + (CH && CH.sunOff ? CH.sunOff[2] : 40)); sun.target.position.set(fxp, py, fzp);
-  sky.update(cam); if (Math.floor(S.t * 4) !== Math.floor((S.t - (dt || 0.016)) * 4) || !dt) forest.lod(S.px, S.pz, S.scoping ? 3 : S.view === 3 ? 2.2 : 1);
+  sky.update(cam); if (Math.floor(S.t * 4) !== Math.floor((S.t - (dt || 0.016)) * 4) || !dt) forest.lod(S.px, S.pz, S.scoping ? 2.4 : 1);
   if (play && CH) { const len = CH.len || 1, k = clamp(1 - S.cht / len, 0, 1); $('time').querySelector('i').style.width = (CH.timeK ? CH.timeK() : k) * 100 + '%'; }
 }
 
@@ -342,7 +343,7 @@ function step(dt) { update(dt); army.update(dt, S.t); view(dt); mis.update(dt, S
 requestAnimationFrame(frame);
 
 /* ───── 자동 판 고리(설계 ⑨): window.__scene ───── */
-window.__scene = { S, ctl, army, fx, ppl, pads, info: () => { renderer.render(scene, cam); const r = renderer.info.render; return { calls: r.calls, tris: r.triangles }; }, get CH() { return CH; }, get cur() { return curTask; }, get TL() { return TL; }, get targets() { return targets; }, get LAST() { return LAST; },
+window.__scene = { S, ctl, army, fx, ppl, pads, forest, info: () => { renderer.render(scene, cam); const r = renderer.info.render; return { calls: r.calls, tris: r.triangles }; }, get CH() { return CH; }, get cur() { return curTask; }, get TL() { return TL; }, get targets() { return targets; }, get LAST() { return LAST; },
   go(ch = 0, band, tags) { $('ov').style.display = 'none'; S.band = { ...BAND0, ...(band || {}) }; S.tags = { ...(tags || {}) }; startChapter(ch); cardT = 0.01; },
   step(sec, dt = 1 / 30) { for (let i = 0; i < sec / dt; i++) { update(dt); army.update(dt, S.t); view(dt); mis.update(dt, S.mode === 'play'); } },
   frame(n = 1) { for (let i = 0; i < n; i++) step(1 / 30); },

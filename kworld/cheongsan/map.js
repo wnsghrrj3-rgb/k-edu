@@ -117,10 +117,15 @@ export function buildTerrain(scene, { x0 = -90, z0 = -90, x1 = MAP_W + 90, z1 = 
   for (let j = 0; j < nz - 1; j++) for (let i = 0; i < nx - 1; i++) { const a = j * nx + i, b = a + 1, cc = a + nx, d = cc + 1; if (Math.abs(hh[a] - hh[d]) < Math.abs(hh[b] - hh[cc])) { idx[q++] = a; idx[q++] = cc; idx[q++] = d; idx[q++] = a; idx[q++] = d; idx[q++] = b; } else { idx[q++] = a; idx[q++] = cc; idx[q++] = b; idx[q++] = b; idx[q++] = cc; idx[q++] = d; } }
   const uv = new Float32Array(nx * nz * 2); for (let k = 0; k < nx * nz; k++) { uv[k * 2] = pos[k * 3] / 9; uv[k * 2 + 1] = pos[k * 3 + 2] / 9; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(new THREE.BufferAttribute(idx, 1)); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, map: groundTex() }));
-  m.receiveShadow = true; m.frustumCulled = false; scene.add(m);
+  /* 땅을 가로 10 × 세로 6 조각으로 — 꼭짓점은 같이 쓰고 세모 차례만 나눠, 화면 밖 조각은 안 그린다 */
+  const mat0 = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, map: groundTex() }), CX = 10, CZ = 6; let m = null;
+  for (let cj = 0; cj < CZ; cj++) for (let ci = 0; ci < CX; ci++) { const i0 = Math.floor(ci * (nx - 1) / CX), i1 = Math.floor((ci + 1) * (nx - 1) / CX), j0 = Math.floor(cj * (nz - 1) / CZ), j1 = Math.floor((cj + 1) * (nz - 1) / CZ), sub = new Uint32Array((i1 - i0) * (j1 - j0) * 6); let w = 0, lo = 1e9, hi = -1e9;
+    for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) { const o = (j * (nx - 1) + i) * 6; for (let k = 0; k < 6; k++) { const v = idx[o + k]; sub[w++] = v; const y = hh[v]; if (y < lo) lo = y; if (y > hi) hi = y; } }
+    const cg = new THREE.BufferGeometry(); for (const nm of ['position', 'color', 'uv', 'normal']) cg.setAttribute(nm, g.attributes[nm]); cg.setIndex(new THREE.BufferAttribute(sub, 1));
+    const bx0 = x0 + i0 * cs, bx1 = x0 + i1 * cs, bz0 = z0 + j0 * cs, bz1 = z0 + j1 * cs; cg.boundingBox = new THREE.Box3(new THREE.Vector3(bx0, lo, bz0), new THREE.Vector3(bx1, hi, bz1)); cg.boundingSphere = new THREE.Sphere(); cg.boundingBox.getBoundingSphere(cg.boundingSphere);
+    const cm = new THREE.Mesh(cg, mat0); cm.receiveShadow = true; scene.add(cm); if (!m) m = cm; }
   /* 고동하 물낯 · 빈터 옆 샘 */
-  const wm = new THREE.MeshStandardMaterial({ color: 0x6f93b4, roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.85 });
+  const wm = new THREE.MeshStandardMaterial({ color: 0x5f86a8, roughness: 0.6, metalness: 0, transparent: true, opacity: 0.88 });
   /* 고동하 물낯: 물줄기 꺾은선을 따라 띠 하나(땅 높이를 따라) */
   const river = []; { const P = VALLEYS.godong, pos = [], idx = []; let n = 0;
     for (let i = 0; i < P.length - 1; i++) { const a = P[i], b = P[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]), steps = Math.ceil(L / 3), nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
@@ -157,28 +162,33 @@ export function plantForest(scene, { avoid = () => false, seed = 1920, lite = fa
     if (up < 3 && r() < 0.8) continue; if (cl < 0.42 && r() < 0.75) continue;   /* 숲은 덩어리지게 */
     const nm = h > 34 ? (r() < 0.6 ? 'cs_spruce_snow' : 'cs_spruce') : up > 14 ? ['cs_spruce', 'cs_larch', 'cs_birch', 'cs_larch'][Math.floor(r() * 4)] : ['cs_birch', 'cs_birch_b', 'cs_larch', 'cs_birch'][Math.floor(r() * 4)];
     near[nm].push([x, h - 0.15, z, 0.75 + r() * 0.5, r() * 6.28, NEAR.findIndex((q) => x > q[0] && x < q[2] && z > q[1] && z < q[3])]); put.push([x, z]); i++; }
-  for (let i = 0, tries = 0; i < (lite ? 650 : 1400) && tries < 12000; tries++) { const q = r() < 0.8 ? [-10, 100, 290, 150] : [480, 60, 160, 110], x = q[0] + r() * q[2], z = q[1] + r() * q[3]; if (avoid(x, z)) continue; const [d] = mainD(x, z); if (Math.abs(d) < 4.5) continue; const h = Hq(x, z); if (h > 40) continue; (r() < 0.62 ? near.cs_grass_dry : near.cs_bush_dry).push([x, h - 0.05, z, 0.7 + r() * 0.7, r() * 6.28, -1]); }
+  for (let i = 0, tries = 0; i < (lite ? 1500 : 3000) && tries < 16000; tries++) { const q = r() < 0.55 ? [-10, 100, 290, 150] : r() < 0.4 ? [480, 60, 170, 120] : r() < 0.6 ? [0, 262, 590, 120] : [376, 22, 132, 150], x = q[0] + r() * q[2], z = q[1] + r() * q[3]; if (avoid(x, z)) continue; const [d] = mainD(x, z); if (Math.abs(d) < 4.5) continue; const h = Hq(x, z); if (h > 40) continue; (r() < 0.62 ? near.cs_grass_dry : near.cs_bush_dry).push([x, h - 0.05, z, 0.7 + r() * 0.7, r() * 6.28, -1]); i++; }   /* i++ 가 빠져 풀이 만 포기나 났었다(세모 수백만의 까닭) */
   /* 먼 숲: 나머지 판 전체(그림자 없음) */
   for (let i = 0, tries = 0; i < (lite ? 2600 : 5200) && tries < 40000; tries++) { const x = -60 + r() * 760, z = -60 + r() * 480; if (inNear(x, z)) continue; if (!okTree(x, z)) continue; const h = Hq(x, z), cl = fbm(x / 34 + 5, z / 34); if (cl < 0.4 && r() < 0.8) continue;
-    const k = h > 32 ? 'dark' : r() < 0.45 ? 'gold' : r() < 0.6 ? 'grey' : 'dark'; far[k].push([x, h - 0.2, z, 1.6 + r() * 1.4, r() * 6.28]); i++; }
+    const k = h > 32 ? 'dark' : r() < 0.45 ? 'gold' : r() < 0.6 ? 'grey' : 'dark'; far[k].push([x, h - 0.2, z, 0.9 + r() * 0.5, r() * 6.28, h]); i++; }
   /* ── 그리기(11-23 가볍게): 48 m 칸마다 한 덩이(BatchedMesh — 나무 종류가 달라도 그리기 한 번). 가까운 칸만 블렌더 나무 + 그림자, 먼 칸은 값싼 나무, 풀·덤불은 더 가까울 때만.
      전에는 터 하나(나무 1500그루)를 통째로 그려 한 화면에 세모 400만 개가 나왔다. ── */
   const FT = { gold: { leaf: 0xd4a040, bark: 0x6a4a30 }, dark: { leaf: 0x2e4a3a, bark: 0x4a3a2a }, grey: { leaf: 0x8a8070, bark: 0x9a948a } }, FAR_OF = { cs_larch: 'gold', cs_birch: 'grey', cs_birch_b: 'grey', cs_spruce: 'dark', cs_spruce_snow: 'dark' };
-  const TS = 48, tiles = new Map(), tileOf = (x, z) => { const k = Math.floor(x / TS) + '_' + Math.floor(z / TS); let t = tiles.get(k); if (!t) { t = { cx: (Math.floor(x / TS) + 0.5) * TS, cz: (Math.floor(z / TS) + 0.5) * TS, tree: [], mid: [], far: [], ground: [], groundLo: [], prop: [], deco: [] }; tiles.set(k, t); } return t; };
+  const TS = 48, tiles = new Map(), tileOf = (x, z) => { const k = Math.floor(x / TS) + '_' + Math.floor(z / TS); let t = tiles.get(k); if (!t) { t = { cx: (Math.floor(x / TS) + 0.5) * TS, cz: (Math.floor(z / TS) + 0.5) * TS, tree: [], treeFar: [], mid: [], midFar: [], far: [], ground: [], groundLo: [], prop: [], deco: [] }; tiles.set(k, t); } return t; };
   for (const nm in near) { const g = artGeo(nm); if (!g) continue; const isG = nm.includes('grass') || nm.includes('bush'); const lo = artGeo(nm.replace('_dry', '') + '_lo') || (nm === 'cs_birch_b' ? artGeo('cs_birch_lo') : null); for (const t of near[nm]) { const T = tileOf(t[0], t[2]); if (isG) { T.ground.push([g, t]); if (lo) T.groundLo.push([lo, t]); } else { T.tree.push([g, t]); if (lo) T.mid.push([lo, t]); const fg = artGeo('cs_tree_far', FT[FAR_OF[nm] || 'dark']); if (fg) T.far.push([fg, [t[0], t[1], t[2], t[3] * 1.9, t[4]]]); } } }
   /* 더 놓을 것(바위·쓰러진 나무·눈 더미 …): extra = [[이름, x, z, 크기, 돌림, 'prop'|'ground'], …] */
   function addExtra(list) { for (const e of list) { const g = artGeo(e[0]); if (!g) continue; const y = Hq(e[1], e[2]) - 0.06 + (e[6] || 0); tileOf(e[1], e[2])[e[5] || 'prop'].push([g, [e[1], y, e[2], e[3] || 1, e[4] || 0]]); } }   /* e[6] = 높이 더하기(바위벽은 묻고, 눈 더미는 살짝 띄운다) · 'deco' = 그림자 없이 110 m 까지 */
   function batch(items, shadow) { if (!items.length) return null; const ids = new Map(); let nv = 0, ni = 0; for (const [g] of items) if (!ids.has(g)) { ids.set(g, -1); nv += g.attributes.position.count; ni += g.index.count; }
     let m; try { m = new THREE.BatchedMesh(items.length, nv, ni, artMat); m.perObjectFrustumCulled = false; m.sortObjects = false; for (const g of ids.keys()) ids.set(g, m.addGeometry(g)); for (const [g, t] of items) { const id = m.addInstance(ids.get(g)); _o.position.set(t[0], t[1], t[2]); _o.scale.setScalar(t[3]); _o.rotation.set(0, t[4], 0); _o.updateMatrix(); m.setMatrixAt(id, _o.matrix); } m.computeBoundingSphere(); }
     catch (e) { console.warn('batch', e); return null; }
-    m.castShadow = shadow; m.receiveShadow = true; scene.add(m); return m; }
+    m.castShadow = shadow && !lite; m.receiveShadow = true; scene.add(m); return m; }
   const built = [];
-  function build() { for (const m of built) scene.remove(m); built.length = 0; for (const T of tiles.values()) { T.mTree = batch([...T.tree, ...T.prop], true); T.mMid = batch(T.mid, false); T.mFar = batch(T.far, false); T.mGround = batch(T.ground, false); T.mGroundLo = batch(T.groundLo, false); T.mDeco = batch(T.deco, false); for (const m of [T.mTree, T.mMid, T.mFar, T.mGround, T.mGroundLo, T.mDeco]) if (m) built.push(m); } }
+  function build() { for (const m of built) scene.remove(m); built.length = 0; for (const T of tiles.values()) { T.mTree = batch([...T.tree, ...T.prop], true); T.mTreeFar = batch(T.treeFar, false); T.mMidFar = batch(T.midFar, false); T.mMid = batch(T.mid, false); T.mFar = batch(T.far, false); T.mGround = batch(T.ground, false); T.mGroundLo = batch(T.groundLo, false); T.mDeco = batch(T.deco, false); for (const m of [T.mTree, T.mTreeFar, T.mMidFar, T.mMid, T.mFar, T.mGround, T.mGroundLo, T.mDeco]) if (m) built.push(m); } }
   /* 가까운 칸만 자세히: 나(px, pz)에서 칸 가운데까지. k = 망원경으로 볼 때 멀리까지 */
-  function lod(px, pz, k = 1) { for (const T of tiles.values()) { const d = Math.hypot(T.cx - px, T.cz - pz) - TS * 0.7, hasMid = !!T.mMid, nearT = d < (hasMid ? 62 : 110) * k, midT = hasMid && !nearT && d < 210 * k; if (T.mTree) T.mTree.visible = nearT; if (T.mMid) T.mMid.visible = midT; if (T.mFar) T.mFar.visible = !nearT && !midT; const gN = d < (T.mGroundLo ? 34 : 60) * k; if (T.mGround) T.mGround.visible = gN; if (T.mGroundLo) T.mGroundLo.visible = !gN && d < 100 * k; if (T.mDeco) T.mDeco.visible = d < 110 * k; } }
-  const cull = (m) => { if (!m) return m; m.computeBoundingSphere(); m.frustumCulled = true; return m; };
-  for (const k in far) if (far[k].length) { const tl = {}; for (const t of far[k]) { const key = Math.floor(t[0] / 200) + '_' + Math.floor(t[2] / 160); (tl[key] = tl[key] || []).push(t); } for (const key in tl) cull(artInst(scene, 'cs_tree_far', tl[key], FT[k], { shadow: false })); }
-  build(); lod(64, 172);
+  const NEAR_R = lite ? 38 : 50;
+  function lod(px, pz, k = 1) { for (const T of tiles.values()) { const d = Math.hypot(T.cx - px, T.cz - pz) - TS * 0.7, lo = !!(T.mMid || T.mMidFar), nearT = d < (lo ? NEAR_R : 110) * k, midR = d < 210 * k, scope = k > 1;
+      if (T.mTree) T.mTree.visible = nearT; if (T.mTreeFar) T.mTreeFar.visible = scope && nearT;
+      if (T.mMid) T.mMid.visible = midR && !nearT; if (T.mMidFar) T.mMidFar.visible = midR && !(scope && nearT); if (T.mFar) T.mFar.visible = !midR;
+      const gN = d < (T.mGroundLo ? 34 : 60) * k; if (T.mGround) T.mGround.visible = gN; if (T.mGroundLo) T.mGroundLo.visible = !gN && d < 100 * k; if (T.mDeco) T.mDeco.visible = d < 110 * k; } }
+  /* 먼 숲(놀이 터 밖): 210 m 안은 가벼운 나무, 그 밖은 원뿔 — 같은 칸 틀에 넣는다 */
+  const LO_OF = { gold: 'cs_larch_lo', grey: 'cs_birch_lo', dark: 'cs_spruce_lo' };
+  for (const k in far) { const cone = artGeo('cs_tree_far', FT[k]); for (const t of far[k]) { const T = tileOf(t[0], t[2]), snowy = k === 'dark' && t[5] > 32, lo = artGeo(snowy ? 'cs_spruce_snow_lo' : LO_OF[k]), full = artGeo(snowy ? 'cs_spruce_snow' : LO_OF[k].replace('_lo', '')); if (full) T.treeFar.push([full, t]); if (lo) T.midFar.push([lo, t]);   /* 놀이 터 밖 나무: 자세한 모양은 망원경으로 볼 때만 */ if (cone) T.far.push([cone, [t[0], t[1], t[2], t[3] * 1.7, t[4]]]); } }
+  /* build() 는 부르는 쪽이 한 번(꾸밀 것을 다 더한 뒤) */
   return { near, far, put, tiles, addExtra, build, lod };
 }
 
