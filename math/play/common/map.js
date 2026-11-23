@@ -7,7 +7,7 @@
  *   막힘       = 깨끗하지 못한 판 STUCK 연달아 → 틀이 길잡이를 일찍 · 작은 수부터 · 손으로 한 판(벌 없음). 2×STUCK 이면 고르는 화면에서 앞 깃발이 살짝 흔들림
  *   기록은 거꾸로 가지 않는다(딴 깃발은 내려가지 않는다).
  * 저장: localStorage `kedu_mathplay_map` 한 칸 — /kedu_scope.js 가 먼저 실려 있어야 기기에 남는다(정식 세션). 그 밖에는 화면이 열려 있는 동안만. 서버 호출 0. */
-import { BUILT, STARTS } from './built.js?v=3';
+import { BUILT, STARTS } from './built.js?v=4';
 
 // ── 내가 정한 수치(정본 5-4절 기본안 — 준호가 바꾼다)
 export const RULE = { PASS_CLEAN: 2, KEEP_DAYS: 1, STUCK: 3 };
