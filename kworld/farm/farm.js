@@ -170,7 +170,7 @@ const wx = (() => { const N = 700, p = new Float32Array(N * 3); for (let i = 0; 
 const { workPose, hipify, dogPose, henPose, oxPose } = BK;
 const mkP = (o, sc) => { const m = hipify(person({ pants: 0xe8e2d2, skin: 0xf0c48e, ...o })); m.rotation.order = 'YXZ'; if (sc) m.scale.setScalar(sc); return m; };
 const pMesh = mkP({ shirt: 0xf2ead8, hat: 'scarf' });
-const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
+const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, depthWrite: false, depthTest: false })); pRing.rotation.x = -Math.PI / 2; pRing.renderOrder = 5; scene.add(pRing);   /* 낮은 시점에서 집 뒤로 가도 발밑 고리는 보이게 */
 const NB = { A: { name: '김 서방', home: [30, 118], col: 0x4a8ad6 }, B: { name: '박 서방', home: [72, 108], col: 0xd6564a }, C: { name: '최 서방', home: [82, 156], col: 0x4ab07a } };
 for (const k in NB) { const n = NB[k]; n.k = k; n.mesh = mkP({ shirt: n.col, hat: k === 'B' ? 'paeraengi' : 'scarf' }); n.house = putArt(k === 'B' ? 'thatch_a' : 'thatch_b', n.home[0], n.home[1] - 5, 0, 1.05, { wall: 0xdcc8a2 }); n.x = n.home[0]; n.z = n.home[1]; n.tx = n.x; n.tz = n.z; n.wait = 0;
   n.sell = pad('sell' + k, n.home[0] - 3, n.home[1] + 3, 0xc8a0ff); n.help = pad('help' + k, n.home[0] + 3, n.home[1] + 3, 0x7ad65a); }
@@ -257,7 +257,7 @@ const S = { mode: 'title', view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: -Math.PI /
   rice: 2, coin: 10, tob: 0, debt: 0, favor: 1, ox: false, yangban: false, knowMo: false, nursery: false, bo: 0, carry: null, taxDue: 0, taxPaid: false, drought: false, good: false,
   workT: 0, workKey: '', introT: 0, beatT: 0, stepT: 0, log: [], lost: [], gone: [], servant: null, labor: 0, soldY: 0, harvY: 0, lordY: 0, stats: { rented: 0, bought: 0, helped: 0, mo: 0, farMarket: 0 } };
 const { say, tick: sayTick } = sayLine(S);
-const ctl = controls(S, say);
+const ctl = controls(S, say, ['위에서', '가까이', '어깨 너머', '지도', '높이서']);   /* 다섯째 「높이서」 = 예전 기본 시점(논이 한눈에) */
 if (ctl.isTouch) $('keys').textContent = '왼쪽 동그라미로 걷기 · 뛰기 단추 · 노란 고리나 논 안에 가만히 서면 그 일을 한다 · 「시점」 ⟲⟳';
 let R = rng(seed0);
 const mine = () => plots.filter((p) => p.farmer === 'me'), owned = () => plots.filter((p) => p.owner === 'me');
@@ -617,6 +617,7 @@ function place(dt) { flushPlots(); dressTick(); pMesh.position.set(S.px, S.hopT 
   BK.flushAll();
   $('jobl').textContent = play ? (S.jobLabel || '') : ''; $('jobl').style.display = play && S.jobLabel ? 'block' : 'none';
 }
+const CAMV = { h: [24, 46], bk: [42, 76], fov: 32 };   /* 약 30° 내려다보기 — 예전 68° */
 function view() {
   if (window.__camAt) { const c = window.__camAt; cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); if (cam.fov !== (c[6] || 40)) { cam.fov = c[6] || 40; cam.updateProjectionMatrix(); } return; }   /* 시험용(화면 찍기) */
   if (S.mode === 'title' || S.mode === 'intro') { const k = S.mode === 'intro' ? clamp(S.introT / 4.4, 0, 1) : 0, e = k * k * (3 - 2 * k); cam.position.set(lerp(300, HOME[0] + 6, e), lerp(60, 26, e), lerp(190, HOME[1] + 36, e)); cam.lookAt(lerp(200, HOME[0], e), 2, lerp(110, HOME[1] - 10, e)); if (cam.fov !== 50) { cam.fov = 50; cam.updateProjectionMatrix(); } }
@@ -625,7 +626,7 @@ function view() {
     let farC = 400;
     if (S.view === 3) { const fov = 22, t = Math.tan(fov * Math.PI / 360), h = Math.max(272 / (2 * t), 404 / (2 * t * cam.aspect)); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } cam.position.lerp(v3.set(W / 2, h, H / 2 + 4 + h * 0.1), 0.12); cam.lookAt(W / 2, 0, H / 2 + 4); farC = h * 1.4; S.mapH = h; }
     const nearC = S.view === 3 ? Math.max(0.5, (S.mapH || 700) * 0.3) : 0.5; if (cam.near !== nearC) { cam.near = nearC; cam.updateProjectionMatrix(); }   /* 아주 높이서 볼 때 앞면 깊이를 넉넉히 — 강·모래톱이 줄무늬로 깜빡이던 것 */
-    else followCam(cam, S, { W, H, clampX: [-40, W + 40], clampZ: [0, H + 10], farH: [94, 118], farBk: [38, 48], farFov: 24 });
+    else followCam(cam, S, S.view === 4 ? { W, H, clampX: [-40, W + 40], clampZ: [0, H + 10], farH: [94, 118], farBk: [38, 48], farFov: 24 } : { W, H, clampX: [-40, W + 40], clampZ: [0, H + 10], farH: CAMV.h, farBk: CAMV.bk, farFov: CAMV.fov });   /* 11-23 준호 「좀 더 정교하게」: 기본은 비스듬히 낮게(집 옆면·처마·담 높이가 보이게) */
     if (cam.far !== farC) { cam.far = farC; cam.updateProjectionMatrix(); }
     for (const m of skyMeshes) m.scale.setScalar(S.view === 3 ? Math.max(8, farC / 280) : 1.6); scene.fog.near = S.view === 3 ? farC : 175; scene.fog.far = S.view === 3 ? farC * 1.6 : 470;
     const fx = Math.round(S.px / 4) * 4, fz = Math.round(S.pz / 4) * 4; sun.position.set(fx - 40, 64, fz + 30); sun.target.position.set(fx, 0, fz); }
@@ -644,7 +645,7 @@ $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode 
     b.onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'play'; loadGame(d); SFX.season(); }; } }
 canvas.addEventListener('pointerdown', () => { if (S.mode === 'intro') S.introT = 99; });
 runLoop((dt) => { update(dt); mis.update(dt, S.mode === 'play'); misHead(); }, view, () => renderer.render(scene, cam));
-window.__scene = { S, update, beasts: { dog, hens, oxS, oxM, cartM }, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, guideAt() { return curTask ? routeTo(curTask.at()) : null; }, get TL() { return TL; }, saveGame, readSave, loadGame,
+window.__scene = { S, update, CAMV, beasts: { dog, hens, oxS, oxM, cartM }, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, guideAt() { return curTask ? routeTo(curTask.at()) : null; }, get TL() { return TL; }, saveGame, readSave, loadGame,
   go() { $('go').click(); S.introT = 99; update(0.01); }, snap(n = 240) { const m = S.mode; if (m === 'title' || m === 'intro') S.mode = 'hold'; for (let i = 0; i < n; i++) view(); S.mode = m; }, info() { renderer.render(scene, cam); const r = renderer.info.render; return { calls: r.calls, tris: r.triangles }; }, view(n) { S.view = n; }, step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   next() { const b = document.querySelector('#ov button'); if (b && $('ov').style.display !== 'none') b.click(); },
   const: { HOME, GRAN, SEED, NURS, TOBS, DOOR, BO, LORD, TOWN, GWE, PAPER, OX, CLOTH, NEXT, PORT, PEDD, SLEN, P_OX, P_NB, P_LORD, P_PAPER } };
