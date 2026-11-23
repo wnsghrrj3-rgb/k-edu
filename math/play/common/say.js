@@ -11,3 +11,12 @@ export const garu = n => (n === '?' ? '를' : eul(n)) + ' 가르면';
 export const moeu = n => (n === '?' ? '를' : eul(n)) + ' 모으면';
 /** 세는 말(단위) — 「물고기는 모두 4마리」(T03). 틀은 이 표에서 꺼내 쓴다. */
 export const UNIT = { fish: '마리', cargo: '개' };
+/** 한글 수말(T04 — 숫자를 배우기 전의 낱칸은 「셋 주세요」처럼 말로 주문한다). */
+export const KO = ['영', '하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
+export const word = n => KO[n] != null ? KO[n] : String(n);
+/** 낱말 끝에 받침이 있는가(한글이면 글자로 · 숫자면 jong). */
+export const hasJong = s => { s = String(s); const c = s.charCodeAt(s.length - 1); return c >= 0xAC00 && c <= 0xD7A3 ? (c - 0xAC00) % 28 !== 0 : jong(+s); };
+export const eulW = s => hasJong(s) ? '을' : '를';   /* 하나를 · 둘을 · 셋을 */
+/** 한자 수말(숫자 이름 — 「셋, 삼」 · T05). */
+export const SINO = ['영', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구', '십'];
+export const sino = n => SINO[n] != null ? SINO[n] : String(n);

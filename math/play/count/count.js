@@ -13,9 +13,10 @@ import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=8';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=3';
+import * as M from '../common/map.js?v=4';
 import * as C from '../common/choose.js?v=2';
 import { UNIT } from '../common/say.js?v=2';
+import * as B from '../common/barrel.js?v=1';
 import * as R from './rules.js?v=1';
 import { ASSETS, MODEL, fishModel, SCENERY, DONE, GLOW, SAND, ICON } from './art.js?v=2';
 
@@ -44,18 +45,7 @@ const seaBox = () => S.tall ? T.TALL.sea : R.T.SEA;
 
 // ── 통 · 뚜껑: Prop_Barrel 을 조각으로(위 판자 넷 = 뚜껑 · 같은 판자를 바닥에 한 벌) — 안쪽 면이 보이게 양면
 let TK = null;
-function barrelKit(g){ g.scene.updateMatrixWorld(true); let mesh = null; g.scene.traverse(m => { if (m.isMesh && !mesh) mesh = m; });
-  const ps = stage.pieces(mesh).map(p => { p.geo.applyMatrix4(mesh.matrixWorld); p.geo.computeBoundingBox(); p.center = p.geo.boundingBox.getCenter(V()); p.size = p.geo.boundingBox.getSize(V()); return p; });
-  const top = Math.max(...ps.map(p => p.center.y)), lid = ps.filter(p => p.size.y < .05 && p.center.y > top - .05), body = ps.filter(p => !lid.includes(p));
-  const box = new THREE.Box3(); lid.forEach(p => box.union(p.geo.boundingBox)); const inner = mesh.material.clone(); inner.side = THREE.DoubleSide;
-  return { body, lid, mat: mesh.material, inner, lc: box.getCenter(V()), h: box.max.y, r: Math.max(...body.map(p => Math.hypot(p.center.x, p.center.z))) }; }
-function makeTub(){ const root = new THREE.Group(), body = new THREE.Group(); root.add(body); body.scale.setScalar(T.TUB_S);
-  for (const p of TK.body) body.add(stage.shadows(new THREE.Mesh(p.geo, TK.inner)));
-  for (const p of TK.lid) { const m = new THREE.Mesh(p.geo, TK.mat); m.position.y = -TK.lc.y + .03; body.add(stage.shadows(m)); }   /* 바닥 */
-  const layer = new THREE.Group(); layer.position.y = TK.h * T.TUB_S * T.IN_TUB.y; root.add(layer); scene.add(root); return { root, body, layer, fish: [] }; }
-function makeLid(){ const root = new THREE.Group(), g = new THREE.Group(); root.add(g); g.scale.setScalar(T.TUB_S);
-  for (const p of TK.lid) { const m = new THREE.Mesh(p.geo, TK.mat); m.position.set(-TK.lc.x, -TK.lc.y, -TK.lc.z); g.add(stage.shadows(m)); }
-  scene.add(root); return root; }
+const makeTub = () => B.makeTub(stage, THREE, TK, { s: T.TUB_S, layerY: T.IN_TUB.y }), makeLid = () => B.makeLid(stage, THREE, TK, T.TUB_S);   /* 통 · 뚜껑은 common/barrel.js(담아 주기 틀과 같이 씀) */
 /** 뚜껑 자리: 통 위(덮음) 또는 통 옆에 기대 둠(닫을 때 덮는다). */
 function lidPose(on){ const tb = S.tub.root, s = tb.scale.x; return on ? { x: tb.position.x, y: T.DECK + TK.h * T.TUB_S * s + .02, z: tb.position.z, rz: 0, rx: 0 } : { x: L().lid[0], y: T.DECK + .4 * s, z: L().lid[1], rz: -.12, rx: 1.05 }; }
 function lidSet(on){ const q = lidPose(on); S.lid.position.set(q.x, q.y, q.z); S.lid.rotation.set(q.rx, 0, q.rz); S.lid.scale.setScalar(S.tub.root.scale.x); S.lidOn = on; S.tub.layer.visible = !on || !S.ev.lid; }
@@ -77,7 +67,7 @@ const inSea = () => S.fish.filter(f => ['swim', 'go', 'hide'].includes(f.st()));
 // ── 짓기
 const tubs = [];
 async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await stage.load(n); }));
-  TK = barrelKit(K[MODEL.tub]);
+  TK = B.barrelKit(stage, THREE, K[MODEL.tub]);
   const dk = stage.dockKit(K[MODEL.dock]), step = Math.abs(dk.plankAt[1].x - dk.plankAt[0].x) || .36;
   let i = 0; for (let x = -4.8; x <= 4.8; x += step, i++) { const m = new THREE.Mesh(dk.planks[i % dk.planks.length], dk.mat); m.position.set(x, T.DECK - dk.plankH / 2, T.DZ); scene.add(stage.shadows(m)); }
   for (let x = -4.2; x <= 4.4; x += 2.8) for (const z of [T.DZ - 1.15, T.DZ + 1.2]) stage.put(K[MODEL.pole], x, T.DECK - .8, z, 1, x);

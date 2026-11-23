@@ -16,7 +16,7 @@ export const GAP = 14;   /* 띠와 수 셋 사이(px) */
 let cssIn = false; function css(){ if (cssIn) return; cssIn = true; const s = document.createElement('style'); s.id = 'choose-css'; s.textContent = CSS; document.head.appendChild(s); }
 const box = () => { css(); let e = document.getElementById('choose'); if (!e) { e = document.createElement('div'); e.id = 'choose'; document.body.appendChild(e); } return e; };
 /** 점 무늬(정본 5-10절 — 다섯씩 한 줄 · 6~9 는 윗줄 다섯 + 아랫줄 · T02 의 열 칸 틀과 같은 눈). 줄마다 다섯 칸(빈 칸은 테두리만) · lit 개가 켜짐. */
-export function dotsHtml(n, lit = n){ const rows = Math.max(1, Math.ceil(n / 5)); let h = '<span class="dots">'; for (let r = 0; r < rows; r++) { h += '<i>'; for (let k = 0; k < 5; k++) { const j = r * 5 + k; h += `<u class="${j < lit ? 'on' : ''}"></u>`; } h += '</i>'; } return h + '</span>'; }
+export function dotsHtml(n, lit = n){ css(); const rows = Math.max(1, Math.ceil(n / 5)); let h = '<span class="dots">'; for (let r = 0; r < rows; r++) { h += '<i>'; for (let k = 0; k < 5; k++) { const j = r * 5 + k; h += `<u class="${j < lit ? 'on' : ''}"></u>`; } h += '</i>'; } return h + '</span>'; }
 /** 띠의 「?」 칸 깜박임. */
 export function ask(on){ const e = document.querySelector('#tray b.hole'); if (e) e.classList.toggle('ask', !!on); }
 /** 수 셋을 띄운다. onPick(n, 단추) — 아닌 수면 부르는 쪽이 retreat(단추)를 부른다.
