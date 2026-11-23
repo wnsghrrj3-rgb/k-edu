@@ -215,7 +215,7 @@ function startChapter(i, fromSave) {
   army.reset(); ppl.clear(); clearPads(); targets = []; $('spot').style.display = 'none'; S.mode = 'play'; if (CH && CH.dispose) CH.dispose();
   /* 앞 장이 세운 것(천막·연기·고리·횃불)을 걷는다 — 처음 장을 열기 전의 무대만 남긴다. 빛·안개도 낮의 처음 값으로 */
   if (!BASE) BASE = new Set(scene.children); else for (const o of [...scene.children]) if (!BASE.has(o)) scene.remove(o);
-  $('panel').style.display = 'none'; $('cmd').style.opacity = 0; cmdT = 0;
+  $('panel').style.display = 'none'; $('cmd').style.opacity = 0; cmdT = 0; $('say').style.opacity = 0; S.sayT = 0;
   S.frozen = false; scene.fog.color.set(0xd8d0bc); scene.fog.near = 120; scene.fog.far = 520; hemi.color.set(0xeef0ff); hemi.intensity = 1.25; sun.color.set(0xfff0d0); sun.intensity = 2.3; sky.paint(0x8fb4dc, 0xe8e2d4, 0xffe2b0);
   CH = CHAPTERS[i](ctxFor()); CH.start(fromSave);
   S.yaw = S.yawT = CH.yaw != null ? CH.yaw : -Math.PI / 2; $('time').firstChild.textContent = CH.when + ' ';
