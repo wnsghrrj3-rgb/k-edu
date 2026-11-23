@@ -24,13 +24,15 @@ html,body{height:100%;background:#000;color:#dff6ff;font-family:'Pretendard','No
 .pick.on{border-color:#ffd27a;background:rgba(255,190,90,.2);color:#ffe9bd}
 #say{font-size:23px;font-weight:600;line-height:1.35;flex:1;display:flex;align-items:center}
 /* 오른쪽 화면: 시계 둘 */
-#right{width:470px;height:200px;padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;align-content:center}
+#right{width:470px;height:200px;padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;align-content:center}
 .clk{display:flex;flex-direction:column;gap:2px}
-.clk small{font-size:19px;font-weight:700;opacity:.8}
-.clk b{font-size:42px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em;font-family:ui-monospace,'SF Mono',Menlo,monospace}
+.clk small{font-size:16px;font-weight:700;opacity:.8}
+.clk b{font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em;font-family:ui-monospace,'SF Mono',Menlo,monospace}
 .clk.p b{color:#ffd27a;text-shadow:0 0 10px rgba(255,190,90,.6)}
-#rate{grid-column:1/3;font-size:20px;font-weight:700;opacity:.9;display:flex;justify-content:space-between;align-items:center}
-#pass{border:2px solid rgba(90,220,255,.35);background:rgba(20,80,100,.22);color:#bfefff;border-radius:10px;padding:6px 12px;font:inherit;font-weight:800;font-size:19px;cursor:pointer;text-shadow:inherit;white-space:nowrap}
+#rate{grid-column:1/3;font-size:17px;font-weight:700;opacity:.9}
+#btns{grid-column:1/3;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.mini{border:2px solid rgba(90,220,255,.35);background:rgba(20,80,100,.22);color:#bfefff;border-radius:9px;padding:6px 2px;font:inherit;font-weight:800;font-size:15.5px;cursor:pointer;text-shadow:inherit;white-space:nowrap;touch-action:none}
+.mini.on{border-color:#ffd27a;background:rgba(255,190,90,.2);color:#ffe9bd}
 #scope{width:260px;height:260px;border-radius:50%}
 /* 거리 레버 */
 #lever{width:70px;height:300px;touch-action:none;cursor:ns-resize}
@@ -45,6 +47,10 @@ a.back,.snd{color:#c9d3f5;text-decoration:none;font:inherit;font-weight:700;font
 .note.hide{opacity:0}
 .why{position:fixed;left:50%;top:26%;transform:translateX(-50%);max-width:min(560px,86vw);background:rgba(4,8,16,.82);border:1px solid rgba(255,210,122,.5);border-radius:18px;padding:16px 20px;text-align:center;font-size:1.05rem;line-height:1.6;backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .5s;color:#eef2ff;z-index:6}
 .why.show{opacity:1}.why b{color:#ffd27a;display:block;margin-bottom:4px}
+#hint{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);pointer-events:none;text-align:center;color:#dff6ff;font-weight:800;font-size:1.05rem;text-shadow:0 2px 12px #000;opacity:0;transition:opacity .6s;z-index:4}
+#hint.show{opacity:1}
+#hint .hand{font-size:3rem;animation:fling 2.2s ease-in-out infinite}
+@keyframes fling{0%{transform:translate(0,40px);opacity:0}15%{opacity:1}70%{transform:translate(90px,-50px);opacity:1}85%,100%{transform:translate(90px,-50px);opacity:0}}
 #load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;color:#aab6de;font-weight:700;transition:opacity .9s;z-index:9}
 #load.hide{opacity:0;pointer-events:none}
 /* 세로로 긴 화면: 조종석 그림 없이 아래에 판을 깐다 */
@@ -55,7 +61,7 @@ body.flat #left{width:auto;height:auto;grid-column:1/3;padding:6px}
 body.flat .pick{font-size:14px;padding:6px 2px}.flat .pick i{font-size:20px}
 body.flat #say{font-size:15px;min-height:2.6em}
 body.flat #right{width:auto;height:auto;padding:6px;grid-template-columns:1fr 1fr}
-body.flat .clk b{font-size:24px}body.flat .clk small,body.flat #rate,body.flat #pass{font-size:13px}
+body.flat .clk b{font-size:24px}body.flat .clk small,body.flat #rate{font-size:13px}body.flat .mini{font-size:11px;padding:6px 0}
 body.flat #scope{width:110px;height:110px;grid-row:2;grid-column:2}
 body.flat #lever{display:none}
 </style>
@@ -74,7 +80,8 @@ body.flat #lever{display:none}
   <div class="scr" id="right">
     <div class="clk"><small>내 시계</small><b id="cMe">00:00.0</b></div>
     <div class="clk p"><small>탐사선 시계</small><b id="cPr">--:--.-</b></div>
-    <div id="rate"><span id="rateT"></span><button id="pass">✦ 뒤로 별 지나가게</button></div>
+    <div id="rate"><span id="rateT"></span></div>
+    <div id="btns"><button class="mini" id="upB">▲ 위에서 보기</button><button class="mini" id="dnB">▼ 옆에서 보기</button><button class="mini" id="pass">✦ 뒤로 별</button><button class="mini" id="slow">🐢 천천히</button></div>
   </div>
   <div class="scr" id="lever"><div id="knob"></div></div>
 </div>
@@ -84,6 +91,7 @@ body.flat #lever{display:none}
   <button class="snd" id="snd">🔇 소리 켜기</button>
 </div>
 <div class="why" id="why"></div>
+<div id="hint"><div class="hand">👆</div><span>누른 채 끌었다 놓아 던져요</span></div>
 <div id="load">우주선 창을 여는 중…</div>
 <script type="module">
 import { createBlackhole } from './scene.js';
@@ -187,7 +195,7 @@ function trail(f, x, y) { const t = f.trail, l = t[t.length - 1]; if (!l || Math
 let mi = 0, mine = false, hid = null;
 const note = (t, s) => { $('note').innerHTML = t + (s ? `<small>${s}</small>` : ''); $('note').classList.remove('hide'); };
 function showMission() {
-  if (mi >= MISSIONS.length) { note('자유롭게 던져 보세요', '거리 레버로 다가가면 빛이 더 심하게 휘어요'); return; }
+  if (mi >= MISSIONS.length) { note('자유롭게 해 보세요', '위에서 내려다보기 · 다가가기 · 천천히 보기 · 뒤로 별 지나가게'); return; }
   note('의뢰 ' + (mi + 1) + ' · ' + MISSIONS[mi].say);
   if (MISSIONS[mi].id === 'hidden') { hid = { beta: .05 + Math.random() * .1, dir: Math.random() * Math.PI * 2 }; bh.hidden(hid.beta, hid.dir, 1); say('블랙홀 뒤 어딘가에 밝은 별이 숨어 있어요. 보이는 자리를 눌러요.'); }
 }
@@ -202,10 +210,11 @@ function touched() { if (!mine) { mine = true; audio.unlock(); syncSnd(); showMi
 
 // ── 창밖을 끌어 던지기 / 눌러 찾기
 const pad = $('pad'), hud = $('hud'), hc = hud.getContext('2d');
-let drag = null, preview = null;
+let drag = null, preview = null, threw = false;
+setTimeout(() => { if (!threw) $('hint').classList.add('show'); }, 5000);
 // 끄는 쪽이 던지는 쪽: 위 = 블랙홀 쪽으로 곧장, 옆 = 비스듬히. 길게 끌수록 세게.
 const aimOf = d => { const H = innerHeight, dx = d.x - d.x0, dy = d.y - d.y0, len = Math.hypot(dx, dy); return { aim: Math.max(-1.55, Math.min(1.55, Math.atan2(dx, -dy))), power: Math.max(.06, Math.min(1, len / (H * .36))), len }; };
-pad.onpointerdown = e => { pad.setPointerCapture(e.pointerId); drag = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY }; touched(); };
+pad.onpointerdown = e => { $('hint').classList.remove('show'); pad.setPointerCapture(e.pointerId); drag = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY }; touched(); };
 pad.onpointermove = e => { if (!drag) return; drag.x = e.clientX; drag.y = e.clientY; const a = aimOf(drag); if (a.len > 14) { drag.dirty = true; } };
 pad.onpointerup = e => { if (!drag) return; const a = aimOf(drag), d = drag; drag = null; preview = null;
   if (a.len <= 14) {                                                           // 톡 누름
@@ -213,11 +222,18 @@ pad.onpointerup = e => { if (!drag) return; const a = aimOf(drag), d = drag; dra
       if (mi === 2 && m.ok(q)) { say('찾았어요! 별빛이 블랙홀 둘레로 휘어서 여기 보여요.'); win(m); } else if (mi === 2) say(m.tell(q) + ' 귀띔: ' + m.hint); }
     else say('창밖을 누른 채 끌었다 놓으면 끄는 쪽으로 던져요. 위는 블랙홀 쪽, 옆은 비스듬히. 길게 끌수록 세게.');
     return; }
-  throwIt(what, a.aim, a.power, true); say(`${OBJECTS[what].name}을(를) 던졌어요…`); };
+  throwIt(what, a.aim, a.power, true); threw = true; $('hint').classList.remove('show'); say(`${OBJECTS[what].name}을(를) 던졌어요. 가운데 둥근 화면에서 길을 볼 수 있어요.`); };
 pad.onpointercancel = () => { drag = null; preview = null; };
 function drawHud() {
   const dpr = Math.min(devicePixelRatio || 1, 2); if (hud.width !== Math.round(innerWidth * dpr)) { hud.width = Math.round(innerWidth * dpr); hud.height = Math.round(innerHeight * dpr); }
   hc.setTransform(dpr, 0, 0, dpr, 0, 0); hc.clearRect(0, 0, innerWidth, innerHeight);
+  // 날아가는 것: 창 안이면 이름표, 창 밖(아래·옆)이면 가장자리에 화살표
+  const wl = flat ? 8 : (innerWidth - FW) / 2 + FW * .045, wr = flat ? innerWidth - 8 : (innerWidth + FW) / 2 - FW * .045, wt = flat ? 50 : (innerHeight - FH) / 2 + FH * .085, wb = flat ? innerHeight * .62 : (innerHeight - FH) / 2 + FH * .69;
+  for (const f of flying) { const q = bh.project(f.o.pos), name = OBJECTS[f.w].name; const inside = q.front && q.x > wl && q.x < wr && q.y > wt && q.y < wb;
+    hc.font = '700 13px system-ui'; hc.textAlign = 'center';
+    if (inside) { if (f.w !== 'star') { hc.strokeStyle = 'rgba(160,240,255,.75)'; hc.lineWidth = 1.5; hc.beginPath(); hc.arc(q.x, q.y, 13, 0, 7); hc.stroke(); } hc.fillStyle = 'rgba(200,245,255,.9)'; hc.fillText(name, q.x, q.y - 20); }
+    else { const x = Math.max(wl + 16, Math.min(wr - 16, q.x)), y = Math.max(wt + 16, Math.min(wb - 14, q.y)), an = Math.atan2(q.y - y, q.x - x);
+      hc.save(); hc.translate(x, y); hc.fillStyle = 'rgba(160,240,255,.92)'; hc.fillText(name, 0, -14); hc.rotate(an); hc.beginPath(); hc.moveTo(12, 0); hc.lineTo(-4, -7); hc.lineTo(-4, 7); hc.fill(); hc.restore(); } }
   if (!drag) return; const a = aimOf(drag); if (a.len <= 14) return;
   if (drag.dirty) { drag.dirty = false; preview = simulate({ what, aim: a.aim, power: a.power, shipDist: dist, mass: 1 }, { maxTurns: 1 }); }
   const [bx, by] = bh.bhPx(), x0 = innerWidth / 2, y0 = flat ? innerHeight * .6 : innerHeight * .715, L = innerHeight * (.08 + .3 * a.power);
@@ -251,6 +267,15 @@ function clocks(dt) { myClock += dt; $('cMe').textContent = fmt(myClock);
   if (prClock === null) { $('cPr').textContent = '--:--.-'; return; }
   prClock += dt * prRate; $('cPr').textContent = fmt(prClock); if (flying.some(f => f.w === 'probe')) $('rateT').textContent = `탐사선 시계 ×${prRate.toFixed(2)}`; }
 
+// ── 보는 높이(누르고 있으면 움직임) · 천천히
+let elevDir = 0, speed = 1;
+for (const [id, d] of [['upB', 1], ['dnB', -1]]) { const b = $(id); b.onpointerdown = e => { b.setPointerCapture(e.pointerId); elevDir = d; touched(); }; b.onpointerup = b.onpointercancel = () => { elevDir = 0; }; }
+addEventListener('keydown', e => { if (e.key === 'ArrowUp') elevDir = 1; if (e.key === 'ArrowDown') elevDir = -1; });
+addEventListener('keyup', e => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') elevDir = 0; });
+$('gl').parentElement.addEventListener('wheel', e => { dist = Math.max(SHIP_MIN, Math.min(SHIP_MAX, dist + Math.sign(e.deltaY) * 1.5)); bh.setDist(dist); paintLever(); touched(); }, { passive: true });
+$('slow').onclick = () => { speed = speed === 1 ? .25 : 1; $('slow').classList.toggle('on', speed !== 1); touched(); };
+function stepView(dt) { if (elevDir) bh.setElev(bh.elev + elevDir * dt * .55); }
+
 // ── 뒤로 별 지나가게
 let pass = null;
 $('pass').onclick = () => { touched(); if (hid) return; pass = { t: 0 }; say('블랙홀 뒤로 별 하나가 지나가요. 하나가 둘로, 그러다 고리로…'); };
@@ -278,9 +303,9 @@ let demoT = 3.5, demoI = 0;
 function demo(dt) { if (mine) return; demoT -= dt; if (demoT > 0) return; const [w, a, p] = DEMO[demoI++ % DEMO.length]; const f = throwIt(w, a, p, false); demoT = 9 + Math.random() * 4; }
 
 let last = performance.now();
-function tick(dt) { demo(dt); stepFlying(dt); stepPass(dt); clocks(dt); drawScope(); drawHud(); bh.render(dt); }
+function tick(dt) { stepView(dt); demo(dt); stepFlying(dt * speed); stepPass(dt); clocks(dt * speed); drawScope(); drawHud(); bh.render(dt * (speed < 1 ? .5 : 1)); }
 function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; tick(dt); bh.tune(dt); requestAnimationFrame(frame); }
-if (qp.get('shot')) { window.__w = { bh, run(sec, script) { const dt = 1 / 30; let t = 0; while (t < sec) { for (const s of script || []) if (!s.done && t >= s.at) { s.done = 1; if (s.throw) throwIt(...s.throw, false); if (s.dist) { dist = s.dist; bh.setDist(dist); paintLever(); } if (s.pass) pass = { t: s.pass }; if (s.ui) touched(); } demoT = 99; stepFlying(dt); stepPass(dt); clocks(dt); if (t + dt >= sec) { drawScope(); bh.render(dt); } else bh.U.uTime.value += dt; t += dt; } return flying.map(f => f.res.outcome + ':' + f.w); } }; tick(1 / 30); document.title = 'ready'; }
+if (qp.get('shot')) { window.__w = { bh, run(sec, script) { const dt = 1 / 30; let t = 0; while (t < sec) { for (const s of script || []) if (!s.done && t >= s.at) { s.done = 1; if (s.throw) throwIt(...s.throw, false); if (s.dist) { dist = s.dist; bh.setDist(dist); paintLever(); } if (s.pass) pass = { t: s.pass }; if (s.ui) touched(); if (s.elev != null) bh.setElev(s.elev); } demoT = 99; stepFlying(dt); stepPass(dt); clocks(dt); if (t + dt >= sec) { drawScope(); drawHud(); bh.render(dt); } else bh.U.uTime.value += dt; t += dt; } return flying.map(f => f.res.outcome + ':' + f.w); } }; tick(1 / 30); document.title = 'ready'; }
 else requestAnimationFrame(frame);
 </script>
 </body>

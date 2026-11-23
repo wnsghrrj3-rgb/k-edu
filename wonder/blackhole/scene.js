@@ -14,7 +14,7 @@ import { DISK_IN, DISK_OUT } from './logic.js';
 const QUALITY = { high: { steps: 120, k: .085, maxH: 900,  bloom: true },
                   mid:  { steps: 84,  k: .115, maxH: 660,  bloom: true },
                   low:  { steps: 56,  k: .16,  maxH: 450,  bloom: false } };
-const NOBJ = 3, ELEV = THREE.MathUtils.degToRad(6.2), FOVY = 50, BH_UP = .19;   // BH_UP: 블랙홀을 화면 가운데보다 위(창 가운데)에 둠
+const NOBJ = 3, FOVY = 50, BH_UP = .19;   // BH_UP: 블랙홀을 화면 가운데보다 위(창 가운데)에 둠
 
 const FRAG = /* glsl */`
 precision highp float;
@@ -143,7 +143,7 @@ export async function createBlackhole(canvas, opt = {}) {
   composer.addPass(new TracePass()); composer.addPass(bloom); composer.addPass(new OutputPass());
 
   // ── 눈(우주선)
-  let dist = 20, W = 2, H = 2, tanY = Math.tan(THREE.MathUtils.degToRad(FOVY / 2)), focalPx = 1, bhPx = [0, 0];
+  let dist = 20, ELEV = THREE.MathUtils.degToRad(6.2), W = 2, H = 2, CW = 2, CH = 2, tanY = Math.tan(THREE.MathUtils.degToRad(FOVY / 2)), focalPx = 1, bhPx = [0, 0];
   const cam = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3();
   function placeCamera() {
     cam.set(dist * Math.cos(ELEV), dist * Math.sin(ELEV), 0);
@@ -157,7 +157,7 @@ export async function createBlackhole(canvas, opt = {}) {
   function resize() {
     const cw = canvas.clientWidth || innerWidth, ch = canvas.clientHeight || innerHeight, a = cw / ch;
     const pr = Math.min(devicePixelRatio || 1, Q.maxH / ch, 2);
-    W = Math.max(2, Math.round(cw * pr)); H = Math.max(2, Math.round(ch * pr));
+    W = Math.max(2, Math.round(cw * pr)); H = Math.max(2, Math.round(ch * pr)); CW = cw; CH = ch;
     renderer.setPixelRatio(1); renderer.setSize(W, H, false); composer.setSize(W, H); bloom.enabled = Q.bloom;
     tanY = Math.tan(THREE.MathUtils.degToRad(FOVY / 2)) * (a > 16 / 9 ? (16 / 9) / a : 1);   // 조종석 그림(16:9, 가득 채움)과 같은 눈금
     U.uTan.value.set(tanY * a, tanY); focalPx = (ch / 2) / tanY; bhPx = [cw / 2, ch / 2 - BH_UP * ch / 2];
@@ -192,6 +192,11 @@ export async function createBlackhole(canvas, opt = {}) {
   return {
     render, tune, objs, U,
     setDist(d) { dist = d; placeCamera(); }, get dist() { return dist; },
+    /** 원반을 내려다보는 높이(라디안): 0 = 옆에서, 클수록 위에서 */
+    setElev(e) { ELEV = Math.max(-.03, Math.min(1.35, e)); placeCamera(); }, get elev() { return ELEV; },
+    /** 그림 좌표의 한 점이 화면 어디에 보이나(휘는 것은 치지 않음) → { x, y, front } css px */
+    project(v) { const dx = v.x - cam.x, dy = v.y - cam.y, dz = v.z - cam.z; const z = dx * fwd.x + dy * fwd.y + dz * fwd.z, x = dx * right.x + dy * right.y + dz * right.z, y = dx * up.x + dy * up.y + dz * up.z;
+      const zz = Math.max(Math.abs(z), 1e-3); return { x: CW / 2 + (x / zz) * focalPx * (z > 0 ? 1 : 3), y: CH / 2 - (y / zz) * focalPx * (z > 0 ? 1 : 3) + (z > 0 ? 0 : CH), front: z > 0, far: Math.hypot(dx, dy, dz) }; },
     /** 논리 좌표 (x, y) → 그림 좌표 */
     world: (x, y, out = new THREE.Vector3()) => out.set(x, 0, -y),
     flare(angle, r, amt = 1) { U.uFlare.value = Math.min(2.5, U.uFlare.value + amt); U.uHot.value.set(angle, r, 1.6 * amt, 0); },
