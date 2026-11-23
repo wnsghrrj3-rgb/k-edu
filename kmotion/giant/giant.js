@@ -5,8 +5,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Character } from '../run/js/scene.js';
-import { InputManager } from '../run/js/game.js';
-import { KeyboardInput, MotionController } from '../run/js/input.js';
 import { AudioManager } from '../run/js/audio.js';
 
 const $ = id => document.getElementById(id);
@@ -31,7 +29,7 @@ const DIFF = {
   normal:{ name: '보통', speed: 1, gap: 1, react: 0, chase: 1 },
   hard:  { name: '어려움', speed: 1.15, gap: .88, react: -.15, chase: 1.25 },
 };
-const SET = Object.assign({ diff: 'normal', start: 1, hearts: 3, chase: true }, (() => { try { return JSON.parse(localStorage.getItem('kmgiant.set') || '{}'); } catch (e) { return {}; } })());
+const SET = Object.assign({ players: 1, diff: 'normal', start: 1, hearts: 3, chase: true }, (() => { try { return JSON.parse(localStorage.getItem('kmgiant.set') || '{}'); } catch (e) { return {}; } })());
 function saveSet(){ try { localStorage.setItem('kmgiant.set', JSON.stringify(SET)); } catch (e) {} }
 function eff(L){ const b = LEVELS[L], d = DIFF[SET.diff] || DIFF.normal;
   return Object.assign({}, b, { speed: b.speed * d.speed, gap: b.gap * d.gap, react: Math.max(1.4, b.react + d.react), roll: b.roll * d.speed, chase: SET.chase && b.chase ? b.chase * d.chase : 0 }); }
@@ -251,73 +249,128 @@ function pattern(kind, L, pz){
   }
 }
 
-// ───────── 상반신 전용 동작 인식: 앉아서 노트북·태블릿 앞(어깨까지만 보여도 됨)
-// · 줄 바꾸기 = 어깨 가운데가 옆으로 기울어짐(앉아서 몸을 기울이는 정도로 되게 문턱을 낮춤)
-// · 뛰기 = 두 손 번쩍 — 손이 화면 위로 나가도 팔꿈치가 어깨보다 올라가면 인정
-class UpperBodyMotion extends MotionController {
-  constructor(input, opt){ super(input, opt); Object.assign(this.cfg, { laneIn: .38, laneOut: .18, holdMs: 80, bendIn: 99, bendOut: 98 }); }
-  read(f){ const p = f.pose; if (!p) return null; const L = p[11], R = p[12]; if (Math.min(L.v, R.v) < .45) return null;
+// ───────── 상반신 전용 동작 인식 (한 명 · 두 명): 앉아서 어깨까지만 보여도 됨
+// · 줄 바꾸기 = 어깨 가운데가 옆으로 기울어짐 · 뛰기 = 두 손 번쩍(손이 화면 위로 나가도 팔꿈치가 어깨 위면 인정) · 손 쭉 뻗기 = 손목이 어깨 높이에서 옆으로
+// · 두 명: 카메라 화면 왼쪽 자리 = 1번, 오른쪽 자리 = 2번 (공용 엔진 duo)
+class GiantMotion {
+  constructor(n, cb){ this.n = n; this.cb = cb; this.active = false; this.paused = false; this.calib = null; this.cfg = { laneIn: .38, laneOut: .18, holdMs: 80, lostMs: 900 };
+    this.st = Array.from({ length: n }, () => ({ base: null, zone: 'center', cand: 'center', since: 0, lastMove: 0, armsWas: false, reach: null, lostSince: 0 }));
+    this.km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['pose'], poseConf: .35, activity: 'run', duo: n === 2 });
+    this.km.onFrame = f => this.frame(f); this.km.on('error', e => this.cb.onStatus('bad', e.message)); }
+  async start(){ await this.km.start(); this.started = true; }
+  stop(){ try { this.km.stop(); } catch (e) {} this.started = false; }
+  calibrate(seconds, onProgress){ return new Promise(res => { this.st.forEach(s => s.base = null); this.calib = { need: seconds * 1000, acc: 0, last: 0, sum: this.st.map(() => ({ x: 0, y: 0, sw: 0 })), n: 0, onProgress, res }; }); }
+  read(p, f){ if (!p) return null; const L = p[11], R = p[12]; if (Math.min(L.v, R.v) < .45) return null;
     const sh = { x: (L.x + R.x) / 2, y: (L.y + R.y) / 2 }, sw = Math.max(30, Math.abs(L.x - R.x));
     const wl = p[15], wr = p[16], el = p[13], er = p[14];
-    const wristUp = w => w.v > .35 && w.y < sh.y - sw * .3, elbowUp = e => e.v > .35 && e.y < sh.y - sw * .05;
-    const offTop = w => w.v < .35 || w.y < f.H * .04; // 손이 화면 위로 나감
-    const up = (w, e) => wristUp(w) || (elbowUp(e) && offTop(w));
-    const armsUp = up(wl, el) && up(wr, er);
-    // 손 쭉 뻗기: 손목이 어깨 높이쯤에서 어깨 가운데보다 어깨폭 1.1배 넘게 옆으로 나감
-    let reach = null;
-    if (!armsUp) for (const w of [wl, wr]) { if (w.v < .4 || Math.abs(w.y - sh.y) > sw * 1.1) continue; if (w.x < sh.x - sw * 1.1) reach = 'left'; else if (w.x > sh.x + sw * 1.1) reach = 'right'; }
-    if (reach !== this.reachSide) { this.reachSide = reach; if (this.active) this.input.emit('REACH', { side: reach, via: 'motion' }); }
-    return { sh, sw, armsUp, knee: 0 }; }
+    const wristUp = w => w.v > .35 && w.y < sh.y - sw * .3, elbowUp = e => e.v > .35 && e.y < sh.y - sw * .05, offTop = w => w.v < .35 || w.y < f.H * .04;
+    const up = (w, e) => wristUp(w) || (elbowUp(e) && offTop(w)); const armsUp = up(wl, el) && up(wr, er);
+    let reach = null; if (!armsUp) for (const w of [wl, wr]) { if (w.v < .4 || Math.abs(w.y - sh.y) > sw * 1.1) continue; if (w.x < sh.x - sw * 1.1) reach = 'left'; else if (w.x > sh.x + sw * 1.1) reach = 'right'; }
+    return { sh, sw, armsUp, reach }; }
+  frame(f){
+    const km = this.km, ctx = f.ctx, now = f.t, poses = this.n === 2 ? (f.duo || [null, null]) : [f.pose];
+    km.drawCamera(); const rs = poses.map(p => this.read(p, f)), COL = ['rgba(46,196,182,.95)', 'rgba(255,138,61,.95)'];
+    if (this.n === 2) { ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(f.W / 2, 0); ctx.lineTo(f.W / 2, f.H); ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center'; [0, 1].forEach(i => { ctx.fillStyle = COL[i]; ctx.fillText(i + 1, f.W * (i ? .75 : .25), 38); }); ctx.restore(); }
+    poses.forEach((p, i) => { if (p) km.drawSkeleton(p, km.POSE_BONES, rs[i] ? COL[i] : 'rgba(255,90,95,.9)'); });
+    const all = rs.every(Boolean), any = rs.some(Boolean);
+    if (this.calib) { const c = this.calib; if (all) { const dt = c.last ? Math.min(100, now - c.last) : 0; c.acc += dt; rs.forEach((r, i) => { c.sum[i].x += r.sh.x; c.sum[i].y += r.sh.y; c.sum[i].sw += r.sw; }); c.n++; } c.last = now;
+      c.onProgress(Math.min(1, c.acc / c.need), all, rs.map(Boolean));
+      if (c.acc >= c.need) { this.st.forEach((s, i) => { s.base = { hx: c.sum[i].x / c.n, hy: c.sum[i].y / c.n, sw: c.sum[i].sw / c.n }; s.zone = s.cand = 'center'; s.armsWas = false; s.reach = null; }); this.calib = null; c.res(); }
+      return; }
+    // 아무도 안 보이면 잠깐 멈춤(둘이 할 땐 한 명만 보여도 계속)
+    if (any) { this.lost = 0; if (this.paused) { this.paused = false; this.cb.onBack(); } } else { if (!this.lost) this.lost = now; if (this.active && !this.paused && now - this.lost > this.cfg.lostMs) { this.paused = true; this.cb.onLost(); } }
+    this.cb.onStatus(all ? 'ok' : 'bad', all ? '보여요' : any ? '한 명이 안 보여요' : '안 보여요');
+    if (!this.active) return;
+    rs.forEach((r, i) => { const s = this.st[i]; if (!r || !s.base) { if (s.reach) { s.reach = null; this.cb.onReach(i, null); } return; }
+      const dx = (r.sh.x - s.base.hx) / s.base.sw; let z = s.zone, C = this.cfg;
+      if (z === 'center') { if (dx < -C.laneIn) z = 'left'; else if (dx > C.laneIn) z = 'right'; } else if (Math.abs(dx) < C.laneOut) z = 'center'; else if (z === 'left' && dx > C.laneIn) z = 'right'; else if (z === 'right' && dx < -C.laneIn) z = 'left';
+      if (z !== s.cand) { s.cand = z; s.since = now; } else if (z !== s.zone && now - s.since >= C.holdMs) s.zone = z;
+      const want = s.zone === 'left' ? 0 : s.zone === 'right' ? 2 : 1, lane = this.cb.getLane(i);
+      if (want !== lane && now - s.lastMove > 160) { s.lastMove = now; this.cb.onMove(i, want < lane ? -1 : 1); }
+      if (r.armsUp && !s.armsWas) this.cb.onJump(i); s.armsWas = r.armsUp;
+      if (r.reach !== s.reach) { s.reach = r.reach; this.cb.onReach(i, r.reach); }
+      if (DEV && i === 0) $('dev').textContent = `fps ${km.fps} dx ${dx.toFixed(2)} zone ${s.zone} arms ${r.armsUp} reach ${r.reach}`; });
+  }
 }
 
 // ───────── 게임 상태
-const input = new InputManager();
-const keys = new KeyboardInput(input);
 const audio = new GiantAudio();
-const kid = new Character(); scene.add(kid.root);
-const player = { reachSide: null, reachHold: 0, lane: 1, x: 0, z: 0, y: 0, vy: 0, air: false, inv: 0, lanePush: 0, stepT: 0 };
-const game = { stars: 0, itemNext: 40, queue: [], time: 0, state: 'idle', level: 0, levelD: 0, speed: 6, nextSpawn: 30, life: 3, dodges: 0, hits: 0, combo: 0, maxCombo: 0, boomT: 9, breather: 0, pauseReason: '' };
+// 플레이어: 한 명 또는 두 명. 둘이 할 땐 같은 식탁을 함께 달리고 점수·하트는 따로.
+const P_COL = [0x2ec4b6, 0xff8a3d], P_CSS = ['#2ec4b6', '#ff8a3d'];
+function numTex(n, col){ const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'); g.fillStyle = col; g.beginPath(); g.arc(48, 48, 44, 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = 'bold 60px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(n, 48, 52); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
+function makePlayer(i){ const kid = new Character(); scene.add(kid.root);
+  if (i) kid.root.traverse(o => { if (o.isMesh && o.material.color.getHex() === P_COL[0]) { o.material = o.material.clone(); o.material.color.setHex(P_COL[i]); } });
+  const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: numTex(i + 1, P_CSS[i]), depthTest: false, transparent: true, fog: false })); tag.scale.setScalar(.55); tag.position.y = 2.25; tag.renderOrder = 12; kid.root.add(tag);
+  return { i, kid, tag, on: i === 0, lane: 1, x: 0, y: 0, vy: 0, air: false, inv: 0, out: 0, lanePush: 0, reachSide: null, reachHold: 0, life: 3, score: 0, stars: 0, dodges: 0, hits: 0, combo: 0, maxCombo: 0 }; }
+const players = [makePlayer(0), makePlayer(1)];
+const act = () => players.filter(p => p.on), two = () => players[1].on, ready = p => p.on && p.out <= 0;
+// 화면·카메라·생성 기준이 되는 「무리」 위치(한 명이면 그 아이)
+const player = { z: 0, stepT: 0,
+  get x(){ const a = act(); return a.reduce((s, p) => s + p.x, 0) / a.length; }, get y(){ return Math.max(...act().map(p => p.y)); },
+  get lanePush(){ const a = act(); return a.reduce((s, p) => s + p.lanePush, 0) / a.length; }, get lane(){ const a = act().filter(p => p.out <= 0); return (a.length ? pick(a) : players[0]).lane; },
+  get air(){ return act().some(p => p.air); }, get inv(){ return Math.min(...act().map(p => p.inv)); } };
+const game = { itemNext: 40, queue: [], time: 0, state: 'idle', level: 0, levelD: 0, speed: 6, nextSpawn: 30, boomT: 9, breather: 0, pauseReason: '' };
 let motion = null, motionReady = false, calibrating = false, mode = localStorage.getItem('kmgiant.mode') || 'camera';
 
-input.on('REACH', e => { player.reachSide = e.side; player.reachHold = e.side ? (e.via === 'key' ? .6 : 99) : 0; });
-addEventListener('keydown', e => { if (e.key === 'q' || e.key === 'Q') input.emit('REACH', { side: 'left', via: 'key' }); if (e.key === 'e' || e.key === 'E') input.emit('REACH', { side: 'right', via: 'key' }); });
-input.on('MOVE_LEFT', () => move(-1)); input.on('MOVE_RIGHT', () => move(1)); input.on('JUMP', jump);
-input.on('PAUSE', () => { if (game.state === 'play') pause('manual'); else if (game.state === 'pause') resume(); });
-input.on('PAUSE_LOST', () => { if (game.state === 'play') pause('lost'); });
-input.on('RESUME', () => { if (game.state === 'pause' && game.pauseReason === 'lost') resume(); });
-function move(d){ if (game.state !== 'play') return; const n = Math.max(0, Math.min(2, player.lane + d)); if (n !== player.lane) { player.lane = n; audio.lane(); } }
-function jump(){ if (game.state !== 'play' || player.air) return; player.air = true; player.vy = 8.6; kid.set('jump'); audio.jump(); }
+function move(p, d){ if (game.state !== 'play' || !ready(p)) return; const n = Math.max(0, Math.min(2, p.lane + d)); if (n !== p.lane) { p.lane = n; audio.lane(); } }
+function jump(p){ if (game.state !== 'play' || !ready(p) || p.air) return; p.air = true; p.vy = 8.6; p.kid.set('jump'); audio.jump(); }
+function reach(p, side, hold){ if (!p.on) return; p.reachSide = side; p.reachHold = side ? hold : 0; }
+function togglePause(){ if (game.state === 'play') pause('manual'); else if (game.state === 'pause') resume(); }
+// 키보드 — 혼자: ←→/A D · ↑/W/스페이스 뛰기 · Q E 손 뻗기 / 둘이: 1번 A D W Q E · 2번 ← → ↑ , .
+addEventListener('keydown', e => { if (e.repeat) return; const k = e.key.length === 1 ? e.key.toLowerCase() : e.key, P1 = players[0], P2 = two() ? players[1] : players[0]; let used = true;
+  if (k === 'a') move(P1, -1); else if (k === 'd') move(P1, 1); else if (k === 'w') jump(P1); else if (k === 'q') reach(P1, 'left', .6); else if (k === 'e') reach(P1, 'right', .6);
+  else if (k === 'ArrowLeft') move(P2, -1); else if (k === 'ArrowRight') move(P2, 1); else if (k === 'ArrowUp') jump(P2); else if (k === ',') reach(P2, 'left', .6); else if (k === '.') reach(P2, 'right', .6);
+  else if (k === ' ') jump(P1); else if (k === 'p' || k === 'Escape') togglePause(); else used = false;
+  if (used && game.state !== 'idle') e.preventDefault(); });
 
-function pop(text, cls){ const d = document.createElement('div'); d.className = 'pop ' + (cls || ''); d.textContent = text; $('pops').appendChild(d); setTimeout(() => d.remove(), 1000); }
+function pop(text, cls, p){ const d = document.createElement('div'); d.className = 'pop ' + (cls || ''); d.textContent = text; if (p && two()) { d.style.left = (p.i ? 1 : -1) * Math.min(260, innerWidth * .22) + 'px'; d.style.color = P_CSS[p.i]; } $('pops').appendChild(d); setTimeout(() => d.remove(), 1000); }
 let bannerT = null;
 function banner(big, small, ms = 2200){ const b = $('banner'); b.innerHTML = big + (small ? `<small>${small}</small>` : ''); b.classList.remove('hidden'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.add('hidden'), ms); }
+const hearts = p => { const mx = SET.hearts || 0; return !mx ? '❤ ∞' : p.out > 0 ? '💫 쉬는 중' : '❤'.repeat(Math.max(0, p.life)) + '<span style="opacity:.25">' + '❤'.repeat(Math.max(0, mx - p.life)) + '</span>'; };
 function hud(){
-  $('hLevel').textContent = game.level + 1;
-  const mx = SET.hearts || 0; $('hLife').innerHTML = !mx ? '❤ ∞' : '❤'.repeat(Math.max(0, game.life)) + '<span style="opacity:.25">' + '❤'.repeat(Math.max(0, mx - game.life)) + '</span>'; $('hStar').textContent = game.stars;
-  const p = Math.min(1, (game.level + game.levelD / LEVEL_LEN) / LEVELS.length) * 100; $('hProg').style.width = p + '%'; $('hKid').style.left = p + '%';
+  $('hLevel').textContent = game.level + 1; const d = two();
+  $('hud').classList.toggle('duo', d);
+  if (d) players.forEach(p => { $('pScore' + p.i).textContent = p.score; $('pLife' + p.i).innerHTML = hearts(p); });
+  else { const p = players[0]; $('hLife').innerHTML = hearts(p); $('hStar').textContent = p.stars; $('hScore').textContent = p.score; }
+  const pr = Math.min(1, (game.level + game.levelD / LEVEL_LEN) / LEVELS.length) * 100; $('hProg').style.width = pr + '%'; $('hKid').style.left = pr + '%';
 }
+function addScore(p, n, label){ p.score += n; if (label) pop(`${label} +${n}`, 'gold', p); }
 function startLevel(L, again){
-  game.level = L; game.levelD = 0; game.speed = eff(L).speed; game.nextSpawn = player.z - 26; game.breather = 1.6; game.life = SET.hearts || 3; game.itemNext = game.levelD + (L === 0 && !again ? 34 : rnd(30, 50)); hud();
+  game.level = L; game.levelD = 0; game.speed = eff(L).speed; game.nextSpawn = player.z - 26; game.breather = 1.6; game.itemNext = game.levelD + (L === 0 && !again ? 34 : rnd(30, 50));
+  if (!two() || again || game.fresh) act().forEach(p => { p.life = SET.hearts || 3; p.out = 0; }); game.fresh = false; hud();
   const [t, tip] = TIPS[L]; banner(again ? '다시 한 번!' : t, tip, 2600); say((again ? '다시 한 번! ' : t + '. ') + tip);
   game.queue = []; if (eff(L).chase) { if (!chase.on) startChase(); else chase.D = Math.max(chase.D, again ? 22 : 16); } else stopChase();
 }
-function hit(o){
-  if (player.inv > 0) return; o.hit = true; game.hits++; if (!SET.hearts) game.life = 99; (game.hitLog = game.hitLog || []).push(o.name + ':' + o.kind + (o.landed === false ? ':falling' : '') + ':L' + (game.level + 1) + (DEV ? ':dx' + (o.x - player.x).toFixed(2) + ':dz' + (o.z - player.z).toFixed(2) + ':hw' + (o.hw || 0).toFixed(2) + ':y' + (o.y || 0).toFixed(2) + ':py' + player.y.toFixed(2) : '')); game.combo = 0; game.life--; player.inv = 1.4; shake = 1;
-  audio.hit(); kid.set('hit'); $('flash').classList.add('on'); setTimeout(() => $('flash').classList.remove('on'), 90);
-  pop(pick(['앗!', '아야!', '으앗!']), 'red'); hud(); if (chase.on && o.kind !== 'chase') chase.D -= 5.5;
-  if (game.life <= 0) { // 1학년: 처음부터가 아니라 이 단계부터 다시
-    game.state = 'retry'; game.retryT = 1.3;
+function hit(o, p){
+  if (p.inv > 0 || p.out > 0) return; p.hits++; p.combo = 0; if (SET.hearts) p.life--; p.inv = 1.4; shake = 1;
+  (game.hitLog = game.hitLog || []).push(o.name + ':' + o.kind + ':L' + (game.level + 1));
+  audio.hit(); p.kid.set('hit'); $('flash').classList.add('on'); setTimeout(() => $('flash').classList.remove('on'), 90);
+  pop(pick(['앗!', '아야!', '으앗!']), 'red', p); if (chase.on && o.kind !== 'chase') chase.D -= two() ? 3.5 : 5.5;
+  if (SET.hearts && p.life <= 0) {
+    if (two()) { p.out = 3.2; p.inv = 5; pop('💫 잠깐 쉬어요', 'red', p); }   // 둘이 할 땐 멈추지 않고 그 아이만 잠깐 쉬었다 돌아옴
+    else { game.state = 'retry'; game.retryT = 1.3; }                          // 혼자: 처음부터가 아니라 이 단계부터 다시
   }
+  hud();
 }
-function dodge(o){ if (chase.on) chase.D = Math.min(30, chase.D + (o.jump ? 1.1 : 1.6)); game.dodges++; game.combo++; game.maxCombo = Math.max(game.maxCombo, game.combo); audio.dodge(game.combo);
-  if (game.combo >= 3 && game.combo % 5 === 0) { pop(`${game.combo}번 연속!`, 'gold'); audio.combo(); } else if (Math.random() < .55) pop(pick(['휙!', '좋아!', '피했다!', '잘했어!']), 'green'); }
-function pause(reason){ game.state = 'pause'; game.pauseReason = reason; $('pause').classList.remove('hidden'); $('pauseTitle').textContent = reason === 'lost' ? '친구가 안 보여요' : '잠깐 멈춤'; $('pauseMsg').textContent = reason === 'lost' ? '카메라 앞 가운데로 오면 이어서 해요' : '계속하기를 누르면 이어서 해요'; }
+function dodge(o, p){ if (chase.on) chase.D = Math.min(30, chase.D + (o.jump ? 1.1 : 1.6) * (two() ? .6 : 1)); p.dodges++; p.combo++; p.maxCombo = Math.max(p.maxCombo, p.combo); audio.dodge(p.combo);
+  p.score += 10 * Math.min(5, 1 + Math.floor(p.combo / 5));   // 연속으로 피할수록 한 번에 받는 점수가 커짐(최대 5배)
+  if (p.combo >= 3 && p.combo % 5 === 0) { pop(`${p.combo}번 연속!`, 'gold', p); audio.combo(); } else if (Math.random() < (two() ? .3 : .55)) pop(pick(['휙!', '좋아!', '피했다!', '잘했어!']), 'green', p); }
+function pause(reason){ game.state = 'pause'; game.pauseReason = reason; $('pause').classList.remove('hidden'); $('pauseTitle').textContent = reason === 'lost' ? '친구가 안 보여요' : '잠깐 멈춤'; $('pauseMsg').textContent = reason === 'lost' ? '카메라 앞으로 오면 이어서 해요' : '계속하기를 누르면 이어서 해요'; }
 function resume(){ game.state = 'play'; $('pause').classList.add('hidden'); }
+function bestKey(){ return `kmgiant.best.${SET.diff}.${two() ? 2 : 1}`; }
 function win(){
-  stopChase(true); game.state = 'win'; kid.set('win'); audio.win(); banner('탈출 성공!', '거인 나라를 빠져나왔어요', 2400); say('탈출 성공! 거인 나라를 빠져나왔어요');
-  if (motion) motion.active = false;
-  setTimeout(() => { show('result'); const stars = game.hits <= 2 ? 3 : game.hits <= 6 ? 2 : 1; $('resStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-    $('rStar').textContent = game.stars; $('rDodge').textContent = game.dodges; $('rHit').textContent = game.hits; $('rCombo').textContent = game.maxCombo; }, 2600);
+  stopChase(true); game.state = 'win'; act().forEach(p => { p.out = 0; p.kid.set('win'); addScore(p, 300); }); audio.win(); banner('탈출 성공!', '거인 나라를 빠져나왔어요', 2400); say('탈출 성공! 거인 나라를 빠져나왔어요');
+  if (motion) motion.active = false; hud();
+  setTimeout(() => { show('result'); const d = two(), A = players[0], B = players[1], total = act().reduce((s, p) => s + p.score, 0);
+    let best = 0; try { best = +localStorage.getItem(bestKey()) || 0; if (total > best) localStorage.setItem(bestKey(), total); } catch (e) {}
+    const hitsAll = act().reduce((s, p) => s + p.hits, 0) / act().length, st = hitsAll <= 2 ? 3 : hitsAll <= 6 ? 2 : 1; $('resStars').textContent = '⭐'.repeat(st) + '☆'.repeat(3 - st);
+    $('resSolo').classList.toggle('hidden', d); $('resDuo').classList.toggle('hidden', !d);
+    $('resBest').textContent = total > best ? `🎉 새 기록! (${(DIFF[SET.diff] || DIFF.normal).name})` : `최고 기록 ${best}점 (${(DIFF[SET.diff] || DIFF.normal).name})`;
+    if (d) { $('resTitle').textContent = A.score === B.score ? '함께 탈출! 비겼어요' : `함께 탈출! ${A.score > B.score ? 1 : 2}번 친구가 더 많이 모았어요`;
+      players.forEach(p => { $('dScore' + p.i).textContent = p.score; $('dInfo' + p.i).textContent = `⭐ ${p.stars} · 피함 ${p.dodges} · 부딪힘 ${p.hits}`; $('dCard' + p.i).classList.toggle('win', p.score > players[1 - p.i].score); });
+      $('dTotal').textContent = `둘이 합쳐 ${total}점`; }
+    else { $('resTitle').textContent = '탈출 성공!'; $('rScore').textContent = A.score; $('rStar').textContent = A.stars; $('rDodge').textContent = A.dodges; $('rHit').textContent = A.hits; $('rCombo').textContent = A.maxCombo; } }, 2600);
 }
 
 // ───────── 긴장 장치: 느린 화면·심장·뒤돌아보기, 뒤에서 굴러오는 수박
@@ -336,7 +389,7 @@ function updateChase(dt){
   if (chase.on && game.state === 'play' && fx.lookBack <= 0) {
     chase.D -= eff(game.level).chase * dt;
     if (chase.D <= 4.2) { // 꽉! — 수박에 따라잡힘
-      chase.D = 17; if (player.inv <= 0) { hit({ name: 'watermelon', kind: 'chase' }); pop('수박에 잡혔다!', 'red'); audio.thud(true); shake = 1.4; }
+      chase.D = 17; pop('수박에 잡혔다!', 'red'); audio.thud(true); shake = 1.4; act().forEach(p => hit({ name: 'watermelon', kind: 'chase' }, p));
     }
     chase.D = Math.min(30, chase.D);
   }
@@ -369,32 +422,32 @@ function spawnItem(type, side){
   root.position.set(it.x, it.y, it.z); scene.add(root); items.push(it); return it;
 }
 function clearItems(){ for (const it of items) { scene.remove(it.root); scene.remove(it.tag); } items.length = 0; }
-function collect(it){
-  it.got = true; it.t = 0; audio.chime(it.type);
-  if (it.type === 'heart' && SET.hearts) { game.life = Math.min(SET.hearts, game.life + 1); pop('❤ 하트 하나 더!', 'green'); }
-  else if (it.type === 'candy' && chase.on) { chase.D = Math.min(30, chase.D + 9); pop('🍬 수박이 멀어졌어요!', 'gold'); }
-  else { game.stars += it.type === 'star' ? 1 : 2; pop('⭐ 잡았다!', 'gold'); }
+function collect(it, p){
+  it.got = true; it.by = p; it.t = 0; audio.chime(it.type);
+  if (it.type === 'heart') { if (SET.hearts) p.life = Math.min(SET.hearts, p.life + 1); addScore(p, 30, '❤ 하트'); }
+  else if (it.type === 'candy') { if (chase.on) chase.D = Math.min(30, chase.D + 9); addScore(p, 30, chase.on ? '🍬 수박 멀리!' : '🍬 사탕'); }
+  else { p.stars++; addScore(p, 50, '⭐ 별'); }
   hud();
 }
 function updateItems(dt){
   if (game.state === 'play' && game.levelD > game.itemNext && game.levelD < LEVEL_LEN - 20) {
     game.itemNext = game.levelD + rnd(38, 62) / (DIFF[SET.diff] || DIFF.normal).speed;
-    const r = Math.random(), type = (SET.hearts && game.life < SET.hearts && r < .22) ? 'heart' : (chase.on && r < .45) ? 'candy' : 'star';
+    const r = Math.random(), type = (SET.hearts && act().some(q => q.life < SET.hearts) && r < .22) ? 'heart' : (chase.on && r < .45) ? 'candy' : 'star';
     const side = Math.random() < .5 ? 'left' : 'right'; spawnItem(type, side);
     if (!game.taughtReach) { game.taughtReach = true; banner(side === 'left' ? '👈 왼쪽으로 손을 쭉!' : '손을 쭉! 오른쪽 👉', '반짝이는 별이 오면 손을 뻗어 잡아요', 2600); say('반짝이는 별이 오면 손을 쭉 뻗어서 잡아요'); }
   }
-  if (player.reachHold > 0) { player.reachHold -= dt; if (player.reachHold <= 0) player.reachSide = null; }
+  for (const p of act()) if (p.reachHold > 0 && p.reachHold < 50) { p.reachHold -= dt; if (p.reachHold <= 0) p.reachSide = null; }
   const now = performance.now();
   for (let i = items.length - 1; i >= 0; i--) { const it = items[i];
     if (!it.got) {
       it.spin.rotation.y += dt * 2.4; it.root.position.y = it.y + Math.sin(now / 300 + i) * .15; it.halo.material.opacity = .7 + Math.sin(now / 150) * .25;
       const d = player.z - it.z;
       it.tag.material.opacity += ((d > 2 && d < 28 ? 1 : 0) - it.tag.material.opacity) * Math.min(1, dt * 8); it.tag.position.set(it.x, it.y + 1.9, it.z);
-      if (game.state === 'play' && Math.abs(d) < 2.0 && player.reachSide === it.side) collect(it);
+      if (game.state === 'play' && Math.abs(d) < 2.0) { const c = act().filter(q => ready(q) && q.reachSide === it.side).sort((a, b) => Math.abs(it.x - a.x) - Math.abs(it.x - b.x) + (Math.random() - .5) * .9); if (c.length) collect(it, c[0]); }
       if (d < -3) { it.got = true; it.missed = true; it.t = 0; }
     } else { // 잡으면 손 쪽으로 빨려 들어가며 작아짐 / 놓치면 흐려짐
       it.t += dt; it.tag.material.opacity = 0;
-      if (!it.missed) { it.root.position.lerp(new THREE.Vector3(player.x + (it.side === 'left' ? -1 : 1) * .9, player.y + 1.3, player.z), Math.min(1, dt * 12)); it.root.scale.setScalar(Math.max(.01, 1 - it.t * 2.2)); }
+      if (!it.missed) { it.root.position.lerp(new THREE.Vector3(it.by.x + (it.side === 'left' ? -1 : 1) * .9, it.by.y + 1.3, player.z), Math.min(1, dt * 12)); it.root.scale.setScalar(Math.max(.01, 1 - it.t * 2.2)); }
       else it.root.scale.setScalar(Math.max(.01, 1 - it.t * 2));
       if (it.t > .5) { scene.remove(it.root); scene.remove(it.tag); items.splice(i, 1); }
     }
@@ -407,12 +460,15 @@ function update(dt){
   const speed = game.state === 'play' ? game.speed : game.state === 'idle' ? 3 : game.state === 'win' ? 2 : 0;
   // 플레이어
   if (game.state !== 'pause') {
-    player.z -= speed * dt; const tx = LANES[player.lane], dx = tx - player.x; player.x += dx * (1 - Math.exp(-dt * 11)); player.lanePush = Math.max(-1, Math.min(1, dx * .9));
-    if (player.air) { player.y += player.vy * dt; player.vy -= 22 * dt; if (player.y <= 0) { player.y = 0; player.air = false; kid.set('land'); audio.land(); } }
-    if (player.inv > 0) player.inv -= dt;
-    player.stepT += speed * dt; if (player.stepT > 2.2 && !player.air && game.state === 'play') { player.stepT = 0; audio.step(); }
+    player.z -= speed * dt; const off = two() ? .42 : 0;
+    for (const p of act()) { const tx = LANES[p.lane] + (p.i ? off : -off), dx = tx - p.x; p.x += dx * (1 - Math.exp(-dt * 11)); p.lanePush = Math.max(-1, Math.min(1, dx * .9));
+      if (p.air) { p.y += p.vy * dt; p.vy -= 22 * dt; if (p.y <= 0) { p.y = 0; p.air = false; p.kid.set('land'); audio.land(); } }
+      if (p.inv > 0) p.inv -= dt;
+      if (p.out > 0 && game.state === 'play') { p.out -= dt; if (p.out <= 0) { p.life = SET.hearts || 3; p.inv = 1.5; pop('다시 출발!', 'green', p); hud(); } } }
+    player.stepT += speed * dt; if (player.stepT > 2.2 && game.state === 'play') { player.stepT = 0; audio.step(); }
   }
   if (game.state === 'retry') { game.retryT -= dt; if (game.retryT <= 0) { clearObs(); game.state = 'play'; startLevel(game.level, true); } }
+  if (game.state === 'play' && game.levelD + speed * dt >= LEVEL_LEN && game.levelD < LEVEL_LEN) act().forEach(p => addScore(p, 100, '단계 통과'));
   if (game.state === 'play') {
     game.levelD += speed * dt; if (game.breather > 0) game.breather -= dt;
     // 거인의 발소리: 가끔 쿵 — 식탁이 흔들리고 물건들이 들썩
@@ -454,14 +510,14 @@ function update(dt){
       o.tag.material.opacity += ((show ? 1 : 0) - o.tag.material.opacity) * Math.min(1, dt * 8);
       o.tag.position.set(o.across ? player.x : o.x, (o.kind === 'fall' && !o.landed ? Math.min(o.y, 0) : o.y) + Math.max(o.h, .8) + .9 + Math.sin(performance.now() / 160) * .12, o.z); }
     // 부딪힘: 줄(x) 겹침 + 앞뒤(z) 겹침 + 높이(뛰면 작은 것은 넘음)
-    if (playing && !o.hit && !o.passed && o.root.visible) {
-      const ox = Math.abs(o.x - player.x) < o.hw * .82 + .3, oz = Math.abs(o.z - player.z) < o.hd * .82 + .25; // 둥근 물건이라 상자보다 조금 너그럽게
-      const clear = player.y > o.h * .8 + o.y; const underFall = o.kind === 'fall' && !o.landed && o.y < 1.7;
-      if (ox && oz && (underFall || (!clear && o.y < .9))) hit(o);
-    }
-    if (!o.passed && o.z - o.hd > player.z + .6) { o.passed = true; if (!o.hit && Math.abs(o.x - player.x) < 3.4 && game.state === 'play') { dodge(o);
-      const close = (!o.jump && Math.abs(o.x - player.x) < o.hw + 1.3) || (o.jump && player.air && Math.abs(o.x - player.x) < o.hw + .4);
-      if (close && fx.slowCool <= 0) { fx.slow = .5; fx.slowCool = 2.5; chase.D += .8; pop(o.jump ? '훌쩍!' : '아슬아슬!', 'gold'); audio.whoosh(); } } }
+    if (playing && !o.passed && o.root.visible) for (const p of act()) { const bit = 1 << p.i; if ((o.hitMask | 0) & bit || p.out > 0) continue;
+      const ox = Math.abs(o.x - p.x) < o.hw * .82 + .3, oz = Math.abs(o.z - player.z) < o.hd * .82 + .25; // 둥근 물건이라 상자보다 조금 너그럽게
+      const clear = p.y > o.h * .8 + o.y; const underFall = o.kind === 'fall' && !o.landed && o.y < 1.7;
+      if (ox && oz && (underFall || (!clear && o.y < .9)) && p.inv <= 0) { o.hitMask = (o.hitMask | 0) | bit; hit(o, p); } }
+    o.hit = act().every(p => (o.hitMask | 0) & (1 << p.i));
+    if (!o.passed && o.z - o.hd > player.z + .6) { o.passed = true; if (game.state === 'play') for (const p of act()) { if ((o.hitMask | 0) & (1 << p.i) || p.out > 0 || Math.abs(o.x - p.x) > 3.4) continue; dodge(o, p);
+      const close = (!o.jump && Math.abs(o.x - p.x) < o.hw + 1.3) || (o.jump && p.air && Math.abs(o.x - p.x) < o.hw + .4);
+      if (close) { addScore(p, 20); if (fx.slowCool <= 0) { fx.slow = .5; fx.slowCool = 2.5; chase.D += .8; pop(o.jump ? '훌쩍! +20' : '아슬아슬! +20', 'gold', p); audio.whoosh(); } } } hud(); }
   }
   for (let i = obs.length - 1; i >= 0; i--) { const o = obs[i]; if (o.z > player.z + 18 || Math.abs(o.x) > 20) { scene.remove(o.root); if (o.marker) scene.remove(o.marker); if (o.tag) scene.remove(o.tag); obs.splice(i, 1); } }
   // 풍경 재배치·들썩
@@ -469,18 +525,19 @@ function update(dt){
   if (crumbs) updCrumbs(player.z);
   if (table) table.position.z = Math.round(player.z / 120) * 120;
   // 캐릭터
-  if (kid.state === 'jump' && !player.air) kid.set('land');
-  if (game.state === 'idle' || game.state === 'play' || game.state === 'retry') { if (!['jump', 'land', 'hit', 'run'].includes(kid.state)) kid.set('run'); }
-  kid.root.position.set(player.x, player.y, player.z); kid.root.visible = !(player.inv > .3 && Math.floor(performance.now() / 90) % 2 === 0);
-  kid.update(dt, game.state === 'play' ? (game.speed - 6) / 5 : .1, player.y, player.lanePush);
-  if (player.reachSide === 'right') { kid.armR.rotation.set(0, 0, 1.45); kid.foreR.rotation.x = 0; }
-  if (player.reachSide === 'left') { kid.armL.rotation.set(0, 0, -1.45); kid.foreL.rotation.x = 0; }
+  for (const p of players) { const kid = p.kid; kid.root.visible = p.on; if (!p.on) continue; p.tag.visible = two();
+    if (kid.state === 'jump' && !p.air) kid.set('land');
+    if (game.state === 'idle' || game.state === 'play' || game.state === 'retry') { if (!['jump', 'land', 'hit', 'run'].includes(kid.state)) kid.set('run'); }
+    kid.root.position.set(p.x, p.y, player.z + (p.out > 0 ? 1.2 : 0)); kid.root.visible = !((p.inv > .3 || p.out > 0) && Math.floor(performance.now() / 90) % 2 === 0);
+    kid.update(dt, game.state === 'play' ? (game.speed - 6) / 5 : .1, p.y, p.lanePush);
+    if (p.reachSide === 'right') { kid.armR.rotation.set(0, 0, 1.45); kid.foreR.rotation.x = 0; }
+    if (p.reachSide === 'left') { kid.armL.rotation.set(0, 0, -1.45); kid.foreL.rotation.x = 0; } }
   // 예약 생성
   if (game.state === 'play') { game.time += dt; for (let i = game.queue.length - 1; i >= 0; i--) if (game.time >= game.queue[i].at) { const q = game.queue.splice(i, 1)[0]; q.fn(); } }
   updateChase(dt); updateItems(dt);
   // 위험할수록 심장 소리·붉은 테두리
   let danger = 0;
-  if (game.state === 'play') { for (const o of obs) { if (o.passed || o.hit || o.jump) continue; const d = player.z - o.z; if (d > 0 && d < 15 && Math.abs(o.x - player.x) < o.hw + .5) danger = Math.max(danger, 1 - d / 15); }
+  if (game.state === 'play') { for (const o of obs) { if (o.passed || o.hit || o.jump) continue; const d = player.z - o.z; if (d > 0 && d < 15 && act().some(q => Math.abs(o.x - q.x) < o.hw + .5)) danger = Math.max(danger, 1 - d / 15); }
     if (chase.on) danger = Math.max(danger, Math.min(1, Math.max(0, (13 - chase.D) / 9))); }
   fx.danger += (danger - fx.danger) * Math.min(1, dt * 6);
   fx.beatT -= dt; if (fx.danger > .18 && fx.beatT <= 0) { fx.beatT = 1.0 - fx.danger * .55; audio.heart(fx.danger); fx.pulse = 1; }
@@ -507,12 +564,12 @@ function show(name){ for (const k of ['start', 'calib', 'result']) $('scr-' + k)
 function setupSettings(){
   const box = $('setBox'), sum = () => { $('setSum').textContent = `${(DIFF[SET.diff] || DIFF.normal).name} · ${SET.start}단계부터 · 하트 ${SET.hearts || '무제한'} · 수박 ${SET.chase ? '켬' : '끔'}`; };
   const bind = (id, key, conv) => { const el = $(id); el.querySelectorAll('button').forEach(b => { b.classList.toggle('on', String(SET[key]) === b.dataset.v); b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); SET[key] = conv(b.dataset.v); saveSet(); sum(); }; }); };
-  bind('setDiff', 'diff', v => v); bind('setStart', 'start', v => +v); bind('setHearts', 'hearts', v => +v); bind('setChase', 'chase', v => v === 'true');
+  bind('playSeg', 'players', v => +v); bind('setDiff', 'diff', v => v); bind('setStart', 'start', v => +v); bind('setHearts', 'hearts', v => +v); bind('setChase', 'chase', v => v === 'true');
   $('btnSet').onclick = () => box.classList.toggle('hidden'); $('btnSetClose').onclick = () => box.classList.add('hidden'); sum();
 }
 setupSettings();
 const seg = $('modeSeg'); seg.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === mode); b.onclick = () => { seg.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); mode = b.dataset.v; localStorage.setItem('kmgiant.mode', mode); }; });
-function camStatus(kind, text){ const c = $('camBox'); c.classList.toggle('ok', kind === 'ok'); c.classList.toggle('bad', kind !== 'ok'); $('camSt').textContent = text === 'PLAYER DETECTED' ? '보여요' : text === 'NO PLAYER' ? '안 보여요' : text; }
+function camStatus(kind, text){ const c = $('camBox'); c.classList.toggle('ok', kind === 'ok'); c.classList.toggle('bad', kind !== 'ok'); $('camSt').textContent = text; }
 let calibCopy = null;
 function copyCalib(on){ if (calibCopy) cancelAnimationFrame(calibCopy); calibCopy = null; if (!on) return; const src = $('c'), dst = $('calibView'); dst.width = src.width; dst.height = src.height; const ctx = dst.getContext('2d'); const loop = () => { ctx.drawImage(src, 0, 0); calibCopy = requestAnimationFrame(loop); }; loop(); }
 async function startFlow(){
@@ -520,10 +577,15 @@ async function startFlow(){
   if (mode === 'camera') {
     show('calib'); calibrating = true;
     try {
-      if (!motion) motion = new UpperBodyMotion(input, { video: $('v'), canvas: $('c'), getLane: () => player.lane, onStatus: s => camStatus(s.kind === 'error' ? 'bad' : s.kind, s.text), onDebug: d => { if (DEV) $('dev').textContent = `fps ${d.fps} dx ${d.dx} drop ${d.drop} zone ${d.zone} arms ${d.armsUp}`; } });
+      const n = SET.players === 2 ? 2 : 1;
+      if (motion && motion.n !== n) { motion.stop(); motion = null; motionReady = false; }   // 인원이 바뀌면 인식기를 새로
+      if (!motion) motion = new GiantMotion(n, { getLane: i => players[i].lane, onMove: (i, d) => move(players[i], d), onJump: i => jump(players[i]), onReach: (i, side) => reach(players[i], side, 99),
+        onLost: () => { if (game.state === 'play') pause('lost'); }, onBack: () => { if (game.state === 'pause' && game.pauseReason === 'lost') resume(); }, onStatus: camStatus });
+      $('calibTitle').textContent = n === 2 ? '둘이 나란히 앉아요 — 왼쪽이 1번, 오른쪽이 2번' : '카메라 앞에 앉아요 — 어깨까지만 보이면 돼요';
       if (!motion.started) { $('calibMsg').textContent = '카메라를 켜는 중…'; await motion.start(); }
       motionReady = true; copyCalib(true);
-      await motion.calibrate(3, (p, vis) => { $('ringFg').style.strokeDashoffset = 327 * (1 - p); $('calibNum').textContent = Math.max(1, Math.ceil(3 - p * 3)); $('calibMsg').textContent = vis ? (p < .99 ? '좋아요! 그대로 있어요' : '준비 완료!') : '머리와 어깨가 보이게 가운데에'; });
+      await motion.calibrate(3, (p, vis, each) => { $('ringFg').style.strokeDashoffset = 327 * (1 - p); $('calibNum').textContent = Math.max(1, Math.ceil(3 - p * 3));
+        $('calibMsg').textContent = vis ? (p < .99 ? '좋아요! 그대로 있어요' : '준비 완료!') : n === 2 ? (each[0] || each[1] ? `${each[0] ? 2 : 1}번 친구가 안 보여요` : '두 친구 모두 머리와 어깨가 보이게') : '머리와 어깨가 보이게 가운데에'; });
       if (!calibrating) return; copyCalib(false); $('camBox').classList.remove('off');
     } catch (e) { $('calibMsg').textContent = '카메라를 쓸 수 없어요 → 키보드로 해요'; await new Promise(r => setTimeout(r, 1800)); if (!calibrating) return; mode = 'keyboard'; $('camBox').classList.add('off'); }
     calibrating = false;
@@ -532,13 +594,14 @@ async function startFlow(){
 }
 function begin(){
   show('hud'); $('pause').classList.add('hidden'); clearObs();
-  stopChase(); Object.assign(game, { stars: 0, queue: [], time: 0, state: 'play', dodges: 0, hits: 0, combo: 0, maxCombo: 0, boomT: 6 }); player.lane = 1; player.inv = 0; player.y = 0; player.air = false; kid.set('run');
+  stopChase(); Object.assign(game, { queue: [], time: 0, state: 'play', boomT: 6, fresh: true, hitLog: [], taughtReach: false }); players[1].on = SET.players === 2;
+  players.forEach(p => { Object.assign(p, { lane: 1, x: 0, y: 0, vy: 0, air: false, inv: 0, out: 0, reachSide: null, reachHold: 0, score: 0, stars: 0, dodges: 0, hits: 0, combo: 0, maxCombo: 0 }); p.kid.set('run'); });
   if (motion && motionReady && mode === 'camera') { motion.active = true; motion.paused = false; }
   startLevel(Math.max(0, Math.min(4, (SET.start || 1) - 1)));
 }
 function toStart(){ stopChase(); calibrating = false; copyCalib(false); clearObs(); game.state = 'idle'; if (motion) motion.active = false; $('pause').classList.add('hidden'); show('start'); try { speechSynthesis.cancel(); } catch (e) {} }
 $('btnStart').onclick = startFlow; $('btnCalibCancel').onclick = toStart; $('btnHome').onclick = toStart; $('btnQuit').onclick = toStart; $('btnResume').onclick = resume;
-$('btnRetry').onclick = () => { audio.ensure(); if (mode === 'camera' && motionReady) { $('camBox').classList.remove('off'); begin(); } else startFlow(); };
+$('btnRetry').onclick = () => { audio.ensure(); if (mode === 'camera' && motionReady && motion && motion.n === (SET.players === 2 ? 2 : 1)) { $('camBox').classList.remove('off'); begin(); } else startFlow(); };
 document.addEventListener('visibilitychange', () => { if (document.hidden && game.state === 'play') pause('manual'); });
 addEventListener('keydown', e => { if (e.key === 'Enter' && !$('scr-start').classList.contains('hidden')) startFlow(); if (e.key === 'm' || e.key === 'M') audio.setMuted(!audio.muted); });
 if (DEV) $('dev').classList.remove('hidden');
@@ -562,6 +625,6 @@ function loop(now){
   bar(1, '준비 완료'); setTimeout(() => $('loading').classList.add('off'), 250);
   show('start'); requestAnimationFrame(loop);
   // 자동 시험용: ?auto=1 이면 키보드 모드로 바로 시작(확인 촬영용)
-  if (Q.has('auto')) { mode = 'keyboard'; begin(); if (Q.get('level')) { clearObs(); startLevel(+Q.get('level') - 1); } }
-  window.__giant = { items, spawnItem, game, player, obs, scene, camera, renderer, startLevel, pattern, update, move, jump, LANES, chase, fx };
+  if (Q.has('auto')) { mode = 'keyboard'; if (Q.get('players')) SET.players = +Q.get('players'); begin(); if (Q.get('level')) { clearObs(); startLevel(+Q.get('level') - 1); } }
+  window.__giant = { items, spawnItem, game, player, players, obs, scene, camera, renderer, startLevel, pattern, update, move, jump, reach, LANES, chase, fx, SET };
 })();
