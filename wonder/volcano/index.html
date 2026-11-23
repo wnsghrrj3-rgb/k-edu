@@ -3,68 +3,188 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>화산 속 · 케이원더</title>
+<title>화산이 만든 땅 · 케이원더</title>
+<script type="importmap">
+{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:#0b0d12;color:#e6e9ef;font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
-#cv{position:fixed;inset:0;display:block;touch-action:none}
-.top{position:fixed;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 0;display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+html,body{height:100%;background:#05060a;color:#f3ece6;font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl.drag{cursor:grabbing}
+.top{position:fixed;left:0;right:0;top:0;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;display:flex;gap:10px;align-items:flex-start;pointer-events:none}
 .top>*{pointer-events:auto}
-a.back{color:#c3c8d2;text-decoration:none;font-weight:700;font-size:.9rem;background:#161a22;border:1px solid #2a303b;padding:7px 12px;border-radius:999px;white-space:nowrap}
-.note{margin:0 auto;max-width:min(680px,70vw);background:#161a22;border:1px solid #2a303b;border-radius:14px;padding:8px 16px;font-weight:800;font-size:clamp(.95rem,1.7vw,1.1rem);text-align:center}
-.note small{display:block;font-weight:500;color:#9aa1ae;font-size:.82em;margin-top:2px}
-.tag{font-size:.75rem;color:#8a91a0;border:1px dashed #3a404c;border-radius:999px;padding:6px 10px;white-space:nowrap}
-.bar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(920px,97vw);display:grid;gap:8px}
-.say{background:#161a22;border:1px solid #2a303b;border-radius:14px;padding:10px 14px;font-size:1rem;line-height:1.5;min-height:2.9em}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.chip{border:2px solid #2a303b;background:#12151c;color:#e6e9ef;border-radius:12px;padding:8px 12px;font:inherit;font-size:.92rem;font-weight:700;cursor:pointer;display:flex;gap:6px;align-items:center}
-.chip.on{border-color:#d9dde6;background:#232833}
-.sp{flex:1}
-.hide{display:none!important}
-@media (max-width:640px){.top{flex-wrap:wrap}.note{order:3;flex-basis:100%;max-width:none;margin:0}.tag{margin-left:auto}.chip{padding:7px 10px;font-size:.88rem}.say{font-size:.95rem}}
-.why{position:fixed;left:50%;top:18%;transform:translateX(-50%);max-width:min(560px,88vw);background:#161a22;border:1px solid #6b7280;border-radius:18px;padding:16px 20px;text-align:center;font-size:1.05rem;line-height:1.6;opacity:0;pointer-events:none;transition:opacity .5s}
-.why.show{opacity:1}.why b{display:block;margin-bottom:4px;color:#fff}
+a.back{color:#f0d9c8;text-decoration:none;font-weight:700;font-size:.9rem;background:rgba(20,12,10,.5);border:1px solid rgba(255,190,140,.2);padding:7px 12px;border-radius:999px;backdrop-filter:blur(6px);white-space:nowrap}
+.note{margin:0 auto;max-width:min(700px,72vw);background:rgba(20,12,10,.55);border:1px solid rgba(255,190,140,.2);border-radius:14px;padding:9px 16px;font-weight:700;font-size:clamp(.95rem,1.7vw,1.15rem);text-align:center;backdrop-filter:blur(6px);transition:opacity .6s;pointer-events:none}
+.note small{display:block;font-weight:500;color:#e0bfa8;font-size:.82em;margin-top:2px}
+.note.hide{opacity:0}
+.sp{width:5.6em;flex:none}
+/* 조종판(임시 — 묶음 2에서 블렌더 관측소 조종판으로 바뀐다) */
+.desk{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:18px;align-items:flex-end;background:linear-gradient(180deg,rgba(38,30,28,.86),rgba(18,14,14,.9));border:1px solid rgba(255,190,140,.22);border-radius:22px;padding:12px 18px 10px;backdrop-filter:blur(10px);box-shadow:0 10px 40px rgba(0,0,0,.45)}
+.ctl{display:grid;justify-items:center;gap:5px}
+.ctl b{font-size:.86rem;color:#f0d9c8;font-weight:800}
+.ctl .ends{display:flex;justify-content:space-between;width:100%;font-size:.74rem;color:#c9a892;font-weight:600}
+/* 끈적임 레버 */
+.lever{position:relative;width:176px;height:54px;touch-action:none;cursor:pointer}
+.lever .slot{position:absolute;left:10px;right:10px;top:23px;height:10px;border-radius:6px;background:#0c0908;box-shadow:inset 0 2px 4px #000,0 1px 0 rgba(255,255,255,.12)}
+.lever .slot::after{content:"";position:absolute;inset:2px;border-radius:4px;background:linear-gradient(90deg,#ff8a2a,#ffcf8a 45%,#d9d2c6);opacity:.55}
+.lever .arm{position:absolute;top:2px;width:22px;height:50px;margin-left:-11px;border-radius:9px;background:linear-gradient(90deg,#6d6a68,#d8d5d0 45%,#77736f);box-shadow:0 3px 8px rgba(0,0,0,.6),inset 0 -6px 0 rgba(0,0,0,.25)}
+.lever .arm::after{content:"";position:absolute;left:3px;right:3px;top:5px;height:14px;border-radius:6px;background:linear-gradient(180deg,#e2452a,#8f1d10)}
+/* 기체 밸브 */
+.valve{position:relative;width:62px;height:62px;touch-action:none;cursor:pointer}
+.valve .wheel{position:absolute;inset:0;border-radius:50%;border:8px solid #b8382a;box-shadow:0 3px 8px rgba(0,0,0,.6),inset 0 0 0 2px #6a1b12;background:
+  linear-gradient(0deg,transparent 44%,#b8382a 44% 56%,transparent 56%),linear-gradient(90deg,transparent 44%,#b8382a 44% 56%,transparent 56%),radial-gradient(circle,#d9d5cf 0 16%,transparent 17%)}
+.valve .wheel::after{content:"";position:absolute;left:50%;top:-8px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#ffe9c9}
+.btns{display:grid;gap:6px}
+.chip{border:1px solid rgba(255,190,140,.3);background:rgba(255,255,255,.05);color:#f3ece6;border-radius:12px;padding:8px 12px;font:inherit;font-size:.86rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.chip.hide{display:none}
+.model{position:fixed;right:12px;bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:.72rem;color:rgba(240,217,200,.6);text-align:right;line-height:1.35;pointer-events:none}
+#veil{position:fixed;inset:0;background:#05060a;opacity:0;pointer-events:none;transition:opacity .9s}
+#veil.on{opacity:1}
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#05060a;color:#e0bfa8;font-weight:700;transition:opacity .8s}
+#load.hide{opacity:0;pointer-events:none}
+@media (max-width:640px){.desk{gap:10px;padding:10px 12px 8px}.lever{width:132px}.sp{display:none}.note{max-width:none;margin:0;flex:1}.model{display:none}.chip{padding:7px 9px;font-size:.8rem}}
+@media (max-height:480px){.desk{transform:translateX(-50%) scale(.82);transform-origin:bottom center}}
 </style>
 </head>
 <body>
-<canvas id="cv"></canvas>
+<canvas id="gl"></canvas>
 <div class="top">
   <a class="back" href="../">← 케이원더</a>
-  <div class="note" id="note"></div>
-  <span class="tag">회색 판(그림 준비 중)</span>
+  <div class="note hide" id="note"></div>
+  <span class="sp"></span>
 </div>
-<section class="bar">
-  <div class="say" id="say">조종판의 레버·밸브·펌프를 끌어 보세요. 무인기는 끌어 옮겨요.</div>
-  <div class="row">
-    <button class="chip" id="ffwd">⏩ 빨리 감기</button>
-    <button class="chip" id="reset">↺ 처음 산으로</button>
-    <span class="sp"></span>
-    <span class="chip hide" id="freeTag">자유 · 힘 두 배</span>
+<section class="desk" id="desk">
+  <div class="ctl"><b>마그마 끈적임</b>
+    <div class="lever" id="lever" role="slider" tabindex="0" aria-label="마그마 끈적임" aria-valuemin="0" aria-valuemax="100"><div class="slot"></div><div class="arm" id="arm"></div></div>
+    <div class="ends"><span>묽게</span><span>끈적하게</span></div></div>
+  <div class="ctl"><b>기체</b>
+    <div class="valve" id="valve" role="slider" tabindex="0" aria-label="기체 밸브" aria-valuemin="0" aria-valuemax="100"><div class="wheel" id="wheel"></div></div>
+    <div class="ends"><span>닫힘</span><span>활짝</span></div></div>
+  <div class="btns">
+    <button class="chip" id="again">↺ 바다에서 다시</button>
+    <button class="chip hide" id="auto">▶ 저절로 보기</button>
   </div>
 </section>
-<div class="why" id="why"></div>
+<div class="model">계산으로 닮게 만든 모형이에요.<br>시간이 아주 빨리 감기고 있어요.</div>
+<div id="veil"></div>
+<div id="load">해 질 녘 바다를 준비하는 중…</div>
 <script type="module">
-import { createBoard } from './board.js';
+import { createScene } from './scene.js';
+import { createTerrain, reset, setVent, step, blast, measure } from './terrain.js';
+import { createVolcano, setHandles, stepVolcano, SAYS } from './logic.js';
+
 const $ = id => document.getElementById(id);
 const qp = new URLSearchParams(location.search);
-const ui = {
-  note(t, s) { $('note').innerHTML = t + (s ? `<small>${s}</small>` : ''); },
-  say(t) { $('say').textContent = t; },
-  why(t) { const w = $('why'); w.innerHTML = '<b>왜 그럴까?</b>' + t; w.classList.add('show'); setTimeout(() => w.classList.remove('show'), 7000); },
-  freeMode(on) { $('freeTag').classList.toggle('hide', !on); },
-  topH() { return document.querySelector('.top').getBoundingClientRect().bottom; },
-  bottomH() { return innerHeight - document.querySelector('.bar').getBoundingClientRect().top; },
-};
-const B = createBoard($('cv'), ui);
-$('ffwd').onclick = () => B.ffwd();
-$('reset').onclick = () => B.reset();
-if (qp.has('free')) { B.S.mi = 3; B.S.free = true; B.V.free = true; }
-if (qp.has('m')) B.S.mi = +qp.get('m');
-B.showMission();
-window.__volcano = B;
+let saved = null; try { saved = localStorage.getItem('wonder_volcano_q'); } catch (e) {}
+const quality = qp.get('q') || saved || 'high';
+const N = quality === 'low' ? 128 : 192, CELL = 19100 / (N - 1);            // 가로 19km 남짓의 바다
+const KV = (100 / CELL) ** 2;                                               // 칸이 크면 같은 부피가 더 얇다
+
+// ── 처음 땅: 깊은 바다 한가운데의 바다 밑 둔덕(꼭대기가 수면 바로 아래)
+let seed = +(qp.get('seed') || 0) || ((Math.random() * 1e6) | 0);
+function seabed(seed) {
+  const r1 = Math.sin(seed * 12.9898) * 43758.5453, ph = r1 - Math.floor(r1);
+  return (x, y, n) => { const c = (n - 1) / 2, dx = (x - c) * CELL / 100, dy = (y - c) * CELL / 100, r = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+    const lump = Math.sin(a * 3 + ph * 6.28) * .5 + Math.sin(a * 5 - ph * 9) * .3 + Math.sin(dx * .9 + ph * 20) * Math.cos(dy * .8) * .6;
+    return -250 + 205 * Math.exp(-Math.pow(r / 13, 4)) * (1 + .04 * lump) - Math.min(90, r * 1.4) + 4 * lump; };   // 넓고 평평한 꼭대기(수심 십몇 m)
+}
+const T = createTerrain({ N, cell: CELL, sea: 0, seed, base: seabed(seed) });
+const scene = await createScene($('gl'), T, { quality });
+$('load').classList.add('hide');
+
+// ── 분출: 끈적임·기체 → 분출 모양은 logic.js 가 정하고, 땅은 terrain.js 가 쌓는다
+const SPEED = 30;                                                           // 1초에 계산 걸음 수(시간이 빨리 감긴다)
+const PUSH = .7, RATE = { flow: 80, fountain: 58, dome: 30, building: 6, column: 105, rest: 0 };
+let V = createVolcano({ visc: .06, gas: .08, push: PUSH });
+let auto = true, showT = 0, phase = 0, blasts = 0, tickAcc = 0, restT = 0, emerged = false, calmT = 0, busy = false, colEnd = -99, hadCol = false, worldT = 0;
+const SHOW = [                                                              // 저절로 돌아가는 쇼(초)
+  { at: 0, visc: .06, gas: .08 },          // 묽은 용암이 흘러 섬이 넓어진다
+  { at: 46, visc: .12, gas: .92 },         // 불 분수와 부스러기로 원뿔이 선다
+  { at: 68, visc: .07, gas: .1 },          // 다시 흘러 원뿔 기슭을 덮는다
+  { at: 80, visc: .93, gas: .22 },         // 끈적한 용암 혹
+  { at: 87, visc: .93, gas: .96 },         // 길이 막혀 압력이 차고 … 한 번 크게 폭발
+];
+const note = (t, s) => { const k = t + '|' + (s || ''); if (note.k === k) return; note.k = k; $('note').innerHTML = t + (s ? `<small>${s}</small>` : ''); $('note').classList.remove('hide'); };
+function world(newSeed) {
+  seed = newSeed; reset(T, { seed, base: seabed(seed) }); scene.clearFx(); scene.sync();
+  V = createVolcano({ visc: V.visc, gas: V.gas, push: PUSH }); blasts = 0; emerged = false; restT = 0; calmT = 0; tickAcc = 0; colEnd = -99; hadCol = false; worldT = 0;
+}
+function startShow() { auto = true; showT = 0; phase = 0; V.visc = SHOW[0].visc; V.gas = SHOW[0].gas; world((Math.random() * 1e6) | 0); paintHandles(); $('auto').classList.add('hide'); }
+function restart(fn) { if (busy) return; busy = true; $('veil').classList.add('on'); setTimeout(() => { fn(); $('veil').classList.remove('on'); busy = false; }, qp.get('shot') ? 0 : 950); }
+
+function frameStep(dt) {
+  if (busy) return;
+  // 쇼의 차례
+  if (auto) {
+    showT += dt;
+    while (phase < SHOW.length && showT >= SHOW[phase].at) { const s = SHOW[phase++]; setHandles(V, { visc: s.visc, gas: s.gas, push: PUSH }); paintHandles(); }
+    if (phase >= SHOW.length && V.blasts > 0 && !V.column && V.push > 0) setHandles(V, { push: 0 });      // 폭발이 가라앉으면 쉰다
+    if (V.push === 0) { restT += dt; if (restT > 24) { restart(startShow); return; } }
+  }
+  stepVolcano(V, dt); worldT += dt;
+  const mode = V.mode, ramp = emerged ? 1 : Math.min(1, .012 + .5 * Math.pow(worldT / 5.5, 3));     // 바다 밑에서는 조금씩 — 물이 끓는 것부터 보인다
+  if (V.column) hadCol = true; else if (hadCol) { hadCol = false; colEnd = worldT; }
+  if (V.blasts > blasts) { blasts = V.blasts; blast(T, .55 + .45 * V.gas); scene.burst(1); calmT = 0; }
+  setVent(T, { visc: V.visc, gas: mode === 'building' ? 0 : mode === 'column' ? Math.max(V.gas, .9) : mode === 'dome' ? Math.min(V.gas, .2) : V.gas, rate: RATE[mode] * KV * ramp });
+  tickAcc += dt * SPEED; let ticked = false;
+  while (tickAcc >= 1) { tickAcc--; step(T, 1); ticked = true; }
+  if (mode === 'rest' && auto) { const a = T.age, k = dt * SPEED * 7; for (let i = 0; i < a.length; i++) a[i] += k; ticked = true; }   // 쉬는 동안은 세월이 더 빨리 — 풀이 돋는다
+  if (ticked) scene.sync();
+  scene.stepFx(dt, { mode, fountain: mode === 'fountain' ? Math.min(1, V.fountainH / 1.05) : 0, column: V.column ? Math.min(1, V.column.top) : 0 });
+  // 글
+  const vi = Math.round(T.vent.y) * N + Math.round(T.vent.x), top = T.g[vi] + T.melt[vi];
+  if (!emerged && top > 1.5) { emerged = true; calmT = -4; }
+  calmT += dt;
+  if (!emerged) note('바다 밑에서 용암이 나오고 있어요', '물이 부글부글 끓고 물빛이 변해요');
+  else if (calmT < 0) note('검은 섬이 얼굴을 내밀었어요!', '화산은 한 겹씩 쌓여 땅이 돼요');
+  else if (mode === 'column') note(SAYS.blast);
+  else if (worldT - colEnd < 7) note(SAYS.calm);
+  else if (mode === 'rest') note('분출이 멈췄어요', '세월이 흐르면 검은 땅이 잿빛이 되고, 풀이 돋아요');
+  else if (mode === 'flow') note('묽은 용암이 강처럼 흘러내려요', '멀리 흘러가 굳어서 넓고 완만한 산이 돼요');
+  else if (mode === 'fountain') note(SAYS.fountain, '부스러기가 둘레에 쌓여 가운데가 팬 원뿔이 돼요');
+  else if (mode === 'dome') note(SAYS.dome, '끈적한 용암은 멀리 못 가서 가파르게 쌓여요');
+  else if (mode === 'building') note('길이 막혀 압력이 차올라요…', '오래 조용하다가 한 번에 터져요');
+}
+
+// ── 손잡이: 끈적임 레버와 기체 밸브. 손을 대면 쇼를 멈추고 손잡이를 따른다
+function paintHandles() {
+  $('arm').style.left = `calc(16px + ${V.visc} * (100% - 32px))`; $('wheel').style.transform = `rotate(${V.gas * 270}deg)`;
+  $('lever').setAttribute('aria-valuenow', Math.round(V.visc * 100)); $('valve').setAttribute('aria-valuenow', Math.round(V.gas * 100));
+}
+function take(h) { if (auto) { auto = false; $('auto').classList.remove('hide'); } setHandles(V, { ...h, push: PUSH }); paintHandles(); }
+function dragger(el, fn) {
+  let on = false;
+  el.addEventListener('pointerdown', e => { on = true; el.setPointerCapture(e.pointerId); fn(e, true); e.preventDefault(); });
+  el.addEventListener('pointermove', e => { if (on) fn(e, false); });
+  const up = () => { on = false; }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+}
+dragger($('lever'), e => { const r = $('lever').getBoundingClientRect(); take({ visc: Math.min(1, Math.max(0, (e.clientX - r.left - 16) / (r.width - 32))) }); });
+let vAng = 0;
+dragger($('valve'), (e, first) => { const r = $('valve').getBoundingClientRect(), a = Math.atan2(e.clientY - r.top - r.height / 2, e.clientX - r.left - r.width / 2);
+  if (!first) { let d = a - vAng; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; take({ gas: Math.min(1, Math.max(0, V.gas + d / (1.5 * Math.PI))) }); } else take({}); vAng = a; });
+$('lever').addEventListener('keydown', e => { const d = e.key === 'ArrowRight' ? .1 : e.key === 'ArrowLeft' ? -.1 : 0; if (d) take({ visc: Math.min(1, Math.max(0, V.visc + d)) }); });
+$('valve').addEventListener('keydown', e => { const d = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? .1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -.1 : 0; if (d) take({ gas: Math.min(1, Math.max(0, V.gas + d)) }); });
+$('again').onclick = () => restart(() => { if (auto) startShow(); else world((Math.random() * 1e6) | 0); });
+$('auto').onclick = () => restart(startShow);
+paintHandles();
+
+// ── 옆으로 끌면 섬 둘레를 돈다
+{ const cv = $('gl'); let on = false, lx = 0;
+  cv.addEventListener('pointerdown', e => { on = true; lx = e.clientX; cv.setPointerCapture(e.pointerId); cv.classList.add('drag'); scene.cam.drift = 0; });
+  cv.addEventListener('pointermove', e => { if (!on) return; const d = (e.clientX - lx) / innerWidth; lx = e.clientX; scene.cam.az -= d * 2.2; scene.cam.vel = -d * 30; });
+  const up = () => { on = false; cv.classList.remove('drag'); }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); }
+
+// ── 돌리기
 let last = performance.now();
-function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; if (!window.__pause) B.step(dt); B.draw(); requestAnimationFrame(frame); }
-requestAnimationFrame(frame);
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; frameStep(dt); scene.render(dt); scene.tune(dt); requestAnimationFrame(frame); }
+if (qp.get('shot')) {                                                         // 화면 찍기용: 시간을 손으로 감는다
+  window.__w = { T, scene, get V() { return V; }, measure: () => measure(T, { ref: 0 }),
+    run(sec) { const dt = 1 / 30; for (let t = 0; t < sec; t += dt) { frameStep(dt); scene.stepCam(dt); } scene.render(0); return { t: showT, mode: V.mode, counts: scene.counts, m: measure(T, { ref: 0 }) }; },
+    set(h) { take(h); }, show() { startShow(); }, fresh(s) { world(s); },
+    cam(o) { if (o.dist) scene.cam.auto = false; Object.assign(scene.cam, o); scene.render(0); }, ui(on) { for (const q of ['.desk', '.top', '.model']) document.querySelector(q).style.display = on ? '' : 'none'; } };
+  scene.cam.drift = 0; scene.render(0); document.title = 'ready';
+} else requestAnimationFrame(frame);
 </script>
 </body>
 </html>
