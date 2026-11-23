@@ -6,15 +6,18 @@
    한 줄 가운데 슬래시 두 개 주석 금지(블록 주석만). */
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, sayLine, controls, overBar, missions, loadArt, ART, art, artInst, tone, noise, resumeAudio, glowSprite, remember } from '../scene/kit.js';
+import { EORANG } from './map.js';
 import { MAP_W, MAP_H, H, Hq, floorAt, mainD, losClear, slopeAt, ZONES, buildTerrain, farRing, plantForest, mapImage, groundRing, groundFan } from './map.js';
 import { makeArmy, makeFx, smokeColumn, path } from './enemy.js';
 import { makePeople } from './people.js';
 import ch0 from './ch0.js';
 import ch1 from './ch1.js';
+import ch4 from './ch4.js';
 
 const Q = new URLSearchParams(location.search);
 const MUTE = Q.get('mute') === '1', SEED = +(Q.get('seed') || 1920), LITE = Q.get('lite') === '1' || (navigator.hardwareConcurrency || 8) <= 4;
-const CHAPTERS = [ch0, ch1], TITLES = ['앞날 · 10월 20일', '첫날 · 10월 21일 백운평'], SAVE_KEY = 'kworld_cheongsan_save_v1';
+/* 장은 이야기 차례(0 앞날 · 1 백운평 · 2 완루구 · 3 천수평 · 4 어랑촌 · 5 쫓기는 길 · 6 고동하). 아직 없는 장은 null — 건너뛴다 */
+const CHAPTERS = [ch0, ch1, null, null, ch4], TITLES = ['앞날 · 10월 20일', '첫날 · 10월 21일 백운평', '첫날 밤 · 완루구', '둘째 날 새벽 · 천수평', '둘째 날 · 어랑촌', '셋째~넷째 날 · 쫓기는 길', '닷새째 밤 · 고동하'], SAVE_KEY = 'kworld_cheongsan_save_v1';
 
 /* ───── 화면 ───── */
 const { canvas, renderer, scene, cam, resize } = stage({ fog: [0xd8d0bc, 120, 520], exposure: 1.05, fov: 40 });
@@ -31,8 +34,10 @@ try { await loadArt('cheongsan'); } catch (e) { console.warn('cheongsan art', e)
 const terrain = buildTerrain(scene, { cs: LITE ? 3 : 2.5 });
 const sky = farRing(scene, 7);
 const CLEAR = [[40, 150, 92, 194], [166, 173, 194, 198], [229, 126, 244, 140], [249, 130, 263, 144]];   /* 빈터 · 신호 자리에서 길까지 · 망바위 · 옆 바위 */   /* 빈터(야영지) — 나무를 두지 않는다 */
-const NO_TREE = [];   /* 장이 비워 둘 자리 [x, z, r] — 아래에서 장이 채운다 */
-const forest = plantForest(scene, { seed: SEED, lite: LITE, avoid: (x, z) => CLEAR.some((r) => x > r[0] && x < r[2] && z > r[1] && z < r[3]) || NO_TREE.some((p) => dist(x, z, p[0], p[1]) < p[2]) || [[110, 148, 0], [136, 148.5, 0], [222, 148, 0], [120, 192, 0], [176, 192, 0], [226, 192, 0], [236, 133, 0], [256, 137, 0], [248, 176, 0], [176, 189, 0]].some((p) => dist(x, z, p[0], p[1]) < 4.2) });
+const NO_TREE = [];
+const segDist = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / L2, 0, 1); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+const eorangClear = (x, z) => dist(x, z, EORANG.hq[0], EORANG.hq[1]) < 24 || EORANG.spurs.some(([a, b]) => segDist(x, z, a, b) < 9) || (x > 552 && x < 580 && z > 150 && z < 170);   /* 어랑촌 고지: 지휘소·능선 등성이·주먹밥 길 */   /* 장이 비워 둘 자리 [x, z, r] — 아래에서 장이 채운다 */
+const forest = plantForest(scene, { seed: SEED, lite: LITE, avoid: (x, z) => CLEAR.some((r) => x > r[0] && x < r[2] && z > r[1] && z < r[3]) || NO_TREE.some((p) => dist(x, z, p[0], p[1]) < p[2]) || eorangClear(x, z) || [[110, 148, 0], [136, 148.5, 0], [222, 148, 0], [120, 192, 0], [176, 192, 0], [226, 192, 0], [236, 133, 0], [256, 137, 0], [248, 176, 0], [176, 189, 0]].some((p) => dist(x, z, p[0], p[1]) < 4.2) });
 /* 숲 그늘: 8 m 칸마다 나무 수(들킴이 덜 오른다) */
 const FG = new Uint8Array(Math.ceil(MAP_W / 8) * Math.ceil(MAP_H / 8)); for (const [x, z] of forest.put) { const i = Math.floor(x / 8), j = Math.floor(z / 8); if (i >= 0 && j >= 0 && i < MAP_W / 8 && j < MAP_H / 8) FG[j * Math.ceil(MAP_W / 8) + i] = Math.min(255, FG[j * Math.ceil(MAP_W / 8) + i] + 1); }
 const forestAt = (x, z) => { const i = Math.floor(x / 8), j = Math.floor(z / 8); return i >= 0 && j >= 0 && i < MAP_W / 8 && j < MAP_H / 8 ? FG[j * Math.ceil(MAP_W / 8) + i] : 0; };
@@ -72,9 +77,9 @@ let CH = null, TL = [], curTask = null;
 
 /* ───── 띠 넷 ───── */
 const BAND_EL = { troop: 'bTroop', net: 'bNet', ammo: 'bAmmo', hunger: 'bHung' }, BAND_NAME = { troop: '부대', net: '포위망', ammo: '탄약', hunger: '배고픔' };
-function band(k, d, why) { if (!d) return; const v0 = S.band[k]; S.band[k] = clamp(Math.round((v0 + d) * 10) / 10, 0, 100); const real = S.band[k] - v0; if (!real) return;
-  const bad = (k === 'troop' || k === 'ammo') ? real < 0 : real > 0; const e = $(BAND_EL[k]); if (bad) { e.classList.remove('hit'); void e.offsetWidth; e.classList.add('hit'); }
-  popText(`${BAND_NAME[k]} ${real > 0 ? '+' : ''}${Math.round(real)}`, bad ? '#ff9a7a' : '#a8f0a0'); S.chLog.push({ k, d: real, why }); hud(); }
+function band(k, d, why, quiet) { if (!d) return; const v0 = S.band[k]; S.band[k] = clamp(Math.round((v0 + d) * 10) / 10, 0, 100); const real = S.band[k] - v0; if (!real) return;
+  const bad = (k === 'troop' || k === 'ammo') ? real < 0 : real > 0; const e = $(BAND_EL[k]); if (bad && !quiet) { e.classList.remove('hit'); void e.offsetWidth; e.classList.add('hit'); }
+  if (!quiet) popText(`${BAND_NAME[k]} ${real > 0 ? '+' : ''}${Math.round(real)}`, bad ? '#ff9a7a' : '#a8f0a0'); S.chLog.push({ k, d: real, why }); hud(); }
 let popT = 0; function popText(t, col) { const p = $('pop'); p.textContent = t; p.style.color = col; p.style.transition = 'none'; p.style.top = '42%'; p.style.opacity = 1; void p.offsetWidth; p.style.transition = 'opacity .5s, top 1.2s'; p.style.top = '36%'; popT = 1.2; }
 function hud() { for (const k in BAND_EL) { const e = $(BAND_EL[k]), v = Math.round(S.band[k]); e.querySelector('b').textContent = v; e.querySelector('u').style.width = v + '%'; } }
 
@@ -203,20 +208,20 @@ function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /*
 let LAST = null;
 function endChapter(res) {
   if (S.mode !== 'play') return; S.mode = 'result'; $('spot').style.display = 'none'; setScope(false); setCrouch(false); closeChoice(); $('det').style.display = 'none'; LAST = res;
-  const next = S.ch + 1, more = next < CHAPTERS.length;
+  let next = S.ch + 1; while (next < CHAPTERS.length && !CHAPTERS[next]) next++; const more = next < CHAPTERS.length && !res.lose, skipped = more ? TITLES.slice(S.ch + 1, next) : [];
   /* 밤이 지난다: 하루가 가면 배고픔 +22 · 포위망 +12(설계 v2 1-1) — 다음 장이 있을 때만 */
   const b0 = { ...S.band }; if (more) { S.band.hunger = clamp(S.band.hunger + 22, 0, 100); S.band.net = clamp(S.band.net + 12, 0, 100); }
   saveGame(more ? next : 0); if (!more) S.tags.done1 = 1;
   const delta = (k) => { const d = Math.round(S.band[k] - res.b0[k]); return d ? `<b class="${((k === 'troop' || k === 'ammo') ? d < 0 : d > 0) ? 'dn' : 'up'}">${d > 0 ? '+' : ''}${d}</b>` : ''; };
   const bands = `<div class="bands">${['troop', 'net', 'ammo', 'hunger'].map((k) => `<span>${BAND_NAME[k]} ${Math.round(S.band[k])} ${delta(k)}</span>`).join('')}</div>`;
   const marks = res.marks ? `<div class="marks">${res.marks.map((m) => `<span class="${m.ok ? 'ok' : ''}">${m.ok ? '✔' : '✘'} ${m.t}</span>`).join('')}</div>` : '';
-  const night = more ? `<p style="font-size:15px;color:#c8d0e8">🌙 밤이 지난다 — 배고픔 +${Math.round(S.band.hunger - b0.hunger)} · 포위망 +${Math.round(S.band.net - b0.net)}${res.night ? ' · ' + res.night : ''}</p>` : '';
+  const night = more ? `<p style="font-size:15px;color:#c8d0e8">🌙 밤이 지난다 — 배고픔 +${Math.round(S.band.hunger - b0.hunger)} · 포위망 +${Math.round(S.band.net - b0.net)}${res.night ? ' · ' + res.night : ''}${skipped.length ? `<br><small>(${skipped.join(' · ')} 장은 만드는 중이라 건너뛴다)</small>` : ''}</p>` : '';
   const html = `<h1>${res.head}<small>${CH.when} · ${CH.place}</small></h1>${marks}${bands}<ul class="why">${res.lines.map((l) => `<li>${l}</li>`).join('')}</ul>${night}${res.hist ? `<div class="hist">${res.hist}</div>` : ''}`;
   setTimeout(() => {
-    const o = $('ov'); o.firstElementChild.innerHTML = html + `<div class="row">${more ? `<button id="go">다음 장 — ${TITLES[next]}</button>` : `<button id="go">처음부터 다시</button><button id="re1" class="sec">백운평만 다시</button>`}</div>`;
+    const o = $('ov'); o.firstElementChild.innerHTML = html + `<div class="row">${more ? `<button id="go">다음 장 — ${TITLES[next]}</button>` : `<button id="go">처음부터 다시</button><button id="re1" class="sec">이 장만 다시</button>`}</div>`;
     o.style.display = 'flex'; if (!more) remember(o.firstElementChild);
     $('go').onclick = () => { resumeAudio(); o.style.display = 'none'; if (more) startChapter(next); else { S.band = { ...BAND0 }; S.tags = {}; clearSave(); startChapter(0); } };
-    if ($('re1')) $('re1').onclick = () => { resumeAudio(); o.style.display = 'none'; S.band = { ...BAND0, ...(LAST.b0 || {}) }; startChapter(1); };
+    const thisCh = S.ch; if ($('re1')) $('re1').onclick = () => { resumeAudio(); o.style.display = 'none'; S.band = { ...BAND0, ...(LAST.b0 || {}) }; startChapter(thisCh); };
   }, res.delay != null ? res.delay * 1000 : 1800);
 }
 
@@ -280,7 +285,7 @@ function place(dt) {
 hud(); S.mode = 'title';
 { const d = readSave(); const row = document.querySelector('#ov .row');
   if (d) { const b = document.createElement('button'); b.id = 'cont'; b.textContent = `이어서 하기 — ${TITLES[d.ch] || '처음'}`; row.insertBefore(b, $('go')); $('go').textContent = '처음부터'; $('go').classList.add('sec');
-    b.onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.band = { ...BAND0, ...d.band }; S.tags = { ...d.tags }; startChapter(clamp(d.ch, 0, CHAPTERS.length - 1), true); }; } }
+    b.onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.band = { ...BAND0, ...d.band }; S.tags = { ...d.tags }; startChapter(CHAPTERS[d.ch] ? d.ch : 0, true); }; } }
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.band = { ...BAND0 }; S.tags = {}; startChapter(+(Q.get('ch') || 0)); };
 canvas.addEventListener('pointerdown', () => { if (cardT > 0) { cardT = 0.01; } });
 

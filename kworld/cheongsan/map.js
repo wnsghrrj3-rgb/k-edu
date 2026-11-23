@@ -49,7 +49,17 @@ export function H(x, z) {
   let h = mountain(x, z);
   for (const k in VSEG) { const [d, p] = nearest(VSEG[k], x, z), ad = Math.abs(d), w = p[2], kk = d < 0 ? p[4] : p[5]; const carve = p[3] + (ad <= w ? 0 : kk * (ad - w) * (1 + 0.012 * (ad - w))) + (ad <= w ? 0.25 * fbm(x / 9, z / 9) : 0); h = smin(h, carve, 5); }
   for (const b of BUMPS) { const d2 = ((x - b[0]) ** 2 + (z - b[1]) ** 2) / (b[3] * b[3]); if (d2 < 4) h += b[2] * Math.exp(-d2 * 1.6); }
-  return h;
+  return eorang(x, z, h);
+}
+/* 어랑촌 뒤 고지(장 4): 우묵한 지휘소에서 부채꼴로 뻗은 능선 셋(왼·가운데·오른). 능선 사이는 골로 낮춘다. */
+export const EORANG = { hq: [565, 104], spurs: [[[549, 114], [518, 142]], [[565, 118], [565, 146]], [[581, 114], [612, 142]]] };
+function segD(x, z, a, b) { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz; let t = ((x - a[0]) * dx + (z - a[1]) * dz) / L2; t = clamp(t, 0, 1); return [Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t), t]; }
+function eorang(x, z, h) {
+  const wx = clamp(Math.min(x - 488, 642 - x) / 16, 0, 1), wz = clamp(Math.min(z - 84, 168 - z) / 12, 0, 1), w = wx * wz; if (w <= 0) return h;
+  let d = h - Math.min(11, Math.max(0, h - 6) * 0.65);
+  for (const [a, b] of EORANG.spurs) { const [dd, t] = segD(x, z, a, b), crest = lerp(31, 21, t), r = crest - 0.075 * dd * dd - (t >= 1 ? 0.06 * dd * dd : 0); d = Math.max(d, r); }
+  const hd = Math.hypot(x - EORANG.hq[0], z - EORANG.hq[1]); if (hd < 22) { const k = clamp(1 - (hd - 12) / 10, 0, 1); d = lerp(d, 26 + 0.25 * fbm(x / 6, z / 6), k); }
+  return lerp(h, d, w);
 }
 export function floorAt(x, z) { const [, p] = nearest(VSEG.main, x, z); return p[3]; }
 /* 큰 골짜기 가운데 줄에서 얼마나 떨어졌나(왼쪽 −) — 길 위인지 · 비탈 어디쯤인지 */
@@ -127,16 +137,17 @@ export function groundFan(scene, x, z, r, a0, a1, color, opacity = 0.3) {
 /* ───── 숲: 가까운 곳(백운평)은 블렌더 나무, 먼 곳은 값싼 나무 ───── */
 export function plantForest(scene, { avoid = () => false, seed = 1920, lite = false } = {}) {
   const r = rng(seed), near = { cs_birch: [], cs_birch_b: [], cs_larch: [], cs_spruce: [], cs_spruce_snow: [], cs_bush_dry: [], cs_grass_dry: [] }, far = { gold: [], dark: [], grey: [] }, put = [];
-  const okTree = (x, z) => { const h = Hq(x, z), [d] = mainD(x, z), w = Math.abs(d); if (w < 12 && x < 640) return false; if (h > 50) return false; if (slopeAt(x, z) > 1.5) return false; if (avoid(x, z)) return false; return true; };
-  /* 가까운 숲: 백운평 일대(x −20~300) */
-  const nNear = lite ? 900 : 1700;
-  for (let i = 0, tries = 0; i < nNear && tries < nNear * 8; tries++) { const x = -20 + r() * 320, z = 90 + r() * 170; if (!okTree(x, z)) continue; const h = Hq(x, z), up = h - floorAt(x, z), cl = fbm(x / 30, z / 30);
+  const okTree = (x, z) => { const h = Hq(x, z), [d, vp] = mainD(x, z), w = Math.abs(d); if (w < Math.max(12, vp[2] + 3) && x < 650) return false; if (h > 50) return false; if (slopeAt(x, z) > 1.5) return false; if (avoid(x, z)) return false; return true; };
+  /* 가까운 숲: 놀이 터(백운평 · 어랑촌 고지 …) — 블렌더 나무 */
+  const NEAR = [[-20, 90, 300, 260, lite ? 900 : 1700], [470, 40, 660, 268, lite ? 450 : 900]];
+  const inNear = (x, z) => NEAR.some((q) => x > q[0] && x < q[2] && z > q[1] && z < q[3]);
+  for (const [nx0, nz0, nx1, nz1, nNear] of NEAR) for (let i = 0, tries = 0; i < nNear && tries < nNear * 8; tries++) { const x = nx0 + r() * (nx1 - nx0), z = nz0 + r() * (nz1 - nz0); if (!okTree(x, z)) continue; const h = Hq(x, z), up = h - floorAt(x, z), cl = fbm(x / 30, z / 30);
     if (up < 3 && r() < 0.8) continue; if (cl < 0.42 && r() < 0.75) continue;   /* 숲은 덩어리지게 */
     const nm = h > 34 ? (r() < 0.6 ? 'cs_spruce_snow' : 'cs_spruce') : up > 14 ? ['cs_spruce', 'cs_larch', 'cs_birch', 'cs_larch'][Math.floor(r() * 4)] : ['cs_birch', 'cs_birch_b', 'cs_larch', 'cs_birch'][Math.floor(r() * 4)];
     near[nm].push([x, h - 0.15, z, 0.75 + r() * 0.5, r() * 6.28]); put.push([x, z]); i++; }
-  for (let i = 0, tries = 0; i < (lite ? 500 : 1100) && tries < 9000; tries++) { const x = -10 + r() * 300, z = 100 + r() * 150; if (avoid(x, z)) continue; const [d] = mainD(x, z); if (Math.abs(d) < 4.5) continue; const h = Hq(x, z); if (h > 40) continue; (r() < 0.62 ? near.cs_grass_dry : near.cs_bush_dry).push([x, h - 0.05, z, 0.7 + r() * 0.7, r() * 6.28]); }
+  for (let i = 0, tries = 0; i < (lite ? 650 : 1400) && tries < 12000; tries++) { const q = r() < 0.8 ? [-10, 100, 290, 150] : [480, 60, 160, 110], x = q[0] + r() * q[2], z = q[1] + r() * q[3]; if (avoid(x, z)) continue; const [d] = mainD(x, z); if (Math.abs(d) < 4.5) continue; const h = Hq(x, z); if (h > 40) continue; (r() < 0.62 ? near.cs_grass_dry : near.cs_bush_dry).push([x, h - 0.05, z, 0.7 + r() * 0.7, r() * 6.28]); }
   /* 먼 숲: 나머지 판 전체(그림자 없음) */
-  for (let i = 0, tries = 0; i < (lite ? 2600 : 5200) && tries < 40000; tries++) { const x = -60 + r() * 760, z = -60 + r() * 480; if (x > -20 && x < 300 && z > 90 && z < 260) continue; if (!okTree(x, z)) continue; const h = Hq(x, z), cl = fbm(x / 34 + 5, z / 34); if (cl < 0.4 && r() < 0.8) continue;
+  for (let i = 0, tries = 0; i < (lite ? 2600 : 5200) && tries < 40000; tries++) { const x = -60 + r() * 760, z = -60 + r() * 480; if (inNear(x, z)) continue; if (!okTree(x, z)) continue; const h = Hq(x, z), cl = fbm(x / 34 + 5, z / 34); if (cl < 0.4 && r() < 0.8) continue;
     const k = h > 32 ? 'dark' : r() < 0.45 ? 'gold' : r() < 0.6 ? 'grey' : 'dark'; far[k].push([x, h - 0.2, z, 1.6 + r() * 1.4, r() * 6.28]); i++; }
   const out = {};
   for (const nm in near) if (near[nm].length) { const shadow = !nm.includes('grass') && !nm.includes('bush'); out[nm] = artInst(scene, nm, near[nm], {}, { shadow }); }
