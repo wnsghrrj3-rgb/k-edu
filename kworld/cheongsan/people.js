@@ -23,7 +23,22 @@ export const CAST = {
   boy: { name: '소년', role: '주민', shirt: 0xe8e0cc, pants: 0xd8d0bc, hat: 'braid' },
   kid: { name: '아이', role: '주민', shirt: 0xe8e0cc, pants: 0xd8d0bc, hat: 'braid' } };
 
-export function makePeople(scene, { mute = false } = {}) {
+/* 다가가면 처지에 맞는 한마디(다섯 해 방식) — 띠(B: 부대·배고픔·포위망)와 꼬리표(T)를 보고 고른다. 지휘관은 짧게. */
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+export const LINES = {
+  kim: (B) => [B.net > 70 ? '서두르게. 길이 좁아지고 있네.' : '자네 눈이 우리 부대의 눈이네.'],
+  na: (B) => [B.ammo < 30 ? '탄약을 아껴야 하오.' : '본 것만 말하게. 본 만큼 정하겠네.'],
+  lee: (B, T) => [T.grade === 'A' ? '자리를 잘 골랐더군.' : '자리는 늘 셋을 보게 — 보임, 가려짐, 빠질 길.'],
+  mak: (B, T) => [T.calm ? '형 곁이면 안 무서워요.' : '…총소리가 꿈에도 들려요.', B.hunger > 70 ? '배가 너무 고파요…' : '오늘은 콜록 안 했어요!'],
+  sot: (B) => [B.hunger > 80 ? '쌀이 바닥났소… 미안하오.' : B.hunger > 50 ? '오늘 밥은 반 덩이씩이오.' : '주먹밥은 싸움보다 먼저요!'],
+  dok: (B) => [B.troop < 60 ? '…빈자리가 늘었어.' : '이번엔 내가 제일 먼저 쏠 테다!'],
+  sun: (B, T) => [T.savedSun ? '그때 부축해 줘서 고마웠어.' : '나, 사실 무서워. 너도 그렇지?'],
+  bug: () => ['깃발만 올리면 바로 분다네.', '나팔 소리가 한 박자 늦으면 다 늦는 거야.'],
+  med: (B) => [`오늘까지 뒤로 보낸 사람이 ${Math.max(0, Math.round((100 - B.troop) / 5))}명쯤 되오.`],
+  hong: () => ['포수는 숲을 읽는다네.', '총알은 아끼고, 발은 가볍게.'],
+  baek: () => ['발소리가 아직 크구먼.', '거긴 나라도 찾겠다 — 바위 뒤로 붙게.'],
+  vil1: () => ['몸조심하시오.', '애들은 산으로 보냈소.'], vil2: () => ['식은 밥이라도 드시오.', '밤새 말 우는 소리가 났다오.'], wood: () => ['나무하다 보면 다 보인다오.'], boy: () => ['저 골을 질러가면 빨라요!'], kid: () => ['형, 총 쏴 봤어요?'] };
+export function makePeople(scene, { mute = false, getS = null } = {}) {
   const { person, walkAnim } = kitPeople(scene);
   const list = [];
   /* 사람 하나: o = { shirt, pants, hat:'fur'|'jcap'|그 밖 kit 머리, rifle, pack, scope } */
@@ -41,7 +56,8 @@ export function makePeople(scene, { mute = false } = {}) {
   function cast(key, x, z, ry = 0, extra = {}) { const c = { ...CAST[key], ...extra }; const civ = ['vil1', 'vil2', 'wood', 'boy', 'kid'].includes(key); const m = mk({ rifle: !civ && !['kim', 'na', 'sot', 'med'].includes(key), pack: false, small: key === 'kid' || key === 'boy' ? 0.78 : 0, ...c }); const p = { key, name: c.name, role: c.role, m, x, z, ry, tx: x, tz: z, pose: 'stand', talkT: 0, speed: 3.2, look: null };
     m.position.set(x, Hq(x, z), z); m.rotation.y = ry; walkAnim(m, 0, false); list.push(p); return p; }
   function update(dt, t, px, pz) {
-    for (const p of list) { if (!p.m.visible) continue; const d = dist(p.x, p.z, p.tx, p.tz); let mv = false;
+    for (const p of list) { if (!p.m.visible) continue;
+      const S = getS && getS(); p.cool = (p.cool || 0) - dt; if (S && S.mode === 'play' && p.cool <= 0 && LINES[p.key] && dist(p.x, p.z, px, pz) < 3.6 && !(p.m._talk && p.m._talk.t > 0)) { p.cool = 14; talk(p, pick(LINES[p.key](S.band, S.tags)), 3.2); } const d = dist(p.x, p.z, p.tx, p.tz); let mv = false;
       if (d > 0.4) { const v = Math.min(d, p.speed * dt); p.x += (p.tx - p.x) / d * v; p.z += (p.tz - p.z) / d * v; p.ry = Math.atan2(p.tx - p.x, p.tz - p.z); mv = true; }
       else if (p.look === 'me' && dist(p.x, p.z, px, pz) < 9) { const to = Math.atan2(px - p.x, pz - p.z); p.ry += Math.atan2(Math.sin(to - p.ry), Math.cos(to - p.ry)) * Math.min(1, dt * 5); }
       const prone = p.pose === 'prone', y = Hq(p.x, p.z);

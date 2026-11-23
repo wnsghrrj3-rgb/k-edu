@@ -54,7 +54,7 @@ const putArt = (n, x, z, ry = 0, s = 1, tints) => { const m = art(n, tints); if 
   GAPSAN.forEach(([x, z, ry], i) => { putArt(i % 3 === 1 ? 'cs_loghouse_b' : 'cs_loghouse', x, z, ry); if (i % 2 === 0) putArt('cs_fence', x + 3.5, z + 3.2, ry + 0.2); }); }
 
 /* ───── 군대 · 효과 · 사람 ───── */
-const army = makeArmy(scene), fx = makeFx(scene, cam), ppl = makePeople(scene, { mute: MUTE });
+const army = makeArmy(scene), fx = makeFx(scene, cam), ppl = makePeople(scene, { mute: MUTE, getS: () => S });   /* S 는 아래에서 만든다 — 한마디를 고를 때만 본다 */
 const me = ppl.mk({ shirt: 0x5a5040, pants: 0x4a4a4e, hat: 'fur', rifle: false, pack: true });
 const meRing = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.8, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, depthWrite: false })); meRing.rotation.x = -Math.PI / 2; scene.add(meRing);
 
@@ -76,6 +76,7 @@ const SFX = {
 
 /* ───── 상태 ───── */
 const BAND0 = { troop: 100, net: 10, ammo: 60, hunger: 20 };
+/* 사람(다가가면 한마디)은 S 를 본다 — S 를 만든 뒤에 */
 const S = { mode: 'title', view: 0, yaw: -Math.PI / 2, yawT: -Math.PI / 2, zoom: 1, camYaw: 0, t: 0, px: 64, pz: 172, pdir: 0, moving: false, running: false, said: {}, sayT: 0,
   crouch: false, scoping: false, scopeYaw: 0, scopePitch: 0, band: { ...BAND0 }, tags: {}, ch: 0, cht: 0, det: 0, detOn: false, workT: 0, workKey: '', jobLabel: '', camLift: 0, log: [], chLog: [], stepT: 0, beatT: 0, tension: 0, introT: 0 };
 const { say, tick: sayTick } = sayLine(S);

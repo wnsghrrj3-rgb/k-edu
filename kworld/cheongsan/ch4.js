@@ -74,7 +74,7 @@ export default function ch4(c) {
         const mult = (r.mgAt >= 0 ? 0.5 : 1) * (st.reserve.at === r.id ? 0.4 : 1) * (r.meter <= 0 ? 2.2 : r.meter < 20 ? 1.4 : 1) * hm * nb * hung;
         r.rate = w[i] * mult; r.push = clamp(r.push + (r.rate - 0.35) * dt, 0, 100);
         if (w[i] > 0.12) r.meter = Math.max(0, r.meter - (0.18 + w[i] * 0.26) * dt);
-        st.attr += 0.015 * w[i] * mult * dt;
+        st.attr += 0.012 * w[i] * mult * dt;
         if (r.push >= 100) ch.fall(r); }
       if (st.attr >= 1) { const n = Math.floor(st.attr); st.attr -= n; band('troop', -n, '능선에서 다친 사람을 뒤로 보냈다', true); }
       if (S.band.troop <= 0) return ch.finish('wiped');
