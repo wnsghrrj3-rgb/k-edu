@@ -372,6 +372,51 @@ def make_watermelon():
     o.data.materials.append(m); uv_sphere_proj(o); shade(o)
     return o
 
+def make_star():
+    # 손 뻗어 잡는 보물: 금빛 별(지름 4cm), 모서리 둥글게
+    bm = bmesh.new(); R1, R2 = 2.0 * G, .9 * G; vs = []
+    for i in range(10):
+        a = math.pi / 2 + i * math.pi / 5; r = R1 if i % 2 == 0 else R2
+        vs.append(bm.verts.new((math.cos(a) * r, 0, math.sin(a) * r)))
+    f = bm.faces.new(vs); ext = bmesh.ops.extrude_face_region(bm, geom=[f])
+    for v in [e for e in ext['geom'] if isinstance(e, bmesh.types.BMVert)]: v.co.y += .7 * G
+    me = bpy.data.meshes.new('star'); bm.to_mesh(me); o = bpy.data.objects.new('star', me); bpy.context.collection.objects.link(o)
+    bpy.context.view_layer.objects.active = o
+    md = o.modifiers.new('bev', 'BEVEL'); md.width = .3 * G; md.segments = 4; apply_mods(o)
+    for v in o.data.vertices: v.co.y -= .35 * G
+    o.data.materials.append(simple('gold', hexc('ffc93c'), .22, metal=1.0)); shade(o, angle=40)
+    return o
+
+def make_candy():
+    # 사탕: 동그란 알 + 비틀린 포장 양 끝(지름 3cm)
+    o = obj_from(bpy.ops.mesh.primitive_uv_sphere_add, 'candy', segments=32, ring_count=18, radius=1.5 * G)
+    m, nt, bs = node_mat('candy_proc'); tc = N(nt, 'ShaderNodeTexCoord')
+    wv = N(nt, 'ShaderNodeTexWave', wave_type='BANDS', bands_direction='DIAGONAL'); wv.inputs['Scale'].default_value = 1.2; L(nt, tc.outputs['Object'], wv.inputs['Vector'])
+    r = ramp(nt, [(0.45, hexc('ff3d6e')), (0.55, hexc('fff4f6'))]); L(nt, wv.outputs['Fac'], r.inputs['Fac']); L(nt, r.outputs['Color'], bs.inputs['Base Color'])
+    bs.inputs['Roughness'].default_value = .12; bs.inputs['Coat Weight'].default_value = 1.0
+    o.data.materials.append(m); uv_sphere_proj(o); shade(o)
+    wraps = []
+    for sx in (-1, 1):
+        c = obj_from(bpy.ops.mesh.primitive_cone_add, 'wrap', vertices=10, radius1=.2 * G, radius2=1.2 * G, depth=1.8 * G, location=(sx * 2.2 * G, 0, 0), rotation=(0, sx * math.pi / 2, 0))
+        md = c.modifiers.new('tw', 'SIMPLE_DEFORM'); md.deform_method = 'TWIST'; md.angle = 1.2; apply_mods(c)
+        c.data.materials.append(simple('wrapper', hexc('ffd6e4'), .2, trans=.4)); shade(c); wraps.append(c)
+    return o, wraps
+
+def make_heart():
+    # 하트 젤리(4cm): 반투명 빨강
+    bm = bmesh.new(); pts = []
+    for i in range(48):
+        t = i / 48 * math.pi * 2; x = 16 * math.sin(t) ** 3; z = 13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)
+        pts.append(bm.verts.new((x * .12 * G, 0, z * .12 * G)))
+    f = bm.faces.new(pts); ext = bmesh.ops.extrude_face_region(bm, geom=[f])
+    for v in [e for e in ext['geom'] if isinstance(e, bmesh.types.BMVert)]: v.co.y += 1.0 * G
+    me = bpy.data.meshes.new('heart'); bm.to_mesh(me); o = bpy.data.objects.new('heart', me); bpy.context.collection.objects.link(o)
+    bpy.context.view_layer.objects.active = o
+    md = o.modifiers.new('bev', 'BEVEL'); md.width = .45 * G; md.segments = 5; apply_mods(o)
+    for v in o.data.vertices: v.co.y -= .5 * G
+    o.data.materials.append(simple('jelly', hexc('ff2d55'), .08, trans=.7, ior=1.35)); shade(o, angle=60)
+    return o
+
 def make_plate():
     # 접시: 단면 회전
     prof = [(0, 0), (8.5, 0), (9.2, .35), (11.5, 1.6), (13.5, 2.1), (13.6, 2.4), (11.4, 1.95), (9.0, .75), (0, .62)]
@@ -552,6 +597,9 @@ def build_props():
     sh, cap, salt = make_shaker(); out.append(finish(sh, [cap, salt]))
     o = make_napkin(); bake(o, 512, 'napkin'); out.append(finish(o))
     o = make_watermelon(); bake(o, 1024, 'watermelon'); out.append(finish(o))
+    out.append(finish(make_star()))
+    c, w = make_candy(); out.append(finish(c, w))
+    out.append(finish(make_heart()))
     # 나란히 놓아 미리보기용으로도 쓸 수 있게 x 로 벌림
     x = 0
     for o in out: o.location.x = x; x += 14

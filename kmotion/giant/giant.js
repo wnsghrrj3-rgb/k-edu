@@ -24,6 +24,17 @@ const LEVELS = [                  // 단계가 오를수록: 빠르게 · 촘촘
   { speed: 9.6, gap: 12, react: 1.95, roll: 7.5, chase: .55, pool: ['rollBig', 'fallMid', 'fallBig', 'coin', 'cutlery', 'double', 'peaRow', 'cross', 'cookieRoll', 'follow', 'zig', 'weave', 'milk'] },
   { speed: 10.6, gap: 11, react: 1.8, roll: 8.0, chase: .7, pool: ['rollBig', 'fallBig', 'coin', 'cutlery', 'double', 'peaRow', 'cross', 'cookieRoll', 'combo', 'follow', 'zig', 'zig', 'weave', 'milk'] },
 ];
+// 선생님 설정: 난이도 · 시작 단계 · 하트 · 수박 추격 (기기에 기억)
+const DIFF = {
+  easy0: { name: '아주 쉬움', speed: .7, gap: 1.5, react: .8, chase: .45 },
+  easy:  { name: '쉬움', speed: .85, gap: 1.22, react: .4, chase: .7 },
+  normal:{ name: '보통', speed: 1, gap: 1, react: 0, chase: 1 },
+  hard:  { name: '어려움', speed: 1.15, gap: .88, react: -.15, chase: 1.25 },
+};
+const SET = Object.assign({ diff: 'normal', start: 1, hearts: 3, chase: true }, (() => { try { return JSON.parse(localStorage.getItem('kmgiant.set') || '{}'); } catch (e) { return {}; } })());
+function saveSet(){ try { localStorage.setItem('kmgiant.set', JSON.stringify(SET)); } catch (e) {} }
+function eff(L){ const b = LEVELS[L], d = DIFF[SET.diff] || DIFF.normal;
+  return Object.assign({}, b, { speed: b.speed * d.speed, gap: b.gap * d.gap, react: Math.max(1.4, b.react + d.react), roll: b.roll * d.speed, chase: SET.chase && b.chase ? b.chase * d.chase : 0 }); }
 const TIPS = [
   ['1단계', '그림자가 생기면 옆으로 피해요'],
   ['2단계', '그림자가 나를 따라와요! 계속 움직여요'],
@@ -40,6 +51,7 @@ class GiantAudio extends AudioManager {
   bounce(){ this.tone(260, .12, { type: 'triangle', g: .1, slide: 520 }); }
   roll(){ this.noise(.9, { g: .07, hp: 60, lp: 320, q: 4 }); }
   boom(){ this.tone(48, .9, { type: 'sine', g: .45, slide: 28 }); this.noise(.6, { g: .25, hp: 20, lp: 160 }); }
+  chime(type){ const f = type === 'heart' ? [660, 880, 1320] : type === 'candy' ? [784, 988, 1175] : [1047, 1319, 1568, 2093]; f.forEach((x, i) => this.tone(x, .35, { type: 'triangle', g: .09, delay: i * .06 })); }
   heart(k){ this.tone(62, .16, { type: 'sine', g: .22 + k * .2, slide: 45 }); this.tone(58, .14, { type: 'sine', g: .16 + k * .15, slide: 42, delay: .2 }); }
   glug(){ [0, .13, .26, .39].forEach((d, i) => this.tone(330 - i * 40, .12, { type: 'sine', g: .08, slide: 180 - i * 20, delay: d })); this.noise(.8, { g: .05, hp: 300, lp: 1200, delay: .1 }); }
   sting(){ [0, .09, .18].forEach((d, i) => this.tone([392, 466, 554][i], .35, { type: 'sawtooth', g: .05, delay: d })); }
@@ -105,9 +117,9 @@ async function buildBackground(){
 // 물건 원본(GLB) → 복제해 쓰는 틀
 const PROTO = {};
 async function loadProps(){
-  const g = await new Promise((res, rej) => loader.load('./assets/props.glb?v=2', res, undefined, rej));
+  const g = await new Promise((res, rej) => loader.load('./assets/props.glb?v=3', res, undefined, rej));
   for (const ch of [...g.scene.children]) {
-    ch.position.set(0, 0, 0); ch.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; if (o.material) { o.material.envMapIntensity = 1; if (o.material.transmission > 0) { o.material.transparent = true; o.material.opacity = .22; o.material.depthWrite = false; o.material.transmission = 0; o.material.roughness = .05; o.material.metalness = .1; } } } });
+    ch.position.set(0, 0, 0); ch.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; if (o.material) { o.material.envMapIntensity = 1; if (o.material.transmission > 0) { o.material.transparent = true; o.material.opacity = o.material.name === 'jelly' ? .82 : .22; o.material.depthWrite = false; o.material.transmission = 0; o.material.roughness = .05; o.material.metalness = .1; } } } });
     const box = new THREE.Box3().setFromObject(ch), size = box.getSize(new THREE.Vector3());
     PROTO[ch.name] = { obj: ch, size };
   }
@@ -206,12 +218,12 @@ function spawnMilk(pz, rollSpeed){
 }
 // 예약 생성(게임 시간 기준) — 그림자가 따라오기·지그재그
 function schedule(delay, fn){ game.queue.push({ at: game.time + delay, fn }); }
-function clearObs(){ game.queue = []; for (const o of obs) { scene.remove(o.root); if (o.marker) scene.remove(o.marker); if (o.tag) scene.remove(o.tag); } obs.length = 0; }
+function clearObs(){ game.queue = []; clearItems(); for (const o of obs) { scene.remove(o.root); if (o.marker) scene.remove(o.marker); if (o.tag) scene.remove(o.tag); } obs.length = 0; }
 
 const SMALL_ROLL = ['pea', 'grape', 'marble'], SMALL_FALL = ['sugar', 'button'], MID_FALL = ['tomato', 'cookie'], BIG_FALL = ['apple', 'orange'], BIG_ROLL = ['orange', 'apple'];
 function otherLanes(l){ return [0, 1, 2].filter(x => x !== l); }
 function pattern(kind, L, pz){
-  const lane = Math.random() * 3 | 0, lv = LEVELS[L];
+  const lane = Math.random() * 3 | 0, lv = eff(L);
   switch (kind) {
     case 'rollSmall': spawnRoll(pick(SMALL_ROLL), lane, pz, lv.roll, { jump: true }); break;
     case 'fallSmall': spawnFall(pick(SMALL_FALL), lane, pz, game.speed, lv.react, { jump: true, spinFall: true }); break;
@@ -250,7 +262,12 @@ class UpperBodyMotion extends MotionController {
     const wristUp = w => w.v > .35 && w.y < sh.y - sw * .3, elbowUp = e => e.v > .35 && e.y < sh.y - sw * .05;
     const offTop = w => w.v < .35 || w.y < f.H * .04; // 손이 화면 위로 나감
     const up = (w, e) => wristUp(w) || (elbowUp(e) && offTop(w));
-    return { sh, sw, armsUp: up(wl, el) && up(wr, er), knee: 0 }; }
+    const armsUp = up(wl, el) && up(wr, er);
+    // 손 쭉 뻗기: 손목이 어깨 높이쯤에서 어깨 가운데보다 어깨폭 1.1배 넘게 옆으로 나감
+    let reach = null;
+    if (!armsUp) for (const w of [wl, wr]) { if (w.v < .4 || Math.abs(w.y - sh.y) > sw * 1.1) continue; if (w.x < sh.x - sw * 1.1) reach = 'left'; else if (w.x > sh.x + sw * 1.1) reach = 'right'; }
+    if (reach !== this.reachSide) { this.reachSide = reach; if (this.active) this.input.emit('REACH', { side: reach, via: 'motion' }); }
+    return { sh, sw, armsUp, knee: 0 }; }
 }
 
 // ───────── 게임 상태
@@ -258,10 +275,12 @@ const input = new InputManager();
 const keys = new KeyboardInput(input);
 const audio = new GiantAudio();
 const kid = new Character(); scene.add(kid.root);
-const player = { lane: 1, x: 0, z: 0, y: 0, vy: 0, air: false, inv: 0, lanePush: 0, stepT: 0 };
-const game = { queue: [], time: 0, state: 'idle', level: 0, levelD: 0, speed: 6, nextSpawn: 30, life: 3, dodges: 0, hits: 0, combo: 0, maxCombo: 0, boomT: 9, breather: 0, pauseReason: '' };
+const player = { reachSide: null, reachHold: 0, lane: 1, x: 0, z: 0, y: 0, vy: 0, air: false, inv: 0, lanePush: 0, stepT: 0 };
+const game = { stars: 0, itemNext: 40, queue: [], time: 0, state: 'idle', level: 0, levelD: 0, speed: 6, nextSpawn: 30, life: 3, dodges: 0, hits: 0, combo: 0, maxCombo: 0, boomT: 9, breather: 0, pauseReason: '' };
 let motion = null, motionReady = false, calibrating = false, mode = localStorage.getItem('kmgiant.mode') || 'camera';
 
+input.on('REACH', e => { player.reachSide = e.side; player.reachHold = e.side ? (e.via === 'key' ? .6 : 99) : 0; });
+addEventListener('keydown', e => { if (e.key === 'q' || e.key === 'Q') input.emit('REACH', { side: 'left', via: 'key' }); if (e.key === 'e' || e.key === 'E') input.emit('REACH', { side: 'right', via: 'key' }); });
 input.on('MOVE_LEFT', () => move(-1)); input.on('MOVE_RIGHT', () => move(1)); input.on('JUMP', jump);
 input.on('PAUSE', () => { if (game.state === 'play') pause('manual'); else if (game.state === 'pause') resume(); });
 input.on('PAUSE_LOST', () => { if (game.state === 'play') pause('lost'); });
@@ -274,16 +293,16 @@ let bannerT = null;
 function banner(big, small, ms = 2200){ const b = $('banner'); b.innerHTML = big + (small ? `<small>${small}</small>` : ''); b.classList.remove('hidden'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.add('hidden'), ms); }
 function hud(){
   $('hLevel').textContent = game.level + 1;
-  $('hLife').innerHTML = '❤'.repeat(Math.max(0, game.life)) + '<span style="opacity:.25">' + '❤'.repeat(Math.max(0, 3 - game.life)) + '</span>';
+  const mx = SET.hearts || 0; $('hLife').innerHTML = !mx ? '❤ ∞' : '❤'.repeat(Math.max(0, game.life)) + '<span style="opacity:.25">' + '❤'.repeat(Math.max(0, mx - game.life)) + '</span>'; $('hStar').textContent = game.stars;
   const p = Math.min(1, (game.level + game.levelD / LEVEL_LEN) / LEVELS.length) * 100; $('hProg').style.width = p + '%'; $('hKid').style.left = p + '%';
 }
 function startLevel(L, again){
-  game.level = L; game.levelD = 0; game.speed = LEVELS[L].speed; game.nextSpawn = player.z - 26; game.breather = 1.6; game.life = 3; hud();
+  game.level = L; game.levelD = 0; game.speed = eff(L).speed; game.nextSpawn = player.z - 26; game.breather = 1.6; game.life = SET.hearts || 3; game.itemNext = game.levelD + (L === 0 && !again ? 34 : rnd(30, 50)); hud();
   const [t, tip] = TIPS[L]; banner(again ? '다시 한 번!' : t, tip, 2600); say((again ? '다시 한 번! ' : t + '. ') + tip);
-  game.queue = []; if (LEVELS[L].chase) { if (!chase.on) startChase(); else chase.D = Math.max(chase.D, again ? 22 : 16); } else stopChase();
+  game.queue = []; if (eff(L).chase) { if (!chase.on) startChase(); else chase.D = Math.max(chase.D, again ? 22 : 16); } else stopChase();
 }
 function hit(o){
-  if (player.inv > 0) return; o.hit = true; game.hits++; (game.hitLog = game.hitLog || []).push(o.name + ':' + o.kind + (o.landed === false ? ':falling' : '') + ':L' + (game.level + 1) + (DEV ? ':dx' + (o.x - player.x).toFixed(2) + ':dz' + (o.z - player.z).toFixed(2) + ':hw' + (o.hw || 0).toFixed(2) + ':y' + (o.y || 0).toFixed(2) + ':py' + player.y.toFixed(2) : '')); game.combo = 0; game.life--; player.inv = 1.4; shake = 1;
+  if (player.inv > 0) return; o.hit = true; game.hits++; if (!SET.hearts) game.life = 99; (game.hitLog = game.hitLog || []).push(o.name + ':' + o.kind + (o.landed === false ? ':falling' : '') + ':L' + (game.level + 1) + (DEV ? ':dx' + (o.x - player.x).toFixed(2) + ':dz' + (o.z - player.z).toFixed(2) + ':hw' + (o.hw || 0).toFixed(2) + ':y' + (o.y || 0).toFixed(2) + ':py' + player.y.toFixed(2) : '')); game.combo = 0; game.life--; player.inv = 1.4; shake = 1;
   audio.hit(); kid.set('hit'); $('flash').classList.add('on'); setTimeout(() => $('flash').classList.remove('on'), 90);
   pop(pick(['앗!', '아야!', '으앗!']), 'red'); hud(); if (chase.on && o.kind !== 'chase') chase.D -= 5.5;
   if (game.life <= 0) { // 1학년: 처음부터가 아니라 이 단계부터 다시
@@ -298,7 +317,7 @@ function win(){
   stopChase(true); game.state = 'win'; kid.set('win'); audio.win(); banner('탈출 성공!', '거인 나라를 빠져나왔어요', 2400); say('탈출 성공! 거인 나라를 빠져나왔어요');
   if (motion) motion.active = false;
   setTimeout(() => { show('result'); const stars = game.hits <= 2 ? 3 : game.hits <= 6 ? 2 : 1; $('resStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-    $('rDodge').textContent = game.dodges; $('rHit').textContent = game.hits; $('rCombo').textContent = game.maxCombo; }, 2600);
+    $('rStar').textContent = game.stars; $('rDodge').textContent = game.dodges; $('rHit').textContent = game.hits; $('rCombo').textContent = game.maxCombo; }, 2600);
 }
 
 // ───────── 긴장 장치: 느린 화면·심장·뒤돌아보기, 뒤에서 굴러오는 수박
@@ -315,7 +334,7 @@ function updateChase(dt){
   if (!chase.obj || (!chase.on && chase.leave <= 0)) return;
   const sp = game.state === 'play' ? game.speed : game.state === 'win' ? 2 : game.state === 'retry' ? 0 : game.speed * .5;
   if (chase.on && game.state === 'play' && fx.lookBack <= 0) {
-    chase.D -= LEVELS[game.level].chase * dt;
+    chase.D -= eff(game.level).chase * dt;
     if (chase.D <= 4.2) { // 꽉! — 수박에 따라잡힘
       chase.D = 17; if (player.inv <= 0) { hit({ name: 'watermelon', kind: 'chase' }); pop('수박에 잡혔다!', 'red'); audio.thud(true); shake = 1.4; }
     }
@@ -326,13 +345,60 @@ function updateChase(dt){
   // 화면에선 카메라 바로 뒤까지만 다가옴(카메라를 덮지 않게) — 대신 커다란 그림자가 아이를 덮친다
   const vis = chase.leave > 0 ? chase.D : Math.max(chase.D, chase.rz + 8.6);
   chase.obj.position.set(chase.x, chase.leave > 0 ? chase.obj.position.y : 0, player.z + vis);
-  chase.spin.rotation.x -= (sp + (chase.on ? LEVELS[game.level].chase || 0 : 0)) * dt / chase.r;
+  chase.spin.rotation.x -= (sp + (chase.on ? eff(game.level).chase || 0 : 0)) * dt / chase.r;
   const near = chase.on ? Math.max(0, Math.min(1, (26 - chase.D) / 22)) : 0; audio.rumbleLevel(near);
   // 수박 그림자가 뒤에서 아이 발밑까지 기어 올라옴
   const close = chase.on ? Math.max(0, Math.min(1, (16 - chase.D) / 11)) : 0; chase.shade.material.opacity = close * .6; chase.shade.scale.set(9 + close * 3, 10 + close * 8, 1); chase.shade.position.set(chase.x, .025, player.z + 9 - close * 8);
   if (chase.on && chase.D < 9) shake = Math.max(shake, (9 - chase.D) / 9 * .5);
   const k = Math.max(0, Math.min(1, (chase.D - 4) / 22)); $('chaseFill').style.width = (k * 100) + '%';
   $('chaseBox').classList.toggle('hot', chase.D < 10);
+}
+
+// ───────── 손 뻗어 잡는 것: ⭐ 별(모으기) · 🍬 사탕(수박을 멀리) · ❤ 하트 젤리(하트 +1)
+const items = [];
+function haloTex(){ const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 2, 64, 64, 62); gr.addColorStop(0, 'rgba(255,240,170,.95)'); gr.addColorStop(.35, 'rgba(255,210,90,.45)'); gr.addColorStop(1, 'rgba(255,200,80,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); }
+const HALO = new THREE.SpriteMaterial({ map: haloTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+const TAG_L = new THREE.SpriteMaterial({ map: emojiTex('👈', '#3aa0ff'), depthTest: false, transparent: true, fog: false });
+const TAG_R = new THREE.SpriteMaterial({ map: emojiTex('👉', '#3aa0ff'), depthTest: false, transparent: true, fog: false });
+function spawnItem(type, side){
+  const root = new THREE.Group(), m = clone(type), sz = sizeOf(type); m.position.y = -sz.y / 2; const spin = new THREE.Group(); spin.add(m); root.add(spin);
+  const k = type === 'star' ? 1.6 : type === 'heart' ? 1.5 : 1.7; spin.scale.setScalar(k); // 잘 보이게 조금 크게
+  const halo = new THREE.Sprite(HALO.clone()); halo.scale.setScalar(3.4); root.add(halo);
+  const it = { type, side, root, spin, halo, x: side === 'left' ? -3.9 : 3.9, y: 1.9, z: player.z - 62, got: false, t: 0 };
+  it.tag = new THREE.Sprite((side === 'left' ? TAG_L : TAG_R).clone()); it.tag.scale.setScalar(1.5); it.tag.material.opacity = 0; it.tag.renderOrder = 11; scene.add(it.tag);
+  root.position.set(it.x, it.y, it.z); scene.add(root); items.push(it); return it;
+}
+function clearItems(){ for (const it of items) { scene.remove(it.root); scene.remove(it.tag); } items.length = 0; }
+function collect(it){
+  it.got = true; it.t = 0; audio.chime(it.type);
+  if (it.type === 'heart' && SET.hearts) { game.life = Math.min(SET.hearts, game.life + 1); pop('❤ 하트 하나 더!', 'green'); }
+  else if (it.type === 'candy' && chase.on) { chase.D = Math.min(30, chase.D + 9); pop('🍬 수박이 멀어졌어요!', 'gold'); }
+  else { game.stars += it.type === 'star' ? 1 : 2; pop('⭐ 잡았다!', 'gold'); }
+  hud();
+}
+function updateItems(dt){
+  if (game.state === 'play' && game.levelD > game.itemNext && game.levelD < LEVEL_LEN - 20) {
+    game.itemNext = game.levelD + rnd(38, 62) / (DIFF[SET.diff] || DIFF.normal).speed;
+    const r = Math.random(), type = (SET.hearts && game.life < SET.hearts && r < .22) ? 'heart' : (chase.on && r < .45) ? 'candy' : 'star';
+    const side = Math.random() < .5 ? 'left' : 'right'; spawnItem(type, side);
+    if (!game.taughtReach) { game.taughtReach = true; banner(side === 'left' ? '👈 왼쪽으로 손을 쭉!' : '손을 쭉! 오른쪽 👉', '반짝이는 별이 오면 손을 뻗어 잡아요', 2600); say('반짝이는 별이 오면 손을 쭉 뻗어서 잡아요'); }
+  }
+  if (player.reachHold > 0) { player.reachHold -= dt; if (player.reachHold <= 0) player.reachSide = null; }
+  const now = performance.now();
+  for (let i = items.length - 1; i >= 0; i--) { const it = items[i];
+    if (!it.got) {
+      it.spin.rotation.y += dt * 2.4; it.root.position.y = it.y + Math.sin(now / 300 + i) * .15; it.halo.material.opacity = .7 + Math.sin(now / 150) * .25;
+      const d = player.z - it.z;
+      it.tag.material.opacity += ((d > 2 && d < 28 ? 1 : 0) - it.tag.material.opacity) * Math.min(1, dt * 8); it.tag.position.set(it.x, it.y + 1.9, it.z);
+      if (game.state === 'play' && Math.abs(d) < 2.0 && player.reachSide === it.side) collect(it);
+      if (d < -3) { it.got = true; it.missed = true; it.t = 0; }
+    } else { // 잡으면 손 쪽으로 빨려 들어가며 작아짐 / 놓치면 흐려짐
+      it.t += dt; it.tag.material.opacity = 0;
+      if (!it.missed) { it.root.position.lerp(new THREE.Vector3(player.x + (it.side === 'left' ? -1 : 1) * .9, player.y + 1.3, player.z), Math.min(1, dt * 12)); it.root.scale.setScalar(Math.max(.01, 1 - it.t * 2.2)); }
+      else it.root.scale.setScalar(Math.max(.01, 1 - it.t * 2));
+      if (it.t > .5) { scene.remove(it.root); scene.remove(it.tag); items.splice(i, 1); }
+    }
+  }
 }
 
 // ───────── 한 프레임
@@ -352,7 +418,7 @@ function update(dt){
     // 거인의 발소리: 가끔 쿵 — 식탁이 흔들리고 물건들이 들썩
     game.boomT -= dt; if (game.boomT <= 0) { game.boomT = rnd(8, 13) - game.level; audio.boom(); shake = Math.max(shake, .8); for (const s of scenery) s.hop = rnd(.15, .35); }
     // 생성: 단계 끝나기 조금 전엔 멈춤(숨 돌리기)
-    const lv = LEVELS[game.level];
+    const lv = eff(game.level);
     if (game.breather <= 0 && !game.queue.length && game.levelD < LEVEL_LEN - 30 && player.z < game.nextSpawn) { pattern(pick(lv.pool), game.level, player.z); game.nextSpawn = player.z - lv.gap * rnd(.85, 1.2); }
     if (game.levelD >= LEVEL_LEN && !obs.some(o => !o.passed)) {
       if (game.level + 1 >= LEVELS.length) win(); else { audio.combo(); startLevel(game.level + 1); }
@@ -407,9 +473,11 @@ function update(dt){
   if (game.state === 'idle' || game.state === 'play' || game.state === 'retry') { if (!['jump', 'land', 'hit', 'run'].includes(kid.state)) kid.set('run'); }
   kid.root.position.set(player.x, player.y, player.z); kid.root.visible = !(player.inv > .3 && Math.floor(performance.now() / 90) % 2 === 0);
   kid.update(dt, game.state === 'play' ? (game.speed - 6) / 5 : .1, player.y, player.lanePush);
+  if (player.reachSide === 'right') { kid.armR.rotation.set(0, 0, 1.45); kid.foreR.rotation.x = 0; }
+  if (player.reachSide === 'left') { kid.armL.rotation.set(0, 0, -1.45); kid.foreL.rotation.x = 0; }
   // 예약 생성
   if (game.state === 'play') { game.time += dt; for (let i = game.queue.length - 1; i >= 0; i--) if (game.time >= game.queue[i].at) { const q = game.queue.splice(i, 1)[0]; q.fn(); } }
-  updateChase(dt);
+  updateChase(dt); updateItems(dt);
   // 위험할수록 심장 소리·붉은 테두리
   let danger = 0;
   if (game.state === 'play') { for (const o of obs) { if (o.passed || o.hit || o.jump) continue; const d = player.z - o.z; if (d > 0 && d < 15 && Math.abs(o.x - player.x) < o.hw + .5) danger = Math.max(danger, 1 - d / 15); }
@@ -436,6 +504,13 @@ function update(dt){
 
 // ───────── 화면 흐름
 function show(name){ for (const k of ['start', 'calib', 'result']) $('scr-' + k).classList.toggle('hidden', k !== name); $('hud').classList.toggle('hidden', name !== 'hud'); }
+function setupSettings(){
+  const box = $('setBox'), sum = () => { $('setSum').textContent = `${(DIFF[SET.diff] || DIFF.normal).name} · ${SET.start}단계부터 · 하트 ${SET.hearts || '무제한'} · 수박 ${SET.chase ? '켬' : '끔'}`; };
+  const bind = (id, key, conv) => { const el = $(id); el.querySelectorAll('button').forEach(b => { b.classList.toggle('on', String(SET[key]) === b.dataset.v); b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); SET[key] = conv(b.dataset.v); saveSet(); sum(); }; }); };
+  bind('setDiff', 'diff', v => v); bind('setStart', 'start', v => +v); bind('setHearts', 'hearts', v => +v); bind('setChase', 'chase', v => v === 'true');
+  $('btnSet').onclick = () => box.classList.toggle('hidden'); $('btnSetClose').onclick = () => box.classList.add('hidden'); sum();
+}
+setupSettings();
 const seg = $('modeSeg'); seg.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === mode); b.onclick = () => { seg.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); mode = b.dataset.v; localStorage.setItem('kmgiant.mode', mode); }; });
 function camStatus(kind, text){ const c = $('camBox'); c.classList.toggle('ok', kind === 'ok'); c.classList.toggle('bad', kind !== 'ok'); $('camSt').textContent = text === 'PLAYER DETECTED' ? '보여요' : text === 'NO PLAYER' ? '안 보여요' : text; }
 let calibCopy = null;
@@ -457,9 +532,9 @@ async function startFlow(){
 }
 function begin(){
   show('hud'); $('pause').classList.add('hidden'); clearObs();
-  stopChase(); Object.assign(game, { queue: [], time: 0, state: 'play', dodges: 0, hits: 0, combo: 0, maxCombo: 0, boomT: 6 }); player.lane = 1; player.inv = 0; player.y = 0; player.air = false; kid.set('run');
+  stopChase(); Object.assign(game, { stars: 0, queue: [], time: 0, state: 'play', dodges: 0, hits: 0, combo: 0, maxCombo: 0, boomT: 6 }); player.lane = 1; player.inv = 0; player.y = 0; player.air = false; kid.set('run');
   if (motion && motionReady && mode === 'camera') { motion.active = true; motion.paused = false; }
-  startLevel(0);
+  startLevel(Math.max(0, Math.min(4, (SET.start || 1) - 1)));
 }
 function toStart(){ stopChase(); calibrating = false; copyCalib(false); clearObs(); game.state = 'idle'; if (motion) motion.active = false; $('pause').classList.add('hidden'); show('start'); try { speechSynthesis.cancel(); } catch (e) {} }
 $('btnStart').onclick = startFlow; $('btnCalibCancel').onclick = toStart; $('btnHome').onclick = toStart; $('btnQuit').onclick = toStart; $('btnResume').onclick = resume;
@@ -488,5 +563,5 @@ function loop(now){
   show('start'); requestAnimationFrame(loop);
   // 자동 시험용: ?auto=1 이면 키보드 모드로 바로 시작(확인 촬영용)
   if (Q.has('auto')) { mode = 'keyboard'; begin(); if (Q.get('level')) { clearObs(); startLevel(+Q.get('level') - 1); } }
-  window.__giant = { game, player, obs, scene, camera, renderer, startLevel, pattern, update, move, jump, LANES, chase, fx };
+  window.__giant = { items, spawnItem, game, player, obs, scene, camera, renderer, startLevel, pattern, update, move, jump, LANES, chase, fx };
 })();
