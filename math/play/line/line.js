@@ -16,9 +16,9 @@ import * as E from '../common/ends.js?v=1';
 import * as M from '../common/map.js?v=6';
 import * as TL from '../common/tell.js?v=1';
 import * as NS from '../common/numsign.js?v=3';
-import * as DG from '../common/drag.js?v=3';
+import * as DG from '../common/drag.js?v=4';
 import { sino } from '../common/say.js?v=3';
-import * as R from './rules.js?v=1';
+import * as R from './rules.js?v=2';
 import { ASSETS, MODEL, SCENERY, SCENERY_NAMES, LEAD_TINT, GLOW, ICON } from './art.js?v=1';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
@@ -113,7 +113,7 @@ function aim(w, h){ const tall = h > w * 1.05, was = S.tall; S.tall = tall; S.lo
   const h0 = leadHome(), e8 = slotPos(8), d = dirV();
   S.cx = S.tall ? 0 : ((h0.x - T.LEAD_L / 2) + (e8.x + T.BOAT_L / 2)) / 2;
   layout(was !== tall);
-  const sh = NS.size(numPx(), true).h, tb = trayBottom(), top = tb + 8, bottom = h - (tall ? 16 : 10), mx = tall ? 6 : 14;
+  const sh = NS.size(numPx(), true).h, tb = trayBottom(), top = tb + 8, bottom = h - (tall ? 16 : S.low ? 30 : 10), mx = tall ? 6 : 14;
   /* 지킬 점들: [점, 위 몫 px, 아래 몫 px, 왼 몫, 오른 몫] */
   const pts = tall ? [[V(l.lx, .5, l.lead - T.LEAD_L / 2 - .1), 6, 0, 0, 0], [V(l.lx, 0, e8.z + T.BOAT_L / 2 + .15), 0, 6, 0, 0], [V(l.dockX - l.dockW / 2, T.DECK, 0), 0, 0, 2, 0], [V(l.fx[1] + .3, 0, l.fz0), 0, 0, 0, NS.size(numPx(), true).w / 2 + 4], [V(l.fx[0], .3, l.fz0), sh + 8, 0, 0, 0]]
     : [[V(h0.x - T.LEAD_L / 2 - .1, 0, l.lz), 0, 0, 4, 0], [V(e8.x + T.BOAT_L / 2 + .1, 0, l.lz), 0, 0, 0, 4], [V(S.cx, .3, (S.low ? T.LOW_FZ : l.fz) - .35), sh + 10, 0, 0, 0], S.low ? [V(S.cx, 0, l.lz + .35), 0, 4, 0, 0] : [V(S.cx, T.DECK, l.dockZ + l.dockW / 2 + .1), 0, 6, 0, 0], [V(h0.x, S.low ? .3 : 1.0, S.low ? l.lz : l.dockZ), 8, 0, 0, 0]];   /* 낮은 가로 화면은 선착장 앞끝까지 넣지 않는다 */
@@ -130,7 +130,7 @@ function layout(flip){ const yaw = lineYaw(); placeLead(); placeHenry();
   for (const b of S.boats) { if (b.role === 'off') continue; if (!b.given && sp[b.spot]) b.home = sp[b.spot];   /* 떠 있던 배의 집(끼운 배도 — 빼면 새 집으로) */
     if (b.role === 'line') { b.g.rotation.y = yaw; if (S.departing) continue; const to = slotPos(b.slot); if (moving(b.g.position)) b.snap = true; else b.g.position.set(to.x, T.WATER, to.z); continue; }
     if (flip) b.g.rotation.y = yaw + (b.k % 3 - 1) * .12; if (b.dragging || b.drifting) continue; if (moving(b.g.position)) b.snap = true; else b.g.position.set(b.home.x, T.WATER, b.home.z); }
-  for (const u of S.buoys) { if (!u.on) continue; const to = slotPos(u.i); u.g.rotation.y = yaw; if (!moving(u.g.position)) u.g.position.set(to.x, T.WATER, to.z); } }
+  for (const u of S.buoys) { if (!u.on) continue; const to = slotPos(u.i); u.g.rotation.y = yaw; if (moving(u.g.position)) u.snap = true; else u.g.position.set(to.x, T.WATER, to.z); } }   /* 부표도 움직이는 중(줄 들어옴 · 돌아옴)이면 끝난 뒤 새 자리로 */
 const moving = o => stage.tweens.some(w => w.o === o);
 function placeLead(){ if (!lead || S.departing) return; const h = leadHome(); lead.g.rotation.y = lineYaw(); lead.g.position.set(h.x, h.y, h.z); }
 function placeHenry(){ if (!henry) return; const l = L(), h = leadHome(); if (S.tall) { henry.obj.position.set(l.dockX + .05, T.DECK, h.z + .15); henry.obj.rotation.y = Math.PI / 2 - .5; } else { henry.obj.position.set(h.x + .35, T.DECK, l.dockZ - .1); henry.obj.rotation.y = -.25; } }
@@ -144,7 +144,8 @@ function buoySign(u){ const on = u.on && u.ghost; u.wrap.classList.toggle('off',
 const anchorOf = (o, side) => side ? o.position.clone().add(V(.24, .22, 0)) : o.position.clone().add(V(0, .3, 0));
 function signPlace(wrap, o, side){ if (wrap.classList.contains('off')) return; const q = stage.screenOf(anchorOf(o, side)); wrap.style.left = q.x + 'px'; wrap.style.top = q.y + 'px'; }
 const rectOf = el => (el && !el.classList.contains('off') ? el.getBoundingClientRect() : null);
-function bobEl(el, cls = 'bob'){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), cls === 'here' ? 1600 : 500); }
+const BOB_MS = { here: 1600, go: 1300 };   /* 부표 「여기!」 세 번 · 섞는 물결 띠가 화면을 다 지나가기까지 */
+function bobEl(el, cls = 'bob'){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); clearTimeout(el._bobT); el._bobT = setTimeout(() => el.classList.remove(cls), BOB_MS[cls] || 500); }
 
 // ── 배 · 부표 · 종
 const floats = () => S.boats.filter(b => b.role === 'float');
@@ -167,7 +168,8 @@ function buoyWob(u, n = 3){ if (u.wob) return Promise.resolve(); u.wob = true; l
 
 // ── 띠 · 소리
 function trayDraw(){ A.trayClear(); const t = $('tray'), p = S.p; if (!p) return; const text = S.closed ? p.run.join(', ') : R.CELLS[p.cell].dir > 0 ? '빈 곳에 알맞은 수를 놓아요' : `${p.run[0]}부터 거꾸로 세어요`;
-  t.innerHTML = `<i class="w"${S.closed ? ' style="color:#ffd34d"' : ''}>${text}</i>`; t.className = 'on'; const room = innerWidth * .96; t.style.fontSize = ''; if (t.offsetWidth > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / t.offsetWidth) + 'px'; }
+  const shown = !S.closed && S.fogOn && p.cell === 'A09' ? '거꾸로 세어요' : text;   /* A09 안개: 띠가 시작 수를 말하지 않음 — 떠날 때 안개가 걷히며 줄의 수가 드러남 */
+  t.innerHTML = `<i class="w"${S.closed ? ' style="color:#ffd34d"' : ''}>${shown}</i>`; t.className = 'on'; const room = innerWidth * .96; t.style.fontSize = ''; if (t.offsetWidth > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / t.offsetWidth) + 'px'; }
 function firstLine(){ const p = S.p; if (!p) return ''; if (S.step === 1) return '떠 있는 배를 끌어서 같은 수의 빈 자리에 끼워 줘.'; return R.CELLS[p.cell].dir > 0 ? '떠 있는 배를 끌어서 빈 자리에 끼우고, 다 되면 종을 눌러 줘.' : '거꾸로 세는 줄이야. 배를 끌어서 차례로 끼우고 종을 눌러 줘.'; }
 const hornShort = () => { tone(165, .2, 'sawtooth', .06); tone(165, .2, 'sawtooth', .06, .32); };
 const hornLong = () => { tone(131, 1.5, 'sawtooth', .07, 0, 123); tone(196, 1.5, 'triangle', .04); };
@@ -197,16 +199,20 @@ const targets = () => { if (!S.p) return []; const out = []; for (const i of S.p
   return out; };
 /** 줄 칸 사이(px) — 전화기 세로는 56 이상. */
 const pitchPx = () => { const a = stage.screenOf(slotPos(3)), b = stage.screenOf(slotPos(4)); return Math.hypot(a.x - b.x, a.y - b.y); };
+/** 종 누르는 반경: 56px · 맨 앞 칸과 가까운 화면(작은 전화기)에서는 맨 앞 칸을 덮지 않게 줄어든다. */
+const bellR = () => { const bp = bellAt(); if (!bp) return T.BELL_HIT; const s0 = stage.screenOf(slotPos(0)); return Math.max(26, Math.min(T.BELL_HIT, Math.hypot(s0.x - bp.x, s0.y - bp.y) - pitchPx() * .5)); };
 const hitD = (h, x, y) => Math.hypot((x - h.x) / h.rx, (y - h.y) / h.ry);
 /** 끼운 배(뺄 수 있는 것) — 떠 있는 배의 집는 곳과 겹치면 더 가까운 쪽(떠 있는 배가 더 가까우면 빼지 않는다). */
 const placedAt = (x, y) => { let best = null, d0 = 1; for (const b of lineBoats()) { if (b.given) continue; const d = hitD(boatHit(b), x, y); if (d <= d0) { d0 = d; best = b; } } if (!best) return null;
   for (const f of floats()) if (f.g.visible && hitD(boatHit(f), x, y) < d0) return null; return best; };
 const DRAG = DG.drag(canvas, { R: () => R.T.SNAP_R, sources, targets,
-  claim: ({ x, y }) => { const bp = bellAt(); if (bp && Math.hypot(x - bp.x, y - bp.y) <= T.BELL_HIT) { audio(); touch(); H.ripple(x, y); if (DRAG.armed() != null) DRAG.disarm(); ring(); return true; }   /* 종 = 「다 채웠어요 · 떠나요」 */
-    const b = placedAt(x, y); if (b) { audio(); touch(); H.ripple(x, y); unhook(b); return true; } return false; },   /* 끼운 배를 누르면 고리가 풀려 물로(깨끗함 그대로) */
+  claim: ({ x, y, armed }) => { if (armed != null && targets().some(t => t.rect && x >= t.rect.left && x <= t.rect.right && y >= t.rect.top && y <= t.rect.bottom)) return false;   /* 든 채 놓을 곳(부표 네모) 누름은 끼우기가 먼저(종 · 끼운 배보다) */
+    const b = placedAt(x, y); if (b) { audio(); touch(); H.ripple(x, y); unhook(b); return true; }   /* 끼운 배를 누르면 고리가 풀려 물로(깨끗함 그대로) — 종보다 먼저 */
+    const bp = bellAt(); if (bp && Math.hypot(x - bp.x, y - bp.y) <= bellR()) { audio(); touch(); H.ripple(x, y); if (DRAG.armed() != null) DRAG.disarm(); ring(); return true; }   /* 종 = 「다 채웠어요 · 떠나요」 */
+    return false; },
   enabled: () => S.ready && S.active && !S.busy && !S.closed && !E.homeOpen(),
   onBusy: ({ x, y }) => { audio(); S.lastAct = S.t; H.ripple(x, y); S.log.push({ ignored: S.active ? 'busy' : 'idle' }); },
-  onArm: id => { audio(); touch(); const b = S.boats[id]; S.log.push({ arm: id, n: b.n }); if (b.drifting) catchDrift(b); bobBoat(b); b.wrap.classList.add('armed'); tone(600, .07, 'triangle', .06); bobTargets(); },
+  onArm: id => { audio(); touch(); const b = S.boats[id]; clearArmed(); S.log.push({ arm: id, n: b.n }); if (b.drifting) catchDrift(b); bobBoat(b); b.wrap.classList.add('armed'); tone(600, .07, 'triangle', .06); bobTargets(); },
   onDisarm: id => { const b = S.boats[id]; if (b) b.wrap.classList.remove('armed'); },
   onDragStart: id => { audio(); touch(); const b = S.boats[id]; S.log.push({ dragStart: id, n: b.n }); if (b.drifting) catchDrift(b, true); b.dragging = true; b.grab = null; stopTweens(b.g.position); tone(520, .06, 'triangle', .05); },
   onMove: (id, x, y) => { const b = S.boats[id]; if (!b || !b.dragging) return; if (!b.grab) { const c = boatScreen(b); b.grab = { x: c.x - x, y: c.y - y }; } const w = waterAt(x + b.grab.x, y + b.grab.y); if (w) b.g.position.set(w.x, T.LIFT, w.z); },
@@ -215,6 +221,8 @@ const DRAG = DG.drag(canvas, { R: () => R.T.SNAP_R, sources, targets,
   onTap: ({ x, y, target, armed }) => { audio(); touch(); tapOther(x, y, target, armed); },
   onDrop: ({ from, to, how }) => { audio(); touch(); const b = S.boats[from]; if (b) b.dragging = false; hook(from, to, how); } });
 function touch(){ S.lastAct = S.t; H.hide(); S.hinting = false; }
+/** 「든」 빛을 모두 끈다(다른 배를 들거나 · 놓침 · 문제가 바뀔 때). */
+function clearArmed(){ for (const b of S.boats) b.wrap.classList.remove('armed'); }
 const waterAt = (x, y) => { const r = stage.pointerRay({ clientX: x, clientY: y }), o = V(0, 0, 0); return r.ray.intersectPlane(new THREE.Plane(V(0, 1, 0), -T.LIFT), o) ? o : null; };
 function stopTweens(o){ for (let i = stage.tweens.length - 1; i >= 0; i--) { const w = stage.tweens[i]; if (w.o === o) { stage.tweens.splice(i, 1); w.res(); } } }
 function goHomeBoat(b, ms = T.BACK_MS){ const h = b.home; return stage.tween(b.g.position, { x: h.x, y: T.WATER, z: h.z }, ms, easeOut).then(() => { if (b.role === 'float' && !b.dragging && !b.drifting) b.g.position.set(b.home.x, T.WATER, b.home.z); }); }
@@ -225,17 +233,18 @@ function tapOther(x, y, target, armed){ H.ripple(x, y); tone(520, .07, 'triangle
   if (armed != null) { S.log.push({ nudge: true, armed: true, target }); bobTargets(); return; }
   const p = S.p; if (!p) return; const done = full(); S.log.push({ nudge: true, target, to: done ? 'bell' : 'boats' });
   if (done) { const bp = bellAt(); if (bp) H.show(bp.x, bp.y + 24); bellWobble(); }
-  else { const fl = floats().filter(b => b.g.visible); fl.forEach(bobBoat); if (fl.length) { const xs = fl.map(b => boatScreen(b)); let cx = xs.reduce((a, q) => a + q.x, 0) / xs.length, by = Math.max(...xs.map(q => q.y)) + 26;
-      if (S.tall) { cx = Math.min(innerWidth - 30, cx); } H.show(cx, Math.min(innerHeight - 70, by)); } }
+  else { const fl = floats().filter(b => b.g.visible); fl.forEach(bobBoat); if (fl.length) { const hs = fl.map(boatHit), left = Math.min(...hs.map(q => q.x - q.rx)), top = Math.min(...hs.map(q => q.y - q.ry)), cy = hs.reduce((a, q) => a + q.y, 0) / hs.length, cx = hs.reduce((a, q) => a + q.x, 0) / hs.length;
+      const at = S.tall ? { x: cx, y: Math.max(trayBottom() + 4, top - 58) } : { x: Math.max(30, left - 36), y: cy - 10 }; S.log.push({ nudgeHand: at }); H.show(at.x, at.y); } }   /* 손은 배 무리 바깥(가로 = 왼쪽 끝 바깥 · 세로 = 위 바깥) — 한 척을 짚는 것처럼 보이지 않게 */
   if (H.tell('line.nudge', firstLine(), { times: 1e9 })) tellPlace(); }
 
 // ── 끼우기 · 빼기
 async function hook(k, slot, how){ const p = S.p, b = S.boats[k], my = S.oid; if (!p || !S.active || S.busy || !b || b.role !== 'float') return;
-  const verdict = R.snap({ p, fill: S.fill }, b.n, slot, S.step === 1); S.log.push({ hook: { n: b.n, slot }, verdict, by: how, step: S.step }); S.busy = true; H.hide(); b.wrap.classList.remove('armed');
+  const verdict = R.snap({ p, fill: S.fill }, b.n, slot, S.step === 1); S.log.push({ hook: { n: b.n, slot }, verdict, by: how, step: S.step }); S.busy = true; H.hide(); b.wrap.classList.remove('armed'); stopTweens(b.g.position); stopTweens(b.g.rotation); if (b.drifting) endDrift(b);   /* 돌아가던 · 섞이던 · 떠내려가던 움직임을 끊고 옮긴다 */
   if (verdict === 'back') { const to = slotPos(slot), mid = b.g.position.clone().lerp(to, .7); await stage.tween(b.g.position, { x: mid.x, y: T.WATER, z: mid.z }, 260, easeOut); if (S.oid !== my) return; tone(300, .12, 'sine', .07); tone(220, .16, 'sine', .06, .1); bobEl(b.wrap, 'shake');
     await goHomeBoat(b, T.BACK_MS); if (S.oid !== my) return; S.log.push({ back: b.n, slot }); S.busy = false; S.lastAct = S.t; return; }   /* 걸음 ①: 아닌 자리 — 고리가 안 걸리고 물로 미끄러져 돌아감(바로 답한다 · 벌 없음) */
   b.role = 'line'; b.slot = slot; S.fill[slot] = b.n; signDraw(b); const to = slotPos(slot);
   await Promise.all([stage.tween(b.g.position, { x: to.x, y: T.WATER, z: to.z }, T.HOOK_MS, easeOut), stage.tween(b.g.rotation, { y: lineYaw() }, T.HOOK_MS)]); if (S.oid !== my) return;
+  { const at = slotPos(b.slot); S.log.push({ hooked: b.n, at: Math.hypot(b.g.position.x - at.x, b.g.position.z - at.z) < .05 }); }
   buoyAway(slot); click();
   if (S.step === 1) { await countUp(slot); if (S.oid !== my) return; }   /* 걸음 ①: 끼우는 그 자리에서 앞에서부터 그 배까지 한 번 세어짐 */
   S.busy = false; S.lastAct = S.t; if (full()) { bellWobble(); S.log.push({ full: true }); } }
@@ -273,7 +282,7 @@ async function depart(){ const p = S.p, my = S.oid; if (S.closed) return; S.clos
   const cleanNow = R.clean(S.res), crateB = S.boats.find(b => b.crate && b.role === 'line');
   if (S.step === 2) { if (cleanNow) { S.streak++; if (S.streak % R.T.STREAK === 0) { confetti(20); [1800, 2300].forEach((f, i) => tone(f, .12, 'sine', .05, .3 + i * .18, f * 1.3)); S.log.push({ song: S.streak }); } } else S.streak = 0; }   /* 뱃노래: 셋 이어지면 갈매기 소리 · 물보라 */
   if (crateB) { if (cleanNow) { stage.tween(crateB.crate.position, { y: crateB.crate.position.y + .35 }, 260).then(() => stage.tween(crateB.crate.scale, { x: .01, y: .01, z: .01 }, 260)); confetti(12); tone(1319, .2, 'triangle', .1); wallet.earn(R.T.SURPRISE_COINS, 'line'); S.surpriseCarry = false; S.log.push({ surpriseOpen: true }); } else S.surpriseCarry = true; }
-  wallet.earn(R.T.COIN_PER, 'line'); coinsDraw(true); S.today.push(p.run.length);
+  if (!S.res.missed) { wallet.earn(R.T.COIN_PER, 'line'); coinsDraw(true); } S.today.push(p.run.length);   /* 동전은 아이가 떠나보낸 문제만 */
   floats().forEach((b, k) => setTimeout(() => bobBoat(b), k * 120));   /* 남은 배는 까딱이며 배웅 */
   const d = dirV(), objs = [lead.g, ...lineBoats().map(b => b.g)]; S.log.push({ depart: p.run.join(''), clean: cleanNow });
   await sleep(350); if (S.oid !== my) return;
@@ -281,41 +290,42 @@ async function depart(){ const p = S.p, my = S.oid; if (S.closed) return; S.clos
   await Promise.all(floats().map(b => stage.tween(b.g.position, S.tall ? { x: b.g.position.x + 6 } : { z: b.g.position.z - 8 }, 700, t => t * t))); if (S.oid !== my) return;
   S.done && S.done(S.res.missed ? 'missed' : 'sent'); }
 /** 밧줄이 다 팽팽해졌다 — 떠 있던 맞는 배들이 스스로 들어와 끼워지고(하나씩 수가 읽힘) 떠난다(답은 보이지만 깨끗하지 않음 · 두 문제 뒤에 다시). */
-async function miss(){ if (!S.active || S.busy || S.closed) return; const p = S.p, my = S.oid; S.busy = true; S.res.missed = true; S.streak = 0; DRAG.cancel(); H.hide(); S.log.push({ missed: true });
+async function miss(){ if (!S.active || S.busy || S.closed) return; const p = S.p, my = S.oid; S.busy = true; S.res.missed = true; S.streak = 0; DRAG.cancel(); DG.line('drag', null); clearArmed(); H.hide(); S.log.push({ missed: true });
   for (const b of S.boats) if (b.role === 'float' && b.dragging) { b.dragging = false; goHomeBoat(b); }
   const wrong = p.holes.filter(i => S.fill[i] != null && S.fill[i] !== p.run[i]).map(boatAt).filter(Boolean); await Promise.all(wrong.map(slipOff)); if (S.oid !== my) return;
   const auto = []; for (const i of p.holes) { if (S.fill[i] === p.run[i]) continue; const b = floats().find(x => x.n === p.run[i]); if (!b) continue; if (b.drifting) endDrift(b);
-    b.role = 'line'; b.slot = i; S.fill[i] = b.n; signDraw(b); const to = slotPos(i); await Promise.all([stage.tween(b.g.position, { x: to.x, y: T.WATER, z: to.z }, T.HOOK_MS * 1.3, easeOut), stage.tween(b.g.rotation, { y: lineYaw() }, T.HOOK_MS)]); if (S.oid !== my) return;
+    stopTweens(b.g.position); stopTweens(b.g.rotation); b.role = 'line'; b.slot = i; S.fill[i] = b.n; signDraw(b); const to = slotPos(i); await Promise.all([stage.tween(b.g.position, { x: to.x, y: T.WATER, z: to.z }, T.HOOK_MS * 1.3, easeOut), stage.tween(b.g.rotation, { y: lineYaw() }, T.HOOK_MS)]); if (S.oid !== my) return;
     buoyAway(i); click(); bobEl(b.wrap, 'lit'); tone(R.NOTE[b.n], .2, 'triangle', .1); TL.say(sino(b.n)); auto.push(b.n); await sleep(380); if (S.oid !== my) return; }
-  S.log.push({ autoFill: auto.join() }); await depart(); }
+  S.log.push({ autoFill: auto.join(), settled: lineBoats().every(b => { const at = slotPos(b.slot); return Math.hypot(b.g.position.x - at.x, b.g.position.z - at.z) < .05 && Math.abs(b.g.position.y - T.WATER) < .02; }) }); await depart(); }
 
 // ── 사건: 떠내려가는 배 · 섞는 물결 · 안개
 function startDrift(){ const fl = floats().filter(b => !b.dragging && b.g.visible && DRAG.armed() !== b.k); if (!fl.length) return; const b = fl[Math.floor(Math.random() * fl.length)], c = boatScreen(b), side = S.tall ? 1 : (c.x < innerWidth / 2 ? -1 : 1);
   b.drifting = true; S.drift = { b, side, t: 0, back: false }; S.log.push({ drift: b.n }); tone(300, .3, 'sine', .04, 0, 200); }
 function driftStep(dt){ const D = S.drift; if (!D) return; const b = D.b; if (!b.drifting || b.role !== 'float') { S.drift = null; return; }
-  const ax = S.tall ? 'x' : 'x', speed = (S.tall ? 4.2 : 9) / R.T.DRIFT_S; if (!D.back) { b.g.position[ax] += D.side * speed * dt; const q = boatScreen(b); if (q.x < -80 || q.x > innerWidth + 80) { D.back = true; b.g.position[ax] = b.home[ax] - D.side * (S.tall ? 4.5 : 10); S.log.push({ driftOut: b.n }); } }   /* 나갔다가 반대쪽에서 다시 들어온다(떠 있는 배의 수는 그대로) */
+  driftMin(b); const ax = 'x', speed = (S.tall ? 4.2 : 9) / R.T.DRIFT_S; if (!D.back) { b.g.position[ax] += D.side * speed * dt; const q = boatScreen(b); if (q.x < -80 || q.x > innerWidth + 80) { D.back = true; b.g.position[ax] = S.tall ? b.home[ax] + 4.5 : b.home[ax] - D.side * 10;   /* 세로는 오른쪽으로 나가 오른쪽에서 돌아옴(선착장 · 줄을 가로지르지 않게) */ S.log.push({ driftOut: b.n }); } }   /* 나갔다가 반대쪽에서 다시 들어온다(떠 있는 배의 수는 그대로) */
   else { const to = b.home[ax], d0 = to - b.g.position[ax], st = Math.sign(d0) * speed * 1.4 * dt; if (Math.abs(d0) <= Math.abs(st)) { b.g.position[ax] = to; endDrift(b); S.log.push({ driftBack: b.n }); } else b.g.position[ax] += st; } }
+function driftMin(b){ if (S.tall) S.driftMinX = Math.min(S.driftMinX == null ? 1e9 : S.driftMinX, b.g.position.x); }
 function endDrift(b){ b.drifting = false; if (S.drift && S.drift.b === b) S.drift = null; }
 /** 떠내려가는 배를 눌러 잡음 → 제자리로(깨끗함 그대로). */
 function catchDrift(b, keep){ endDrift(b); S.log.push({ caught: b.n }); tone(880, .08, 'triangle', .07); if (!keep) goHomeBoat(b, 420); }
-function shuffleWave(){ const fl = floats().filter(b => !b.dragging && !b.drifting); if (fl.length < 2) return; S.shuffleN++; const ids = fl.map(b => b.spot), nw = R.reshuffle(ids); fl.forEach((b, k) => { b.spot = nw[k]; });
+function shuffleWave(){ const fl = floats().filter(b => !b.dragging && !b.drifting); if (fl.length < 2) return; S.shuffleN++; const ids = fl.map(b => b.spot), nw = R.reshuffle(ids), moved = nw.filter((x, k) => x !== ids[k]).length; fl.forEach((b, k) => { b.spot = nw[k]; });
   const sp = spots(S.nSpots); const before = floats().map(b => b.n).sort().join(); fl.forEach(b => { b.home = sp[b.spot]; stage.tween(b.g.position, { x: b.home.x, z: b.home.z }, T.SHUFFLE_MS); });
   const wv = $('wave'), fr = floats().map(boatScreen), ys = fr.map(q => q.y); wv.style.top = (Math.min(...ys) - 60) + 'px'; wv.style.height = (Math.max(...ys) - Math.min(...ys) + 120) + 'px'; bobEl(wv, 'go'); tone(180, .7, 'sine', .05, 0, 90);
-  S.log.push({ shuffle: S.shuffleN, same: floats().map(b => b.n).sort().join() === before }); }
+  S.log.push({ shuffle: S.shuffleN, same: floats().map(b => b.n).sort().join() === before, moved, wave: wv.classList.contains('go') }); }
 function fogOn(){ const f = $('fog'); f.classList.add('on'); S.fogOn = true; S.log.push({ fog: S.p.cell }); }
 function fogOff(){ const f = $('fog'); f.classList.remove('on', 'peek', 'thick'); S.fogOn = false; }
 function fogPlace(t){ if (!S.fogOn || !S.p) return; const f = $('fog'), p = S.p; let r;
   if (p.cell === 'A08') { const a = stage.screenOf(slotPos(1)), b = stage.screenOf(slotPos(p.run.length - 2)), half = pitchPx() * .62, sh = NS.size(numPx(), true).h; r = S.tall ? { l: a.x - half, t: a.y - half, w: half * 2 + sh * 1.2, h: b.y - a.y + half * 2 } : { l: a.x - half, t: a.y - sh - half * .9, w: b.x - a.x + half * 2, h: sh + half * 1.9 }; }
-  else { const b0 = boatAt(0), sr = b0 && rectOf(b0.wrap); if (!sr) return; f.classList.add('thick'); r = { l: sr.left - 18, t: sr.top - 16, w: sr.width + 36, h: sr.height + 32 }; f.classList.toggle('peek', (t % 4.2) < 1.1); }   /* A09: 맨 앞 팻말이 안개에 가렸다가 잠깐씩만 보인다 */
+  else { const b0 = boatAt(0), sr = b0 && rectOf(b0.wrap); if (!sr) return; f.classList.add('thick');   /* A09 안개만 팻말 위 층(짙게) — A08 안개는 팻말 아래 층(아이가 끼운 배의 팻말을 덮지 않음) */ r = { l: sr.left - 18, t: sr.top - 16, w: sr.width + 36, h: sr.height + 32 }; f.classList.toggle('peek', (t % 4.2) < 1.1); }   /* A09: 맨 앞 팻말이 안개에 가렸다가 잠깐씩만 보인다 */
   Object.assign(f.style, { left: r.l + 'px', top: r.t + 'px', width: r.w + 'px', height: r.h + 'px' }); }
 
 // ── 한 문제의 시작 · 끝
-function resetScene(){ for (const b of S.boats) { stopTweens(b.g.position); stopTweens(b.g.rotation); b.role = 'off'; b.slot = -1; b.given = false; b.dragging = false; b.drifting = false; b.snap = false; b.g.visible = false; b.wrap.classList.add('off'); b.wrap.classList.remove('armed', 'lit'); if (b.crate) { b.inner.remove(b.crate); b.crate = null; } }
-  for (const u of S.buoys) { stopTweens(u.g.position); u.on = false; u.ghost = false; u.g.visible = false; u.g.rotation.z = 0; buoySign(u); }
+function resetScene(){ for (const b of S.boats) { stopTweens(b.g.position); stopTweens(b.g.rotation); b.role = 'off'; b.slot = -1; b.given = false; b.dragging = false; b.drifting = false; b.snap = false; b.g.visible = false; b.wrap.classList.add('off'); b.wrap.classList.remove('armed', 'lit'); b.bob = false; b.inner.position.y = 0; stopTweens(b.inner.position); if (b.crate) { b.inner.remove(b.crate); b.crate = null; } }
+  for (const u of S.buoys) { stopTweens(u.g.position); stopTweens(u.g.rotation); u.wob = false; u.snap = false; u.on = false; u.ghost = false; u.g.visible = false; u.g.rotation.z = 0; buoySign(u); }
   S.drift = null; S.departing = false; fogOff(); $('bellring').classList.remove('on'); if (lead) { stopTweens(lead.g.position); placeLead(); } }
 async function runProblem(p, ctx){ const my = S.oid;
   S.p = p; S.step = ctx.step; S.ev = ctx.ev; S.ctx = ctx; S.res = { slipped: false, gapped: false, hinted: false, missed: false }; S.closed = false; S.clock = 0; S.busy = true; S.hinting = false; S.call = -1; S.horned = false;
-  S.fill = Array(p.run.length).fill(null); S.leaveS = R.leaveS(S.cell, ctx.board, ctx.last); S.shufT = 0; S.shuffleN = 0; S.driftAt = Infinity; DRAG.cancel(); DG.line('drag', null); resetScene(); actPlay(henry, 'Idle');
+  S.fill = Array(p.run.length).fill(null); S.leaveS = R.leaveS(S.cell, ctx.board, ctx.last); S.shufT = 0; S.shuffleN = 0; S.driftAt = Infinity; DRAG.cancel(); DG.line('drag', null); resetScene(); clearArmed(); actPlay(henry, 'Idle');
   /* 줄: 앞 배 · 주어진 배 · 빈 자리 부표(걸음 ① 은 흐린 숫자) */
   const yaw = lineYaw(), given = [];
   for (let i = 0; i < p.run.length; i++) { const to = slotPos(i);
@@ -323,7 +333,7 @@ async function runProblem(p, ctx){ const my = S.oid;
     else { const b = freeBoat(); b.role = 'line'; b.given = true; b.slot = i; b.n = p.run[i]; b.g.visible = true; b.g.rotation.y = yaw; b.g.position.copy(to); signDraw(b); given.push(b); } }
   if (ctx.surprise && given.length) { const b = given[Math.floor(Math.random() * given.length)], c = fitH(K[MODEL.crate], T.CRATE); c.position.set(0, .1, 0); c.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.emissive = new THREE.Color(GLOW); m.material.emissiveIntensity = .4; } }); b.inner.add(c); b.crate = c; S.log.push({ crate: b.n }); }   /* 깜짝 짐: 덮개 씌운 상자(금빛) */
   /* 떠 있는 배: 들어오는 차례 = loose · 자리는 뒤섞어(왼쪽부터 답 차례가 되지 않게) */
-  const fl = p.loose.map(n => { const b = freeBoat(); b.role = 'float'; b.n = n; b.given = false; b.slot = -1; signDraw(b); return b; }), sp = spots(fl.length), order = shuffleIdx(fl.length); S.nSpots = fl.length;   /* 자리 수는 문제 동안 그대로(끼워서 줄어도 빈 자리는 그 배의 집) */
+  const fl = p.loose.map(n => { const b = freeBoat(); b.role = 'float'; b.n = n; b.given = false; b.slot = -1; signDraw(b); return b; }), sp = spots(fl.length), order = R.seats(p); S.nSpots = fl.length;   /* 자리 수는 문제 동안 그대로(끼워서 줄어도 빈 자리는 그 배의 집) */
   fl.forEach((b, k) => { b.spot = order[k]; b.home = sp[b.spot]; b.g.rotation.y = yaw + (b.k % 3 - 1) * .12; });
   trayDraw(); E.marbles(ctx.j, 3, 0); H.hide(); aim(innerWidth, innerHeight);
   /* 줄이 들어와 서고 · 배들이 먼바다에서 뒤섞여 들어온다 */
@@ -333,13 +343,12 @@ async function runProblem(p, ctx){ const my = S.oid;
   await Promise.all(fl.map((b, k) => { b.g.visible = true; const h = b.home; b.g.position.set(h.x + (S.tall ? 5 : 0), T.WATER, h.z - (S.tall ? 0 : 8)); return sleep(k * gap).then(() => stage.tween(b.g.position, { x: h.x, z: h.z }, T.ENTER_MS * (1 - .12 * Math.min(S.streak, 3)), easeOut)); })); if (S.oid !== my) return { abort: true };
   fl.forEach(b => b.g.position.set(b.home.x, T.WATER, b.home.z));
   S.log.push({ start: p.run.join(''), holes: p.holes.join(), loose: p.loose.join(), step: S.step, ev: Object.keys(S.ev).filter(k => S.ev[k] === true).join(' '), last: !!ctx.last, fog: !!ctx.fog, retry: !!p.retry });
-  if (ctx.fog && S.step === 2) fogOn();
+  if (ctx.fog && S.step === 2) { fogOn(); trayDraw(); }
   const told = (ctx.j === 0 && ctx.firstStep) ? H.tell('line.' + S.cell + S.step, firstLine(), TELLS()) : false; if (told) { tellPlace(); S.log.push({ told: firstLine() }); }
   S.driftAt = ctx.drift && S.step === 2 && !CALM ? S.t + 1.5 + Math.random() * 2.5 : Infinity;
   S.active = true; S.busy = false; S.lastAct = S.t + (told ? T.TELL_GRACE : 0);
   const out = await new Promise(res => { S.done = res; }); S.active = false; S.done = null; H.hide(); DRAG.cancel(); if (out === 'abort' || S.oid !== my) return { abort: true };
   const r = { ...S.res, clean: R.clean(S.res), out }; S.log.push({ problem: p.run.join(''), holes: p.holes.join(), step: S.step, ...r }); return r; }
-const shuffleIdx = n => { const a = Array.from({ length: n }, (_, i) => i); for (let g = 0; g < 20; g++) { for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } if (a.some((x, i) => x !== i)) break; } return a; };
 
 // ── 나들이(판 셋) · 판(문제 셋)
 const TELLS = () => ({ times: M.passed(M.get(S.cell || '')) ? 2 : 1e9 });
@@ -403,6 +412,7 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
   if (thinking && S.ev.leave && S.step === 2 && !CALM) { S.clock = Math.min(1, S.clock + dt / S.leaveS); if (S.clock > .85 && !S.horned) { S.horned = true; hornShort(); S.log.push({ horn2: true }); } if (S.clock >= 1) miss(); }
   if (lead && !S.departing && !moving(lead.g.position)) { const h = leadHome(), d = dirV(); lead.g.position.set(h.x - d.x * T.PULL * S.clock, h.y, h.z - d.z * T.PULL * S.clock); }
   for (const b of S.boats) if (b.role !== 'off' && !b.bob) b.inner.position.y = b.dragging ? 0 : Math.sin(t * 1.4 + b.k * 1.7) * .02;
+  for (const u of S.buoys) if (u.snap && !moving(u.g.position)) { u.snap = false; if (u.on) { const to = slotPos(u.i); u.g.position.set(to.x, T.WATER, to.z); } }
   for (const b of S.boats) if (b.snap && !moving(b.g.position)) { b.snap = false; if (b.role === 'line' && !S.departing) { const to = slotPos(b.slot); b.g.position.set(to.x, T.WATER, to.z); } else if (b.role === 'float' && !b.dragging && !b.drifting) b.g.position.set(b.home.x, T.WATER, b.home.z); }
   if (thinking && t > S.driftAt) { S.driftAt = Infinity; startDrift(); }
   if (thinking) driftStep(dt);
@@ -416,7 +426,7 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
   if (S.hinting && thinking && t - S.hintAt > T.HINT_SWAP) { S.hintAt = t; S.hintPhase ^= 1; hintShow(); }
   if (!thinking && S.hinting) { S.hinting = false; H.hide(); } });
 /** 길잡이(답까지): 앞에서부터 첫 「아직 맞지 않은」 빈 자리 — 틀린 배가 있으면 그 배(눌러 빼기) · 비었으면 맞는 배 → 그 자리 · 다 맞으면 종. */
-function hintTarget(){ const p = S.p; for (const i of p.holes) { const v = S.fill[i]; if (v === p.run[i]) continue; if (v != null) return [boatScreen(boatAt(i))]; const fb = floats().find(x => x.n === p.run[i]); return [fb ? boatScreen(fb) : null, stage.screenOf(slotPos(i))].filter(Boolean); }
+function hintTarget(){ const p = S.p; for (const i of p.holes) { const v = S.fill[i]; if (v === p.run[i]) continue; if (v != null) return [boatScreen(boatAt(i))]; const fb = floats().find(x => x.n === p.run[i]); if (!fb) { const wb = lineBoats().find(x => !x.given && x.n === p.run[i]); if (wb) return [boatScreen(wb)]; }   /* 맞는 배가 뒤 칸에 잘못 끼워져 있으면 그 배(눌러 빼기)부터 */ return [fb ? boatScreen(fb) : null, stage.screenOf(slotPos(i))].filter(Boolean); }
   const bp = bellAt(); return bp ? [{ x: bp.x, y: bp.y + 20 }] : []; }
 function hintShow(){ if (!S.p) return; const ts = hintTarget(); if (!ts.length) return; const q = ts[S.hintPhase % ts.length]; S.log.push({ hintAt: ts.length > 1 && S.hintPhase ? 'slot' : 'first' }); H.show(q.x, q.y); }
 
@@ -428,5 +438,7 @@ window.__line = { S, R, M, E, T, TL, NS, DG, stage, wallet, outing, abort, ring,
   signs: () => [...S.boats.filter(b => b.role !== 'off').map(b => ({ n: b.n, role: b.role, slot: b.slot, given: b.given, ghost: false, px: +b.cv.dataset.numpx, w: b.cv.width, side: b.wrap.classList.contains('side'), crate: !!b.crate })), ...S.buoys.filter(u => u.on && u.ghost).map(u => ({ n: u.n, role: 'buoy', slot: u.i, ghost: true, px: +u.cv.dataset.numpx }))],
   boatPx: () => Math.min(...S.boats.filter(b => b.role !== 'off').map(boatPx)), floatRects: () => floats().map(b => { const h = boatHit(b); return { left: h.x - h.rx, right: h.x + h.rx, top: h.y - h.ry, bottom: h.y + h.ry, n: b.n }; }),
   homes: () => floats().map(b => ({ n: b.n, ok: Math.hypot(b.g.position.x - b.home.x, b.g.position.z - b.home.z) < .02 })), boatY: () => S.boats.filter(b => b.role !== 'off').map(b => +b.g.position.y.toFixed(3)),
-  showRadius: on => DG.showRadius(on ? targets() : null, R.T.SNAP_R), docks, lead: () => lead, bell: () => bell, sizeOf, ropes: () => document.querySelectorAll('#dragsvg g[data-id^="rope"]').length, keyRects };
+  showRadius: on => DG.showRadius(on ? targets() : null, R.T.SNAP_R), docks, lead: () => lead, bell: () => bell, sizeOf, ropes: () => document.querySelectorAll('#dragsvg g[data-id^="rope"]').length, keyRects, bellR, shuffleWave,
+  armedN: () => document.querySelectorAll('.bsign.armed').length, buoysOk: () => S.buoys.filter(u => u.on).every(u => { const to = slotPos(u.i); return Math.hypot(u.g.position.x - to.x, u.g.position.z - to.z) < .02; }),
+  leadPoint: () => { if (!lead) return null; const d = dirV(), bp = bellAt(); for (const k of [.62, -.62, .45, -.45, .8, -.8]) { const w = lead.g.position.clone().addScaledVector(d, k).setY(.25), q = stage.screenOf(w); if (!bp || Math.hypot(q.x - bp.x, q.y - bp.y) > bellR() + 8) return { ...q, far: true }; } return null; } };
 if (!GO_NOW) build().catch(e => { $('loading').textContent = '불러오지 못했어요'; console.error(e); });

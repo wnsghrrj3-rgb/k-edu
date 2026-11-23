@@ -58,6 +58,12 @@ export function loose(p, rnd = Math.random){ const c = CELLS[p.cell], [lo, hi] =
 /** 들어오는 차례가 답 차례 그대로인가: 빈 자리 수들이 줄 차례대로 들어옴(둘 이상) · 하나면 그 배가 맨 먼저 들어옴. */
 export const answerOrder = (order, hn) => { const sub = order.filter(x => hn.includes(x)); return hn.length >= 2 ? sub.join() === hn.join() : order[0] === hn[0]; };
 
+/** 물 위 자리: seats[k] = loose[k] 배가 놓일 자리 번호(자리 0 = 가로는 왼쪽 끝 · 세로는 왼쪽 위). 들어오는 차례 그대로가 아니고, 자리 차례로 읽어도 답 차례가 되지 않게. */
+export function seats(p, rnd = Math.random){ const n = p.loose.length, hn = p.holes.map(i => p.run[i]); let a = [];
+  for (let g = 0; g < 80; g++) { a = shuffle(Array.from({ length: n }, (_, i) => i), rnd); if (n > 1 && a.every((x, i) => x === i)) continue; if (!answerOrder(bySeat(p.loose, a), hn)) return a; }
+  return a; }
+/** 자리 차례로 읽은 수(자리 0 부터). */
+export const bySeat = (lo, seat) => { const out = []; seat.forEach((s, k) => { out[s] = lo[k]; }); return out; };
 /** 문제 하나를 짓는다. */
 export function make(id, start, len, holes, rnd = Math.random, extra = {}){ const p = { cell: id, run: runOf(id, start, len), holes: holes.slice().sort((a, b) => a - b), ...extra }; p.loose = loose(p, rnd); return p; }
 
@@ -68,7 +74,7 @@ export function deal(id, history = [], rnd = Math.random, opt = {}){ const c = C
   if (id === 'A09' || c.given === 'head') { let runs = null;
     for (let g = 0; g < 400 && !runs; g++) { const st = shuffle([6, 6, 7, 7, 8, 8, 9, 9].filter(s => s >= c.start[0] && s <= c.start[1]), rnd), lens = {}; const rs = st.map(s => { const used = lens[s] || (lens[s] = []), cand = shuffle(range(c.len[0], c.len[1]).filter(l => !used.includes(l)), rnd), len = cand[0] || c.len[0]; used.push(len); return { start: s, len }; });   /* 같은 시작 수의 두 줄은 길이가 다르다(같은 줄이 두 번 나오지 않게) */
       if (opt.small) rs.sort((x, y) => x.len - y.len);
-      const all = [...(prev ? [{ start: prev.run[0], len: prev.run.length }] : []), ...rs]; if (all.some((r, k) => k && r.start === all[k - 1].start)) continue; runs = rs; }
+      const all = [...(prev ? [{ start: prev.run[0], len: prev.run.length }] : []), ...rs]; if (all.some((r, k) => k && r.start === all[k - 1].start)) continue; if (c.fullLast && rs[rs.length - 1].start === 9) continue; runs = rs; }   /* 여덟째가 9 로 시작하면 곧 온 줄(9 시작)이 붙는다 — 피함 */
     if (!runs) runs = [6, 7, 8, 9, 6, 7, 8, 9].map(s => ({ start: s, len: c.len[0] }));
     const out = runs.map(r => make(id, r.start, r.len, range(1, r.len - 1), rnd));
     if (c.fullLast) { const gv = fullGiven(rnd); out.push(make(id, 9, 9, range(0, 8).filter(i => !gv.includes(i)), rnd, { last: true, full: true })); }
@@ -77,8 +83,8 @@ export function deal(id, history = [], rnd = Math.random, opt = {}){ const c = C
   if (c.given === 'one') { const pl = pool(id); return Array.from({ length: N }, (_, k) => { const r = pl[Math.floor(rnd() * pl.length)], keep = Math.floor(rnd() * r.len); return make(id, r.start, r.len, range(0, r.len - 1).filter(i => i !== keep), rnd, k === N - 1 ? { last: true } : {}); }); }   /* 뒤 묶음(A11 · A12)이 쓸 꼴 — 받게만 */
   /* A08 */
   const pl = pool(id), longest = pl.filter(r => r.len === c.len[1]); let runs = null;
-  for (let g = 0; g < 600 && !runs; g++) { const rs = shuffle(pl.slice(), rnd).slice(0, N - 1); if (opt.small) rs.sort((x, y) => x.len - y.len);
-    rs.push(longest[Math.floor(rnd() * longest.length)]); const all = [...(prev ? [{ start: prev.run[0], len: prev.run.length }] : []), ...rs];
+  for (let g = 0; g < 600 && !runs; g++) { const L = longest[Math.floor(rnd() * longest.length)], rs = shuffle(pl.filter(r => !(r.start === L.start && r.len === L.len)), rnd).slice(0, N - 1); if (opt.small) rs.sort((x, y) => x.len - y.len);
+    rs.push(L);   /* 마지막 긴 줄을 먼저 뽑고 나머지는 그 줄을 뺀 풀에서 — 한 나들이에 같은 줄 두 번 없음 */ const all = [...(prev ? [{ start: prev.run[0], len: prev.run.length }] : []), ...rs];
     if (all.some((r, k) => k && r.start === all[k - 1].start && r.len === all[k - 1].len)) continue;
     const ends = rs.filter(r => r.start + r.len - 1 >= 8).length, starts = new Set(rs.map(r => r.start)).size; if (ends < 3 || starts < 4) continue; runs = rs; }
   if (!runs) runs = [{ start: 1, len: 5 }, { start: 4, len: 5 }, { start: 2, len: 6 }, { start: 5, len: 5 }, { start: 1, len: 6 }, { start: 3, len: 7 }, { start: 4, len: 6 }, { start: 2, len: 5 }, { start: 1, len: 7 }];
@@ -91,13 +97,13 @@ export function handFix(q, start, rnd = Math.random){ return q.map((p, k) => { i
   const kind = kindOf(p), n = ri(c.holes.hand[0], c.holes.hand[1], rnd); let hs = kind === 'head' ? [0] : kind === 'tail' ? [p.run.length - 1] : []; for (const i of shuffle(p.holes.filter(i => !hs.includes(i)), rnd)) if (hs.length < n) hs.push(i);
   const h = { ...p, holes: hs.sort((a, b) => a - b), hand: true, solo: p }; h.loose = loose(h, rnd); return h; }); }
 /** 안개 낀 줄(A08 · 통과 뒤): 줄의 양 끝만 보이고 가운데가 다 빈다(수는 그대로 · 떠 있는 배를 새로). A09 는 줄이 그대로(맨 앞 팻말만 가려짐 — 화면이 한다). */
-export function fogFix(p, rnd = Math.random){ if (p.cell !== 'A08' || p.run.length < 3) return { ...p, fog: true }; const f = { ...p, holes: range(1, p.run.length - 2), fog: true }; f.loose = loose(f, rnd); return f; }
+export function fogFix(p, rnd = Math.random){ if (p.cell !== 'A08' || p.run.length < 3) return { ...p, fog: true, prefog: p }; const f = { ...p, holes: range(1, p.run.length - 2), fog: true, prefog: p }; f.loose = loose(f, rnd); return f; }
 /** 깨끗하지 못했던 문제를 「문제 둘을 사이에 두고」 다시(같은 줄 · 같은 빈 자리 · 떠 있는 배의 차례와 남는 배는 새로).
  *  밀어 넣지 않고 뒤의 문제 하나와 바꾼다 — 마지막 문제(가장 긴 줄 · 온 줄)는 바꾸지 않는다 · 빈 꼴(맨 앞 · 맨 뒤 · 가운데)이 같은 문제와 먼저 바꾼다 · 앞뒤로 같은 줄이 붙지 않게.
  *  그런 자리가 없으면(나들이 끝 가까이) 다시 내지 않는다. 걸음 ① 판의 문제는 처음 꼴(solo)로 다시 낸다. */
-export function requeue(q, i, rnd = Math.random){ const src = q[i] && (q[i].solo || q[i]); if (!src) return q.slice();
-  for (const strict of [true, false]) for (let at = i + T.RETRY_GAP + 1; at < q.length - 1; at++) { if (q[at].retry || q[at].last) continue; if (strict && kindOf(q[at].solo || q[at]) !== kindOf(src)) continue;
-    const a = q.slice(), r = { cell: src.cell, run: src.run.slice(), holes: src.holes.slice(), retry: true }; if (src.fog) r.fog = true; r.loose = loose(r, rnd); a[at] = r;
+export function requeue(q, i, rnd = Math.random){ const src = q[i] && (q[i].prefog || q[i].solo || q[i]); if (!src) return q.slice();   /* 안개 문제는 안개 앞의 빈 꼴로 · 걸음 ① 문제는 처음 꼴로 */
+  for (const [gap, strict] of [[T.RETRY_GAP, true], [T.RETRY_GAP, false], [1, true], [1, false]]) for (let at = i + gap + 1; at < q.length - 1; at++) { if (q[at].retry || q[at].last) continue; if (strict && kindOf(q[at].solo || q[at]) !== kindOf(src)) continue;   /* 두 문제 뒤가 없으면(여섯째~여덟째) 마지막 바로 앞까지 남은 자리와 바꾼다 */
+    const a = q.slice(), r = { cell: src.cell, run: src.run.slice(), holes: src.holes.slice(), retry: true }; r.loose = loose(r, rnd); a[at] = r;
     if (same(a[at - 1], a[at]) || same(a[at], a[at + 1])) continue; return a; }
   return q.slice(); }
 

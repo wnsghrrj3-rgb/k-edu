@@ -55,9 +55,9 @@ export function drag(el, o){ const R = () => (typeof o.R === 'function' ? o.R() 
     if (cur.moved) { if (o.enabled && !o.enabled()) { const id = cur.id; cur = null; line('drag', null); setHover(null); if (o.onCancel) o.onCancel(id, null); return; }
       line('drag', ropeFrom(cur.id), { x, y }); const t = targetAt(o.targets() || [], x, y, R()); setHover(t ? t.id : null); if (o.onMove) o.onMove(cur.id, x, y); } });
   const up = e => { if (!cur || e.pointerId !== cur.pid) return; const c = cur; cur = null; const x = e.clientX, y = e.clientY; setHover(null);
-    if (!c.moved) { if (o.enabled && !o.enabled()) { if (o.onBusy) o.onBusy({ x, y }); return; } armedId = c.id; if (o.onArm) o.onArm(c.id, { x, y }); return; }
+    if (!c.moved) { if (o.enabled && !o.enabled()) { if (o.onBusy) o.onBusy({ x, y }); return; } if (armedId != null && armedId !== c.id && o.onDisarm) o.onDisarm(armedId); armedId = c.id; if (o.onArm) o.onArm(c.id, { x, y }); return; }   /* 다른 것을 들면 앞의 것은 내려놓는다 */
     const a = ropeFrom(c.id), t = e.type === 'pointerup' && (!o.enabled || o.enabled()) ? targetAt(o.targets() || [], x, y, R()) : null;
     if (t) { line('drag', null); o.onDrop({ from: c.id, to: t.id, how: 'drag', x, y }); return; }
     if (a) retract('drag', a, { x, y }); else line('drag', null); if (o.onCancel) o.onCancel(c.id, { x, y }); };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-  return { armed: () => armedId, disarm(){ const a = armedId; armedId = null; if (a != null && o.onDisarm) o.onDisarm(a); }, cancel(){ cur = null; armedId = null; line('drag', null); setHover(null); }, dragging: () => !!(cur && cur.moved), state: () => ({ armed: armedId, dragging: !!(cur && cur.moved), hover: hoverId }) }; }
+  return { armed: () => armedId, disarm(){ const a = armedId; armedId = null; if (a != null && o.onDisarm) o.onDisarm(a); }, cancel(){ const a = armedId; cur = null; armedId = null; line('drag', null); setHover(null); if (a != null && o.onDisarm) o.onDisarm(a); }, dragging: () => !!(cur && cur.moved), state: () => ({ armed: armedId, dragging: !!(cur && cur.moved), hover: hoverId }) }; }
