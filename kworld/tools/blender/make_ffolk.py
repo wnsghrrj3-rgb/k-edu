@@ -13,10 +13,10 @@ PREVIEW = '--preview' in sys.argv
 reset_bake(samples=24)
 
 m_plain('skin', 0xf0c48e, var=0.03, scale=8, rough=0.7); m_plain('cheek', 0xe89a80, var=0.03); m_plain('lip', 0xb85a4a, var=0.03); m_plain('ink', 0x1a1410, var=0.1, rough=0.5)
-m_plain('hair', 0x1c1612, var=0.25, scale=40, rough=0.6); m_plain('eyew', 0xfaf8f2, var=0.01)
+m_fur('hair', (0xa8a8a8, 0xdcdcdc, 0xffffff), axis='Z', scale=1.2, rough=0.6); m_plain('eyew', 0xfaf8f2, var=0.01)
 m_cloth('shirt', 0xf2efe6, weave=120, var=0.07); m_cloth('pants', 0xf2efe6, weave=120, var=0.07); m_cloth('white', 0xf8f5ee, weave=120, var=0.04)
 m_plain('straw', 0xd0b060, var=0.25, scale=40); m_cloth('bamboo', 0xd8b868, weave=60, var=0.2); m_cloth('gat', 0x1a1a1e, weave=160, var=0.3); m_plain('felt', 0x1c1c22, var=0.15, scale=30)
-m_plain('red', 0xc0302a, var=0.1); m_plain('bead', 0xd8a030, var=0.1, rough=0.4); m_plain('beard', 0x2a2420, var=0.3, scale=50)
+m_plain('red', 0xc0302a, var=0.1); m_plain('bead', 0xd8a030, var=0.1, rough=0.4); m_fur('beard', (0xa8a8a8, 0xdcdcdc, 0xffffff), axis='Z', scale=1.5); m_plain('silver', 0xd8d8e0, var=0.05, rough=0.3)
 
 
 def egg(b, c, r, m, sub=2, rot=(0, 0, 0), **k):
@@ -24,34 +24,41 @@ def egg(b, c, r, m, sub=2, rot=(0, 0, 0), **k):
 
 
 def mask(ob):
-    """옷 가리개: 꼭짓점 색 R = 저고리(shirt) · G = 바지(pants)."""
+    """색 가리개: 꼭짓점 색 R = 저고리(shirt) · G = 바지·치마(pants) · B = 머리칼·수염(hair·beard)."""
     me = ob.data
     for ca in list(me.color_attributes):
         me.color_attributes.remove(ca)
     ca = me.color_attributes.new('Col', 'BYTE_COLOR', 'CORNER')
     for p in me.polygons:
         nm = me.materials[p.material_index].name
-        c = (1, 0, 0, 1) if nm == 'shirt' else (0, 1, 0, 1) if nm == 'pants' else (0, 0, 0, 1)
+        c = (1, 0, 0, 1) if nm == 'shirt' else (0, 1, 0, 1) if nm == 'pants' else (0, 0, 1, 1) if nm in ('hair', 'beard') else (0, 0, 0, 1)
         for li in p.loop_indices:
             ca.data[li].color = c
     return ob
 
 
 OBJ = []
-# ── 머리: 얼굴 ──
+# ── 머리: 얼굴(머리통·턱·코·귀를 한 겹으로 빚고, 눈·눈썹·입·볼·머리칼은 또렷하게 덧붙인다) ──
 b = B()
-egg(b, (0, 0, 1.66), (0.29, 0.275, 0.295), 'skin', sub=3)
+egg(b, (0, 0, 1.675), (0.29, 0.275, 0.285), 'skin', sub=3)
+egg(b, (0, -0.03, 1.56), (0.235, 0.225, 0.2), 'skin', sub=2)                                             # 볼·턱
+egg(b, (0, -0.275, 1.622), (0.04, 0.05, 0.045), 'skin', sub=2); egg(b, (0, -0.25, 1.66), (0.03, 0.04, 0.07), 'skin', sub=2)   # 코끝 · 콧등
 for s in (-1, 1):
-    egg(b, (s * 0.283, 0.02, 1.64), (0.04, 0.06, 0.075), 'skin', sub=1)                                  # 귀
-    egg(b, (s * 0.108, -0.252, 1.69), (0.036, 0.016, 0.047), 'ink', sub=2)                               # 눈
-    egg(b, (s * 0.098, -0.266, 1.703), (0.011, 0.006, 0.013), 'eyew', sub=1)                             # 눈빛
-    b.box((0.085, 0.014, 0.02), (s * 0.11, -0.262, 1.772), 'hair', rot=(0, -s * 0.16, 0), bevel=0.006, jit=0)   # 눈썹
+    egg(b, (s * 0.285, 0.02, 1.64), (0.045, 0.06, 0.08), 'skin', sub=2)                                  # 귀
+    egg(b, (s * 0.11, -0.238, 1.765), (0.075, 0.035, 0.03), 'skin', sub=2)                               # 눈두덩
+    egg(b, (s * 0.108, -0.246, 1.692), (0.05, 0.02, 0.05), 'eyew', sub=2)                                # 흰자
+    egg(b, (s * 0.106, -0.257, 1.69), (0.033, 0.016, 0.042), 'ink', sub=2)                               # 눈동자
+    egg(b, (s * 0.096, -0.27, 1.704), (0.011, 0.006, 0.013), 'eyew', sub=1)                              # 눈빛
+    b.box((0.09, 0.016, 0.022), (s * 0.112, -0.272, 1.782), 'hair', rot=(0, -s * 0.16, 0), bevel=0.007, jit=0)   # 눈썹
     egg(b, (s * 0.178, -0.212, 1.585), (0.052, 0.014, 0.036), 'cheek', sub=1)                            # 볼
-    b.box((0.05, 0.012, 0.016), (s * 0.03, -0.268, 1.535 + 0.006), 'lip', rot=(0, -s * 0.3, 0), bevel=0.005, jit=0)   # 웃는 입
-egg(b, (0, -0.285, 1.625), (0.034, 0.03, 0.03), 'skin', sub=1)                                           # 코
+    b.box((0.05, 0.014, 0.018), (s * 0.03, -0.262, 1.535 + 0.006), 'lip', rot=(0, -s * 0.3, 0), bevel=0.006, jit=0)   # 웃는 입
 egg(b, (0, 0.035, 1.71), (0.3, 0.29, 0.285), 'hair', sub=2)                                              # 머리칼(뒤·위로 물려 이마선이 생긴다)
+for s in (-1, 1):
+    egg(b, (s * 0.262, -0.07, 1.69), (0.05, 0.07, 0.11), 'hair', sub=1)                                  # 귀밑머리
 b.cone(0.11, 0.1, 0.16, (0, 0, 1.36), 'skin', seg=10, jit=0)                                             # 목
-OBJ.append(mask(b.done('folk_head', smooth=60, shade=(1, 1), under=0)))
+hd = b.done('folk_head', smooth=60, shade=(1, 1), under=0)
+skin(hd, voxel=0.011, faces=480, keep=('eyew', 'ink', 'hair', 'cheek', 'lip'), smooth_it=5, smooth_f=0.5)
+OBJ.append(mask(hd))
 
 # ── 쓰개 · 수염 ──
 b = B()   # 맨상투 + 망건
@@ -105,6 +112,27 @@ egg(b, (0.02, -0.236, 1.03), (0.04, 0.03, 0.035), 'shirt', sub=1, tone=0.8)     
 b.box((0.05, 0.02, 0.3), (0.05, -0.245, 0.88), 'shirt', rot=(0, -0.1, 0), tone=0.8, jit=0); b.box((0.05, 0.02, 0.24), (-0.01, -0.245, 0.91), 'shirt', rot=(0, 0.14, 0), tone=0.8, jit=0)
 OBJ.append(mask(b.done('folk_body', smooth=60, shade=(1, 1), under=0)))
 
+b = B()   # 쪽머리(가르마 탄 머리 · 뒤로 쪽 지고 비녀)
+egg(b, (0, 0.05, 1.72), (0.305, 0.3, 0.275), 'hair', sub=2)
+egg(b, (0, 0.3, 1.56), (0.1, 0.085, 0.085), 'hair', sub=2)
+seg(b, (-0.19, 0.31, 1.56), (0.19, 0.31, 1.57), 0.014, 0.012, 'silver', n=5, jit=0); egg(b, (-0.2, 0.31, 1.56), (0.028, 0.028, 0.028), 'bead', sub=1)
+b.box((0.012, 0.22, 0.012), (0, -0.13, 1.985), 'skin', rot=(0.5, 0, 0), jit=0)                           # 가르마
+OBJ.append(mask(b.done('hat_bun', smooth=60, shade=(1, 1), under=0)))
+b = B()   # 여인 몸통: 짧은 저고리 + 발목까지 오는 주름치마(G = 치마 색)
+b.lathe([(0.23, 1.02), (0.3, 1.08), (0.295, 1.24), (0.24, 1.36), (0.13, 1.42)], (0, 0, 0), 'shirt', seg=11, scale=(1.0, 0.72, 1.0), jit=0)
+for s in (-1, 1):
+    egg(b, (s * 0.33, 0, 1.3), (0.13, 0.14, 0.115), 'shirt', sub=2)
+N_ = 16
+def chima(u, v):
+    a = u * 2 * math.pi; r = 0.27 + (0.5 - 0.27) * (v ** 0.8) + 0.018 * math.sin(a * N_ / 2) * v
+    return (math.cos(a) * r, math.sin(a) * r * 0.86, 1.12 - 1.04 * v)
+b.grid(N_, 5, chima, 'pants', jit=0)
+b.lathe([(0.275, 1.1), (0.285, 1.14), (0.27, 1.17)], (0, 0, 0), 'white', seg=11, scale=(1.0, 0.75, 1.0), cap=False, jit=0)   # 치마 말기
+b.box((0.07, 0.03, 0.3), (-0.07, -0.214, 1.25), 'shirt', rot=(0.1, 0.42, 0), bevel=0.01, jit=0); b.box((0.07, 0.03, 0.26), (0.08, -0.21, 1.27), 'shirt', rot=(0.1, -0.5, 0), bevel=0.01, jit=0)
+b.box((0.034, 0.034, 0.22), (-0.098, -0.22, 1.3), 'white', rot=(0.1, 0.42, 0), jit=0); b.box((0.034, 0.034, 0.2), (0.108, -0.216, 1.31), 'white', rot=(0.1, -0.5, 0), jit=0)
+b.box((0.05, 0.02, 0.36), (0.05, -0.25, 0.98), 'red', rot=(0, -0.08, 0), jit=0); b.box((0.05, 0.02, 0.3), (-0.0, -0.25, 1.0), 'red', rot=(0, 0.12, 0), jit=0)   # 붉은 고름
+OBJ.append(mask(b.done('folk_body_f', smooth=60, shade=(1, 1), under=0)))
+
 # ── 팔: 넓은 소매 + 손 ──
 for nm, s in (('folk_armL', -1), ('folk_armR', 1)):
     b = B(); x = s * 0.46
@@ -131,9 +159,9 @@ for nm, s in (('folk_legL', -1), ('folk_legR', 1)):
 
 for o in OBJ:
     print('FACES', o.name, len(o.data.polygons))
-bake_set(OBJ, 'ffolk', size=1024, normal=False, keep_color=True, ao_lo=0.5, uv_angle=86, uv_weight={'hat_gat': 0.5, 'hat_paeraengi': 0.55, 'hat_guard': 0.55, 'hat_scarf': 0.8, 'folk_head': 1.5, 'folk_body': 1.2})
+bake_set(OBJ, 'ffolk', size=1024, normal=False, keep_color=True, ao_lo=0.5, uv_angle=86, uv_weight={'hat_gat': 0.5, 'hat_paeraengi': 0.55, 'hat_guard': 0.55, 'hat_scarf': 0.8, 'folk_head': 1.6, 'folk_body': 1.2, 'folk_body_f': 0.9})
 if PREVIEW:
     by = {o.name: o for o in OBJ}
-    for i, (hat, beard, yaw) in enumerate((('hat_scarf', False, 0.5), ('hat_gat', True, -0.4), ('hat_paeraengi', False, 0.0), ('hat_guard', True, 2.4))):
-        sel = [by[n] for n in ('folk_head', 'folk_body', 'folk_armL', 'folk_armR', 'folk_legL', 'folk_legR', hat)] + ([by['folk_beard']] if beard else [])
+    for i, (hat, beard, yaw) in enumerate((('hat_scarf', False, 0.5), ('hat_gat', True, -0.4), ('hat_knot', False, 0.0), ('hat_bun', False, 0.6))):
+        sel = [by[n] for n in ('folk_head', 'folk_body_f' if hat == 'hat_bun' else 'folk_body', 'folk_armL', 'folk_armR', 'folk_legL', 'folk_legR', hat)] + ([by['folk_beard']] if beard else [])
         preview(os.path.join(OUT, '_tex', f'ffolk_preview{i}.png'), sel, samples=24, elev=12, dist=0.62, layout=False, look=(0, 0, 1.1), yaw=yaw, res=(520, 640))

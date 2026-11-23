@@ -9,15 +9,16 @@
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, ringsFx, people, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, loadArt, art as kitArt, artGeo, artMat, artInst as kitInst, scatter, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset');   /* 개·닭·소·나무는 이제 구워 입힌 묶음(fbeasts·fyard) */   /* beasts = 움직이는 개·닭·소(tools/blender/make_beasts.py) */
-import { beastKit } from './beasts.js?v=2';
+import { beastKit } from './beasts.js?v=3';
 import { makeLand, dikes, hAt, lineDist, STREAM } from './land.js?v=2';
 import { airKit, sunAt } from './air.js?v=1';
-import { BAKED, loadBaked, bakedMesh, bakedInst, tintMat, eachInst } from './models.js?v=2';
+import { BAKED, loadBaked, bakedMesh, bakedInst, tintMat, eachInst } from './models.js?v=3';
 /* 구워 입힌 모델(블렌더 kw_bake — 이엉 결·나뭇결·돌·회벽 무늬와 구석 그늘): 같은 이름이 있으면 그것으로 갈아 끼운다 */
-await loadBaked('fhouse', 'ftown', 'ffolk', 'fbeasts', 'fyard');
-import { folkKit } from './folk.js?v=2';
+await loadBaked('fhouse', 'ftown', 'ffolk', 'fbeasts', 'fyard', 'fprops');
+import { folkKit } from './folk.js?v=3';
 const art = (n, tints, o) => (typeof n === 'string' && BAKED[n] ? bakedMesh(n, o) : kitArt(n, tints, o));
 const artInst = (sc, n, list, tints, o) => (typeof n === 'string' && BAKED[n] ? bakedInst(sc, n, list, o) : kitInst(sc, n, list, tints, o));
+const geoOf = (n) => (BAKED[n] ? BAKED[n].geo : artGeo(n)), matOf = (n) => (BAKED[n] ? BAKED[n].mat : artMat);   /* 벼·볏단처럼 직접 InstancedMesh 를 짓는 것용 */
 /* 읽어 들인 farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
 
 const W = 380, H = 240;
@@ -157,8 +158,8 @@ const plots = []; for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { cons
 plots.push({ id: plots.length, x0: 16, z0: 178, cx: 24, cz: 185, w: 16, d: 14, owner0: 'me', kind: 'field', wet: false }, { id: plots.length + 1, x0: 38, z0: 182, cx: 46, cz: 189, w: 16, d: 14, owner0: 'lord', kind: 'field', wet: false });
 /* 논에 서는 것(준호 11-20 「벼가 뿔 모양이다」 → 원뿔 대신 블렌더 모델): 자람새마다 한 겹씩, 그 철에 그 모습인 그루만 그린다(그리기 한 번씩) */
 const STAGES = ['rice_young', 'rice_grow', 'rice_ripe', 'rice_dead', 'rice_stub', 'tob_plant', 'bean'], stIM = {};
-for (const n of STAGES) { const im = new THREE.InstancedMesh(artGeo(n), artMat, plots.length * TUFTS); im.count = 0; im.frustumCulled = false; im.castShadow = false; im.receiveShadow = true; scene.add(im); stIM[n] = im; }
-const SHEAF_N = 10, sheafIM = new THREE.InstancedMesh(artGeo('rice_sheaf'), artMat, plots.length * SHEAF_N); sheafIM.count = 0; sheafIM.frustumCulled = false; sheafIM.castShadow = true; scene.add(sheafIM);
+for (const n of STAGES) { const im = new THREE.InstancedMesh(geoOf(n), matOf(n), plots.length * TUFTS); im.count = 0; im.frustumCulled = false; im.castShadow = false; im.receiveShadow = true; scene.add(im); stIM[n] = im; }
+const SHEAF_N = 10, sheafIM = new THREE.InstancedMesh(geoOf('rice_sheaf'), matOf('rice_sheaf'), plots.length * SHEAF_N); sheafIM.count = 0; sheafIM.frustumCulled = false; sheafIM.castShadow = true; scene.add(sheafIM);
 let plotDirty = true;
 for (const p of plots) { p.w = p.w || PW; p.d = p.d || PD;
   p.soil = box(p.w, 0.14, p.d, 0x9a7a4e); p.soil.castShadow = false; p.soil.receiveShadow = true; at(p.soil, p.cx, 0.05, p.cz); scene.add(p.soil);
@@ -192,7 +193,7 @@ function drawPlot(p) { plotDirty = true;
   p.soil.material.color.set(S.season === 3 ? 0xdfe3e4 : p.kind === 'field' ? 0x8a6a44 : p.flood ? 0x5a4a34 : S.drought && S.season >= 1 && !(p.wet && S.bo >= 6) ? 0xb39a66 : 0x8a6c44);
   p.cloth.material.color.set(WHO_COL[p.farmer] || 0x888888); p.flag.visible = !!p.farmer; }
 /* 보 · 물길 */
-const boG = new THREE.Group(); for (let k = 0; k < 6; k++) { const s = box(3.2, 1.9 + (k % 2) * 0.3, 2.2, 0x8a8a84); at(s, BO[0] - 8 + k * 3.2, 0.25, BO[1]); s.visible = false; boG.add(s); } scene.add(boG);   /* 개울 바닥(-0.6)부터 쌓는다 */
+const boG = new THREE.Group(); for (let k = 0; k < 6; k++) { const s = BAKED.bo_stone ? art('bo_stone') : box(3.2, 1.9 + (k % 2) * 0.3, 2.2, 0x8a8a84); if (BAKED.bo_stone) { s.position.set(BO[0] - 8 + k * 3.2, -0.7, BO[1]); s.rotation.y = (k % 3) * 2.1; s.scale.set(1, 1 + (k % 2) * 0.12, 1.05); } else at(s, BO[0] - 8 + k * 3.2, 0.25, BO[1]); s.visible = false; boG.add(s); } scene.add(boG);   /* 보의 돌: 상자 대신 포개 쌓은 막돌(fyard.glb bo_stone) */   /* 개울 바닥(-0.6)부터 쌓는다 */
 /* 물길(보가 서면): 보 자리에서 갈라져 나와 논 위쪽을 따라 흐르는 좁은 도랑 — 예전엔 10칸 넓이라 개울이 두 배로 넓어진 것처럼 보였다 */
 const canal = land.ribbon([[214, 55.1], [108, 55.1]], 1.5, 0.06); canal.visible = false; const canalHead = land.ribbon([[BO[0], 49.6], [BO[0], 55.1]], 1.4, 0.07); canalHead.visible = false; const canal2 = land.ribbon([[136, 55.6], [136, 120]], 1.4, 0.06); canal2.visible = false; const canal3 = land.ribbon([[188, 55.6], [188, 120]], 1.4, 0.06); canal3.visible = false;
 /* 물꼬: 물길에서 물 댄 논으로 흘러드는 작은 터진 자리(보가 서면) */
@@ -205,7 +206,7 @@ const pads = {}; function pad(key, x, z, col = 0xffcf4d) { const m = new THREE.M
 pad('seed', ...SEED); pad('nurs', ...NURS, 0x7ad65a); pad('tobs', ...TOBS, 0x6a9a3a); pad('gran', ...GRAN); pad('granT', GRAN[0] + 4, GRAN[1] + 3, 0x6a9a3a); pad('door', ...DOOR, 0xffffff);
 pad('bo', BO[0], BO[1] + 4, 0x7ac8ff); pad('town', ...TOWN); pad('next', ...NEXT); pad('port', ...PORT); pad('pedd', ...PEDD); pad('gwe', GWE[0], GWE[1] + 2.4, 0xff6a4a); pad('paper', ...PAPER, 0xc8a0ff);
 pad('duty', ...DUTY, 0xff6a4a); pad('ox', ...OX); pad('cloth', ...CLOTH, 0x9ad0ff); pad('lordBuy', LORD[0], LORD[1] + 6, 0xc8a0ff); pad('work', LORD[0] - 8, LORD[1] + 6, 0xffffff);
-const nurseryM = (() => { const g = new THREE.Group(); g.add(at(box(6, 0.12, 5, 0x6f8f9a), 0, 0.07, 0)); const im = new THREE.InstancedMesh(artGeo('rice_young'), artMat, 15); im.castShadow = false; for (let i = 0; i < 15; i++) { _o.position.set(-2.2 + (i % 5) * 1.1, 0.12, -1.6 + Math.floor(i / 5) * 1.6); _o.scale.set(0.42, 0.6, 0.42); _o.rotation.set(0, i * 1.7, 0); _o.updateMatrix(); im.setMatrixAt(i, _o.matrix); } g.add(im); g.userData.im = im; g.position.set(NURS[0], 0, NURS[1] + 4.6); scene.add(g); return g; })();   /* 못자리: 촘촘한 어린 모 */
+const nurseryM = (() => { const g = new THREE.Group(); g.add(at(box(6, 0.12, 5, 0x6f8f9a), 0, 0.07, 0)); const im = new THREE.InstancedMesh(geoOf('rice_young'), matOf('rice_young'), 15); im.castShadow = false; for (let i = 0; i < 15; i++) { _o.position.set(-2.2 + (i % 5) * 1.1, 0.12, -1.6 + Math.floor(i / 5) * 1.6); _o.scale.set(0.42, 0.6, 0.42); _o.rotation.set(0, i * 1.7, 0); _o.updateMatrix(); im.setMatrixAt(i, _o.matrix); } g.add(im); g.userData.im = im; g.position.set(NURS[0], 0, NURS[1] + 4.6); scene.add(g); return g; })();   /* 못자리: 촘촘한 어린 모 */
 /* 움직이는 짐승(beasts.js): 개 한 마리 · 닭 넷(흰 둘·누런 둘) · 소 셋(우리 소 · 읍내 소 장수의 둘) */
 const BK = beastKit(scene), dogH = BK.herd('dog', 1), henW = BK.herd('hen', 2, { fur: 0xf4f0e6, tail: 0x3a3a34 }), henB = BK.herd('hen', 2, { fur: 0xc07c40, tail: 0x5a2c18 }), oxH = BK.herd('ox', 3);
 const oxM = oxH.rigs[0].root; oxM.position.set(HOME[0] + 9, 0, HOME[1] + 2); oxM.rotation.y = 1.2; oxM.visible = false; const oxS = { x: HOME[0] + 9, z: HOME[1] + 2, face: 1.2, sp: 0, on: false, cx: 0, cz: 0 }; const cartM = putArt('cart', HOME[0] + 12, HOME[1] + 4, 1.2) || putArt('handcart', HOME[0] + 12, HOME[1] + 4); if (cartM) cartM.visible = false;
@@ -230,9 +231,9 @@ const air = airKit(scene);
 { const ch = (x, z, ry, sc, a, y0 = 0) => { const lx = (a ? 3.56 : 2.56) * sc, lz = -(a ? 0.9 : 0.8) * sc; return [x + lx * Math.cos(ry) + lz * Math.sin(ry), y0 + 1.6 * sc, z - lx * Math.sin(ry) + lz * Math.cos(ry), sc]; };
   air.chimneys([ch(HOME[0], HOME[1] - 6, 0, 1.15, true), ...Object.values(NB).map((n) => ch(n.home[0], n.home[1] - 5, 0, 1.05, n.k === 'B')), ch(232, 150, 0.3, 1, false), ch(272, 148, -0.4, 1, false), ch(226, 110, 0.8, 1, false), ch(334, 108, 0.5, 1, true), ch(362, 140, 0.9, 1, true),
     ...[[-30, 60, 1.2, 1], [-44, 74, 1.2, 0.4], [150, -30, 1.2, 0], [170, -40, 1.2, 2], [410, 180, 1.2, 1]].map(([x, z, k, r]) => ch(x, z, r, 1.2 * k, true, hAt(x, z) - 0.3)), [224 - 3.9, 0.9, 139.5 - 1.4, 0.8]]); }
-const extras = [[LORD[0] + 4, LORD[1] + 7, { shirt: 0xdfe6f0, hat: 'gat' }, 0],   /* 양반: 대문 앞에서 길(남쪽)을 보고 섰다 → 다가가면 흘끗 보고 등을 돌린다 */ [GWE[0] + 2.4, GWE[1] - 1, { shirt: 0x3a4a7a, hat: 'gat' }, 3.14], [OX[0] + 1.6, OX[1] - 2, { shirt: 0xb08a5a, hat: 'paeraengi' }, 0], [247, 121, { shirt: 0xc8b08a, hat: 'scarf' }, 0], [256, 122, { shirt: 0x9a8a68, hat: 'paeraengi' }, 0.4], [244, 135, { shirt: 0xd0b890, hat: 'scarf' }, 3], [346, 123, { shirt: 0xb89a70, hat: 'paeraengi' }, 0], [352, 134, { shirt: 0xc8b08a, hat: 'scarf' }, 3], [PORT[0] - 3, PORT[1] + 1, { shirt: 0x6a7a8a, hat: 'paeraengi' }, 1.2]].map(([x, z, o, ry]) => { const m = mkP(o); m.position.set(x, 0, z); m.rotation.y = ry; walkAnim(m, 0, false); return m; });
-const crowd = Array.from({ length: 7 }, (_, i) => ({ m: mkP({ shirt: [0xf2ead8, 0xd8c8a8, 0xc8d8e8, 0xe8d0c0][i % 4], hat: i % 3 ? 'scarf' : 'gat' }), a: i * 0.9, r: 7 + (i % 3) * 3, sp: 0.25 + (i % 4) * 0.06 }));
-const peddler = mkP({ shirt: 0xb07a4a, hat: 'paeraengi' }); peddler.visible = false; const peddlerPack = art('bundle'); if (peddlerPack) { peddlerPack.visible = false; scene.add(peddlerPack); }
+const extras = [[LORD[0] + 4, LORD[1] + 7, { shirt: 0xdfe6f0, hat: 'gat', hair: 0x8e8c86 }, 0],   /* 양반: 대문 앞에서 길(남쪽)을 보고 섰다 → 다가가면 흘끗 보고 등을 돌린다 */ [GWE[0] + 2.4, GWE[1] - 1, { shirt: 0x3a4a7a, hat: 'gat' }, 3.14], [OX[0] + 1.6, OX[1] - 2, { shirt: 0xb08a5a, hat: 'paeraengi' }, 0], [247, 121, { shirt: 0xc8b08a, hat: 'scarf' }, 0], [256, 122, { shirt: 0x9a8a68, hat: 'paeraengi' }, 0.4], [244, 135, { shirt: 0xd0b890, hat: 'scarf' }, 3], [346, 123, { shirt: 0xb89a70, hat: 'paeraengi' }, 0], [352, 134, { shirt: 0xc8b08a, hat: 'scarf' }, 3], [PORT[0] - 3, PORT[1] + 1, { shirt: 0x6a7a8a, hat: 'paeraengi' }, 1.2]].map(([x, z, o, ry]) => { const m = mkP(o); m.position.set(x, 0, z); m.rotation.y = ry; walkAnim(m, 0, false); return m; });
+const crowd = Array.from({ length: 7 }, (_, i) => ({ m: mkP(i % 3 === 1 ? { shirt: [0xf4e6b4, 0xdcecd4, 0xf0d4dc][i % 3 + (i > 3 ? 1 : 0)] || 0xf4e6b4, pants: [0x34467e, 0x8e2c3c, 0x2e5a4a][(i >> 1) % 3], hat: 'bun', chima: true } : { shirt: [0xf2ead8, 0xd8c8a8, 0xc8d8e8, 0xe8d0c0][i % 4], hat: i % 3 ? 'scarf' : 'gat', hair: i === 0 ? 0x9a9890 : 0x241c16 }),   /* 장꾼 일곱 가운데 둘은 여인(쪽머리·치마저고리), 갓 쓴 노인은 센 머리 */ a: i * 0.9, r: 7 + (i % 3) * 3, sp: 0.25 + (i % 4) * 0.06 }));
+const peddler = mkP({ shirt: 0xb07a4a, hat: 'paeraengi', hair: 0x6e6a64, beard: true }); peddler.visible = false; const peddlerPack = art('bundle'); if (peddlerPack) { peddlerPack.visible = false; scene.add(peddlerPack); }
 const ajeon = mkP({ shirt: 0x2a3a6a, hat: 'gat' }); ajeon.visible = false;
 /* 아전 뒤에 포졸 둘(11-23: 멀리서 걸어오는 게 눈에 띄게) · 화면 밖에 있으면 가장자리에 붉은 알림 */
 const pojol = [0, 1].map(() => { const m = mkP({ shirt: 0x2a2a30, pants: 0x3a3a40, hat: 'guard' }); m.visible = false; return m; });

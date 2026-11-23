@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/labs/vendor/three185/addons/loaders/GLTFLoader.js';
 
 export const BAKED = {};
-const BV = 3;
+const BV = 4;
 export async function loadBaked(...names) {
   const L = new GLTFLoader();
   await Promise.all(names.map(async (n) => {
@@ -32,10 +32,10 @@ export function bakedInst(scene, name, list, { shadow = true } = {}) {
   scene.add(grp); return grp;
 }
 export const eachInst = (m, fn) => { if (!m) return; if (m.isGroup) m.children.forEach(fn); else fn(m); };
-/* 색 곱하기 재질: 구운 흰 바탕(무명·깃털) 위에 가리개 tmask(R·G) 자리만 색을 곱한다 — 무늬·그늘은 구운 그대로, 프로그램은 같이 쓴다 */
+/* 색 곱하기 재질: 구운 흰 바탕(무명·깃털) 위에 가리개 tmask(R·G·B — 사람은 저고리·바지·머리칼) 자리만 색을 곱한다 — 무늬·그늘은 구운 그대로, 프로그램은 같이 쓴다 */
 const _tm = {};
-export function tintMat(base, colA = 0xffffff, colB = 0xffffff) { const k = base.name + '|' + colA + '|' + colB; if (_tm[k]) return _tm[k]; const m = base.clone(), a = new THREE.Color(colA), b = new THREE.Color(colB);
-  m.onBeforeCompile = (sh) => { sh.uniforms.uTintA = { value: a }; sh.uniforms.uTintB = { value: b };
+export function tintMat(base, colA = 0xffffff, colB = 0xffffff, colC = 0xffffff) { const k = base.name + '|' + colA + '|' + colB + '|' + colC; if (_tm[k]) return _tm[k]; const m = base.clone(), a = new THREE.Color(colA), b = new THREE.Color(colB), c = new THREE.Color(colC);
+  m.onBeforeCompile = (sh) => { sh.uniforms.uTintA = { value: a }; sh.uniforms.uTintB = { value: b }; sh.uniforms.uTintC = { value: c };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 tmask; varying vec3 vTmask;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvTmask = tmask;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uTintA; uniform vec3 uTintB; varying vec3 vTmask;').replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb *= mix(vec3(1.0), uTintA, vTmask.r) * mix(vec3(1.0), uTintB, vTmask.g);'); };
-  m.customProgramCacheKey = () => 'baked-tint'; _tm[k] = m; return m; }
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uTintA; uniform vec3 uTintB; uniform vec3 uTintC; varying vec3 vTmask;').replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb *= mix(vec3(1.0), uTintA, vTmask.r) * mix(vec3(1.0), uTintB, vTmask.g) * mix(vec3(1.0), uTintC, vTmask.b);'); };
+  m.customProgramCacheKey = () => 'baked-tint3'; _tm[k] = m; return m; }

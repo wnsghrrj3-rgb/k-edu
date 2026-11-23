@@ -202,6 +202,14 @@ for i in range(5):
     b.ball(0.4, (i * 0.85 - 1.7, math.sin(i * 1.7) * 0.15, 0.03), 'stone' if i % 2 else 'stone_l', sub=1, scale=(1, 0.9, 0.2), jit=0, f=wob(0.08, i))
 fin(b, 'didimdol')
 
+b = B()   # 보에 쌓는 돌(한 칸 3.2m — 개울 바닥부터 물 위까지): 큰 막돌 서넛을 포개고 틈에 잔돌
+rr = random.Random(77)
+for (x, y, z, r, sc) in [(-0.9, 0.1, 0.55, 0.95, (1.0, 1.0, 0.62)), (0.85, -0.15, 0.6, 1.0, (1.0, 0.95, 0.64)), (0.0, 0.2, 1.35, 0.9, (1.15, 0.9, 0.55)), (-1.2, -0.5, 1.2, 0.5, (1, 1, 0.7)), (1.25, 0.55, 1.25, 0.5, (1, 1, 0.7))]:
+    b.ball(r, (x, y, z), ['stone', 'stone_d', 'stone_l'][int(rr.random() * 3)], sub=2, scale=sc, jit=0, f=wob(0.1, int(rr.random() * 999)))
+for i in range(7):
+    b.ball(0.26 + rr.random() * 0.12, (-1.4 + i * 0.47, (rr.random() - 0.5) * 1.6, 1.75 + rr.random() * 0.2), ['stone', 'stone_l'][i % 2], sub=1, scale=(1, 1, 0.6), jit=0)
+fin(b, 'bo_stone')
+
 for o in OBJ:
     print('FACES', o.name, len(o.data.polygons))
 bake_set(OBJ, 'fyard', size=1024 if PREVIEW else 2048, normal=False, keep_color=True, ao_lo=0.42, uv_angle=80, uv_weight={'seopdari': 0.6, 'jeongja_leaf': 0.8, 'tree_big': 0.8})
