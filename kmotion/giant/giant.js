@@ -239,6 +239,20 @@ function pattern(kind, L, pz){
   }
 }
 
+// ───────── 상반신 전용 동작 인식: 앉아서 노트북·태블릿 앞(어깨까지만 보여도 됨)
+// · 줄 바꾸기 = 어깨 가운데가 옆으로 기울어짐(앉아서 몸을 기울이는 정도로 되게 문턱을 낮춤)
+// · 뛰기 = 두 손 번쩍 — 손이 화면 위로 나가도 팔꿈치가 어깨보다 올라가면 인정
+class UpperBodyMotion extends MotionController {
+  constructor(input, opt){ super(input, opt); Object.assign(this.cfg, { laneIn: .38, laneOut: .18, holdMs: 80, bendIn: 99, bendOut: 98 }); }
+  read(f){ const p = f.pose; if (!p) return null; const L = p[11], R = p[12]; if (Math.min(L.v, R.v) < .45) return null;
+    const sh = { x: (L.x + R.x) / 2, y: (L.y + R.y) / 2 }, sw = Math.max(30, Math.abs(L.x - R.x));
+    const wl = p[15], wr = p[16], el = p[13], er = p[14];
+    const wristUp = w => w.v > .35 && w.y < sh.y - sw * .3, elbowUp = e => e.v > .35 && e.y < sh.y - sw * .05;
+    const offTop = w => w.v < .35 || w.y < f.H * .04; // 손이 화면 위로 나감
+    const up = (w, e) => wristUp(w) || (elbowUp(e) && offTop(w));
+    return { sh, sw, armsUp: up(wl, el) && up(wr, er), knee: 0 }; }
+}
+
 // ───────── 게임 상태
 const input = new InputManager();
 const keys = new KeyboardInput(input);
@@ -431,7 +445,7 @@ async function startFlow(){
   if (mode === 'camera') {
     show('calib'); calibrating = true;
     try {
-      if (!motion) motion = new MotionController(input, { video: $('v'), canvas: $('c'), getLane: () => player.lane, onStatus: s => camStatus(s.kind === 'error' ? 'bad' : s.kind, s.text), onDebug: d => { if (DEV) $('dev').textContent = `fps ${d.fps} dx ${d.dx} drop ${d.drop} zone ${d.zone} arms ${d.armsUp}`; } });
+      if (!motion) motion = new UpperBodyMotion(input, { video: $('v'), canvas: $('c'), getLane: () => player.lane, onStatus: s => camStatus(s.kind === 'error' ? 'bad' : s.kind, s.text), onDebug: d => { if (DEV) $('dev').textContent = `fps ${d.fps} dx ${d.dx} drop ${d.drop} zone ${d.zone} arms ${d.armsUp}`; } });
       if (!motion.started) { $('calibMsg').textContent = '카메라를 켜는 중…'; await motion.start(); }
       motionReady = true; copyCalib(true);
       await motion.calibrate(3, (p, vis) => { $('ringFg').style.strokeDashoffset = 327 * (1 - p); $('calibNum').textContent = Math.max(1, Math.ceil(3 - p * 3)); $('calibMsg').textContent = vis ? (p < .99 ? '좋아요! 그대로 있어요' : '준비 완료!') : '머리와 어깨가 보이게 가운데에'; });
