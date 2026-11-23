@@ -9,13 +9,13 @@
 import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, ringsFx, people, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, loadArt, art as kitArt, artGeo, artMat, artInst as kitInst, scatter, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset', 'beasts', 'farmtree');   /* beasts = 움직이는 개·닭·소(tools/blender/make_beasts.py) */
-import { beastKit } from './beasts.js?v=1';
+import { beastKit } from './beasts.js?v=2';
 import { makeLand, dikes, hAt, lineDist, STREAM } from './land.js?v=2';
 import { airKit, sunAt } from './air.js?v=1';
-import { BAKED, loadBaked, bakedMesh, bakedInst } from './models.js?v=1';
+import { BAKED, loadBaked, bakedMesh, bakedInst, tintMat, eachInst } from './models.js?v=2';
 /* 구워 입힌 모델(블렌더 kw_bake — 이엉 결·나뭇결·돌·회벽 무늬와 구석 그늘): 같은 이름이 있으면 그것으로 갈아 끼운다 */
-await loadBaked('fhouse', 'ftown', 'ffolk', 'fbeasts');
-import { folkKit } from './folk.js?v=1';
+await loadBaked('fhouse', 'ftown', 'ffolk', 'fbeasts', 'fyard');
+import { folkKit } from './folk.js?v=2';
 const art = (n, tints, o) => (typeof n === 'string' && BAKED[n] ? bakedMesh(n, o) : kitArt(n, tints, o));
 const artInst = (sc, n, list, tints, o) => (typeof n === 'string' && BAKED[n] ? bakedInst(sc, n, list, o) : kitInst(sc, n, list, tints, o));
 /* 읽어 들인 farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
@@ -118,7 +118,7 @@ yard(19, 105, 41, 124); wallRun('dam_stone', 19, 105, 41, 105); wallRun('ul_ssar
 yard(60, 95, 86, 114); wallRun('dam_stone2', 60, 95, 86, 95); wallRun('dam_stone', 60, 95, 60, 111); wallRun('dam_stone', 86, 95, 86, 107); putArt('jangdokdae', 64, 99, 0, 1.1); putArt('oeyanggan', 81.5, 100, 0); gam(63, 110, 1.15, 0.5); gam(83, 110.5, 0.9, 3); putArt('namutdan', 70, 96.4, 0); putArt('namutdan', 73.5, 96.4, 0); putArt('teotbat', 66, 119, 0, 0.9);
 yard(73, 145, 91, 162, 0xc4ac7c); wallRun('ul_ssari', 73, 145, 73, 159); wallRun('ul_ssari', 73, 145, 81, 145); putArt('teotbat', 86, 166, 0, 0.7); putArt('namutdan', 76, 146.4, 0);
 /* 마을 어귀: 정자나무와 평상 · 서낭당 */
-{ const a = putArt('jeongja_trunk', 82, 128), b = putArt('jeongja_leaf', 82, 128); if (b) SEASON_LEAF.push(b); putArt('pyeongsang', 85.5, 130.5, 0.3); putArt('pyeongsang', 79, 131.5, -0.4); putArt('seonang', 101.5, 151, 1.2); }
+{ const a = putArt('jeongja_trunk', 82, 128), b = putArt('jeongja_leaf', 82, 128); if (b) LEAFS.push([b, 'jeongja_leaf', 'zel']); putArt('pyeongsang', 85.5, 130.5, 0.3); putArt('pyeongsang', 79, 131.5, -0.4); putArt('seonang', 101.5, 151, 1.2); }
 /* 개울: 섶다리(큰길이 건너는 곳) · 물레방아 */
 putArt('seopdari', 95, 46.5, Math.PI / 2); putArt('mulle_house', 118, 41.4, 0); const mulleWheel = putArt('mulle_wheel', 118, 41.4); if (mulleWheel) mulleWheel.position.set(118, 1.05, 43.0);   /* 바퀴 아래가 개울물에 잠기게 */
 { const d = putArt('didimdol', 176, 46.5, Math.PI / 2, 1.6); if (d) { d.position.y = -0.3; d.scale.set(1.6, 4, 1.6); } }
@@ -144,7 +144,8 @@ function routeTo(p) { if (!p) return p; const a = inGwana(S.px, S.pz), b = inGwa
 /* 철마다 잎: 봄 연두 · 여름 짙은 초록(모델 색) · 가을 단풍(느티 붉은 갈색 · 감 주황 · 버들 노랑) · 겨울 잎 짐 */
 const LEAF_T = { zel: [{ leaf: 0x80c04c, leafd: 0x62a03c, leafl: 0xa4d468 }, {}, { leaf: 0xc8702c, leafd: 0xa25424, leafl: 0xe0a040 }], gam: [{ leaf: 0x7ab84a, leafd: 0x5c9a3a, leafl: 0x9ccc60 }, {}, { leaf: 0xd4642a, leafd: 0xb04a22, leafl: 0xe89a3a }], wil: [{ wil: 0xb4d868, wild: 0x94bc50 }, {}, { wil: 0xdccc58, wild: 0xc0aa44 }] };
 let leafSn = -1;
-function leafSeason(sn) { if (sn === leafSn) return; leafSn = sn; for (const [m, nm, k] of LEAFS) { m.visible = sn !== 3; if (sn < 3) { const g = artGeo(nm, LEAF_T[k][sn]); if (g) m.geometry = g; } } }
+const LEAF_C = { zel: [0x90cc5a, 0x5e9e42, 0xc8702c], gam: [0x86c654, 0x5c9c3e, 0xd4642a], wil: [0xb6da6a, 0x8ebe50, 0xdccc58] };   /* 구워 입힌 나무: 흰 바탕 잎에 철 색을 곱한다 */
+function leafSeason(sn) { if (sn === leafSn) return; leafSn = sn; for (const [m, nm, k] of LEAFS) { m.visible = sn !== 3; if (sn < 3) { if (BAKED[nm]) { const mt = tintMat(BAKED[nm].mat, LEAF_C[k][sn]); eachInst(m, (q) => { q.material = mt; }); } else { const g = artGeo(nm, LEAF_T[k][sn]); if (g) m.geometry = g; } } } }
 function dressTick() { const sn = S.season; leafSeason(sn); for (const m of SEASON_LEAF) m.visible = sn !== 3; for (const m of SEASON_FRUIT) m.visible = sn === 2; if (mulleWheel) mulleWheel.rotation.z = -S.t * 0.9; }
 
 /* ───── 논 열넷 + 밭 둘 ───── */
@@ -707,7 +708,7 @@ $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode 
 canvas.addEventListener('pointerdown', () => { if (S.mode === 'intro') S.introT = 99; });
 /* 느린 기기(크롬북)면 저절로 가볍게: 놀이 첫 4초의 한 장면이 평균 40ms 를 넘으면 나무 그림자 · 낙엽 · 빛 알갱이를 끈다(?lite=1 이면 처음부터) */
 const PERF = { t: 0, n: 0, lite: false };
-function goLite() { if (PERF.lite) return; PERF.lite = true; for (const m of LITE) if (m) m.castShadow = false; air.leaves.material.opacity = 0; air.motes.material.visible = false; sun.shadow.blurSamples = 4; }
+function goLite() { if (PERF.lite) return; PERF.lite = true; for (const m of LITE) eachInst(m, (q) => { q.castShadow = false; }); air.leaves.material.opacity = 0; air.motes.material.visible = false; sun.shadow.blurSamples = 4; }
 if (new URLSearchParams(location.search).get('lite') === '1') goLite();
 runLoop((dt) => { if (S.mode === 'play' && !PERF.lite && PERF.t < 4) { PERF.t += dt; PERF.n++; if (PERF.t >= 4 && PERF.t / PERF.n > 0.04) goLite(); } update(dt); mis.update(dt, S.mode === 'play'); misHead(); }, view, () => renderer.render(scene, cam));
 window.__scene = { S, update, CAMV, scene, PERF, goLite, redraw() { for (const p of plots) drawPlot(p); }, beasts: { dog, hens, oxS, oxM, cartM }, ctl, plots, NB, mine, owned, job, price, rank, pads, shipIn, ACT, extras, get cur() { return curTask; }, guideAt() { return curTask ? routeTo(curTask.at()) : null; }, get TL() { return TL; }, saveGame, readSave, loadGame,

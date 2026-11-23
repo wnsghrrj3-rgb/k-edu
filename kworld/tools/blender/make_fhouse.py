@@ -51,7 +51,7 @@ def sgnpow(v, p):
     return math.copysign(abs(v) ** p, v)
 
 
-def thatch_roof(b, w, d, z0, h, over=0.6, seg=24, y0=0.0, ropes=True, rafters=True):
+def thatch_roof(b, w, d, z0, h, over=0.6, seg=20, y0=0.0, ropes=True, rafters=True):
     """둥근 우진각 초가지붕. 처마는 두툼하게 말려 내려오고(자른 짚 단면), 용마름을 얹고, 새끼줄로 그물처럼 묶는다."""
     prof = [(0.0, -0.2), (0.04, -0.08), (0.12, 0.06), (0.3, 0.34), (0.5, 0.6), (0.72, 0.83), (0.9, 0.96), (1.0, 1.0)]
     ridge = max(0.3, (w - d) / 2 + 0.3)
@@ -63,7 +63,7 @@ def thatch_roof(b, w, d, z0, h, over=0.6, seg=24, y0=0.0, ropes=True, rafters=Tr
     def fn(u, v, lift=0.0):
         a = u * 2 * math.pi; f = v * (len(prof) - 1); i = min(int(f), len(prof) - 2); t = f - i
         return at(prof[i][0] + (prof[i + 1][0] - prof[i][0]) * t, prof[i][1] + (prof[i + 1][1] - prof[i][1]) * t, a, lift)
-    b.grid(seg, 10, fn, 'thatch', jit=0.0)
+    b.grid(seg, 8, fn, 'thatch', jit=0.0)
     # 처마 끝 단면(자른 짚) — 바깥 가장자리에서 안쪽 아래로 말려 들어간다
     b.grid(seg, 2, lambda u, v: at(-0.0 + 0.1 * v, -0.2 - 0.07 * math.sin(v * math.pi) - 0.02 * v, u * 2 * math.pi), 'thatch_cut', jit=0.0)
     b.grid(seg, 1, lambda u, v: at(0.1 + 0.9 * v, -0.2 + 0.02 * v, u * 2 * math.pi), 'dark', jit=0.0)       # 지붕 속(어두움)
@@ -267,11 +267,11 @@ def stone_wall(name, sd):
         for row in range(3):
             x = -2.0 + (0.24 if row % 2 else 0.0)
             while x < 1.95:
-                w = 0.5 + r.random() * 0.36; w = min(w, 2.0 - x)
+                w = 0.7 + r.random() * 0.4; w = min(w, 2.0 - x)
                 b.ball(0.5, (x + w / 2, side * 0.17, z), ['stone', 'stone_d', 'stone'][int(r.random() * 3)], sub=1, scale=(w * 1.05, 0.26, 0.34 + r.random() * 0.05), rot=(r.random() * 0.3, 0, 0), jit=0)
                 x += w
             z += 0.32
-    b.grid(8, 4, lambda u, v: ((u - 0.5) * 4.0, (v - 0.5) * 0.66, 1.06 + 0.13 * math.sin(v * math.pi) - 0.03 * (abs(2 * v - 1) ** 3)), 'thatch', jit=0)   # 담 위 이엉
+    b.grid(3, 4, lambda u, v: ((u - 0.5) * 4.0, (v - 0.5) * 0.66, 1.06 + 0.13 * math.sin(v * math.pi) - 0.03 * (abs(2 * v - 1) ** 3)), 'thatch', jit=0)   # 담 위 이엉
     for s in (-1, 1):
         b.box((4.0, 0.03, 0.06), (0, s * 0.33, 1.05), 'thatch_cut', jit=0)
     return b.done(name, smooth=50, shade=(1, 1), under=0)

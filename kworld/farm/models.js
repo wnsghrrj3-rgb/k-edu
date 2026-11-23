@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/labs/vendor/three185/addons/loaders/GLTFLoader.js';
 
 export const BAKED = {};
-const BV = 2;
+const BV = 3;
 export async function loadBaked(...names) {
   const L = new GLTFLoader();
   await Promise.all(names.map(async (n) => {
@@ -20,12 +20,18 @@ export async function loadBaked(...names) {
 }
 export function bakedMesh(name, { shadow = true } = {}) { const B = BAKED[name], m = new THREE.Mesh(B.geo, B.mat); m.castShadow = shadow; m.receiveShadow = true; return m; }
 const _d = new THREE.Object3D();
-/* list = [[x, y, z, 크기(수 또는 [sx, sy, sz]), 돌림y], …] — kit artInst 와 같은 꼴 */
+/* list = [[x, y, z, 크기(수 또는 [sx, sy, sz]), 돌림y], …] — kit artInst 와 같은 꼴.
+   온 고을에 흩어진 것(담·나무·집)은 80칸 네모마다 한 묶음으로 나눠 화면(과 그림자 상자) 밖 묶음은 그리지 않는다 — 한 덩이로 두면 늘 전부 그려졌다.
+   돌려주는 것 = 묶음들을 담은 Group(하나뿐이어도). 재질·그림자를 바꿀 때는 eachInst(m, fn) 으로. */
 export function bakedInst(scene, name, list, { shadow = true } = {}) {
-  const B = BAKED[name]; if (!B || !list.length) return null; const m = new THREE.InstancedMesh(B.geo, B.mat, list.length);
-  list.forEach((t, i) => { _d.position.set(t[0], t[1], t[2]); const s = t[3] == null ? 1 : t[3]; if (Array.isArray(s)) _d.scale.set(s[0], s[1], s[2]); else _d.scale.setScalar(s); _d.rotation.set(0, t[4] || 0, 0); _d.updateMatrix(); m.setMatrixAt(i, _d.matrix); });
-  m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = false; scene.add(m); return m;
+  const B = BAKED[name]; if (!B || !list.length) return null; const cells = {}, grp = new THREE.Group();
+  for (const t of list) { const k = Math.floor(t[0] / 80) + ',' + Math.floor(t[2] / 80); (cells[k] = cells[k] || []).push(t); }
+  for (const k in cells) { const L = cells[k], m = new THREE.InstancedMesh(B.geo, B.mat, L.length);
+    L.forEach((t, i) => { _d.position.set(t[0], t[1], t[2]); const s = t[3] == null ? 1 : t[3]; if (Array.isArray(s)) _d.scale.set(s[0], s[1], s[2]); else _d.scale.setScalar(s); _d.rotation.set(0, t[4] || 0, 0); _d.updateMatrix(); m.setMatrixAt(i, _d.matrix); });
+    m.castShadow = shadow; m.receiveShadow = true; m.computeBoundingSphere(); m.frustumCulled = true; grp.add(m); }
+  scene.add(grp); return grp;
 }
+export const eachInst = (m, fn) => { if (!m) return; if (m.isGroup) m.children.forEach(fn); else fn(m); };
 /* 색 곱하기 재질: 구운 흰 바탕(무명·깃털) 위에 가리개 tmask(R·G) 자리만 색을 곱한다 — 무늬·그늘은 구운 그대로, 프로그램은 같이 쓴다 */
 const _tm = {};
 export function tintMat(base, colA = 0xffffff, colB = 0xffffff) { const k = base.name + '|' + colA + '|' + colB; if (_tm[k]) return _tm[k]; const m = base.clone(), a = new THREE.Color(colA), b = new THREE.Color(colB);

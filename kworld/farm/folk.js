@@ -3,7 +3,7 @@
    쓰개·수염은 머리와 한 덩이로 합친다(그리기 한 번). 옷 색은 구운 흰 무명 위에 사람마다 곱한다 — 꼭짓점 가리개 tmask(R 저고리 · G 바지). */
 import * as THREE from 'three';
 import { mergeGeometries } from '/labs/vendor/three185/addons/utils/BufferGeometryUtils.js';
-import { BAKED, tintMat } from './models.js?v=1';
+import { BAKED, tintMat } from './models.js?v=2';
 
 const HATS = { scarf: 'hat_scarf', gat: 'hat_gat', paeraengi: 'hat_paeraengi', guard: 'hat_guard' };
 export function folkKit(scene) {

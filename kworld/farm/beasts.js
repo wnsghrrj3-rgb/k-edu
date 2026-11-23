@@ -5,7 +5,7 @@
    다리 돌림(rotation.x): + 면 발이 뒤로, - 면 앞으로. 몸통(엉덩이 축) rotation.x: - 면 머리가 든다. 꼬리 rotation.z = 좌우 흔들기. */
 import * as THREE from 'three';
 import { ART, artGeo, artMat } from '../scene/kit.js?v=5';
-import { BAKED, tintMat } from './models.js?v=1';
+import { BAKED, tintMat } from './models.js?v=2';
 
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 const DEFS = {
