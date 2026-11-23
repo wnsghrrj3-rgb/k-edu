@@ -8,7 +8,7 @@ export function createBoard(cv, ui) {
   const g = cv.getContext('2d');
   const S = {
     what: 'planet', shipBase: 20, mass: 1, mi: 0, free: false,
-    drag: null, lever: false, flight: null, pass: null, hidden: null, lastRes: null,
+    drag: null, lever: false, flight: null, pass: null, hidden: null, lastRes: null, waiting: false, timers: [],
     myHand: 0, probeHand: 0,
   };
   let W = 0, H = 0, dpr = 1, MAP = null, WIN = null, barsAt = '';
@@ -36,6 +36,7 @@ export function createBoard(cv, ui) {
 
   // ── 의뢰
   function showMission() {
+    S.waiting = false;
     if (S.mi < MISSIONS.length) ui.note('의뢰 ' + (S.mi + 1) + ' · ' + MISSIONS[S.mi].say);
     else ui.note('자유롭게 던져 보세요', '블랙홀을 키워 볼 수도 있어요');
     if (S.mi === 2 && !S.hidden) {
@@ -44,14 +45,14 @@ export function createBoard(cv, ui) {
     }
     ui.freeMode(S.free);
   }
-  function succeed(i, sub) {
-    S.mi = i + 1; if (S.mi >= MISSIONS.length) S.free = true;
+  function succeed(i, sub) {                                                          // 성공 뒤 8초는 다음 의뢰를 재지 않는다
+    S.mi = i + 1; S.waiting = true; if (S.mi >= MISSIONS.length) S.free = true;
     ui.note('성공! ⭐', sub);
-    setTimeout(() => ui.why(WHY[MISSIONS[i].why]), 1200);
-    setTimeout(showMission, 8000);
+    S.timers.forEach(clearTimeout);
+    S.timers = [setTimeout(() => ui.why(WHY[MISSIONS[i].why]), 1200), setTimeout(showMission, 8000)];
   }
   function judge(res) {
-    if (S.mi > 1) return;
+    if (S.waiting || S.mi > 1) return;
     const m = MISSIONS[S.mi];
     if (m.ok(res)) succeed(S.mi, S.mi === 0 ? '세 바퀴! 옆으로, 알맞은 세기로 던지면 돌아요.' : `가장 가까울 때 탐사선 시계가 ${res.minClock.toFixed(2)}배 빠르기였어요.`);
     else ui.note('의뢰 ' + (S.mi + 1) + ' · ' + m.say, m.tell(res) + ' · 귀띔: ' + m.hint);
@@ -67,11 +68,11 @@ export function createBoard(cv, ui) {
   }
   function finishFlight() {
     const F = S.flight, res = F.res; F.done = true;
-    let t = SAYS[res.outcome];
+    let t = res.outcome === 'fling' && res.deflect < 0.35 ? SAYS.away : SAYS[res.outcome];
     if (res.outcome === 'orbit') t += ` (${res.turns.toFixed(1)}바퀴)`;
-    if (res.freezes) t = SAYS.plunge.split('.')[0] + '. ' + SAYS.freeze;
+    if (res.freezes) t = SAYS[res.outcome] + ' ' + SAYS.freeze;
     if (OBJECTS[res.what].clock && res.outcome === 'orbit') t += ` 탐사선 시계는 가장 가까울 때 내 시계의 ${res.minClock.toFixed(2)}배 빠르기.`;
-    if (res.outcome === 'fling') t += ` (${Math.round(res.deflect * 180 / Math.PI)}° 꺾임)`;
+    if (res.outcome === 'fling' && res.deflect >= 0.35) t += ` (${Math.round(res.deflect * 180 / Math.PI)}° 꺾임)`;
     ui.say(t);
     judge(res);
   }
@@ -92,7 +93,7 @@ export function createBoard(cv, ui) {
     if (Math.abs(x - leverX()) < 30 && y > leverY[0]() - 24 && y < leverY[1]() + 24) { S.lever = true; setLever(y); cv.setPointerCapture(e.pointerId); return; }
     if (Math.hypot(x - sx, y - sy) < 70) { S.drag = { x0: sx, y0: sy, x, y }; cv.setPointerCapture(e.pointerId); return; }
     const c = winC();
-    if (S.mi === 2 && S.hidden && Math.hypot(x - c.x, y - c.y) < c.R) {
+    if (S.mi === 2 && !S.waiting && S.hidden && Math.hypot(x - c.x, y - c.y) < c.R) {
       const k = FOV / c.R, tap = [(x - c.x) * k, -(y - c.y) * k];
       if (hiddenHit({ tap, hidden: S.hidden, shipDist: rel(), mass: S.mass }).hit) { S.hidden.found = true; succeed(2, '휜 빛의 고리 — 그 뒤에 별이 숨어 있었어요.'); }
       else ui.note('의뢰 3 · ' + MISSIONS[2].say, MISSIONS[2].tell({ tap, hidden: S.hidden, shipDist: rel(), mass: S.mass }) + ' · 귀띔: ' + MISSIONS[2].hint);
@@ -106,7 +107,8 @@ export function createBoard(cv, ui) {
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { S.drag = null; S.lever = false; });
   function dragAim() {
     const D = S.drag, wx = D.x - D.x0, wy = -(D.y - D.y0), len = Math.hypot(wx, wy);
-    return { aim: Math.atan2(wy, -wx), power: Math.min(1, len / (Math.min(MAP.w, MAP.h) * 0.42)), len };
+    const f = Math.min(1, len / Math.max(140, Math.max(MAP.w, MAP.h) * 0.5));        // 약한 쪽을 더 섬세하게(세기 = 끈 길이^1.5)
+    return { aim: Math.atan2(wy, -wx), power: Math.pow(f, 1.5), len };
   }
   let leverSaid = 0;
   function setLever(y) {

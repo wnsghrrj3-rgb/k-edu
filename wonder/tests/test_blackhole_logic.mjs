@@ -30,6 +30,7 @@ t('4 비스듬히 아주 세면 휘었다가 반대쪽으로 튕겨 나간다', 
   const r = simulate({ what: 'planet', aim: 0.35, power: 1 });
   assert.equal(r.outcome, 'fling'); assert.ok(r.deflect > Math.PI / 2);
   const g = simulate({ what: 'planet', aim: 0.35, power: 0.95, shipDist: 20 }); assert.equal(g.outcome, 'fling');
+  const away = simulate({ what: 'planet', aim: Math.PI, power: 1 }); assert.equal(away.outcome, 'fling'); assert.ok(away.says.includes('멀리 날아가'));   // 블랙홀 반대로 던지면 꺾였다고 하지 않는다
 });
 t('5 별을 가까이 지나가게 하면 찢겨 원반으로 감긴다 — 같은 길의 행성은 돈다', () => {
   const s = simulate({ what: 'star', aim: SIDE, power: 0.35 }), p = simulate({ what: 'planet', aim: SIDE, power: 0.35 });

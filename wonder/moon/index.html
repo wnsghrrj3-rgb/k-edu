@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>달 만들기 · 케이원더</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0d12;color:#e6e9ef;font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.top{position:fixed;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 0;display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+.top>*{pointer-events:auto}
+a.back{color:#c3c8d2;text-decoration:none;font-weight:700;font-size:.9rem;background:#161a22;border:1px solid #2a303b;padding:7px 12px;border-radius:999px;white-space:nowrap}
+.note{margin:0 auto;max-width:min(680px,70vw);background:#161a22;border:1px solid #2a303b;border-radius:14px;padding:8px 16px;font-weight:800;font-size:clamp(.95rem,1.7vw,1.1rem);text-align:center}
+.note small{display:block;font-weight:500;color:#9aa1ae;font-size:.82em;margin-top:2px}
+.tag{font-size:.75rem;color:#8a91a0;border:1px dashed #3a404c;border-radius:999px;padding:6px 10px;white-space:nowrap}
+.bar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(920px,97vw);display:grid;gap:8px}
+.say{background:#161a22;border:1px solid #2a303b;border-radius:14px;padding:10px 14px;font-size:1rem;line-height:1.5;min-height:2.9em}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:2px solid #2a303b;background:#12151c;color:#e6e9ef;border-radius:12px;padding:8px 12px;font:inherit;font-size:.92rem;font-weight:700;cursor:pointer;display:flex;gap:6px;align-items:center}
+.chip.on{border-color:#d9dde6;background:#232833}
+.chip i{display:inline-block;width:12px;height:12px;background:#b9bfca}
+.chip i.c{border-radius:50%}.chip i.s{background:#eceff4;border-radius:50%;box-shadow:0 0 6px #fff}.chip i.t{width:0;height:0;background:none;border-left:12px solid #b9bfca;border-top:6px solid transparent;border-bottom:6px solid transparent}
+.sp{flex:1}
+.hide{display:none!important}
+@media (max-width:640px){.top{flex-wrap:wrap}.note{order:3;flex-basis:100%;max-width:none;margin:0}.tag{margin-left:auto}.chip{padding:7px 10px;font-size:.88rem}.say{font-size:.95rem}}
+.why{position:fixed;left:50%;top:18%;transform:translateX(-50%);max-width:min(560px,88vw);background:#161a22;border:1px solid #6b7280;border-radius:18px;padding:16px 20px;text-align:center;font-size:1.05rem;line-height:1.6;opacity:0;pointer-events:none;transition:opacity .5s}
+.why.show{opacity:1}.why b{display:block;margin-bottom:4px;color:#fff}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="top">
+  <a class="back" href="../">← 케이원더</a>
+  <div class="note" id="note"></div>
+  <span class="tag">회색 판(그림 준비 중)</span>
+</div>
+<section class="bar">
+  <div class="say" id="say">왼쪽 행성을 위아래로 끌어 방향을 정하고, 조종판의 크기 다이얼과 빠르기 레버를 맞춘 뒤 「던지기」를 눌러요.</div>
+  <div class="row" id="what">
+    <button class="chip" data-v="rock"><i class="c"></i>바위 행성</button>
+    <button class="chip hide" data-v="ice" id="ice"><i class="s"></i>얼음 행성</button>
+  </div>
+</section>
+<div class="why" id="why"></div>
+<script type="module">
+import { createBoard } from './board.js';
+const $ = id => document.getElementById(id);
+const qp = new URLSearchParams(location.search);
+const ui = {
+  note(t, s) { $('note').innerHTML = t + (s ? `<small>${s}</small>` : ''); },
+  say(t) { $('say').textContent = t; },
+  why(t) { const w = $('why'); w.innerHTML = '<b>왜 그럴까?</b>' + t; w.classList.add('show'); setTimeout(() => w.classList.remove('show'), 7000); },
+  freeMode(on) { $('ice').classList.toggle('hide', !on); },
+  topH() { return document.querySelector('.top').getBoundingClientRect().bottom; },
+  bottomH() { return innerHeight - document.querySelector('.bar').getBoundingClientRect().top; },
+};
+const B = createBoard($('cv'), ui);
+const paint = () => { for (const b of $('what').querySelectorAll('[data-v]')) b.classList.toggle('on', b.dataset.v === B.S.what); };
+for (const b of $('what').querySelectorAll('[data-v]')) b.onclick = () => { B.pick(b.dataset.v); paint(); };
+if (qp.has('free')) { B.S.mi = 3; B.S.free = true; }
+if (qp.has('m')) B.S.mi = +qp.get('m');
+paint(); B.showMission();
+B.paint = paint;
+window.__moon = B;
+let last = performance.now();
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; if (!window.__pause) B.step(dt); B.draw(); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

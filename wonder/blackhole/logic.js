@@ -31,6 +31,7 @@ export const SAYS = {
   spiral: '나선을 그리며 돌다가 원반에 섞여 빛나요.',
   orbit:  '블랙홀 둘레를 돌아요.',
   fling:  '휘었다가 튕겨 나가듯 반대쪽으로 날아가요.',
+  away:   '블랙홀 곁을 크게 지나지 않고 멀리 날아가 버려요.',
   torn:   '별이 찢겨 긴 빛줄기가 되어 원반으로 감겨요.',
   freeze: '검은 원 가장자리에서 멈춘 듯 붉어지며 흐려져요. 들어가는 걸 끝내 못 봐요.',
 };
@@ -123,7 +124,7 @@ export function simulate(input = {}, opts = {}) {
     deflect, tearAt, intoDisk: outcome === 'spiral' || outcome === 'torn', freezes: !!O.clock && (outcome === 'plunge' || outcome === 'spiral'),
     L, E, shipDist: D,
   };
-  res.says = SAYS[outcome] + (res.freezes ? ' ' + SAYS.freeze : '')
+  res.says = (outcome === 'fling' && deflect < 0.35 ? SAYS.away : SAYS[outcome]) + (res.freezes ? ' ' + SAYS.freeze : '')
     + (O.clock && outcome === 'orbit' ? ` 탐사선 시계는 가장 가까울 때 내 시계의 ${res.minClock.toFixed(2)}배 빠르기.` : '');
   return res;
 }
@@ -185,11 +186,11 @@ export const MISSIONS = [
       : r.outcome === 'orbit' ? `${Math.floor(r.turns)}바퀴 돌았어요.`
       : '너무 약하거나 너무 곧장이에요. 빨려 들어갔어요.' },
   { id: 'halfclock', say: '탐사선 시계를 내 시계의 절반 빠르기로', hint: '가까이 갈수록 시계가 느려요. 그래도 빠지면 안 돼요.', why: 1,
-    ok: r => r.what === 'probe' && r.outcome === 'orbit' && r.turns >= 1 && r.minClock >= 0.4 && r.minClock <= 0.6,
+    ok: r => r.what === 'probe' && r.outcome === 'orbit' && r.turns >= 1 && r.minClock >= 0.35 && r.minClock <= 0.65,
     tell: r => r.what !== 'probe' ? '시계 탐사선을 골라 던져요.'
       : r.outcome !== 'orbit' ? (r.outcome === 'fling' ? '날아가 버렸어요. 궤도에 올려야 해요.' : '빠져 버렸어요. 조금만 덜 가까이.')
-      : r.minClock > 0.6 ? `시계가 ${r.minClock.toFixed(2)}배예요. 더 가까이 지나가게.`
-      : r.minClock < 0.4 ? `시계가 ${r.minClock.toFixed(2)}배예요. 너무 느려요. 조금만 멀리.`
+      : r.minClock > 0.65 ? `시계가 ${r.minClock.toFixed(2)}배예요. 더 가까이 지나가게.`
+      : r.minClock < 0.35 ? `시계가 ${r.minClock.toFixed(2)}배예요. 너무 느려요. 조금만 멀리.`
       : '한 바퀴는 돌아야 해요.' },
   { id: 'hidden', say: '블랙홀 뒤에 숨은 별을 찾아라', hint: '빛이 휘어서 블랙홀 둘레에 보여요.', why: 1,
     /* q = { tap:[x,y](라디안, 블랙홀 가운데 = 0), hidden:{ beta, dir }, shipDist, mass, behind } */
@@ -198,10 +199,10 @@ export const MISSIONS = [
 ];
 export function hiddenHit({ tap, hidden, shipDist = 20, mass = 1, behind = 1000 }) {
   const L = lensImages(hidden.beta, shipDist, mass, behind), [tx, ty] = tap, r = Math.hypot(tx, ty);
-  if (L.kind === 'ring') return { hit: Math.abs(r - L.thetaE) < 0.2 * L.thetaE, lens: L };
+  if (L.kind === 'ring') return { hit: Math.abs(r - L.thetaE) < 0.35 * L.thetaE, lens: L };
   const n = [Math.cos(hidden.dir || 0), Math.sin(hidden.dir || 0)];
   const imgs = L.kind === 'two' ? L.images : L.images.slice(0, 1);
-  return { hit: imgs.some(im => Math.hypot(tx - n[0] * im.at, ty - n[1] * im.at) < 0.25 * L.thetaE), lens: L };
+  return { hit: imgs.some(im => Math.hypot(tx - n[0] * im.at, ty - n[1] * im.at) < 0.35 * L.thetaE), lens: L };
 }
 
 export const WHY = [

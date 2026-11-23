@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>자라는 결정 · 케이원더</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0d12;color:#e6e9ef;font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.top{position:fixed;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 0;display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+.top>*{pointer-events:auto}
+a.back{color:#c3c8d2;text-decoration:none;font-weight:700;font-size:.9rem;background:#161a22;border:1px solid #2a303b;padding:7px 12px;border-radius:999px;white-space:nowrap}
+.note{margin:0 auto;max-width:min(680px,70vw);background:#161a22;border:1px solid #2a303b;border-radius:14px;padding:8px 16px;font-weight:800;font-size:clamp(.95rem,1.7vw,1.1rem);text-align:center}
+.note small{display:block;font-weight:500;color:#9aa1ae;font-size:.82em;margin-top:2px}
+.tag{font-size:.75rem;color:#8a91a0;border:1px dashed #3a404c;border-radius:999px;padding:6px 10px;white-space:nowrap}
+.bar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(920px,97vw);display:grid;gap:8px}
+.say{background:#161a22;border:1px solid #2a303b;border-radius:14px;padding:10px 14px;font-size:1rem;line-height:1.5;min-height:2.9em}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:2px solid #2a303b;background:#12151c;color:#e6e9ef;border-radius:12px;padding:8px 12px;font:inherit;font-size:.92rem;font-weight:700;cursor:pointer;display:flex;gap:6px;align-items:center}
+.chip.on{border-color:#d9dde6;background:#232833}
+.sp{flex:1}
+.hide{display:none!important}
+@media (max-width:640px){.top{flex-wrap:wrap}.note{order:3;flex-basis:100%;max-width:none;margin:0}.tag{margin-left:auto}.chip{padding:6px 9px;font-size:.84rem}.say{font-size:.92rem;padding:8px 12px}.row{gap:6px}}
+.why{position:fixed;left:50%;top:18%;transform:translateX(-50%);max-width:min(560px,88vw);background:#161a22;border:1px solid #6b7280;border-radius:18px;padding:16px 20px;text-align:center;font-size:1.05rem;line-height:1.6;opacity:0;pointer-events:none;transition:opacity .5s}
+.why.show{opacity:1}.why b{display:block;margin-bottom:4px;color:#fff}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="top">
+  <a class="back" href="../">← 케이원더</a>
+  <div class="note" id="note"></div>
+  <span class="tag">회색 판(그림 준비 중)</span>
+</div>
+<section class="bar">
+  <div class="say" id="say">다이얼을 돌려 보세요. 결정이 자라는 모양이 바뀌어요.</div>
+  <div class="row" id="boxes">
+    <button class="chip" data-v="snow">❄ 눈 결정</button>
+    <button class="chip" data-v="salt">▣ 소금물</button>
+    <button class="chip" data-v="bismuth">◈ 비스무트</button>
+    <button class="chip" data-v="quartz">⬡ 수정</button>
+    <button class="chip hide" data-v="cave" id="cave">⛰ 거대 결정 동굴</button>
+    <span class="sp"></span>
+    <button class="chip" id="seed">🌱 새 씨앗</button>
+    <button class="chip" id="twin">🔁 같은 조건 한 번 더</button>
+  </div>
+</section>
+<div class="why" id="why"></div>
+<script type="module">
+import { createBoard } from './board.js';
+const $ = id => document.getElementById(id);
+const qp = new URLSearchParams(location.search);
+let B;
+const paint = () => { if (B) for (const b of $('boxes').querySelectorAll('[data-v]')) b.classList.toggle('on', b.dataset.v === B.S.box); };
+const ui = {
+  note(t, s) { $('note').innerHTML = t + (s ? `<small>${s}</small>` : ''); },
+  say(t) { $('say').textContent = t; },
+  why(t) { const w = $('why'); w.innerHTML = '<b>왜 그럴까?</b>' + t; w.classList.add('show'); setTimeout(() => w.classList.remove('show'), 7000); },
+  freeMode(on) { $('cave').classList.toggle('hide', !on); },
+  topH() { return document.querySelector('.top').getBoundingClientRect().bottom; },
+  bottomH() { return innerHeight - document.querySelector('.bar').getBoundingClientRect().top; },
+  boxChanged() { paint(); },
+};
+B = createBoard($('cv'), ui);
+for (const b of $('boxes').querySelectorAll('[data-v]')) b.onclick = () => B.pick(b.dataset.v);
+$('seed').onclick = () => B.reset(true);
+$('twin').onclick = () => B.twin();
+if (qp.has('free')) { B.S.mi = 3; B.S.free = true; }
+if (qp.has('m')) B.S.mi = +qp.get('m');
+paint(); B.showMission();
+window.__crystal = B;
+let last = performance.now();
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; if (!window.__pause) B.step(dt); B.draw(); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
