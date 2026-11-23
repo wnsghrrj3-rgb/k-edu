@@ -15,7 +15,7 @@ export const NS = {
   DOT_ON: '#e0662c', DOT_ON_EDGE: '#a8431a', DOT_OFF: '#8a5a2b', FLASH: '#ffe27a',
   FONT: '"Pretendard","Noto Sans KR",system-ui,sans-serif',
   W: 1.32, PAD: .14, DOT: .17, DOT_GAP: .05, TOP: .16,        /* px 에 곱하는 몫: 너비 · 안쪽 여백 · 점 지름 · 점 사이 · 못 자리 */
-  C_W: 1.0, C_PAD: .1, C_TOP: .12,                             /* 작은 팻말(compact): 너비 · 위아래 여백 · 못 자리 */
+  C_W: 1.0, C_PAD: .07, C_TOP: .06,                           /* 작은 팻말(compact): 너비 · 위아래 여백 · 못 자리 */
   GHOST: { BOARD: 'rgba(255,248,226,.86)', EDGE: '#6b4423', INK: 'rgba(58,33,8,.62)' },   /* 흐린 숫자(ghost): 옅은 판 · 점선 테두리 · 흐린 먹(밝은 판 위에서 3:1 넘게 읽힘) */
 };
 /** 팻말 크기(화면 px): 숫자 높이 px → { w, h, dotsTop } */
