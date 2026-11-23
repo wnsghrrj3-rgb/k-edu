@@ -7,11 +7,16 @@
          군포(갓난아기·죽은 사람 몫) · 이름 없는 임명장으로 양반 되기 · 땅을 잃고 떠나는 이웃(내가 넓힌 만큼 누군가는 잃는다).
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 우리 마을 → 가운데 들 → 동쪽 읍내 → 고개 너머 이웃 고을 장. 남쪽 강과 포구. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, ringsFx, people, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, loadArt, art, artGeo, artMat, artInst, scatter, missions } from '../scene/kit.js?v=5';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, ringsFx, people, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, loadArt, art as kitArt, artGeo, artMat, artInst as kitInst, scatter, missions } from '../scene/kit.js?v=5';
 await loadArt('people', 'nature', 'build', 'props', 'market', 'night', 'farm', 'farmset', 'beasts', 'farmtree');   /* beasts = 움직이는 개·닭·소(tools/blender/make_beasts.py) */
 import { beastKit } from './beasts.js?v=1';
 import { makeLand, dikes, hAt, lineDist, STREAM } from './land.js?v=2';
 import { airKit, sunAt } from './air.js?v=1';
+import { BAKED, loadBaked, bakedMesh, bakedInst } from './models.js?v=1';
+/* 구워 입힌 모델(블렌더 kw_bake — 이엉 결·나뭇결·돌·회벽 무늬와 구석 그늘): 같은 이름이 있으면 그것으로 갈아 끼운다 */
+await loadBaked('fhouse', 'ftown');
+const art = (n, tints, o) => (typeof n === 'string' && BAKED[n] ? bakedMesh(n, o) : kitArt(n, tints, o));
+const artInst = (sc, n, list, tints, o) => (typeof n === 'string' && BAKED[n] ? bakedInst(sc, n, list, o) : kitInst(sc, n, list, tints, o));
 /* 읽어 들인 farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
 
 const W = 380, H = 240;
