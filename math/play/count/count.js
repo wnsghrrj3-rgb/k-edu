@@ -2,7 +2,7 @@
  * 설계: 핸드오프 kedu/math-play-work/T03_세기_틀.md · 정본 kmotion/math-wizard/27_수학놀이터_내용지도와_틀_설계_v1.md(4 · 5절 · 5-9 · 5-10 · 5-11). 규칙 = ./rules.js(화면 없음).
  * 한 나들이 = 낱칸 하나(A01 · A06) · 판 = 문제 셋(구슬) · 나들이 = 판 셋(등불). 짚는 손이 곧 세기 — 담긴 물고기는 다시 꺼낼 수 없다.
  * 걸음 ① 따라 세기(낱칸의 첫 판 · 막히면 한 판 다시): 담을 때마다 통 위의 점과 수가 하나씩 오르고, 바다가 비면 저절로 닫힘.
- * 걸음 ② 세고 답하기(통과는 여기서만): 수는 오르지 않는다 → 다 담았다고 생각하면 「다 담았어요」(종 — 고르기 전까지는 통 옆 뚜껑)를 아이가 스스로 →
+ * 걸음 ② 세고 답하기(통과는 여기서만): 수는 오르지 않는다 → 다 담았다고 생각하면 「다 담았어요」(종)를 아이가 스스로 →
  *   남았으면 숨은 물고기가 고개를 내밀고 「나도!」 · 다 담았으면 「물고기는 모두 ?마리」 + 점 카드 셋 → 아니면 통의 물고기가 하나씩 튀어 오르며 세어지고 그 수가 물러난다.
  * 사건(rules.js events): 썰물(시계 · 생각하는 동안에만) · 숨는 물고기(알맹이) · 빠른 물고기 · 깜짝 물고기 · 뚜껑 덮인 통(통과 뒤) · 물장구. 사건은 수를 바꾸지 않는다.
  * 누름에는 늘 답이 있다(5-11): 빈 곳을 눌러도 물결 + 손이 다음에 누를 곳 + 한 줄 안내 — 깨끗함에 세지 않는다.
@@ -17,15 +17,15 @@ import * as M from '../common/map.js?v=3';
 import * as C from '../common/choose.js?v=2';
 import { UNIT } from '../common/say.js?v=2';
 import * as R from './rules.js?v=1';
-import { ASSETS, MODEL, fishModel, SCENERY, DONE, GLOW, SAND, ICON } from './art.js?v=1';
+import { ASSETS, MODEL, fishModel, SCENERY, DONE, GLOW, SAND, ICON } from './art.js?v=2';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
 const T = { DECK: .45, DZ: 1.95,
-  WIDE: { tub: [-.2, 1.72], lid: [.72, 1.86], anne: [-1.5, 1.72], boat: [3.72, .95], boatRy: 0 },
-  TALL: { tub: [-.05, 1.62], lid: [.88, 1.78], anne: [-1.05, 1.55], boat: [1.95, 2.85], boatRy: Math.PI / 2, sea: { x: [-1.65, 1.65], z: [-3.2, .4] } },
+  WIDE: { tub: [-.2, 1.72], lid: [.72, 1.86], bell: [1.5, 1.5], anne: [-1.5, 1.72], boat: [3.72, .95], boatRy: 0 },
+  TALL: { tub: [-.05, 1.62], lid: [1.62, 2.0], bell: [.98, 1.5], anne: [-1.05, 1.55], boat: [1.95, 2.85], boatRy: Math.PI / 2, sea: { x: [-1.65, 1.65], z: [-3.2, .4] } },
   TUB_S: 1.55, TUB_BIG: 1.18, BOAT_S: .85, ON_BOAT_S: .55, FISH_S: .85, FISH_Y: .03, IN_TUB: { s: .46, r: [.04, .23], y: .8 }, ROCK_S: 1.15, WEED_S: 1.15,
   FLY_MS: 520, ENTER_MS: 1300, SEP: .75, AVOID: .85, WANDER: 1.3, FRONT: .99, TELL_GRACE: 5, NADO_MS: 1500, NADO_BUSY: 400, COUNT_MS: 430, SHOW_MS: 700, CLOSE_MS: 600, LEAVE_MS: 1600, ARRIVE_MS: 1300,
-  DONE_PX: 70, EBB: { op: [.92, .42], drop: .16 }, HIDE: { rock: .64, weed: .62, back: .12, down: .04 } };
+  DONE_PX: 70, BELL_S: .9, BELL_TILT: [-.5, -.8], EBB: { op: [.92, .42], drop: .16 }, HIDE: { rock: .64, weed: .62, back: .12, down: .04 } };
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
 const GO = '/math/play/go/';
@@ -56,7 +56,7 @@ function makeTub(){ const root = new THREE.Group(), body = new THREE.Group(); ro
 function makeLid(){ const root = new THREE.Group(), g = new THREE.Group(); root.add(g); g.scale.setScalar(T.TUB_S);
   for (const p of TK.lid) { const m = new THREE.Mesh(p.geo, TK.mat); m.position.set(-TK.lc.x, -TK.lc.y, -TK.lc.z); g.add(stage.shadows(m)); }
   scene.add(root); return root; }
-/** 뚜껑 자리: 통 위(덮음) 또는 통 옆에 기대 둠(「다 담았어요」 — 종을 고르기 전까지 이것을 누른다). */
+/** 뚜껑 자리: 통 위(덮음) 또는 통 옆에 기대 둠(닫을 때 덮는다). */
 function lidPose(on){ const tb = S.tub.root, s = tb.scale.x; return on ? { x: tb.position.x, y: T.DECK + TK.h * T.TUB_S * s + .02, z: tb.position.z, rz: 0, rx: 0 } : { x: L().lid[0], y: T.DECK + .4 * s, z: L().lid[1], rz: -.12, rx: 1.05 }; }
 function lidSet(on){ const q = lidPose(on); S.lid.position.set(q.x, q.y, q.z); S.lid.rotation.set(q.rx, 0, q.rz); S.lid.scale.setScalar(S.tub.root.scale.x); S.lidOn = on; S.tub.layer.visible = !on || !S.ev.lid; }
 async function lidMove(on, ms = T.CLOSE_MS){ const q = lidPose(on), up = Math.max(S.lid.position.y, q.y) + .5; S.lidOn = on;
@@ -85,7 +85,7 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   S.rock = stage.put(K[MODEL.rock], 0, -.22, 0, T.ROCK_S, .4); S.weed = new THREE.Group(); { const a = K[MODEL.weed].scene.clone(), b = K[MODEL.weed2].scene.clone(), c = K[MODEL.weed2].scene.clone(); a.position.y = -.28; b.position.set(.25, -.25, -.15); c.position.set(-.28, -.25, .05); c.rotation.y = 1.3; [a, b, c].forEach(x => S.weed.add(stage.shadows(x))); S.weed.scale.setScalar(T.WEED_S); scene.add(S.weed); }
   S.anne = stage.person(K[MODEL.keeper]); stage.play(S.anne, 'Idle'); setNet();
   S.boat = new THREE.Group(); { const b = K[MODEL.boat].scene.clone(); S.boat.add(stage.shadows(b)); S.boat.scale.setScalar(T.BOAT_S); scene.add(S.boat); }
-  if (MODEL.bell) { S.bell = stage.put(K[MODEL.bell], 0, T.DECK, 0, .9, 0); }
+  if (MODEL.bell) { S.bell = stage.put(K[MODEL.bell], 0, T.DECK, 0, T.BELL_S, 0); }
   stage.onResize = aim; stage.resize();
   let c = document.createElement('div'); c.id = 'coins'; document.body.appendChild(c); coinsDraw(); wallet.onChange(() => coinsDraw());
   if (!wallet.persists()) { const n = document.createElement('div'); n.id = 'note'; n.textContent = '지금은 구경 중이에요 · 화면을 나가면 깃발이 처음으로 돌아가요'; document.body.appendChild(n); }
@@ -108,7 +108,7 @@ function reflow(){ S.spots = S.sc.spots.map(s => S.tall ? toTall(s[0], s[1]) : s
 function layout(){ const l = L(); S.anne.obj.position.set(l.anne[0], T.DECK + .02, l.anne[1]); S.anne.obj.rotation.y = Math.PI * .85;
   if (S.tub && !S.busy) { S.tub.root.position.set(l.tub[0], T.DECK, l.tub[1]); lidSet(S.lidOn); }
   if (!S.boatMoving) { S.boat.position.set(l.boat[0], 0, l.boat[1]); S.boat.rotation.y = l.boatRy; }
-  if (S.bell) S.bell.position.set(l.lid[0] + .2, T.DECK, l.lid[1] + .1); }
+  if (S.bell) { S.bell.position.set(l.bell[0], T.DECK + .08, l.bell[1]); S.bell.rotation.x = T.BELL_TILT[S.tall ? 1 : 0]; }   /* 위에서 내려다보면 종이 동그라미로만 보여, 윗부분을 뒤로 눕혀 옆모습이 보이게 */ }
 function spotsDraw(){ const [r, w] = S.spots; if (!r) return; S.rock.position.set(r[0], -.22, r[1]); S.weed.position.set(w[0], 0, w[1]); }
 /** 세로 화면: 규칙의 바다(가로)를 세로 바다로 옮긴다(숨는 곳 · 처음 자리 · 들어오는 곳). */
 function toTall(x, z){ const A0 = R.T.SEA, B = T.TALL.sea; return [B.x[0] + (x - A0.x[0]) / (A0.x[1] - A0.x[0]) * (B.x[1] - B.x[0]), B.z[0] + (z - A0.z[0]) / (A0.z[1] - A0.z[0]) * (B.z[1] - B.z[0])]; }
@@ -139,7 +139,7 @@ async function countUp(){ const my = S.oid, list = S.tub.fish.slice(); tallyShow
 // ── 누르기(물고기 · 「다 담았어요」 · 빈 곳 — 모든 누름에 답이 있다)
 const canvas = $('c');
 function fishUnder(x, y){ let best = null, d0 = R.T.TAP_R; for (const f of inSea()) { const q = fishScreen(f), d = Math.hypot(q.x - x, q.y - y); if (d < d0) { d0 = d; best = f; } } return best; }
-function doneScreen(){ if (S.bell && !S.lidOn) return stage.screenOf(S.bell.position.clone().add(V(0, .45, 0))); return stage.screenOf(S.lid.position.clone().add(V(0, S.lidOn ? .05 : 0, 0))); }
+function doneScreen(){ if (S.bell) return stage.screenOf(S.bell.position.clone().add(V(0, .45, 0))); return stage.screenOf(S.lid.position.clone().add(V(0, S.lidOn ? .05 : 0, 0))); }
 function onDone(x, y){ const q = doneScreen(); return Math.hypot(q.x - x, q.y - y) < T.DONE_PX; }
 canvas.addEventListener('pointerdown', e => { audio(); if (!S.ready || E.homeOpen()) return; S.lastAct = S.t; H.hide(); const x = e.clientX, y = e.clientY;
   if (!S.active || S.busy) { S.log.push({ ignored: S.active ? 'busy' : 'idle' }); H.ripple(x, y); return; }   /* 바쁜 동안에도 물결은 뜬다(5-11) */
@@ -167,7 +167,7 @@ async function scoop(f){ const my = S.oid; if (!R.scoop(S.sea, f.i)) return; S.l
   if (S.step === 1) tallyShow(n);
   if (S.pendingDone && !S.flying && S.step === 2 && S.active && !S.busy) { S.pendingDone = false; pressDone(); return; }
   if (R.left(S.sea) === 0 && !S.flying && S.step === 1 && S.active && !S.closed) await complete(); }
-/** 「다 담았어요」(종 · 고르기 전까지는 뚜껑). 남았으면 「나도!」(깨끗하지 않음) · 다 담았으면 띠 「?」 + 점 카드 셋. */
+/** 「다 담았어요」(종). 남았으면 「나도!」(깨끗하지 않음) · 다 담았으면 띠 「?」 + 점 카드 셋. */
 async function pressDone(){ const my = S.oid; S.lastAct = S.t; doneWobble();
   if (S.step === 1 || S.asked) { nudge(...(q => [q.x, q.y])(doneScreen())); return; }   /* 걸음 ① 은 바다가 비면 저절로 닫힌다 — 손이 물고기를 짚어 준다 */
   if (S.flying) { S.pendingDone = true; return; }   /* 날아가는 중에 눌렀다 — 내려앉으면 이어서(검수 6) */
@@ -175,7 +175,8 @@ async function pressDone(){ const my = S.oid; S.lastAct = S.t; doneWobble();
   if (how === 'early') { S.res.early = true; S.busy = true; tone(196, .18, 'sine', .08); const ids = R.peek(S.sea); for (const i of ids) { const f = S.fish[i]; f.go = null; if (f.hp) { f.hp = null; f.heading = Math.atan2(0, 1) + (Math.random() - .5); } nadoShow(f); jump(f); }
     await sleep(T.NADO_BUSY); if (S.oid !== my) return; S.busy = false; S.lastAct = S.t; return; }   /* 말풍선은 1.5초 남지만 바쁜 것은 잠깐만 — 고개 내민 물고기를 바로 누를 수 있게(검수 7) */
   S.asked = true; ring(); chooseShow(R.picksFor(S.cell, S.p)); tone(880, .1, 'triangle', .08); }
-function doneWobble(){ const o = S.bell && !S.lidOn ? S.bell : S.lid, r0 = o === S.lid ? lidPose(S.lidOn).rx : 0; if (stage.tweens.some(w => w.o === o.rotation)) return; stage.tween(o.rotation, { x: r0 + .18 }, 90).then(() => stage.tween(o.rotation, { x: r0 - .12 }, 120)).then(() => stage.tween(o.rotation, { x: r0 }, 150)); }
+function doneWobble(){ if (S.bell) { const o = S.bell; if (stage.tweens.some(w => w.o === o.rotation)) return; stage.tween(o.rotation, { z: .28 }, 110).then(() => stage.tween(o.rotation, { z: -.22 }, 150)).then(() => stage.tween(o.rotation, { z: .1 }, 130)).then(() => stage.tween(o.rotation, { z: 0 }, 150)); return; }   /* 종이 흔들림(남았으면 소리는 안 남) */
+  const o = S.lid, r0 = lidPose(S.lidOn).rx; if (stage.tweens.some(w => w.o === o.rotation)) return; stage.tween(o.rotation, { x: r0 + .18 }, 90).then(() => stage.tween(o.rotation, { x: r0 - .12 }, 120)).then(() => stage.tween(o.rotation, { x: r0 }, 150)); }
 function ring(){ if (S.bell) { [1046, 1318].forEach((f, i) => tone(f, .5, 'sine', .1, i * .12)); } else tone(660, .12, 'triangle', .1); }
 function jump(f){ const y0 = T.FISH_Y; stage.tween(f.o.position, { y: y0 + .45 }, 220, t => t * (2 - t)).then(() => stage.tween(f.o.position, { y: y0 }, 260, t => t * t)); }
 /** 「나도!」: 남은 물고기 머리 위에 말풍선 + 물방울(그 물고기를 따라다님). */
