@@ -1,4 +1,4 @@
-/* 수학 놀이터 「끌어 놓기」(T05 짝 잇기 틀 — 뒤 틀 T06 줄 세우기 · T07 견주기도 쓴다).
+/* 수학 놀이터 「끌어 놓기」(T05 짝 잇기 틀 — T06 줄 세우기 · 뒤 틀 T07 견주기도 쓴다).
  * 끌기와 「누르고 → 누르기」를 같은 판정으로 돌려준다: onDrop({ from, to, how: 'drag' | 'tap' }).
  *   sources() = 집을 수 있는 것 [{ id, x, y, r }] · targets() = 놓을 곳 [{ id, x, y, rect? }] (화면 좌표 — 부르는 쪽이 장면마다 계산)
  *   놓을 곳 판정: rect 안이거나 (x, y)에서 R(px) 안 — 둘 이상이면 가까운 쪽. 아니면 onCancel(from)(줄이 스르르 돌아온다 · 벌 없음).
@@ -6,18 +6,20 @@
  *   o.claim({ x, y, armed }) 가 참이면 그 누름은 부르는 쪽이 가져간다(든 것은 그대로). 끄는 중의 둘째 손가락은 받지 않는다. 집을 것은 r 또는 rx · ry(타원).
  *   집은 것을 누르기만 하면(끌지 않으면) 「들었다」(onArm) — 둘째로 누를 곳을 부르는 쪽이 들썩여 준다(정본 5-11절). 그다음 놓을 곳을 누르면 onDrop(how 'tap').
  *   그 밖의 누름은 onTap({ x, y, target, armed }) — 부르는 쪽이 물결 · 손 · 한 줄 안내(5-11)를 띄운다. enabled() 가 거짓이면 onBusy({ x, y }).
- * 화면 굴림과 싸우지 않게 el 에 touch-action:none. 화면 위 표시(줄 · 반경 원)는 svg 하나(#dragsvg). */
+ * 화면 굴림과 싸우지 않게 el 에 touch-action:none. 화면 위 표시(줄 · 반경 원)는 svg 하나(#dragsvg).
+ * line(id, a, b, { sag }) — 줄의 처짐을 따로 줄 때(T06 배 기차의 밧줄: 늘어짐 → 팽팽함이 시계). sag = 줄 길이에 곱하는 몫 · 줄에 수직으로(가로 줄은 아래 · 세로 줄은 오른쪽 · 음수면 반대쪽). 안 주면 예전 그대로. */
 export const DRAG = { R: 80, SLOP: 12, ROPE: '#a0703a', ROPE_DARK: '#6b4423', ROPE_W: 7, SAG: .12, BACK_MS: 260 };
 
 let svg = null;
 const NSV = 'http://www.w3.org/2000/svg';
 function layer(){ if (svg) return svg; svg = document.createElementNS(NSV, 'svg'); svg.id = 'dragsvg'; svg.setAttribute('style', 'position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:4;overflow:visible'); document.body.appendChild(svg); return svg; }
-const pathOf = (a, b) => { const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + Math.hypot(b.x - a.x, b.y - a.y) * DRAG.SAG; return `M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`; };
+const pathOf = (a, b, o) => { if (o && o.sag != null) { const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1; let nx = -dy / L, ny = dx / L; if (ny < 0 || (Math.abs(ny) < 1e-6 && nx < 0)) { nx = -nx; ny = -ny; } const k = L * o.sag, mx = (a.x + b.x) / 2 + nx * k, my = (a.y + b.y) / 2 + ny * k; return `M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`; }
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + Math.hypot(b.x - a.x, b.y - a.y) * DRAG.SAG; return `M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`; };
 /** 줄 하나를 a → b 로 그린다(id 마다 하나 · 축 늘어진 밧줄). a 나 b 가 없으면 지운다. */
-export function line(id, a, b){ const s = layer(); let g = s.querySelector(`g[data-id="${id}"]`);
+export function line(id, a, b, o){ const s = layer(); let g = s.querySelector(`g[data-id="${id}"]`);
   if (!a || !b) { if (g) g.remove(); return; }
   if (!g) { g = document.createElementNS(NSV, 'g'); g.dataset.id = id; for (const [col, w, dash] of [[DRAG.ROPE_DARK, DRAG.ROPE_W + 3, ''], [DRAG.ROPE, DRAG.ROPE_W, ''], ['rgba(255,235,190,.7)', DRAG.ROPE_W * .4, '6 7']]) { const p = document.createElementNS(NSV, 'path'); p.setAttribute('fill', 'none'); p.setAttribute('stroke', col); p.setAttribute('stroke-width', w); p.setAttribute('stroke-linecap', 'round'); if (dash) p.setAttribute('stroke-dasharray', dash); g.appendChild(p); } s.appendChild(g); }
-  const d = pathOf(a, b); for (const p of g.children) p.setAttribute('d', d); }
+  const d = pathOf(a, b, o); for (const p of g.children) p.setAttribute('d', d); }
 export const lines = () => (svg ? svg.querySelectorAll('g[data-id]').length : 0);
 /** 줄이 스르르 돌아온다(b → a 로 줄어듦). */
 export function retract(id, a, b, ms = DRAG.BACK_MS){ return new Promise(res => { const t0 = performance.now(); const step = () => { const k = Math.min(1, (performance.now() - t0) / ms), e = k * k; line(id, a, { x: b.x + (a.x - b.x) * e, y: b.y + (a.y - b.y) * e }); if (k < 1) requestAnimationFrame(step); else { line(id, null); res(); } }; requestAnimationFrame(step); }); }

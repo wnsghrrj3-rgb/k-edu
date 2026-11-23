@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>배 기차 떠나보내기 · 수학 놀이터</title>
+<script src="/kedu_scope.js"></script>
+<script type="importmap">{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+[hidden]{display:none!important}
+html{background:#9fd8f0}html,body{height:100%;overflow:hidden;font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;touch-action:none;overscroll-behavior:none}
+canvas#c{display:block;width:100%;height:100%;touch-action:none}
+.back{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));z-index:31;background:rgba(10,20,40,.5);color:#fff;border-radius:999px;padding:8px 16px;font-weight:900;font-size:1rem;text-decoration:none}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:40;background:#9fd8f0;color:#1d4a63;font-weight:900;font-size:1.3rem;transition:opacity .5s;pointer-events:none}
+#note{position:fixed;left:50%;bottom:calc(6px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:32;background:rgba(10,20,40,.5);color:#fff;border-radius:999px;padding:3px 14px;font-size:.78rem;font-weight:700;white-space:nowrap;max-width:96vw;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#coins{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));top:calc(54px + env(safe-area-inset-top,0px));z-index:5;display:flex;align-items:center;gap:6px;background:rgba(10,20,40,.5);color:#fff;border-radius:999px;padding:4px 12px;font-weight:900;font-size:.95rem;pointer-events:none}#coins img.art{height:1em}
+#coins.pop{animation:cpop .4s}@media (max-width:520px){#coins{top:auto;bottom:calc(32px + env(safe-area-inset-bottom,0px))}}@keyframes cpop{40%{transform:scale(1.3)}}
+#tray{pointer-events:none}#tray i.w{font-size:.6em;opacity:.97}
+/* 배의 숫자 팻말(배에 꽂혀 있다 — 평면 안에서 돌지 않음) · 줄의 팻말은 전화기 세로에서 배 오른쪽에 */
+.bsign{position:fixed;z-index:3;transform:translate(-50%,-100%);pointer-events:none}
+.bsign.side{transform:translate(0,-50%)}
+.bsign.off{display:none}
+.bsign canvas{display:block}
+.bsign.lit canvas{filter:brightness(1.18) drop-shadow(0 0 9px #ffd34d) drop-shadow(0 0 3px #fff3b0)}
+.bsign.armed canvas{filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 3px #ffd34d)}
+.bsign.bob{animation:bbob .45s}@keyframes bbob{40%{margin-top:-12px}}
+.bsign.shake{animation:bshake .42s}@keyframes bshake{20%{margin-left:-7px}40%{margin-left:7px}60%{margin-left:-5px}80%{margin-left:3px}}
+.bsign.here{animation:bhere .5s 3}@keyframes bhere{50%{margin-top:-14px}}
+/* 종 둘레의 빛(다 차면 「눌러 봐」 · 누를 곳이 손가락 크기로 보이게) */
+#bellring{position:fixed;z-index:3;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;border:4px solid rgba(255,214,80,.95);box-shadow:0 0 16px 2px rgba(255,196,60,.75),inset 0 0 12px rgba(255,214,80,.55);pointer-events:none;opacity:0;transition:opacity .3s}
+#bellring.on{opacity:1;animation:bring 1.1s ease-in-out infinite}@keyframes bring{50%{transform:scale(1.14)}}
+/* 안개(통과 뒤의 궁금함 — 떠날 때 걷힌다) · 섞는 물결 */
+#fog{position:fixed;z-index:4;pointer-events:none;border-radius:48px;background:radial-gradient(ellipse at center,rgba(244,249,252,.78),rgba(244,249,252,.6) 55%,rgba(244,249,252,0) 100%);opacity:0;transition:opacity .9s}
+#fog.on{opacity:1}#fog.peek{opacity:.08;transition:opacity .35s}
+#wave{position:fixed;z-index:2;left:-40vw;width:40vw;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.55) 45%,rgba(220,245,255,.75) 55%,rgba(255,255,255,0));border-radius:50%;opacity:0}
+#wave.go{animation:wave 1.3s ease-in-out}@keyframes wave{0%{left:-40vw;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:100vw;opacity:0}}
+/* 나들이 끝 줄: 오늘의 줄 팻말이 차례로 한 번씩 반짝 */
+#home .row img.ns{height:2.2em;width:auto;vertical-align:middle}
+#home .row b.ns{animation:nsflash .5s calc(var(--k) * .3s + .8s)}@keyframes nsflash{50%{transform:scale(1.25);filter:brightness(1.35) drop-shadow(0 0 8px #ffd34d)}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<a class="back" href="/math/play/go/">← 수학 길</a>
+<div id="loading">배를 모으는 중…</div>
+<script type="module" src="./line.js?v=1"></script>
+</body>
+</html>

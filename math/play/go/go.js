@@ -2,9 +2,9 @@
  * 가르기 틀 들머리(split/)에서 옮겨 왔다 — 통과 규칙 · 저장 · 깃발 모양은 그대로. 깃발을 누르면 그 낱칸의 틀로 간다(cells.js 의 frame → /math/play/<틀>/?cell=<낱칸>).
  * 학년 · 단원 꼬리표는 이 화면(과 부모 화면)에만. 깃발 줄은 내용 지도 차례 · 사이의 아직 없는 낱칸은 빈 깃대 하나(지도에 구멍이 있다는 것을 숨기지 않는다).
  * 시작점과 열림: built.js STARTS · map.js openSet — 이미 열렸거나 딴 깃발은 닫지 않는다. 누름에는 늘 답이 있다(5-11): 잠긴 깃발 · 빈 곳 → 물결 + 손이 열린 깃발을 짚는다. */
-import * as M from '../common/map.js?v=5';
+import * as M from '../common/map.js?v=6';
 import * as H from '../common/hint.js?v=5';
-import { BUILT } from '../common/built.js?v=4';
+import { BUILT } from '../common/built.js?v=5';
 import { art } from '../common/art.js?v=8';
 import { audio, tone, wallet } from '../common/kit.js?v=8';
 import { cell as cellOf, tag, CELLS } from '../common/cells.js?v=1';

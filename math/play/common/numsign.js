@@ -1,10 +1,12 @@
-/* 수학 놀이터 「숫자 팻말」(T05 짝 잇기 틀 — 뒤 틀 T06 줄 세우기 · T07 견주기도 쓴다).
+/* 수학 놀이터 「숫자 팻말」(T05 짝 잇기 틀 — T06 줄 세우기 · 뒤 틀 T07 견주기도 쓴다).
  * 나무 팻말 위에 숫자를 그린 그림 한 장(캔버스)을 만든다. 숫자 꼴 · 빛깔 · 크기가 이 한 곳에 있다(화면 표시라 코드로 그려도 된다).
  *   numsign(n, { dots, lit, face, back, px, flash }) → <canvas>      paint(캔버스, n, { … }) → 같은 캔버스에 다시 그림
  *   dots  = 숫자 아래 점 무늬(정본 5-10절 — 다섯씩 한 줄 · 6~9 는 윗줄 다섯 + 아랫줄 · 점 카드와 같은 눈) · lit = 켜진 점 수(기본 n) · flash = 반짝이는 점(0부터)
  *   face  = 'book' 교과서 꼴(기기에 있는 글꼴) | 'chalk' 분필 꼴(손으로 쓴 꼴 — 위가 닫힌 4 · 가로줄 있는 7 · 꼬리가 굽은 9)
  *   back  = 뒷면(빈 나무 — 바람에 뒤집혔을 때)
- *   px    = 숫자 높이(화면 px — 가로 화면 96 이상 · 전화기 72 이상)
+ *   px    = 숫자 높이(화면 px — 가로 화면 96 이상 · 전화기 72 이상 · 줄 세우기 틀은 64 · 48 이상)
+ *   compact = 점 무늬 자리 없이 숫자만 담는 작은 팻말(T06 — 배에 꽂는 팻말 · 점을 쓰지 않는 낱칸)
+ *   ghost = 흐린 숫자(T06 — 빈 자리 부표의 자리 표시: 옅은 판 · 점선 테두리 · 흐리지만 읽히는 숫자)
  * 팻말은 늘 같은 크기다(점 무늬 두 줄 자리를 늘 비워 둔다 — 점이 켜져도 팻말이 커지지 않고, 크기로 수를 미리 알 수 없다).
  * 팻말은 평면 안에서 돌지 않는다(6 과 9 가 뒤집혀 보이면 안 된다) — 이 그림에는 돌림이 없다. 뒤집힘은 세로 축으로만(부르는 쪽 CSS). */
 export const NS = {
@@ -13,24 +15,29 @@ export const NS = {
   DOT_ON: '#e0662c', DOT_ON_EDGE: '#a8431a', DOT_OFF: '#8a5a2b', FLASH: '#ffe27a',
   FONT: '"Pretendard","Noto Sans KR",system-ui,sans-serif',
   W: 1.32, PAD: .14, DOT: .17, DOT_GAP: .05, TOP: .16,        /* px 에 곱하는 몫: 너비 · 안쪽 여백 · 점 지름 · 점 사이 · 못 자리 */
+  C_W: 1.0, C_PAD: .1, C_TOP: .12,                             /* 작은 팻말(compact): 너비 · 위아래 여백 · 못 자리 */
+  GHOST: { BOARD: 'rgba(255,248,226,.86)', EDGE: '#6b4423', INK: 'rgba(58,33,8,.62)' },   /* 흐린 숫자(ghost): 옅은 판 · 점선 테두리 · 흐린 먹(밝은 판 위에서 3:1 넘게 읽힘) */
 };
 /** 팻말 크기(화면 px): 숫자 높이 px → { w, h, dotsTop } */
-export function size(px = 96){ const d = px * NS.DOT, g = px * NS.DOT_GAP, w = Math.round(Math.max(px * NS.W, 5 * d + 4 * g + px * NS.PAD * 2)), top = px * (NS.TOP + NS.PAD), dotsTop = top + px * 1.08, h = Math.round(dotsTop + 2 * d + g + px * NS.PAD * 1.4);
-  return { w, h, dotsTop, d, g }; }
+export function size(px = 96, compact = false){ const d = px * NS.DOT, g = px * NS.DOT_GAP;
+  if (compact) { const top = px * NS.C_TOP; return { w: Math.round(px * NS.C_W), h: Math.round(top + px * (NS.C_PAD * 2 + 1)), dotsTop: 0, d, g, top, cy: top + px * (NS.C_PAD + .5) }; }
+  const w = Math.round(Math.max(px * NS.W, 5 * d + 4 * g + px * NS.PAD * 2)), top = px * (NS.TOP + NS.PAD), dotsTop = top + px * 1.08, h = Math.round(dotsTop + 2 * d + g + px * NS.PAD * 1.4);
+  return { w, h, dotsTop, d, g, top: px * NS.TOP, cy: px * (NS.TOP + NS.PAD) + px * .5 }; }
 
 const DPR = () => Math.min(2, (typeof devicePixelRatio !== 'undefined' && devicePixelRatio) || 1);
 /** 숫자 팻말 하나(캔버스). */
 export function numsign(n, opt = {}){ const c = document.createElement('canvas'); c.className = 'numsign'; paint(c, n, opt); return c; }
 
 /** 같은 캔버스에 다시 그린다(팻말을 바꾸지 않고 점 · 꼴만 바꿀 때). */
-export function paint(c, n, opt = {}){ const px = opt.px || 96, z = size(px), r = DPR();
+export function paint(c, n, opt = {}){ const px = opt.px || 96, z = size(px, !!opt.compact), r = DPR();
   if (c.width !== Math.round(z.w * r) || c.height !== Math.round(z.h * r)) { c.width = Math.round(z.w * r); c.height = Math.round(z.h * r); }
   c.style.width = z.w + 'px'; c.style.height = z.h + 'px';
   const x = c.getContext('2d'); x.setTransform(r, 0, 0, r, 0, 0); x.clearRect(0, 0, z.w, z.h);
-  board(x, z, px);
-  c.dataset.n = opt.back ? '' : String(n); c.dataset.face = opt.back ? 'back' : (opt.face || 'book'); c.dataset.dots = opt.dots && !opt.back ? String(opt.lit == null ? n : opt.lit) : '';
+  if (opt.ghost) ghostBoard(x, z, px); else board(x, z, px);
+  c.dataset.n = opt.back ? '' : String(n); c.dataset.face = opt.back ? 'back' : (opt.face || 'book'); c.dataset.dots = opt.dots && !opt.back ? String(opt.lit == null ? n : opt.lit) : ''; c.dataset.ghost = opt.ghost ? '1' : '';
   if (opt.back) { c.dataset.numpx = '0'; return c; }
-  const cy = px * (NS.TOP + NS.PAD) + px * .5;
+  const cy = z.cy;
+  if (opt.ghost) { c.dataset.numpx = String(Math.round(book(x, n, z.w / 2, cy, px, NS.GHOST.INK))); return c; }
   if (opt.face === 'chalk') { const w = px * .95 * Math.max(1, String(n).length * .8), h = px * 1.16; rr(c.getContext('2d'), z.w / 2 - w / 2, cy - h / 2, w, h, px * .1); const x2 = c.getContext('2d'); x2.fillStyle = NS.SLATE; x2.fill(); x2.lineWidth = Math.max(2, px * .04); x2.strokeStyle = NS.EDGE; x2.stroke(); }   /* 분필 꼴은 작은 칠판 위에(나무 위 흰 분필은 흐려서) */
   c.dataset.numpx = String(Math.round(opt.face === 'chalk' ? chalk(x, n, z.w / 2, cy, px) : book(x, n, z.w / 2, cy, px)));
   if (opt.dots) dots(x, z, n, opt.lit == null ? n : opt.lit, opt.flash == null ? -1 : opt.flash);
@@ -38,7 +45,7 @@ export function paint(c, n, opt = {}){ const px = opt.px || 96, z = size(px), r 
 
 function rr(x, a, b, w, h, k){ x.beginPath(); x.moveTo(a + k, b); x.arcTo(a + w, b, a + w, b + h, k); x.arcTo(a + w, b + h, a, b + h, k); x.arcTo(a, b + h, a, b, k); x.arcTo(a, b, a + w, b, k); x.closePath(); }
 /** 나무 판: 둥근 네모 · 나무 무늬 줄 · 테두리 · 위의 못 둘(걸려 있다). */
-function board(x, z, px){ const top = px * NS.TOP, k = px * .14, g = x.createLinearGradient(0, top, 0, z.h);
+function board(x, z, px){ const top = z.top, k = px * .14, g = x.createLinearGradient(0, top, 0, z.h);
   g.addColorStop(0, NS.WOOD[0]); g.addColorStop(1, NS.WOOD[1]);
   x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = px * .08; x.shadowOffsetY = px * .05; rr(x, 2, top, z.w - 4, z.h - top - px * .07, k); x.fillStyle = g; x.fill(); x.restore();
   rr(x, 2, top, z.w - 4, z.h - top - px * .07, k); x.lineWidth = Math.max(2, px * .045); x.strokeStyle = NS.EDGE; x.stroke();
@@ -46,10 +53,12 @@ function board(x, z, px){ const top = px * NS.TOP, k = px * .14, g = x.createLin
   for (let y = top + px * .22; y < z.h; y += px * .27) { x.beginPath(); x.moveTo(0, y); x.bezierCurveTo(z.w * .3, y - px * .05, z.w * .6, y + px * .06, z.w, y - px * .02); x.stroke(); } x.restore();
   for (const a of [.2, .8]) { x.beginPath(); x.arc(z.w * a, top + px * .1, px * .045, 0, 7); x.fillStyle = NS.NAIL; x.fill(); }
   x.beginPath(); x.moveTo(z.w * .2, top + px * .1); x.lineTo(z.w / 2, 1); x.lineTo(z.w * .8, top + px * .1); x.lineWidth = Math.max(1.5, px * .025); x.strokeStyle = NS.EDGE; x.stroke(); }
+/** 흐린 숫자 판: 옅은 판 · 점선 테두리(못 · 끈 없음 — 부표에 붙은 자리 표시). */
+function ghostBoard(x, z, px){ const top = z.top, k = px * .16; rr(x, 2, top, z.w - 4, z.h - top - 3, k); x.fillStyle = NS.GHOST.BOARD; x.fill(); x.setLineDash([px * .12, px * .09]); x.lineWidth = Math.max(2, px * .05); x.strokeStyle = NS.GHOST.EDGE; x.stroke(); x.setLineDash([]); }
 /** 교과서 꼴(기기 글꼴) — 숫자 높이가 px 가 되게 글자 크기를 맞춘다. → 그린 높이 */
-function book(x, n, cx, cy, px){ const s = String(n); let f = px * 1.36; x.font = `900 ${f}px ${NS.FONT}`; let m = x.measureText(s), h = (m.actualBoundingBoxAscent || f * .72) + (m.actualBoundingBoxDescent || 0);
+function book(x, n, cx, cy, px, ink){ const s = String(n); let f = px * 1.36; x.font = `900 ${f}px ${NS.FONT}`; let m = x.measureText(s), h = (m.actualBoundingBoxAscent || f * .72) + (m.actualBoundingBoxDescent || 0);
   if (h > 0) { f = f * px / h; x.font = `900 ${f}px ${NS.FONT}`; m = x.measureText(s); h = (m.actualBoundingBoxAscent || f * .72) + (m.actualBoundingBoxDescent || 0); }
-  const asc = m.actualBoundingBoxAscent || f * .72; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillStyle = NS.INK; x.fillText(s, cx, cy - h / 2 + asc); return h; }
+  const asc = m.actualBoundingBoxAscent || f * .72; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillStyle = ink || NS.INK; x.fillText(s, cx, cy - h / 2 + asc); return h; }
 /** 분필 꼴: 손으로 쓴 획(0~1 칸 안의 길) — 위가 닫힌 4 · 가로줄 있는 7 · 꼬리가 굽은 9. → 그린 높이 */
 const STROKES = {
   0: [['M', .5, .05], ['C', .12, .05, .12, .95, .5, .95], ['C', .88, .95, .88, .05, .5, .05]],
