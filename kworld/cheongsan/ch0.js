@@ -2,6 +2,7 @@
    차례: 사령관 명령 듣기 → 망바위에 올라 연기 넷 세기(하나는 옆 바위에서만 보인다) → 돌아와 알리기(회의) → 비탈 여섯 자리 살피기 → 이범석에게 두 자리 알리기 → 천막에서 밤.
    골라서: 짐·환자 먼저 보내기(살필 시간 30초 줄어듦) · 막둥이에게 말 걸기(내일 기침을 덜 한다) · 솥단지 물 긷기(배고픔 −5).
    지는 길은 없다(길잡이 장). 넘기는 값 = 자리등급(A/B/C) · 짐먼저 · 연기다셈 · 신병안심. */
+import { dressCamp, dressVillage } from './dress.js';
 import { clamp, dist, lerp } from '../scene/kit.js';
 
 export const CAMP = { fire: [64, 171], tent: [50, 157], kim: [51.5, 161.5], na: [55.5, 162], lee: [84, 166], sot: [73, 177], pot: [74.5, 179], mak: [57, 179.5], bag: [54, 185], spring: [70, 190], sleep: [66, 160] };
@@ -45,7 +46,7 @@ export default function ch0(c) {
       c.putArt('cs_tent_cmd', CAMP.tent[0], CAMP.tent[1], 0.35);
       for (let i = 0; i < 11; i++) { const a = -0.4 + i * 0.5, x = CAMP.fire[0] + Math.cos(a) * 15, z = CAMP.fire[1] + Math.sin(a) * 11; if (dist(x, z, CAMP.tent[0], CAMP.tent[1]) < 7) continue; c.putArt('cs_tent', x, z, Math.atan2(CAMP.fire[0] - x, CAMP.fire[1] - z)); }
       c.putArt('cs_fire', CAMP.fire[0], CAMP.fire[1]); st.glow = c.fx && c.fx.puff; c.putArt('cs_pot', CAMP.pot[0], CAMP.pot[1]); c.putArt('cs_crate_pile', CAMP.bag[0] - 3, CAMP.bag[1]); c.putArt('cs_stretcher', CAMP.bag[0] + 1.5, CAMP.bag[1] + 0.5, 0.3); c.putArt('cs_flag', CAMP.tent[0] + 3.4, CAMP.tent[1] + 2.4, 0, 1, { cloth: 0xc0392b });
-      dressSlopes(c);
+      dressSlopes(c); dressCamp(c.putArt, CAMP.fire[0], CAMP.fire[1], { r: 13, seed: 2, n: 5, table: [CAMP.tent[0] + 4.2, CAMP.tent[1] + 3.6, 0.4], keep: (x, z) => Object.values(CAMP).every((p) => dist(x, z, p[0], p[1]) > 2.6) && dist(x, z, CAMP.fire[0] + 4, CAMP.fire[1] + 6) > 2.5 });
       /* 연기 넷(적이 피운 불) */
       st.smk = SMOKES.map((s) => ({ ...s, col: c.smokeColumn(c.scene, s.x, s.z, { h: 80, w: 7 }) }));
       for (const s of st.smk) c.addTarget({ id: 'smk_' + s.k, x: s.x, y: H(s.x, s.z) + 40, z: s.z, range: 520, need: 0.7, labelY: 8,

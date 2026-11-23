@@ -3,6 +3,7 @@
    해 띠가 다 가면 이긴다(어둠을 타고 빠짐). 내가 하는 일 = 예비대 보내기 · 탄약 나르기 · 기관총 자리 옮기기(붉은 산포 고리) · 주먹밥 받아 나누기 · 홍범도에게 전령(기다림/내가 뜀).
    물결 넷: 왼 능선 → 산포 → 한낮(주먹밥) → 세 능선 한꺼번에 → 해 질 녘 30초(북이 빨라짐). 앞 장의 값: 놓친 기병(시작이 40초씩 일찍=버틸 시간이 는다) · 말 · 전갈닿음 · 홍범도힘.
    주먹밥은 「전해지는 이야기」(이범석 회고) — 끝 화면에 그렇게 적는다. 적은 쓰러지면서 사라진다. 우리 편은 「다쳐 뒤로 보냈다」로만. */
+import { dressCamp, dressVillage } from './dress.js';
 import { clamp, dist, lerp, ART } from '../scene/kit.js';
 import { EORANG } from './map.js';
 
@@ -30,6 +31,7 @@ export default function ch4(c) {
       S.px = HQ[0] + 2; S.pz = HQ[1] + 8; S.pdir2 = 0;
       c.putArt('cs_tent_cmd', CMD[0] + 4, CMD[1] - 4, 2.6); c.putArt('cs_crate_pile', PILE[0], PILE[1], 0.3); c.putArt('cs_crate_pile', PILE[0] - 2.6, PILE[1] + 1.2, 1.3, 0.8); c.putArt('cs_flag', CMD[0], CMD[1] - 3, 0, 1, { cloth: 0xc0392b }); c.putArt('cs_stretcher', CMD[0] + 3, CMD[1] + 3, 0.2);
       for (const [x, z] of [[560, 112], [571, 113], [553, 108]]) c.putArt('cs_rocks', x, z, Math.random() * 3, 0.8);
+      dressCamp(c.putArt, HQ[0] + 1, HQ[1] - 1, { r: 9, seed: 8, n: 4, table: [CMD[0] - 3.4, CMD[1] - 3, 0.3], keep: (x, z) => dist(x, z, PILE[0] + 2.4, PILE[1] + 2.6) > 3 && dist(x, z, PILE[0] - 3.4, PILE[1] + 4.2) > 3 && dist(x, z, CMD[0], CMD[1]) > 3 && !(x > HQ[0] - 8 && x < HQ[0] + 8 && z > HQ[1] + 4 && z < HQ[1] + 11) });
       /* 능선마다 엎드린 조 · 기관총 */
       st.ridges.forEach((r, ri) => { const [dx, dz] = r.dir, lx = -dz, lz = dx; for (let i = 0; i < 12; i++) { const off = (i - 5.5) * 2.1, back = (i % 3) * 1.2, x = r.pos[0] + lx * off - dx * back, z = r.pos[1] + lz * off - dz * back, ry = Math.atan2(dx, dz); const g = (i % 2 ? army.iaP : army.iaK)[(i + ri) % 3]; r.men.push({ u: g.add({ x, z, ry }), x, z, ry }); }
         const m = c.putArt('cs_mg', 0, 0, 0); mgMesh.push(m); });

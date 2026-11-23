@@ -8,7 +8,8 @@ import * as THREE from 'three';
 import { $, clamp, lerp, dist, rng, stage, sunLight, sayLine, controls, overBar, missions, loadArt, ART, art, artInst, tone, noise, resumeAudio, glowSprite, remember } from '../scene/kit.js';
 import { EORANG, GAPSAN } from './map.js';
 import { NODES } from './strat.js';
-import { MAP_W, MAP_H, H, Hq, floorAt, mainD, losClear, slopeAt, ZONES, buildTerrain, farRing, plantForest, mapImage, groundRing, groundFan } from './map.js';
+import { dressWorld, dressVillage } from './dress.js';
+import { MAP_W, MAP_H, H, Hq, floorAt, mainD, losClear, slopeAt, ZONES, buildTerrain, farRing, plantForest, shadeForestFloor, mapImage, groundRing, groundFan } from './map.js';
 import { makeArmy, makeFx, smokeColumn, path } from './enemy.js';
 import { makePeople } from './people.js';
 import ch0 from './ch0.js';
@@ -34,6 +35,7 @@ addEventListener('resize', resize); resize();
 /* 그림: 블렌더 모델(없으면 네모로 대신) */
 try { await loadArt('people', 'nature', 'props'); } catch (e) { console.warn('art', e); }
 try { await loadArt('cheongsan'); } catch (e) { console.warn('cheongsan art', e); }
+try { await loadArt('cheongsan2'); } catch (e) { console.warn('cheongsan2 art', e); }   /* 블렌더 2차(11-23): 먼 산·바위벽·걷는 병사·야영 소품·옷차림 */
 
 /* ───── 큰 지형 ───── */
 const terrain = buildTerrain(scene, { cs: LITE ? 3 : 2.5 });
@@ -44,18 +46,21 @@ const segDist = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 =
 const godongClear = (x, z) => dist(x, z, 92, 290) < 33 || dist(x, z, 72, 276) < 6 || [3, 5, 7, 9].some((i) => dist(x, z, NODES[i][0], NODES[i][1] - 14) < 20) || (x > 222 && x < 262 && z > 318 && z < 348);   /* 장 5 사이 장면 자리 · 거짓 불 자리 */
 const eorangClear = (x, z) => dist(x, z, EORANG.hq[0], EORANG.hq[1]) < 24 || EORANG.spurs.some(([a, b]) => segDist(x, z, a, b) < 9) || (x > 552 && x < 580 && z > 150 && z < 170);   /* 어랑촌 고지: 지휘소·능선 등성이·주먹밥 길 */   /* 장이 비워 둘 자리 [x, z, r] — 아래에서 장이 채운다 */
 const forest = plantForest(scene, { seed: SEED, lite: LITE, avoid: (x, z) => CLEAR.some((r) => x > r[0] && x < r[2] && z > r[1] && z < r[3]) || NO_TREE.some((p) => dist(x, z, p[0], p[1]) < p[2]) || eorangClear(x, z) || godongClear(x, z) || [[110, 148, 0], [136, 148.5, 0], [222, 148, 0], [120, 192, 0], [176, 192, 0], [226, 192, 0], [236, 133, 0], [256, 137, 0], [248, 176, 0], [176, 189, 0]].some((p) => dist(x, z, p[0], p[1]) < 4.2) });
+const treeAvoid = (x, z) => CLEAR.some((r) => x > r[0] && x < r[2] && z > r[1] && z < r[3]) || eorangClear(x, z) || godongClear(x, z) || dist(x, z, 440, 179) < 26 || dist(x, z, 437, 100) < 16 || (x > 322 && x < 370 && z > 176 && z < 204);
+dressWorld({ scene, forest, lite: LITE, avoid: treeAvoid });
+shadeForestFloor(terrain.mesh, forest.put);
 /* 숲 그늘: 8 m 칸마다 나무 수(들킴이 덜 오른다) */
 const FG = new Uint8Array(Math.ceil(MAP_W / 8) * Math.ceil(MAP_H / 8)); for (const [x, z] of forest.put) { const i = Math.floor(x / 8), j = Math.floor(z / 8); if (i >= 0 && j >= 0 && i < MAP_W / 8 && j < MAP_H / 8) FG[j * Math.ceil(MAP_W / 8) + i] = Math.min(255, FG[j * Math.ceil(MAP_W / 8) + i] + 1); }
 const forestAt = (x, z) => { const i = Math.floor(x / 8), j = Math.floor(z / 8); return i >= 0 && j >= 0 && i < MAP_W / 8 && j < MAP_H / 8 ? FG[j * Math.ceil(MAP_W / 8) + i] : 0; };
 
 /* 먼 마을(갑산촌·어랑촌) — 지도에 보이는 큰 판의 나머지 */
 const putArt = (n, x, z, ry = 0, s = 1, tints) => { const m = art(n, tints); if (!m || (m.isMesh && !m.geometry.attributes.position)) return null; m.position.set(x, Hq(x, z) - 0.1, z); m.rotation.y = ry; m.scale.setScalar(s); scene.add(m); return m; };
-{ const r = rng(51); for (const [vx, vz, n] of [[566, 212, 12]]) for (let i = 0; i < n; i++) { const x = vx + (r() - 0.5) * 34, z = vz + (r() - 0.5) * 18; putArt(i % 3 ? 'cs_loghouse' : 'cs_loghouse_b', x, z, (r() - 0.5) * 0.6); }
-  GAPSAN.forEach(([x, z, ry], i) => { putArt(i % 3 === 1 ? 'cs_loghouse_b' : 'cs_loghouse', x, z, ry); if (i % 2 === 0) putArt('cs_fence', x + 3.5, z + 3.2, ry + 0.2); }); }
+{ const r = rng(51), EOR = []; for (const [vx, vz, n] of [[566, 212, 12]]) for (let i = 0; i < n; i++) { const x = vx + (r() - 0.5) * 34, z = vz + (r() - 0.5) * 18, ry = (r() - 0.5) * 0.6; putArt(i === 4 && ART.cs_loghouse_c ? 'cs_loghouse_c' : i % 3 ? 'cs_loghouse' : 'cs_loghouse_b', x, z, ry); EOR.push([x, z, ry]); } dressVillage(putArt, EOR, { seed: 5 });
+  GAPSAN.forEach(([x, z, ry], i) => { putArt(i === 8 && ART.cs_loghouse_c ? 'cs_loghouse_c' : i % 3 === 1 ? 'cs_loghouse_b' : 'cs_loghouse', x, z, ry); if (i % 2 === 0) putArt('cs_fence', x + 3.5, z + 3.2, ry + 0.2); }); dressVillage(putArt, GAPSAN, { seed: 3, well: [346, 188] }); }
 
 /* ───── 군대 · 효과 · 사람 ───── */
 const army = makeArmy(scene), fx = makeFx(scene, cam), ppl = makePeople(scene, { mute: MUTE, getS: () => S });   /* S 는 아래에서 만든다 — 한마디를 고를 때만 본다 */
-const me = ppl.mk({ shirt: 0x5a5040, pants: 0x4a4a4e, hat: 'fur', rifle: false, pack: true });
+const me = ppl.mk({ shirt: 0x5a5040, pants: 0x4a4a4e, hat: 'fur', rifle: false, pack: true, satchel: true, scarf: 0xb04a3a });   /* 척후: 붉은 목수건 · 옆 가방 */
 const meRing = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.8, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, depthWrite: false })); meRing.rotation.x = -Math.PI / 2; scene.add(meRing);
 
 /* ───── 소리(?mute=1 이면 조용히) ───── */
@@ -81,7 +86,7 @@ const S = { mode: 'title', view: 0, yaw: -Math.PI / 2, yawT: -Math.PI / 2, zoom:
   crouch: false, scoping: false, scopeYaw: 0, scopePitch: 0, band: { ...BAND0 }, tags: {}, ch: 0, cht: 0, det: 0, detOn: false, workT: 0, workKey: '', jobLabel: '', camLift: 0, log: [], chLog: [], stepT: 0, beatT: 0, tension: 0, introT: 0 };
 const { say, tick: sayTick } = sayLine(S);
 const ctl = controls(S, say);
-let CH = null, TL = [], curTask = null;
+let CH = null, TL = [], curTask = null, BASE = null;
 
 /* ───── 띠 넷 ───── */
 const BAND_EL = { troop: 'bTroop', net: 'bNet', ammo: 'bAmmo', hunger: 'bHung' }, BAND_NAME = { troop: '부대', net: '포위망', ammo: '탄약', hunger: '배고픔' };
@@ -208,6 +213,9 @@ function ctxFor() { return { THREE, scene, cam, S, H: Hq, floorAt, mainD, losCle
 function startChapter(i, fromSave) {
   S.ch = i; S.cht = 0; S.det = 0; S.detOn = false; S.said = {}; S.chLog = []; S.workT = 0; S.workKey = ''; S.camLift = 0; S.view = 0; S.zoom = 1; setCrouch(false); setScope(false); closeChoice();
   army.reset(); ppl.clear(); clearPads(); targets = []; $('spot').style.display = 'none'; S.mode = 'play'; if (CH && CH.dispose) CH.dispose();
+  /* 앞 장이 세운 것(천막·연기·고리·횃불)을 걷는다 — 처음 장을 열기 전의 무대만 남긴다. 빛·안개도 낮의 처음 값으로 */
+  if (!BASE) BASE = new Set(scene.children); else for (const o of [...scene.children]) if (!BASE.has(o)) scene.remove(o);
+  S.frozen = false; scene.fog.color.set(0xd8d0bc); scene.fog.near = 120; scene.fog.far = 520; hemi.color.set(0xeef0ff); hemi.intensity = 1.25; sun.color.set(0xfff0d0); sun.intensity = 2.3; sky.paint(0x8fb4dc, 0xe8e2d4, 0xffe2b0);
   CH = CHAPTERS[i](ctxFor()); CH.start(fromSave);
   S.yaw = S.yawT = CH.yaw != null ? CH.yaw : -Math.PI / 2; $('time').firstChild.textContent = CH.when + ' ';
   card(CH.when, CH.place + ' — ' + CH.title, 3.6); refreshTasks(); hud(); place(0);
@@ -315,7 +323,7 @@ function place(dt) {
   $('jobl').textContent = play ? S.jobLabel : ''; $('jobl').style.display = play && S.jobLabel ? 'block' : 'none';
   /* 해 · 그림자 */
   const fxp = Math.round(S.px / 6) * 6, fzp = Math.round(S.pz / 6) * 6; sun.position.set(fxp + (CH && CH.sunOff ? CH.sunOff[0] : -50), py + (CH && CH.sunOff ? CH.sunOff[1] : 80), fzp + (CH && CH.sunOff ? CH.sunOff[2] : 40)); sun.target.position.set(fxp, py, fzp);
-  sky.update(cam);
+  sky.update(cam); if (Math.floor(S.t * 4) !== Math.floor((S.t - (dt || 0.016)) * 4) || !dt) forest.lod(S.px, S.pz, S.scoping ? 3 : S.view === 3 ? 2.2 : 1);
   if (play && CH) { const len = CH.len || 1, k = clamp(1 - S.cht / len, 0, 1); $('time').querySelector('i').style.width = (CH.timeK ? CH.timeK() : k) * 100 + '%'; }
 }
 
@@ -334,7 +342,7 @@ function step(dt) { update(dt); army.update(dt, S.t); view(dt); mis.update(dt, S
 requestAnimationFrame(frame);
 
 /* ───── 자동 판 고리(설계 ⑨): window.__scene ───── */
-window.__scene = { S, ctl, army, fx, ppl, pads, get CH() { return CH; }, get cur() { return curTask; }, get TL() { return TL; }, get targets() { return targets; }, get LAST() { return LAST; },
+window.__scene = { S, ctl, army, fx, ppl, pads, info: () => { renderer.render(scene, cam); const r = renderer.info.render; return { calls: r.calls, tris: r.triangles }; }, get CH() { return CH; }, get cur() { return curTask; }, get TL() { return TL; }, get targets() { return targets; }, get LAST() { return LAST; },
   go(ch = 0, band, tags) { $('ov').style.display = 'none'; S.band = { ...BAND0, ...(band || {}) }; S.tags = { ...(tags || {}) }; startChapter(ch); cardT = 0.01; },
   step(sec, dt = 1 / 30) { for (let i = 0; i < sec / dt; i++) { update(dt); army.update(dt, S.t); view(dt); mis.update(dt, S.mode === 'play'); } },
   frame(n = 1) { for (let i = 0; i < n; i++) step(1 / 30); },

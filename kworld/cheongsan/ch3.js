@@ -4,6 +4,7 @@
    안 막은 길 하나에 놓친 기병 +1(0~3) → 어랑촌이 40초씩 일찍 시작. 얻는 것: 탄약 +30 · 쌀(배고픔 −25) · 말. 날이 새기까지 6분(나무꾼을 찾으면 1분 번다).
    들킴 100 = 기병이 먼저 올라타 흩어진다(놓친 기병 3, 얻는 것 반). 가만히 = 날이 새서 기병이 먼저 떠나며 우리를 본다.
    실제: 갑산촌 주민에게서 근처 천수평에 기병대가 묵고 있다는 말을 듣고 새벽에 가서 쳤다. 바람·조 세우기·흔적 지우기는 놀이 장치. */
+import { dressCamp, dressVillage } from './dress.js';
 import { clamp, dist, lerp, ART } from '../scene/kit.js';
 import { GAPSAN, CAMP3 } from './map.js';
 
@@ -32,7 +33,7 @@ export default function ch3(c) {
       c.scene.fog.color.set(0x2a3448); c.scene.fog.near = 40; c.scene.fog.far = 240; c.hemi.intensity = 0.62; c.hemi.color.set(0x9ab0d8); c.sun.color.set(0xb8c8f0); c.sun.intensity = 0.7; c.sky.paint(0x1a2238, 0x3a4660, 0x8090c0, [0.4, 0.3, -0.5], 0.3); ch.sunOff = [40, 70, -40];
       /* 기병 야영지: 천막 여덟 · 모닥불 · 말 열넷 · 보초 넷 */
       for (let i = 0; i < 8; i++) { const x = C3[0] - 9 + (i % 4) * 6, z = C3[1] + (i < 4 ? -2 : 6); c.putArt('cs_tent_jp', x, z, 0); }
-      c.putArt('cs_fire', C3[0] + 1, C3[1] + 2); st.glow = c.fx;
+      c.putArt('cs_fire', C3[0] + 1, C3[1] + 2); st.glow = c.fx; dressCamp(c.putArt, C3[0], C3[1] + 2, { r: 12, seed: 6, jp: true, n: 5 }); c.putArt('cs_hitch', C3[0] - 7, C3[1] - 10.4, 0); c.putArt('cs_hitch', C3[0] + 5, C3[1] - 10.4, 0);
       for (let i = 0; i < 14; i++) { const x = C3[0] - 13 + i * 2, z = C3[1] - 9 + Math.sin(i) * 0.5; const m = c.putArt('cs_horse', x, z, Math.PI / 2 + (i % 2 ? 0.15 : -0.1), 0.92); if (m) st.horses.push({ m, x, z, ph: i }); }
       for (const [x, z] of SENT) st.sentries.push({ u: army.jp.add({ x, z, ry: Math.atan2(x - C3[0], z - C3[1]) }), x, z, a0: Math.atan2(x - C3[0], z - C3[1]), ph: Math.random() * 6 });
       /* 개울: 들 가운데를 남북으로 */

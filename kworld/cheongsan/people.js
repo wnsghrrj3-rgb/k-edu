@@ -6,17 +6,17 @@ import { $, clamp, dist, ART, art, people as kitPeople, tone } from '../scene/ki
 import { Hq } from './map.js';
 
 export const CAST = {
-  kim: { name: '김좌진', role: '사령관', shirt: 0x3a4250, pants: 0x3a3a40, hat: 'fur', mood: 'stern' },
-  na: { name: '나중소', role: '참모장', shirt: 0x4a4a52, pants: 0x3e3e44, hat: 'fur', mood: 'stern' },
-  lee: { name: '이범석', role: '연성대장', shirt: 0x3e4a5a, pants: 0x4a4a4e, hat: 'fur', mood: 'stern' },
+  kim: { name: '김좌진', role: '사령관', shirt: 0x3a4250, pants: 0x3a3a40, hat: 'fur', mood: 'stern', coat2: true, belt: true },
+  na: { name: '나중소', role: '참모장', shirt: 0x4a4a52, pants: 0x3e3e44, hat: 'fur', mood: 'stern', coat2: true, bincase: true },
+  lee: { name: '이범석', role: '연성대장', shirt: 0x3e4a5a, pants: 0x4a4a4e, hat: 'fur', mood: 'stern', bincase: true },
   mak: { name: '막둥이', role: '신병', shirt: 0x6a5a44, pants: 0x5a5448, hat: 'fur' },
   sot: { name: '솥단지', role: '취사병', shirt: 0x7a6a50, pants: 0x4a4a4e, hat: 'scarf' },
   dok: { name: '덕보', role: '연성소 동기', shirt: 0x4a4f58, pants: 0x5a5448, hat: 'fur' },
   sun: { name: '순길', role: '연성소 동기', shirt: 0x5a5040, pants: 0x4a4a4e, hat: 'fur' },
   bug: { name: '나팔 형', role: '나팔수', shirt: 0x3e4a5a, pants: 0x4a4a4e, hat: 'fur' },
-  med: { name: '위생병', role: '위생병', shirt: 0xd8d2c0, pants: 0x4a4a4e, hat: 'fur' },
-  hong: { name: '홍범도', role: '대한 독립군', shirt: 0x5a4a38, pants: 0x4a4440, hat: 'fur', mood: 'stern' },
-  baek: { name: '백 포수', role: '포수 출신 노병', shirt: 0x6a5840, pants: 0x4a4440, hat: 'fur', mood: 'stern' },
+  med: { name: '위생병', role: '위생병', shirt: 0xd8d2c0, pants: 0x4a4a4e, hat: 'fur', satchel: true },
+  hong: { name: '홍범도', role: '대한 독립군', shirt: 0x5a4a38, pants: 0x4a4440, hat: 'fur', mood: 'stern', coat2: true, beard: true },
+  baek: { name: '백 포수', role: '포수 출신 노병', shirt: 0x6a5840, pants: 0x4a4440, hat: 'fur', mood: 'stern', beard: true, satchel: true },
   vil1: { name: '아주머니', role: '어랑촌 주민', shirt: 0xf2ead8, pants: 0xe8e2d2, hat: 'scarf', chima: true },
   vil2: { name: '할머니', role: '주민', shirt: 0xf0ece0, pants: 0xe0dccc, hat: 'bun', chima: true },
   wood: { name: '나무꾼', role: '주민', shirt: 0xd8c8a8, pants: 0xc8b898, hat: 'paeraengi' },
@@ -46,9 +46,14 @@ export function makePeople(scene, { mute = false, getS = null } = {}) {
     const kh = o.hat === 'fur' || o.hat === 'jcap' ? 'crop' : o.hat;
     const m = person({ shirt: o.shirt, pants: o.pants, hat: kh, mood: o.mood || 'soft', skin: o.skin || 0xf0c48e, style: o.coat ? 'coat' : null, chima: !!o.chima, torch: !!o.torch }); if (o.small) m.scale.setScalar(o.small);
     m.rotation.order = 'YXZ';
-    const add = (n) => { if (!ART[n]) return null; const a = art(n); m.add(a); return a; };
+    const tn = { shirt: o.shirt, pants: o.pants, cloth: o.scarf || 0xb8a888 };
+    const add = (n, to = m) => { if (!ART[n]) return null; const a = art(n, tn); to.add(a); return a; };
     if (o.hat === 'fur') add('cs_hat_fur'); if (o.hat === 'jcap') add('cs_hat_jcap');
     if (o.rifle) add('cs_rifle'); if (o.pack) add('cs_pack');
+    /* 블렌더 2차(11-23): 누비 줄·목수건·탄띠·각반·긴 겉옷·옆 가방 — 다리 것은 다리에 붙어 같이 움직인다 */
+    if (o.hat === 'fur') { add('cs_quilt'); if (o.rifle || o.belt) add('cs_belt'); add('cs_puttee_L', m.userData.legL); add('cs_puttee_R', m.userData.legR); }
+    if (o.hat === 'jcap') { add('cs_jp_gear'); add('cs_puttee_L', m.userData.legL); add('cs_puttee_R', m.userData.legR); }
+    if (o.coat2) add('cs_coat_long'); if (o.satchel) add('cs_satchel'); if (o.bincase) add('cs_bincase'); if (o.beard) add('cs_mustache');
     m.userData.scope = add('cs_scope'); if (m.userData.scope) m.userData.scope.visible = false;
     return m;
   }

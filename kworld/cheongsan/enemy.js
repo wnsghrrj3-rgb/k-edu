@@ -11,12 +11,21 @@ const _d = new THREE.Object3D();
 function boxMan(col, prone) { const g = prone ? new THREE.BoxGeometry(0.55, 0.42, 1.8) : new THREE.BoxGeometry(0.6, 1.7, 0.4); g.translate(0, prone ? 0.21 : 0.85, 0); const c = new THREE.Color(col), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); return g; }
 
 /* ───── 무리(한 가지 모양을 여럿) ───── */
-export function crowd(scene, name, max, { tints = {}, fallback = 0x8a7f55, prone = false, shadow = true } = {}) {
-  const g = artGeo(name, tints) || boxMan(fallback, prone), m = new THREE.InstancedMesh(g, artMat, max); m.count = 0; m.frustumCulled = false; m.castShadow = shadow; m.receiveShadow = true; scene.add(m);
+export function crowd(scene, name, max, { tints = {}, fallback = 0x8a7f55, prone = false, shadow = true, walk = null, run = null, runAt = 3.9, step = 2.4, loose = false } = {}) {
+  /* 걷는 모습(11-23 블렌더 2차): walk = [이름 a, 이름 b] · run = [a, b] 가 있으면 움직이는 사람은 두 걸음 모양을 번갈아 그린다(모양마다 인스턴스 메시 하나). 없으면 예전처럼 한 모양. */
+  const mk = (n) => { const g = n ? artGeo(n, tints) : null; if (!g) return null; const m = new THREE.InstancedMesh(g, artMat, max); m.count = 0; m.frustumCulled = false; m.castShadow = shadow; m.receiveShadow = true; scene.add(m); return m; };
+  const g0 = artGeo(name, tints) || boxMan(fallback, prone), m = new THREE.InstancedMesh(g0, artMat, max); m.count = 0; m.frustumCulled = false; m.castShadow = shadow; m.receiveShadow = true; scene.add(m);
+  const W = walk ? walk.map(mk) : [], R = run ? run.map(mk) : [], hasW = W.length === 2 && W[0] && W[1], hasR = R.length === 2 && R[0] && R[1], all = [m, ...W, ...R].filter(Boolean), cnt = new Map();
   const units = [];
-  function add(o) { const u = Object.assign({ x: 0, y: null, z: 0, ry: 0, pitch: 0, roll: 0, s: 1, bob: 0, on: true }, o); units.push(u); return u; }
-  function flush() { let k = 0; for (const u of units) { if (!u.on || k >= max) continue; const y = u.y == null ? Hq(u.x, u.z) : u.y; _d.position.set(u.x, y + u.bob, u.z); _d.rotation.set(u.pitch, u.ry, u.roll, 'YXZ'); _d.scale.setScalar(Math.max(0.001, u.s)); _d.updateMatrix(); m.setMatrixAt(k++, _d.matrix); } m.count = k; m.instanceMatrix.needsUpdate = true; }
-  function clear() { units.length = 0; m.count = 0; }
+  function add(o) { const u = Object.assign({ x: 0, y: null, z: 0, ry: 0, pitch: 0, roll: 0, s: 1, bob: 0, on: true, ph0: loose ? Math.random() * 2 : 0 }, o); units.push(u); return u; }
+  function flush(dt = 0, t = 0) { for (const q of all) cnt.set(q, 0);
+    for (const u of units) { if (!u.on) { u._lx = null; continue; } const y = u.y == null ? Hq(u.x, u.z) : u.y;
+      let sp = 0; if (u._lx != null && dt > 0) sp = Math.hypot(u.x - u._lx, u.z - u._lz) / dt; if (dt > 0) { u._lx = u.x; u._lz = u.z; u._sp = (u._sp || 0) * 0.7 + sp * 0.3; }
+      const v = u._sp || 0, upright = Math.abs(u.pitch) < 0.3; let tm = m, bob = u.bob;
+      if (upright && hasR && v > runAt) { tm = R[Math.floor(t * step * 1.45 + u.ph0) % 2]; bob *= 0.5; } else if (upright && hasW && v > 0.35) { tm = W[Math.floor(t * step + u.ph0) % 2]; bob *= 0.4; } else if (upright && !hasW && walk && W[0] && v > 0.35 && Math.floor(t * step + u.ph0) % 2) { tm = W[0]; bob *= 0.4; }
+      const k = cnt.get(tm); if (k >= max) continue; _d.position.set(u.x, y + bob, u.z); _d.rotation.set(u.pitch, u.ry, u.roll, 'YXZ'); _d.scale.setScalar(Math.max(0.001, u.s)); _d.updateMatrix(); tm.setMatrixAt(k, _d.matrix); cnt.set(tm, k + 1); }
+    for (const q of all) { q.count = cnt.get(q); q.visible = q.count > 0; q.instanceMatrix.needsUpdate = true; } }
+  function clear() { units.length = 0; for (const q of all) q.count = 0; }
   return { m, units, add, flush, clear };
 }
 
@@ -27,10 +36,10 @@ export function path(pts) { const segs = []; let L = 0; for (let i = 0; i < pts.
 
 /* ───── 군대 ───── */
 export function makeArmy(scene) {
-  const jp = crowd(scene, 'cs_jp', 320, { fallback: 0x8a7f55 });
-  const off = crowd(scene, 'cs_jp_off', 6, { fallback: 0x6a4a30 });
+  const jp = crowd(scene, 'cs_jp', 320, { fallback: 0x8a7f55, walk: ['cs_jp_b', null], run: ['cs_jp', 'cs_jp_b'], runAt: 3.2 });   /* 걷기 = cs_jp ↔ cs_jp_b */
+  const off = crowd(scene, 'cs_jp_off', 16, { fallback: 0x6a4a30, run: ['cs_cav_a', 'cs_cav_b'], runAt: 3.5, step: 2.2 });
   const IA_T = [{ shirt: 0x4a4f58, pants: 0x5a5448 }, { shirt: 0x6a5a44, pants: 0x4a4a4e }, { shirt: 0x3e4a5a, pants: 0x6a604c }];
-  const iaS = IA_T.map((t) => crowd(scene, 'cs_ia', 90, { tints: t, fallback: 0x4a4f58 }));
+  const iaS = IA_T.map((t) => crowd(scene, 'cs_ia', 90, { tints: t, fallback: 0x4a4f58, walk: ['cs_ia_walk_a', 'cs_ia_walk_b'], run: ['cs_ia_run_a', 'cs_ia_run_b'], loose: true }));
   const iaP = IA_T.map((t) => crowd(scene, 'cs_ia_prone', 60, { tints: t, fallback: 0x4a4f58, prone: true }));
   const iaK = IA_T.map((t) => crowd(scene, 'cs_ia_kneel', 40, { tints: t, fallback: 0x4a4f58 }));
   const columns = [];
@@ -61,7 +70,7 @@ export function makeArmy(scene) {
         const arc = o.st === 'flee' ? o.arc : c.s - o.back; u.on = o.st !== 'gone' && arc > 0.01 && arc < c.p.L - 0.01; u.x = x; u.z = z; u.ry = o.st === 'flee' || c.dir < 0 ? a + Math.PI : a; u.bob = moving || o.st === 'flee' ? Math.abs(Math.sin(t * 5)) * 0.06 : 0; if (u.on) anyOn = true; } }
       if (!anyOn && c.s > tailBack(c) + 2 && c.men.every((m) => m.st === 'gone' || m.st === 'flee' || c.s - m.back >= c.p.L || c.s - m.back <= 0) && (c.dir < 0 || c.s - tailBack(c) >= c.p.L)) c.gone = true;
     }
-    jp.flush(); off.flush(); for (const k of [...iaS, ...iaP, ...iaK]) k.flush();
+    jp.flush(dt, t); off.flush(dt, t); for (const k of [...iaS, ...iaP, ...iaK]) k.flush(dt, t);
   }
   /* 살아 있는(쓰러지지 않은) 사람 수 · 어느 x 보다 서쪽에 든 사람 수 */
   const alive = (c) => c.men.filter((m) => m.st === 'walk' || m.st === 'stand').length;

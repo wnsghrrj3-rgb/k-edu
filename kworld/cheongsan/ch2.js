@@ -4,6 +4,7 @@
         → 틈 하나를 골라 길잡이로 앞장선다(뛰면 줄이 끊긴다 — 걷고, 멈추고, 엎드리는 박자) → 능선에서 내려다본다: 두 횃불 줄이 빈 야영지를 향해 서로 다가가 총소리가 서로를 향한다.
    넘기는 값: 전갈닿음(어랑촌에서 홍범도가 제때 오나) · 홍범도힘(100/70/40). 실제: 홍범도 부대가 포위를 빠져나오며 일본군 부대끼리 서로 공격하게 만들었다.
    빛 고리·틈 고르기·발자국·모닥불 남기기는 놀이 장치. */
+import { dressCamp, dressVillage } from './dress.js';
 import { clamp, dist, lerp, art, glowSprite, ART } from '../scene/kit.js';
 
 const START = [404, 158], CAMP = [437, 100], RIDGE = [388, 76];
@@ -35,6 +36,7 @@ export default function ch2(c) {
       for (let i = 0; i < 10; i++) st.lines.push({ side: 'N', k: i / 9, gl: glowSprite(c.scene, 'rgba(255,190,110,.95)', 'rgba(255,120,40,0)', 4.5) });
       /* 홍범도 부대 야영지 */
       c.putArt('cs_fire', CAMP[0], CAMP[1]); for (let i = 0; i < 5; i++) { const a = i * 1.25; c.putArt('cs_tent', CAMP[0] + Math.cos(a) * 9, CAMP[1] + Math.sin(a) * 7, a + Math.PI); }
+      dressCamp(c.putArt, CAMP[0], CAMP[1], { r: 8, seed: 4, n: 3, keep: (x, z) => dist(x, z, CAMP[0] - 1, CAMP[1] + 6) > 3 && dist(x, z, CAMP[0] + 2.2, CAMP[1] + 1.6) > 2.5 });
       P.hong = ppl.cast('hong', CAMP[0] + 2, CAMP[1] - 2.4, Math.PI); P.baek = ppl.cast('baek', CAMP[0] - 5, CAMP[1] + 4.5, 2.4); P.hong.look = P.baek.look = 'me';
       for (let i = 0; i < 24; i++) { const a = i * 0.7, rr = 5 + (i % 3) * 2, x = CAMP[0] + Math.cos(a) * rr, z = CAMP[1] + Math.sin(a) * rr; st.line.push({ u: army.iaS[i % 3].add({ x, z, ry: Math.atan2(CAMP[0] - x, CAMP[1] - z) }), x, z, i, lost: false }); }
       pad('camp', CAMP[0] - 1, CAMP[1] + 6, 0xffcf4d, 2.2); pad('fire', CAMP[0] + 2.2, CAMP[1] + 1.6, 0xffa040, 1.6); for (const g of GAPS) pad('gap_' + g.id, g.at[0], g.at[1], 0x7ab8f0, 2.4); pad('ridge', RIDGE[0], RIDGE[1], 0xffcf4d, 3.4);

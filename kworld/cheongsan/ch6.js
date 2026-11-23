@@ -3,6 +3,7 @@
         → 깨우기(천막 여섯)·불 끄기(모닥불 여섯) — 둘 다 할 시간은 없다 → 올라가 살피기(「적은 수다」) → 사령관에게 → 숲을 크게 돌아 적 뒤 언덕에 → 신호 → 날이 샌다(남쪽 숲길).
    지는 길: 깨우기·불 끄기를 반도 못 함(부대 −20) · 돌아가다 들킴(되치기 실패 — 그냥 빠져나감, 부대 −12).
    실제: 밤에 기습을 받았으나 곧 되쳐서 물리치고 안도 쪽으로 옮겨 갔다. 보초 자리·깨우기·불 끄기·돌아 치기 길은 놀이 장치. */
+import { dressCamp, dressVillage } from './dress.js';
 import { clamp, dist, lerp, rng, glowSprite } from '../scene/kit.js';
 
 const CAMP = [92, 290], KNOLL = [72, 276], KIM = [96, 284], SOUTH = [86, 338];
@@ -25,6 +26,7 @@ export default function ch6(c) {
       c.scene.fog.color.set(0x3a3448); c.scene.fog.near = 60; c.scene.fog.far = 260; c.hemi.intensity = 0.8; c.sun.color.set(0xffb080); c.sun.intensity = 1.1; c.sky.paint(0x4a5a88, 0xe0907a, 0xff9060, [-0.8, 0.08, 0.3], 0.9); ch.sunOff = [-70, 30, 20];
       tents.forEach((t) => c.putArt('cs_tent', t.x, t.z, Math.atan2(CAMP[0] - t.x, CAMP[1] - t.z)));
       fires.forEach((f) => { f.m = c.putArt('cs_fire', f.x, f.z); f.cold = c.putArt('cs_fire_cold', f.x, f.z); if (f.cold) f.cold.visible = false; f.gl = glowSprite(c.scene, 'rgba(255,200,120,.85)', 'rgba(255,140,40,0)', 7); f.gl.position.set(f.x, H(f.x, f.z) + 1.2, f.z); });
+      dressCamp(c.putArt, CAMP[0], CAMP[1], { r: 13, seed: 9, n: 5, keep: (x, z) => tents.every((t) => dist(x, z, t.x, t.z) > 3.4) && fires.every((f) => dist(x, z, f.x, f.z) > 2.6) && dist(x, z, KIM[0], KIM[1]) > 3.5 && dist(x, z, CAMP[0], CAMP[1]) > 4 });
       for (const s of SPOTS) { if (s.cover) c.putArt(s.id.length === 1 && s.id !== 'E' ? 'cs_rocks' : 'cs_boulder', s.x + 1.4, s.z + 0.8, 1, 0.8); if (!s.view) c.putArt('cs_bush_dry', s.x + DV[s.id][0] * 2.2, s.z + DV[s.id][1] * 2.2, 0, 2.4); pad('sp_' + s.id, s.x, s.z, 0xffffff, 1.9); }
       P.kim = ppl.cast('kim', KIM[0], KIM[1], Math.PI); P.sot = ppl.cast('sot', CAMP[0] - 3, CAMP[1] + 2, 1); P.mak = ppl.cast('mak', CAMP[0] + 4, CAMP[1] - 2, -1); P.med = ppl.cast('med', CAMP[0] - 5, CAMP[1] - 3, 0.5); for (const k of ['kim', 'sot', 'mak', 'med']) P[k].look = 'me';
       if (S.tags.savedSun) { P.sun = ppl.cast('sun', CAMP[0] + 6, CAMP[1] + 3, -2); P.sun.look = 'me'; }

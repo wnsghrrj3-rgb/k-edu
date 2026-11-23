@@ -68,6 +68,7 @@ export default function ch5(c) {
       if (w.lit === 2 && !w.patrol) { const nx = NODES[w.ev.node][0], nz = NODES[w.ev.node][1] - 14; w.patrol = army.column({ n: 6, p: c.path([[nx + 70, nz + 4], [nx - 70, nz + 4]]), files: 2, gap: 2.6, speed: 1.9, s0: 0, name: '수색조', seed: 3 }); S.detOn = true; S.det = 0; say('수색조가 물가 길을 지난다 — 엎드려 넘기자(C)', null, 3.6); } },
     /* 쉬구: 마을 */
     w_village_start(nx, nz) { const w = st.walk; for (const [dx, dz, ry] of [[-10, -12, 0.2], [4, -14, -0.1], [14, -8, 0.3], [-4, 8, 3.1]]) { const m = c.putArt('cs_loghouse', nx + dx, nz + dz, ry); if (m) w.props.push(m); }
+      for (const nm of [['cs_woodpile', -13, -9], ['cs_haystack', 9, -17], ['cs_well', 0, -6], ['cs_haystack', -8, 11], ['cs_cart', 10, 7]]) { const m = c.putArt(nm[0], nx + nm[1], nz + nm[2], Math.random() * 3); if (m) w.props.push(m); }
       padOn('eat', nx - 9, nz - 8, 0x8ad08a, 1.7); padOn('news', nx + 5, nz - 10, 0xffcf4d, 1.7); P.boy = ppl.cast('boy', nx + 14, nz - 4, -1); P.boy.look = 'me'; padOn('boy', nx + 13, nz - 2.4, 0x7ab8f0, 1.6); padOn('sw0', nx - 2, nz + 2, 0xd8c8a0, 1.6); padOn('sw1', nx + 7, nz + 3, 0xd8c8a0, 1.6);
       w.sw = {}; say('쉬구 마을 — 밥과 소식을 얻을 수 있다. 떠날 때 흔적을 지우자', null, 3.6); },
     /* 천보산 아래: 맞닥뜨림 */
