@@ -6,14 +6,13 @@
  * 그림은 기성 3D 재료만(Quaternius Pirate Kit, CC0 — ./assets · 이름표는 ./art.js). 화면 위 표시(팻말 · 띠 · 수 셋 · 구슬 · 등불 · 안개)만 코드로. */
 import { createStage, THREE, CALM, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=2';
-import * as H from '../common/hint.js?v=4';
+import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=8';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=2';
-import * as C from '../common/choose.js?v=1';
-import { wa, eul, garu, moeu } from '../common/say.js?v=1';
-import { cell as cellOf, tag, CELLS } from '../common/cells.js?v=1';
+import * as M from '../common/map.js?v=3';
+import * as C from '../common/choose.js?v=2';
+import { wa, eul, garu, moeu } from '../common/say.js?v=2';
 import * as R from './rules.js?v=3';
 import { ASSETS, MODEL, SCENERY, BOATS, GLOW, ICON } from './art.js?v=1';
 
@@ -24,6 +23,8 @@ const T = { DECK: .45, DZ: 1.95, CARGO: { dx: .58, z: [1.62, 2.26], s: .5 }, WAR
   FLY_MS: 380, ARRIVE_MS: 1500, LEAVE_MS: 1800, SHOW_MS: 1400, LAST_BIG: 1.18, DRAG_PX: 12, PICK_PX: 46, ONBOAT_PX: 24, BOAT_PX: 95, ANCHOR_DROP: .5, FRONT: .8, TELL_GRACE: 5 };
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
+const GO = '/math/play/go/';
+const GO_NOW = !(Q.get('cell') && R.CELLS[Q.get('cell')]); if (GO_NOW) location.replace(GO);   /* ?cell= 없이 열리면 모형을 불러오기 전에 고르는 화면으로 */
 const S = { ready: false, busy: true, active: false, gate: false, t: 0, oid: 0, cell: null, kind: null, p: null, res: null, step: 2, ev: {}, board: null, clock: 0, streak: 0, closed: false,
   ways: [], hit: -1, cargo: [], ware: [], overs: [], picks: [], pile: [], far: false, sel: null, drag: null, wave: null, choose: null, fog: false, lastAct: 0, back: false, surpriseCarry: false, hist: {}, log: [], signs: [], tall: false, coinsShown: 0 };
 
@@ -80,7 +81,7 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   let c = document.createElement('div'); c.id = 'coins'; document.body.appendChild(c); coinsDraw(); wallet.onChange(() => coinsDraw());
   if (!wallet.persists()) { const n = document.createElement('div'); n.id = 'note'; n.textContent = '지금은 구경 중이에요 · 화면을 나가면 깃발이 처음으로 돌아가요'; document.body.appendChild(n); }
   layoutShips(true); $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500); S.ready = true;
-  const want = Q.get('cell'); if (want && R.CELLS[want]) outing(want); else gateShow(); }
+  const want = Q.get('cell'); if (want && R.CELLS[want]) outing(want); else location.replace(GO); }   /* ?cell= 없이 열리면 고르는 화면으로(T03 — 들머리를 /math/play/go/ 로 옮김) */
 function coinsDraw(pop){ const c = $('coins'); if (!c) return; const v = `${art('coin')}<b>${wallet.coins()}</b>`; if (c.dataset.v !== v) { c.dataset.v = v; c.innerHTML = v; if (pop) { c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); } } }
 
 // ── 카메라 · 배 자리(세로 화면은 배를 세워 나란히)
@@ -224,7 +225,7 @@ async function act1(kind, b, side){ const p = S.p; S.lastAct = S.t; if (S.sel ==
 /** 누른 자리에 물결(화면 위 표시). 아무 일도 안 일어나는 누름이 없게. */
 /** 한 줄 안내를 화면 아래쪽으로 — 띠 바로 아래에 두면 배 팻말(「빨간 배는 팻말만큼」의 그 팻말)을 가린다. */
 function tellLow(){ const tl = $('tell'); if (tl) { tl.style.top = 'auto'; tl.style.bottom = 'calc(54px + env(safe-area-inset-bottom,0px))'; } }
-function ripple(x, y){ const d = document.createElement('div'); d.className = 'ripple'; d.style.left = x + 'px'; d.style.top = y + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 650); }
+const ripple = H.ripple;   /* 물결은 common/hint.js 한 곳(세기 틀과 같이 씀) */
 /** 헛누름: 물결 + (수 셋이 떠 있으면 수 셋이 들썩 · 아니면 손이 다음에 누를 곳을 짚고 한 줄 안내를 다시). 깨끗함에는 세지 않는다 — 답이 아니라 「어디를 누르는지」만 알려 준다. */
 function nudge(e){ ripple(e.clientX, e.clientY); S.log.push({ nudge: true }); tone(520, .07, 'triangle', .05);
   if (S.choose) { const c = $('choose'); if (c.animate) c.animate([{ transform: 'translateX(-50%) scale(1)' }, { transform: 'translateX(-50%) scale(1.12)' }, { transform: 'translateX(-50%) scale(1)' }], { duration: 450 }); return; }   /* 수 셋이 들썩 — 여기를 눌러야 한다 */
@@ -305,7 +306,7 @@ function fogPlace(){ const f = $('fog'); if (!S.p) return; let pts; if (S.p.kind
 // ── 나들이(판 셋) · 판(문제 셋)
 const TELLS = () => ({ times: M.passed(M.get(S.cell || '')) ? 2 : 1e9 });   /* 깃발을 따기 전에는 나들이 첫 문제마다 한 줄 안내(준호 2026-11-20) */
 const FIRST = { split: '짐을 누르고 배를 눌러 실어 줘. 빨간 배는 팻말만큼!', join: '배에 실린 짐을 눌러 창고에 모아 줘.', fill: '빨간 배 짐을 내리고, 짐 더미로 열 칸을 꽉 채워 줘.', fill2: '빨간 배 짐을 내리고, 파란 배가 몇 개를 싣고 올지 골라 줘.', ways: '아까와 다르게 나눠 실어 봐.' };
-async function outing(id){ const my = ++S.oid; gateHide(); E.showBar(true); S.cell = id; S.kind = R.kindOf(id); S.streak = 0; S.outSent = []; S.back = false; S.surpriseCarry = false; const day = M.dayKey();
+async function outing(id){ const my = ++S.oid; S.gate = false; E.showBar(true); S.cell = id; S.kind = R.kindOf(id); S.streak = 0; S.outSent = []; S.back = false; S.surpriseCarry = false; const day = M.dayKey();
   let rec = M.get(id), q = R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1 }); E.lanterns(0); S.log.push({ outing: id, deal: q.map(R.key) });
   for (let b = 0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = S.kind !== 'ways' && (!rec.hand || S.back);
     let ev = R.events(rec.evBoards, Math.random, { passed: M.passed(rec), calm: CALM, kind: S.kind, hand }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; } if (S.surpriseCarry && !hand) ev.surprise = true;
@@ -319,26 +320,12 @@ async function outing(id){ const my = ++S.oid; gateHide(); E.showBar(true); S.ce
     if (S.oid !== my) return; await sleep(500); }
   S.hist[id] = q; S.p = null; signsDraw(); A.trayClear();
   const items = S.outSent.flatMap(n => Array(n).fill(art(ICON.cargo))); const choice = await E.home({ items }); if (S.oid !== my) return;
-  if (choice === 'again') outing(id); else gateShow(); }
+  if (choice === 'again') outing(id); else location.href = GO; }
 /** 하네스 · 교사용: 지금 나들이를 거둔다. */
 function abort(){ S.oid++; S.active = false; S.acting = 0; S.far = false; if (S.done) { const d = S.done; S.done = null; d('abort'); } stage.tweens.length = 0; clearAll(); for (const sh of Object.values(ships)) { sh.obj.position.y = 0; } layoutShips(true); S.busy = false; }
 
-// ── 들머리: 깃발 다섯 + 꼬리표(학년 · 단원은 여기에만) + 「할 수 있어요」
-function gateShow(){ abort(); S.gate = true; S.p = null; signsDraw(); A.trayClear(); E.showBar(false); for (const sh of Object.values(ships)) { sh.obj.scale.setScalar(shipS()); } S.keeper.obj.visible = false;
-  let g = $('gate'); if (!g) { g = document.createElement('div'); g.id = 'gate'; document.body.appendChild(g); } g.hidden = false;
-  const m = M.all(), ids = R.IDS, open = M.open(ids, m), nudge = open && M.stuck(m[open]) >= 2 ? ids[ids.indexOf(open) - 1] : null;   /* 낱칸은 만들어진 것끼리 차례대로 열린다(T02 — B05 통과 → C02) */
-  const can = ids.filter(id => M.passed(m[id])).map(id => `<p>${cellOf(id).can}${M.kept(m[id]) ? ' ' + art(ICON.star) : ''}</p>`).join('');
-  /* 단원마다 한 줄 · 사이의 아직 없는 낱칸은 빈 깃대 하나(수는 세지 않음 — 지도에 구멍이 있다는 것을 숨기지 않는다) */
-  const all = CELLS.map(c => c.id), lo = all.indexOf(ids[0]), hi = all.indexOf(ids[ids.length - 1]), units = [...new Set(ids.map(id => cellOf(id).unit))];
-  const flag = id => { const r = m[id], cls = M.passed(r) ? 'won' : id === open ? 'open' : 'locked';
-    return `<button class="flag ${cls}${id === nudge ? ' nudge' : ''}" data-id="${id}" type="button"${cls === 'locked' ? ' aria-disabled="true"' : ''}><span class="pic">${art(ICON.flag)}</span><span class="nm">${cellOf(id).name}</span>${M.kept(r) ? `<span class="star">${art(ICON.star)}</span>` : ''}</button>`; };
-  const row = u => { const out = []; let gap = false; for (const id of all) { const k = all.indexOf(id); if (cellOf(id).unit !== u || k < lo || k > hi) continue; if (ids.includes(id)) { if (gap) out.push('<div class="pole"><span class="stick"></span><span class="nm">아직 만드는 중</span></div>'); gap = false; out.push(flag(id)); } else gap = true; }
-    if (gap) out.push('<div class="pole"><span class="stick"></span><span class="nm">아직 만드는 중</span></div>');
-    return `<div class="unit"><div class="tag">${tag(ids.find(id => cellOf(id).unit === u))}</div><div class="flags">${out.join('')}</div></div>`; };
-  g.innerHTML = `<div class="title">두 배에 나눠 싣기</div>${units.map(row).join('')}${can ? `<div class="can"><b>할 수 있어요</b>${can}</div>` : ''}`;
-  g.querySelectorAll('.flag').forEach(b => b.addEventListener('click', () => { audio(); if (b.classList.contains('locked')) { tone(200, .12, 'sine', .06); return; } outing(b.dataset.id); }));
-  S.log.push({ gate: open }); }
-function gateHide(){ const g = $('gate'); if (g) g.hidden = true; S.gate = false; }
+/** 고르는 화면으로(들머리는 /math/play/go/ 로 옮김 — T03). */
+function gateShow(){ abort(); S.gate = true; location.href = GO; }
 
 // ── 한 장면의 일
 stage.frame((dt, t) => { S.t = t; if (!S.ready) return; signsDraw(); choosePlace(); tenDraw(t); if (S.fog) fogPlace();
@@ -365,4 +352,4 @@ function hintAt(){ const p = S.p; if (S.choose) { const ans = R.answerOf(p), b =
 window.__split = { S, R, M, E, T, stage, wallet, ships, outing, abort, gate: gateShow, act, onPick, check, boatUnder, tap,
   barrelAt: i => stage.screenOf(S.cargo[i].o), boatAt: side => stage.screenOf(ships[side].obj.position.clone().add(V(0, .45, 0))), boatTap: side => stage.screenOf(ships[side].inner.localToWorld(V(0, .3, 1.15))), wareAt: () => stage.screenOf(warePos(0)), pileAt: () => S.pile.length ? stage.screenOf(S.pile[S.pile.length - 1].o) : null, frameAt: k => stage.screenOf(warePos(k)),
   dock: () => S.cargo.map((b, i) => ({ i, where: b.where })).filter(x => x.where === 'dock').map(x => x.i), onBoat: side => onBoat(ships[side]) };
-build().catch(e => { $('loading').textContent = '불러오지 못했어요'; console.error(e); });
+if (!GO_NOW) build().catch(e => { $('loading').textContent = '불러오지 못했어요'; console.error(e); });

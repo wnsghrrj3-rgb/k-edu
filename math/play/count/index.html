@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>물고기 세어 담기 · 수학 놀이터</title>
+<script src="/kedu_scope.js"></script>
+<script type="importmap">{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+[hidden]{display:none!important}
+html{background:#9fd8f0}html,body{height:100%;overflow:hidden;font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;touch-action:none}
+canvas{display:block;width:100%;height:100%}
+.back{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));z-index:31;background:rgba(10,20,40,.5);color:#fff;border-radius:999px;padding:8px 16px;font-weight:900;font-size:1rem;text-decoration:none}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:40;background:#9fd8f0;color:#1d4a63;font-weight:900;font-size:1.3rem;transition:opacity .5s;pointer-events:none}
+#note{position:fixed;left:50%;bottom:calc(6px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:32;background:rgba(10,20,40,.5);color:#fff;border-radius:999px;padding:3px 14px;font-size:.78rem;font-weight:700;white-space:nowrap;max-width:96vw;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#coins{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));top:calc(54px + env(safe-area-inset-top,0px));z-index:5;display:flex;align-items:center;gap:6px;background:rgba(10,20,40,.5);color:#fff;border-radius:999px;padding:4px 12px;font-weight:900;font-size:.95rem;pointer-events:none}#coins img.art{height:1em}
+#coins.pop{animation:cpop .4s}@media (max-width:520px){#coins{top:auto;bottom:calc(32px + env(safe-area-inset-bottom,0px))}}@keyframes cpop{40%{transform:scale(1.3)}}
+/* 띠: 「물고기는 모두 ?마리」 → 닫히면 「물고기는 모두 4마리」 — 눌러도 뒤의 바다로 */
+#tray{pointer-events:none}#tray i.w{font-size:.62em;opacity:.95}
+/* 통 위의 수: 점 무늬(다섯씩 한 줄) + 숫자 — 걸음 ① 은 담을 때마다 하나씩 · 걸음 ② 는 맞는 수를 고르면 찍힘 */
+#tally{position:fixed;z-index:3;transform:translate(-50%,-100%);display:flex;align-items:center;gap:10px;background:#fff4d6;color:#4a2a0c;border:4px solid #8a5a2b;border-radius:16px;padding:6px 12px;font-weight:900;font-size:2.3rem;line-height:1;pointer-events:none;box-shadow:0 5px 0 rgba(60,30,5,.35)}
+#tally::after{content:"";position:absolute;left:50%;top:100%;width:6px;height:12px;margin-left:-3px;background:#8a5a2b;border-radius:0 0 3px 3px}
+#tally .dots u{width:15px;height:15px}#tally.pop{animation:tpop .35s}@keyframes tpop{40%{transform:translate(-50%,-100%) scale(1.25)}}
+@media (max-width:520px){#tally{font-size:1.8rem;padding:4px 9px;gap:7px}#tally .dots u{width:11px;height:11px}}
+/* 「나도!」 — 남은 물고기가 고개를 내밀고 물방울을 뿜는다 */
+.nado{position:fixed;z-index:6;transform:translate(-50%,-100%);pointer-events:none;display:flex;flex-direction:column;align-items:center}
+.nado b{background:#fff;color:#12314a;border:4px solid #12314a;border-radius:18px;padding:4px 14px;font-weight:900;font-size:1.6rem;line-height:1.2;animation:nadoin .3s backwards}
+.nado span{display:block;width:12px;height:12px;margin-top:3px;border-radius:50%;border:3px solid rgba(255,255,255,.95);animation:bub 1s infinite}.nado span+span{width:8px;height:8px;animation-delay:.3s}@keyframes nadoin{0%{transform:scale(.3)}70%{transform:scale(1.15)}}@keyframes bub{0%{transform:translateY(14px);opacity:0}50%{opacity:1}100%{transform:translateY(-6px);opacity:0}}
+/* 물보라(물장구 셋) · 헛누름의 물 튀김 */
+.spray{position:fixed;z-index:6;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:rgba(220,245,255,.95);border:2px solid #7cc9ee;pointer-events:none;transition:transform .8s cubic-bezier(.2,.7,.4,1),opacity .8s}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<a class="back" href="/math/play/go/">← 수학 길</a>
+<div id="loading">얕은 바다로 가는 중…</div>
+<script type="module" src="./count.js?v=1"></script>
+</body>
+</html>

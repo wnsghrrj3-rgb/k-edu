@@ -7,6 +7,10 @@ const CSS = `#handhint{position:fixed;z-index:9;font-size:2.8rem;line-height:1;m
 let el = null, last = (typeof performance !== 'undefined' ? performance.now() : 0);
 function make(){ if (el) return el; const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); el = document.createElement('div'); el.id = 'handhint'; el.innerHTML = `<span>${art('hint.hand')}</span>`; document.body.appendChild(el);
   addEventListener('pointerdown', () => { last = performance.now(); hide(); }, true); return el; }
+// ── 누른 자리 물결(정본 5-11절 — 아무 일도 안 일어나는 누름을 두지 않는다 · 가르기 틀 · 세기 틀이 같이 쓴다)
+const RIPPLE_CSS = `.ripple{position:fixed;z-index:9;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:4px solid rgba(255,255,255,.95);pointer-events:none;animation:ripple .6s ease-out forwards}@keyframes ripple{to{transform:scale(4.2);opacity:0}}`;
+let rippleIn = false;
+export function ripple(x, y){ if (!rippleIn) { rippleIn = true; const s = document.createElement('style'); s.textContent = RIPPLE_CSS; document.head.appendChild(s); } const d = document.createElement('div'); d.className = 'ripple'; d.style.left = x + 'px'; d.style.top = y + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 650); }
 /** 손을 (x, y) 바로 아래에 띄운다(위를 가리킴). 이미 떠 있으면 그 자리로 미끄러진다. */
 export function show(x, y){ const e = make(); e.style.left = x + 'px'; e.style.top = y + 'px'; e.classList.add('on'); }
 export function hide(){ if (el) el.classList.remove('on'); }

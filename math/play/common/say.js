@@ -9,3 +9,5 @@ export const eun = n => jong(n) ? '은' : '는';    /* 1은 · 2는 */
 /** 「N을 가르면」 · 「b를 모으면」 — 숫자 뒤에 붙는 말(? 는 묻는 동안 「를」로 둔다). */
 export const garu = n => (n === '?' ? '를' : eul(n)) + ' 가르면';
 export const moeu = n => (n === '?' ? '를' : eul(n)) + ' 모으면';
+/** 세는 말(단위) — 「물고기는 모두 4마리」(T03). 틀은 이 표에서 꺼내 쓴다. */
+export const UNIT = { fish: '마리', cargo: '개' };

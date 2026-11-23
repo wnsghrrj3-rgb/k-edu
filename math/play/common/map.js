@@ -7,7 +7,7 @@
  *   막힘       = 깨끗하지 못한 판 STUCK 연달아 → 틀이 길잡이를 일찍 · 작은 수부터 · 손으로 한 판(벌 없음). 2×STUCK 이면 고르는 화면에서 앞 깃발이 살짝 흔들림
  *   기록은 거꾸로 가지 않는다(딴 깃발은 내려가지 않는다).
  * 저장: localStorage `kedu_mathplay_map` 한 칸 — /kedu_scope.js 가 먼저 실려 있어야 기기에 남는다(정식 세션). 그 밖에는 화면이 열려 있는 동안만. 서버 호출 0. */
-import { BUILT } from './built.js?v=1';
+import { BUILT, STARTS } from './built.js?v=2';
 
 // ── 내가 정한 수치(정본 5-4절 기본안 — 준호가 바꾼다)
 export const RULE = { PASS_CLEAN: 2, KEEP_DAYS: 1, STUCK: 3 };
@@ -45,6 +45,9 @@ export const stuckNow = rec => !!rec && rec.stuckRun > 0 && rec.stuckRun % RULE.
 export function next(id, ids = BUILT){ const i = ids.indexOf(id); return i >= 0 && i < ids.length - 1 ? ids[i + 1] : null; }
 /** 열려 있는 낱칸: ids 가운데 아직 통과하지 않은 첫 낱칸(다 통과했으면 null). 낱칸은 차례대로 열린다. */
 export function open(ids, m){ for (const id of ids) if (!passed(m[id])) return id; return null; }
+/** 열린 낱칸들(T03 — 고르는 화면 한 곳): 아직 통과하지 않았고 ① 시작점(built.js STARTS)이거나 ② 앞 낱칸(만들어진 것끼리 차례)을 땄거나 ③ 이미 해 본 낱칸.
+ *  앞쪽에 낱칸이 새로 생겨도 이미 열렸던 것은 닫히지 않는다(B01 은 시작점 · B02~ 는 앞 깃발을 땄으면 그대로). */
+export function openSet(m, ids = BUILT, starts = STARTS){ return ids.filter((id, k) => !passed(m[id]) && (starts.includes(id) || (k > 0 && passed(m[ids[k - 1]])) || (((m[id] || {}).state | 0) >= 1))); }
 
 // ── 저장(kedu_scope 를 따른다 — 지갑과 같은 방식)
 const scope = () => (typeof window !== 'undefined' && window.__keduScope) || null;
