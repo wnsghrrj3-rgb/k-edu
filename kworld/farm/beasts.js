@@ -5,6 +5,7 @@
    다리 돌림(rotation.x): + 면 발이 뒤로, - 면 앞으로. 몸통(엉덩이 축) rotation.x: - 면 머리가 든다. 꼬리 rotation.z = 좌우 흔들기. */
 import * as THREE from 'three';
 import { ART, artGeo, artMat } from '../scene/kit.js?v=5';
+import { BAKED, tintMat } from './models.js?v=1';
 
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 const DEFS = {
@@ -16,14 +17,15 @@ export function beastKit(scene) {
   const kinds = [];
   /* 같은 짐승 n 마리. tints = 깃·털 색(tint_*) */
   function herd(kind, n, tints = {}) {
-    const D = DEFS[kind]; if (!ART[D.body]) return null;
+    const D = DEFS[kind], bk = !!BAKED[D.body], SRC = bk ? BAKED : ART; if (!SRC[D.body]) return null;   /* 구워 입힌 모델(fbeasts.glb)이 있으면 그것으로 — 조각 이름·돌림 중심은 같다. 닭 깃 색은 가리개에 곱한다 */
+    const mat = bk ? (tints.fur != null ? tintMat(BAKED[D.body].mat, tints.fur, tints.tail == null ? 0xffffff : tints.tail) : BAKED[D.body].mat) : artMat;
     const parts = [['body', D.body, null]]; for (const k in D.kids) parts.push([k, D.kids[k], 'body']); for (const k in D.sub || {}) parts.push([k, D.sub[k][1], D.sub[k][0]]);
     const nameOf = {}; for (const [k, nm] of parts) nameOf[k] = nm;
     const inst = {};
-    for (const [k, nm] of parts) { const im = new THREE.InstancedMesh(artGeo(nm, tints), artMat, n); im.castShadow = !(D.noShadow || []).includes(k); im.receiveShadow = true; im.frustumCulled = false; scene.add(im); inst[k] = im; }
+    for (const [k, nm] of parts) { const im = new THREE.InstancedMesh(bk ? BAKED[nm].geo : artGeo(nm, tints), mat, n); im.castShadow = !(D.noShadow || []).includes(k); im.receiveShadow = true; im.frustumCulled = false; scene.add(im); inst[k] = im; }
     const rigs = [];
     for (let i = 0; i < n; i++) { const root = new THREE.Object3D(), P = {};
-      for (const [k, nm, par] of parts) { const o = new THREE.Object3D(); o.position.copy(ART[nm].pivot); if (par) o.position.sub(ART[nameOf[par]].pivot); (par ? P[par] : root).add(o); o.userData.p0 = o.position.clone(); P[k] = o; }
+      for (const [k, nm, par] of parts) { const o = new THREE.Object3D(); o.position.copy(SRC[nm].pivot); if (par) o.position.sub(SRC[nameOf[par]].pivot); (par ? P[par] : root).add(o); o.userData.p0 = o.position.clone(); P[k] = o; }
       rigs.push({ root, P, ph: i * 1.7, st: {} }); }
     function flush() { rigs.forEach((r, i) => { r.root.updateMatrixWorld(true); for (const [k] of parts) inst[k].setMatrixAt(i, r.root.visible && (k !== 'yoke' || r.yoke) ? r.P[k].matrixWorld : ZERO); }); for (const k in inst) inst[k].instanceMatrix.needsUpdate = true; }
     const h = { rigs, inst, flush }; kinds.push(h); return h;

@@ -14,7 +14,8 @@ import { makeLand, dikes, hAt, lineDist, STREAM } from './land.js?v=2';
 import { airKit, sunAt } from './air.js?v=1';
 import { BAKED, loadBaked, bakedMesh, bakedInst } from './models.js?v=1';
 /* 구워 입힌 모델(블렌더 kw_bake — 이엉 결·나뭇결·돌·회벽 무늬와 구석 그늘): 같은 이름이 있으면 그것으로 갈아 끼운다 */
-await loadBaked('fhouse', 'ftown');
+await loadBaked('fhouse', 'ftown', 'ffolk', 'fbeasts');
+import { folkKit } from './folk.js?v=1';
 const art = (n, tints, o) => (typeof n === 'string' && BAKED[n] ? bakedMesh(n, o) : kitArt(n, tints, o));
 const artInst = (sc, n, list, tints, o) => (typeof n === 'string' && BAKED[n] ? bakedInst(sc, n, list, o) : kitInst(sc, n, list, tints, o));
 /* 읽어 들인 farm = 모·벼·이삭·볏단·그루터기·콩(tools/blender/make_farm.py) */
@@ -38,7 +39,7 @@ addEventListener('resize', resize); resize();
 const drnd = rng(18200), sky = skyDome(scene, drnd, { top: 0x6aa6e8, low: 0xeaf2e0, stars: 0 });
 const flat = flatMaker(scene);
 const skyMeshes = scene.children.filter((m) => m.geometry && m.geometry.type === 'SphereGeometry' && m.geometry.parameters.radius >= 250);
-const { person, walkAnim } = people(scene);
+const { walkAnim } = people(scene), { person } = folkKit(scene);   /* 사람 = 구워 입힌 모델(folk.js) · 걷기는 kit 그대로 */
 const { ring, update: ringsUpdate } = ringsFx(scene);
 const v3 = new THREE.Vector3(), _o = new THREE.Object3D(), _c = new THREE.Color();
 
@@ -205,7 +206,7 @@ pad('bo', BO[0], BO[1] + 4, 0x7ac8ff); pad('town', ...TOWN); pad('next', ...NEXT
 pad('duty', ...DUTY, 0xff6a4a); pad('ox', ...OX); pad('cloth', ...CLOTH, 0x9ad0ff); pad('lordBuy', LORD[0], LORD[1] + 6, 0xc8a0ff); pad('work', LORD[0] - 8, LORD[1] + 6, 0xffffff);
 const nurseryM = (() => { const g = new THREE.Group(); g.add(at(box(6, 0.12, 5, 0x6f8f9a), 0, 0.07, 0)); const im = new THREE.InstancedMesh(artGeo('rice_young'), artMat, 15); im.castShadow = false; for (let i = 0; i < 15; i++) { _o.position.set(-2.2 + (i % 5) * 1.1, 0.12, -1.6 + Math.floor(i / 5) * 1.6); _o.scale.set(0.42, 0.6, 0.42); _o.rotation.set(0, i * 1.7, 0); _o.updateMatrix(); im.setMatrixAt(i, _o.matrix); } g.add(im); g.userData.im = im; g.position.set(NURS[0], 0, NURS[1] + 4.6); scene.add(g); return g; })();   /* 못자리: 촘촘한 어린 모 */
 /* 움직이는 짐승(beasts.js): 개 한 마리 · 닭 넷(흰 둘·누런 둘) · 소 셋(우리 소 · 읍내 소 장수의 둘) */
-const BK = beastKit(scene), dogH = BK.herd('dog', 1), henW = BK.herd('hen', 2, { fur: 0xf4f0e6, tail: 0x3a3a34 }), henB = BK.herd('hen', 2, { fur: 0xb8743a, tail: 0x4a2414 }), oxH = BK.herd('ox', 3);
+const BK = beastKit(scene), dogH = BK.herd('dog', 1), henW = BK.herd('hen', 2, { fur: 0xf4f0e6, tail: 0x3a3a34 }), henB = BK.herd('hen', 2, { fur: 0xc07c40, tail: 0x5a2c18 }), oxH = BK.herd('ox', 3);
 const oxM = oxH.rigs[0].root; oxM.position.set(HOME[0] + 9, 0, HOME[1] + 2); oxM.rotation.y = 1.2; oxM.visible = false; const oxS = { x: HOME[0] + 9, z: HOME[1] + 2, face: 1.2, sp: 0, on: false, cx: 0, cz: 0 }; const cartM = putArt('cart', HOME[0] + 12, HOME[1] + 4, 1.2) || putArt('handcart', HOME[0] + 12, HOME[1] + 4); if (cartM) cartM.visible = false;
 const cartLoad = cartM && art('sack_pile'); if (cartLoad) { cartLoad.position.set(0, 0.8, 0.1); cartLoad.scale.setScalar(0.75); cartLoad.visible = false; cartM.add(cartLoad); }   /* 소가 실어 가는 짐은 달구지 위에 */
 oxH.rigs[1].root.position.set(OX[0] + 3, 0, OX[1] + 2); oxH.rigs[1].root.rotation.y = 0.6; oxH.rigs[2].root.position.set(OX[0] + 5.5, 0, OX[1] - 1); oxH.rigs[2].root.rotation.y = 2;

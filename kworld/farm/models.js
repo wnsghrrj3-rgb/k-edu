@@ -6,14 +6,15 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/labs/vendor/three185/addons/loaders/GLTFLoader.js';
 
 export const BAKED = {};
-const BV = 1;
+const BV = 2;
 export async function loadBaked(...names) {
   const L = new GLTFLoader();
   await Promise.all(names.map(async (n) => {
     const g = await L.loadAsync(new URL(`../scene/assets/${n}.glb?v=${BV}`, import.meta.url).href); let mat = null;
     for (const node of g.scene.children) { let mesh = null; node.traverse((o) => { if (o.isMesh && !mesh) mesh = o; }); if (!mesh) continue;
       if (!mat) { const src = mesh.material; mat = new THREE.MeshStandardMaterial({ map: src.map, normalMap: src.normalMap || null, roughness: 0.9, metalness: 0 }); if (mat.map) mat.map.anisotropy = 4; mat.name = n; }
-      BAKED[node.name] = { geo: mesh.geometry, mat, pivot: node.position.clone(), set: n }; }
+      const ge = mesh.geometry; if (ge.attributes.color) { ge.setAttribute('tmask', ge.attributes.color); ge.deleteAttribute('color'); }   /* 꼭짓점 색 = 옷 색 가리개(folk.js) — 그대로 두면 무늬에 곱해진다 */
+      BAKED[node.name] = { geo: ge, mat, pivot: node.position.clone(), set: n }; }
   }));
   return BAKED;
 }
@@ -25,3 +26,10 @@ export function bakedInst(scene, name, list, { shadow = true } = {}) {
   list.forEach((t, i) => { _d.position.set(t[0], t[1], t[2]); const s = t[3] == null ? 1 : t[3]; if (Array.isArray(s)) _d.scale.set(s[0], s[1], s[2]); else _d.scale.setScalar(s); _d.rotation.set(0, t[4] || 0, 0); _d.updateMatrix(); m.setMatrixAt(i, _d.matrix); });
   m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = false; scene.add(m); return m;
 }
+/* 색 곱하기 재질: 구운 흰 바탕(무명·깃털) 위에 가리개 tmask(R·G) 자리만 색을 곱한다 — 무늬·그늘은 구운 그대로, 프로그램은 같이 쓴다 */
+const _tm = {};
+export function tintMat(base, colA = 0xffffff, colB = 0xffffff) { const k = base.name + '|' + colA + '|' + colB; if (_tm[k]) return _tm[k]; const m = base.clone(), a = new THREE.Color(colA), b = new THREE.Color(colB);
+  m.onBeforeCompile = (sh) => { sh.uniforms.uTintA = { value: a }; sh.uniforms.uTintB = { value: b };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 tmask; varying vec3 vTmask;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvTmask = tmask;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uTintA; uniform vec3 uTintB; varying vec3 vTmask;').replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb *= mix(vec3(1.0), uTintA, vTmask.r) * mix(vec3(1.0), uTintB, vTmask.g);'); };
+  m.customProgramCacheKey = () => 'baked-tint'; _tm[k] = m; return m; }

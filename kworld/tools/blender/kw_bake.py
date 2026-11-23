@@ -231,7 +231,7 @@ def _sel(objs):
     bpy.context.view_layer.objects.active = objs[0]
 
 
-def bake_set(objs, fname, size=2048, nsize=1024, ao_lo=0.38, ao_pow=0.9, normal=True, quality=86, uv_angle=66, keep_color=False):
+def bake_set(objs, fname, size=2048, nsize=1024, ao_lo=0.38, ao_pow=0.9, normal=True, quality=86, uv_angle=66, keep_color=False, uv_weight=None):
     """objs 를 무늬 한 장에 굽고 fname(.glb)으로 내보낸다."""
     t0 = time.time(); sc = bpy.context.scene
     objs = [o for o in objs if o.type == 'MESH']
@@ -240,6 +240,13 @@ def bake_set(objs, fname, size=2048, nsize=1024, ao_lo=0.38, ao_pow=0.9, normal=
     bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.uv.smart_project(angle_limit=math.radians(uv_angle), island_margin=0.002)
     bpy.ops.uv.average_islands_scale()
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for o in objs:   # 눈에 덜 띄는 것(갓 양태 따위)은 무늬를 덜 쓰고, 얼굴은 더 쓴다
+        k = (uv_weight or {}).get(o.name, 1.0)
+        if k != 1.0:
+            for d in o.data.uv_layers.active.data:
+                d.uv = d.uv * k
+    _sel(objs); bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.uv.select_all(action='SELECT')
     try:
         bpy.ops.uv.pack_islands(margin=0.0025, rotate=True)
     except TypeError:
@@ -305,6 +312,12 @@ def bake_set(objs, fname, size=2048, nsize=1024, ao_lo=0.38, ao_pow=0.9, normal=
         if not keep_color:
             for ca in list(o.data.color_attributes):
                 o.data.color_attributes.remove(ca)
+        elif len(o.data.color_attributes):
+            o.data.color_attributes.active_color = o.data.color_attributes[0]
+            try:
+                o.data.color_attributes.render_color_index = 0
+            except Exception:
+                pass
     # 5) 내보내기
     _sel(objs)
     path = os.path.join(OUT, fname + '.glb')
@@ -317,7 +330,7 @@ def bake_set(objs, fname, size=2048, nsize=1024, ao_lo=0.38, ao_pow=0.9, normal=
     print('BAKED', fname, 'objects', len(objs), 'faces', faces, 'bytes', os.path.getsize(path), 'sec', round(time.time() - t0))
 
 
-def preview(path, objs=None, cols=4, gap=3.0, res=(1280, 720), samples=24, elev=32, dist=1.0):
+def preview(path, objs=None, cols=4, gap=3.0, res=(1280, 720), samples=24, elev=32, dist=1.0, layout=True, look=None, yaw=0.0):
     """구운 모델을 줄지어 놓고 놀이 시점(비스듬히 내려다봄)으로 한 장 그린다 — 놀이에 넣기 전에 모양·무늬를 눈으로 본다."""
     sc = bpy.context.scene
     objs = objs or [o for o in sc.objects if o.type == 'MESH']
@@ -326,20 +339,23 @@ def preview(path, objs=None, cols=4, gap=3.0, res=(1280, 720), samples=24, elev=
     for o in hid:
         o.hide_render = True
     x = 0.0; y = 0.0; rowh = 0.0; n = 0; xs = []
-    for o in objs:
+    for o in (objs if layout else []):
         bb = [Vector(c) for c in o.bound_box]; w = max(c.x for c in bb) - min(c.x for c in bb); d = max(c.y for c in bb) - min(c.y for c in bb)
         if n and n % cols == 0:
             x = 0.0; y -= rowh + gap; rowh = 0.0
         o.location = (x + w / 2, y - d / 2, o.location.z); xs.append(x + w)
         x += w + gap; rowh = max(rowh, d); n += 1
-    W = max(xs); H = -(y - rowh)
+    W = max(xs) if layout else 0.0; H = -(y - rowh) if layout else 0.0
     bpy.ops.mesh.primitive_plane_add(size=600, location=(0, 0, 0)); g = bpy.context.active_object
     gm = bpy.data.materials.new('pv_ground'); gm.use_nodes = True; gm.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value = (0.36, 0.5, 0.2, 1); g.data.materials.append(gm)
     sun = bpy.data.objects.new('pv_sun', bpy.data.lights.new('pv_sun', 'SUN')); sun.data.energy = 3.2; sun.data.angle = 0.06; sun.rotation_euler = (math.radians(52), 0, math.radians(-38)); sc.collection.objects.link(sun)
     w = sc.world; w.use_nodes = True; w.node_tree.nodes['Background'].inputs['Color'].default_value = (0.62, 0.74, 0.9, 1); w.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.9
     cam = bpy.data.objects.new('pv_cam', bpy.data.cameras.new('pv_cam')); sc.collection.objects.link(cam); sc.camera = cam
     cam.data.lens = 60; r = max(W, H * 1.6) * 1.25 * dist + 6; e = math.radians(elev)
-    c = Vector((W / 2, -H / 2, 1.2)); cam.data.sensor_fit = 'HORIZONTAL'; cam.location = c + Vector((0, -math.cos(e) * r, math.sin(e) * r))
+    c = Vector(look) if look else Vector((W / 2, -H / 2, 1.2)); cam.data.sensor_fit = 'HORIZONTAL'
+    if not layout:
+        r = 9 * dist
+    cam.location = c + Vector((math.sin(yaw) * math.cos(e) * r, -math.cos(yaw) * math.cos(e) * r, math.sin(e) * r))
     cam.rotation_euler = (c - cam.location).to_track_quat('-Z', 'Y').to_euler()
     sc.render.resolution_x, sc.render.resolution_y = res; sc.cycles.samples = samples; sc.render.filepath = path
     try:
@@ -358,10 +374,108 @@ def preview(path, objs=None, cols=4, gap=3.0, res=(1280, 720), samples=24, elev=
 
 
 def seg(b, p0, p1, r0, r1, m, n=7, **k):
-    """p0 → p1 로 뻗은 둥근 토막(서까래·가지·다리)."""
+    """p0 → p1 로 뻗은 둥근 토막(서까래·가지·다리).
+    꼭짓점을 먼저 옮기고 면 방향을 새로 셈한 뒤 넘긴다 — kw_lib._take 는 옮기기 전 면 방향으로 안팎을 가려서, 기울어진 토막이 뒤집힌 채 구워졌다(그늘이 안쪽 기준)."""
     p0, p1 = Vector(p0), Vector(p1)
     d = p1 - p0; h = d.length
-    Q = d.normalized().to_track_quat('Z', 'Y').to_matrix()
+    Q = Vector((0, 0, 1)).rotation_difference(d.normalized()).to_matrix()
     t = bmesh.new()
     bmesh.ops.create_cone(t, cap_ends=True, cap_tris=False, segments=n, radius1=max(r0, 1e-4), radius2=max(r1, 1e-4), depth=h)
-    return b._take(t, m, (0, 0, 0), f=lambda co: p0 + Q @ (co + Vector((0, 0, h / 2))), **k)
+    for v in t.verts:
+        v.co = p0 + Q @ (v.co + Vector((0, 0, h / 2)))
+    t.normal_update()
+    return b._take(t, m, (0, 0, 0), **k)
+
+
+def m_fur(name, cols, axis='Y', scale=1.0, rough=0.9):
+    """털: 몸을 따라 누운 잔결 + 얼룩."""
+    m, nt, bs = nmat(name, rough)
+    s = {'Y': (38, 5, 38), 'Z': (38, 38, 5), 'X': (5, 38, 38)}[axis]
+    n1 = N(nt, 'ShaderNodeTexNoise', Scale=1.0, Detail=3.0, Roughness=0.6); L(nt, coords(nt, tuple(q * scale for q in s)), n1.inputs['Vector'])
+    n2 = N(nt, 'ShaderNodeTexNoise', Scale=3.0 * scale, Detail=2.0); L(nt, coords(nt), n2.inputs['Vector'])
+    f = math1(nt, 'ADD', math1(nt, 'MULTIPLY', n1.outputs['Fac'], 0.6), math1(nt, 'MULTIPLY', n2.outputs['Fac'], 0.4))
+    L(nt, ramp(nt, [(0.3, cols[0]), (0.5, cols[1]), (0.72, cols[2])], f).outputs['Color'], bs.inputs['Base Color'])
+    bump(nt, bs, n1.outputs['Fac'], 0.3, 0.01)
+    return m
+
+
+def mask_by(ob, r=(), g=()):
+    """색 가리개: 재질 이름이 r 에 있으면 R, g 에 있으면 G — 읽는 쪽이 그 자리에 색을 곱한다."""
+    me = ob.data
+    for ca in list(me.color_attributes):
+        me.color_attributes.remove(ca)
+    ca = me.color_attributes.new('Col', 'BYTE_COLOR', 'CORNER')
+    for p in me.polygons:
+        nm = me.materials[p.material_index].name
+        c = (1, 0, 0, 1) if nm in r else (0, 1, 0, 1) if nm in g else (0, 0, 0, 1)
+        for li in p.loop_indices:
+            ca.data[li].color = c
+    return ob
+
+
+def _take_fixed(self, tmp, m, loc=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1), f=None, tone=1.0, jit=0.05, bevel=0, bseg=1):
+    """kw_lib.B._take 와 같되, 꼭짓점을 옮긴 뒤 면 방향을 새로 셈하고 나서 안팎을 가린다(돌리거나 휘게 한 조각이 뒤집혀 구워지던 것).
+    구워 입히는 모델에서만 바꿔 끼운다 — kw_lib 로 만든 예전 모델은 양면 재질이라 티가 나지 않았다."""
+    from mathutils import Matrix
+    if bevel > 0:
+        bmesh.ops.bevel(tmp, geom=list(tmp.edges), offset=bevel, segments=bseg, affect='EDGES', profile=0.5)
+    M = Matrix.Translation(Vector(loc)) @ Matrix.Rotation(rot[2], 4, 'Z') @ Matrix.Rotation(rot[1], 4, 'Y') @ Matrix.Rotation(rot[0], 4, 'X')
+    S = Matrix.Diagonal((scale[0], scale[1], scale[2], 1))
+    for v in tmp.verts:
+        if f:
+            v.co = Vector(f(v.co.copy()))
+        v.co = M @ (S @ v.co)
+    tmp.normal_update()
+    bmesh.ops.recalc_face_normals(tmp, faces=list(tmp.faces))
+    me = bpy.data.meshes.new('tmp')
+    tmp.to_mesh(me)
+    tmp.free()
+    n0 = len(self.bm.faces)
+    self.bm.from_mesh(me)
+    bpy.data.meshes.remove(me)
+    self.bm.faces.ensure_lookup_table()
+    mi = self._mi(m)
+    for i in range(n0, len(self.bm.faces)):
+        fc = self.bm.faces[i]
+        fc.material_index = mi
+        fc[self.tone] = tone
+        fc[self.jit] = jit
+    return self
+
+
+B._take = _take_fixed
+
+
+def skin(ob, voxel=0.014, faces=600, keep=(), smooth_it=6, smooth_f=0.6):
+    """겹쳐 쌓은 덩이들을 한 겹 살갗으로: 복셀 리메시(합치기) → 다듬기 → 면 줄이기. 재질은 가까운 원래 면에서 옮겨 온다.
+    keep 에 든 재질(눈·코·뿔·발굽처럼 또렷해야 하는 것)은 합치지 않고 그대로 붙인다."""
+    from mathutils.bvhtree import BVHTree
+    me = ob.data; names = [m.name for m in me.materials]
+    det = None
+    if keep and any(names[p.material_index] in keep for p in me.polygons):
+        det = ob.copy(); det.data = me.copy(); bpy.context.scene.collection.objects.link(det)
+        for o, want in ((ob, False), (det, True)):
+            bm = bmesh.new(); bm.from_mesh(o.data)
+            bmesh.ops.delete(bm, geom=[f for f in bm.faces if (names[f.material_index] in keep) != want], context='FACES')
+            bm.to_mesh(o.data); bm.free()
+    src = ob.data.copy()
+    bvh = BVHTree.FromPolygons([v.co.copy() for v in src.vertices], [tuple(p.vertices) for p in src.polygons])
+    smi = [p.material_index for p in src.polygons]
+    bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active = ob
+    md = ob.modifiers.new('rm', 'REMESH'); md.mode = 'VOXEL'; md.voxel_size = voxel; md.adaptivity = 0.0; bpy.ops.object.modifier_apply(modifier=md.name)
+    md = ob.modifiers.new('sm', 'SMOOTH'); md.factor = smooth_f; md.iterations = smooth_it; bpy.ops.object.modifier_apply(modifier=md.name)
+    n = len(ob.data.polygons) * 2
+    if n > faces:
+        md = ob.modifiers.new('dc', 'DECIMATE'); md.ratio = faces / n; bpy.ops.object.modifier_apply(modifier=md.name)
+    me = ob.data
+    for p in me.polygons:
+        hit = bvh.find_nearest(p.center)
+        p.material_index = smi[hit[2]] if hit and hit[2] is not None else 0
+        p.use_smooth = True
+    bpy.data.meshes.remove(src)
+    if det:
+        bpy.ops.object.select_all(action='DESELECT'); det.select_set(True); ob.select_set(True); bpy.context.view_layer.objects.active = ob
+        nm = ob.name; bpy.ops.object.join(); ob.name = nm
+    for p in ob.data.polygons:
+        p.use_smooth = True
+    return ob
