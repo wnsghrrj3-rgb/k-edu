@@ -9,7 +9,7 @@
  * 팻말은 평면 안에서 돌지 않는다(6 과 9 가 뒤집혀 보이면 안 된다) — 이 그림에는 돌림이 없다. 뒤집힘은 세로 축으로만(부르는 쪽 CSS). */
 export const NS = {
   WOOD: ['#d9a566', '#b47b3e'], GRAIN: 'rgba(90,50,15,.18)', EDGE: '#6b4423', NAIL: '#5b5f66',
-  INK: '#3a2108', CHALK: '#fffdf2', CHALK_SHADE: 'rgba(255,253,242,.35)',
+  INK: '#3a2108', CHALK: '#fffdf2', SLATE: '#2f4a3c', CHALK_SHADE: 'rgba(255,253,242,.35)',
   DOT_ON: '#e0662c', DOT_ON_EDGE: '#a8431a', DOT_OFF: '#8a5a2b', FLASH: '#ffe27a',
   FONT: '"Pretendard","Noto Sans KR",system-ui,sans-serif',
   W: 1.32, PAD: .14, DOT: .17, DOT_GAP: .05, TOP: .16,        /* px 에 곱하는 몫: 너비 · 안쪽 여백 · 점 지름 · 점 사이 · 못 자리 */
@@ -31,6 +31,7 @@ export function paint(c, n, opt = {}){ const px = opt.px || 96, z = size(px), r 
   c.dataset.n = opt.back ? '' : String(n); c.dataset.face = opt.back ? 'back' : (opt.face || 'book'); c.dataset.dots = opt.dots && !opt.back ? String(opt.lit == null ? n : opt.lit) : '';
   if (opt.back) { c.dataset.numpx = '0'; return c; }
   const cy = px * (NS.TOP + NS.PAD) + px * .5;
+  if (opt.face === 'chalk') { const w = px * .95 * Math.max(1, String(n).length * .8), h = px * 1.16; rr(c.getContext('2d'), z.w / 2 - w / 2, cy - h / 2, w, h, px * .1); const x2 = c.getContext('2d'); x2.fillStyle = NS.SLATE; x2.fill(); x2.lineWidth = Math.max(2, px * .04); x2.strokeStyle = NS.EDGE; x2.stroke(); }   /* 분필 꼴은 작은 칠판 위에(나무 위 흰 분필은 흐려서) */
   c.dataset.numpx = String(Math.round(opt.face === 'chalk' ? chalk(x, n, z.w / 2, cy, px) : book(x, n, z.w / 2, cy, px)));
   if (opt.dots) dots(x, z, n, opt.lit == null ? n : opt.lit, opt.flash == null ? -1 : opt.flash);
   return c; }

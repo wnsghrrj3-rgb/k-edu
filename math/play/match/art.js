@@ -11,6 +11,8 @@ export const WATCHER = 'Deer';
 export const ANIMAL_H = { Fox: .32, Husky: .4, ShibaInu: .38, Alpaca: .62, Deer: .56 };
 /** 쟁반 위 물고기(Cute Fish Pack — 가만히 놓인 것 · 한 쟁반에는 한 종류: 종류를 세는 놀이가 아니다) */
 export const FISH = ['Clownfish', 'BlueTang', 'YellowTang', 'Koi', 'Tetra'];
+/** 다섯씩 한 줄로 놓는 낱칸(A07)은 밝은 물고기만 — 작아도 잘 보이게 */
+export const FISH_ROWS = ['Clownfish', 'YellowTang', 'Koi'];
 export const fishModel = n => 'Fish_' + n;
 /** 둘레 꾸밈: [모형, x, y, z, 크기, 돌림] */
 export const SCENERY = [ ['Environment_Cliff2', -12.5, 0, -9, 1.1, .4], ['Environment_Cliff2', 13.5, 0, -11, 1.0, 2.4], ['Environment_PalmTree_1', -8.6, 1.1, -6.5, 1.0, .3], ['Environment_PalmTree_1', 9.4, 1.1, -7.2, .9, 2] ];
@@ -18,5 +20,7 @@ export const SCENERY = [ ['Environment_Cliff2', -12.5, 0, -9, 1.1, .4], ['Enviro
 export const GLOW = '#ffcf3a';
 /** 문짝 빛깔(꾸러미의 짙은 나무를 조금 밝게 — 문으로 읽히게) */
 export const DOOR_TINT = '#c08a52';
+/** 빗장 빛깔(울타리 판을 밝게 — 짙은 문 위에서 보이게) */
+export const BAR_TINT = '#f2d08a';
 /** 화면 위 그림(common/art.js 이름표) */
 export const ICON = { flag: 'flag', star: 'flag.star', coin: 'coin' };

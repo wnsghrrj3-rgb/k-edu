@@ -3,6 +3,7 @@
  *   sources() = 집을 수 있는 것 [{ id, x, y, r }] · targets() = 놓을 곳 [{ id, x, y, rect? }] (화면 좌표 — 부르는 쪽이 장면마다 계산)
  *   놓을 곳 판정: rect 안이거나 (x, y)에서 R(px) 안 — 둘 이상이면 가까운 쪽. 아니면 onCancel(from)(줄이 스르르 돌아온다 · 벌 없음).
  *   끄는 동안 집은 것에서 손끝까지 줄(밧줄 — 코드로 그린 화면 위 선)을 그린다. 손을 떼지 않고 R 안에 들어오면 그 곳이 들썩(onHover).
+ *   o.claim({ x, y, armed }) 가 참이면 그 누름은 부르는 쪽이 가져간다(든 것은 그대로). 끄는 중의 둘째 손가락은 받지 않는다. 집을 것은 r 또는 rx · ry(타원).
  *   집은 것을 누르기만 하면(끌지 않으면) 「들었다」(onArm) — 둘째로 누를 곳을 부르는 쪽이 들썩여 준다(정본 5-11절). 그다음 놓을 곳을 누르면 onDrop(how 'tap').
  *   그 밖의 누름은 onTap({ x, y, target, armed }) — 부르는 쪽이 물결 · 손 · 한 줄 안내(5-11)를 띄운다. enabled() 가 거짓이면 onBusy({ x, y }).
  * 화면 굴림과 싸우지 않게 el 에 touch-action:none. 화면 위 표시(줄 · 반경 원)는 svg 하나(#dragsvg). */
@@ -30,15 +31,17 @@ export function targetAt(list, x, y, R = DRAG.R){ let best = null, d0 = Infinity
   for (const t of list) { if (!t) continue; const inRect = t.rect && x >= t.rect.left && x <= t.rect.right && y >= t.rect.top && y <= t.rect.bottom, d = Math.hypot(t.x - x, t.y - y);
     if ((inRect || d <= R) && d < d0) { d0 = d; best = t; } }
   return best; }
-const sourceAt = (list, x, y) => { let best = null, d0 = Infinity; for (const s of list) { if (!s) continue; const d = Math.hypot(s.x - x, s.y - y); if (d <= (s.r || 40) && d < d0) { d0 = d; best = s; } } return best; };
+/** 집을 것 찾기: 둥근 r 또는 타원(rx · ry — 비스듬히 보이는 쟁반) 안 · 가까운 쪽. */
+const sourceAt = (list, x, y) => { let best = null, d0 = Infinity; for (const s of list) { if (!s) continue; const d = Math.hypot((s.x - x) / (s.rx || s.r || 40), (s.y - y) / (s.ry || s.r || 40)); if (d <= 1 && d < d0) { d0 = d; best = s; } } return best; };
 
 /** 끌어 놓기를 단다. → { armed(), disarm(), cancel(), state() } */
 export function drag(el, o){ const R = () => (typeof o.R === 'function' ? o.R() : o.R) || DRAG.R; let cur = null, armedId = null, hoverId = null;
   el.style.touchAction = 'none';
   const ropeFrom = id => { const s = (o.sources() || []).find(q => q && q.id === id); return s ? { x: s.x, y: s.y } : null; };
   const setHover = id => { if (id === hoverId) return; hoverId = id; if (o.onHover) o.onHover(id); };
-  el.addEventListener('pointerdown', e => { if (e.button > 0) return; const x = e.clientX, y = e.clientY;
+  el.addEventListener('pointerdown', e => { if (e.button > 0) return; if (cur && cur.pid !== e.pointerId) return;   /* 끄는 중의 둘째 손가락은 받지 않는다 */ const x = e.clientX, y = e.clientY;
     if (o.enabled && !o.enabled()) { cur = null; if (o.onBusy) o.onBusy({ x, y }); return; }
+    if (o.claim && o.claim({ x, y, armed: armedId })) return;   /* 부르는 쪽이 먼저 가져가는 누름(예: 뒤집힌 문패 돌려놓기 — 든 것은 그대로) */
     const s = sourceAt(o.sources() || [], x, y), tl = o.targets() || [], inRect = armedId != null && tl.some(t => t && t.rect && x >= t.rect.left && x <= t.rect.right && y >= t.rect.top && y <= t.rect.bottom);
     if (inRect) { const t = targetAt(tl, x, y, R()), from = armedId; armedId = null; cur = null; if (o.onDisarm) o.onDisarm(from); o.onDrop({ from, to: t.id, how: 'tap', x, y }); return; }   /* 든 채로 놓을 곳(네모 안)을 누르면 — 집을 것과 겹쳐도 놓는다 */
     if (s) { cur = { id: s.id, x0: x, y0: y, moved: false, pid: e.pointerId }; try { el.setPointerCapture(e.pointerId); } catch (_) {} return; }

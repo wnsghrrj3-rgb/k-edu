@@ -65,11 +65,15 @@ export function deal(id, history = [], rnd = Math.random, opt = {}){ if (!CELLS[
   ns.forEach((n, k) => { const p = fill(n, ds[k], id, rnd, seatsH); seatsH.push(p.seat); out.push(p); }); return out; }
 /** 손으로 하는 판(걸음 ①)은 (가) 만 — 그 판 자리(start ~ start+2)의 (나) 를 (가) 로(답 · 같이 보이는 수는 그대로). */
 export function handFix(q, start){ return q.map((p, k) => k >= start && k < start + T.PER_BOARD && p.dir !== 'ga' ? { ...p, dir: 'ga' } : p); }
-/** 깨끗하지 못했던 문제를 「문제 둘을 사이에 두고」 다시(같은 답 · 같은 방향 · 자리와 같이 보이는 수는 새로 · 길이는 그대로). */
-export function requeue(q, i, rnd = Math.random){ for (let at = i + T.RETRY_GAP + 1; at < q.length; at++) { const a = q.slice(), hist = a.slice(0, at).map(p => p.seat), p = { ...fill(q[i].n, q[i].dir, q[i].cell, rnd, hist), retry: true }; a.splice(at, 0, p); a.length = q.length;
-    if (!same(a[at - 1], a[at]) && !same(a[at], a[at + 1])) return a; }
+/** 깨끗하지 못했던 문제를 「문제 둘을 사이에 두고」 다시(같은 답 · 같은 방향 · 자리와 같이 보이는 수는 새로 · 길이는 그대로).
+ *  밀어 넣지 않고 **뒤의 문제 하나와 바꾼다** — 같은 방향인 문제와 바꿔 판마다 (가) · (나) 가 그대로이고, 바꿔도 낱칸의 수가 모두 남는 자리(A03 다섯 수 · A07 저마다 둘)만 고른다.
+ *  그런 자리가 없으면(나들이 끝 가까이) 다시 내지 않는다. 앞뒤로 같은 n 이 붙지 않게. */
+export function requeue(q, i, rnd = Math.random){ const id = q[i] && q[i].cell, c = CELLS[id], need = id === 'A07' ? 2 : 1; if (!c) return q.slice();
+  for (let at = i + T.RETRY_GAP + 1; at < q.length; at++) { if (q[at].dir !== q[i].dir || q[at].retry) continue; const a = q.slice(), hist = a.slice(0, at).map(p => p.seat); a[at] = { ...fill(q[i].n, q[i].dir, id, rnd, hist), retry: true };
+    if (same(a[at - 1], a[at]) || same(a[at], a[at + 1])) continue;
+    if (pool(id).some(n => a.filter(p => p.n === n).length < Math.min(need, q.filter(p => p.n === n).length))) continue;   /* 바꿔서 어느 수가 모자라게 되지 않게(이미 모자랐던 것은 더 나빠지지만 않게) */
+    return a; }
   return q.slice(); }
-
 /** 판정: link = { at: 자리 } (가 = 고른 문 · 나 = 고른 쟁반) · 없으면 'none'(문이 아닌 곳에 놓음). */
 export function judge(p, link){ if (!link || link.at == null || link.at < 0 || link.at > 2) return 'none'; return p.set[link.at] === p.n ? 'fit' : 'off'; }
 /** 깨끗한 문제 = 빗장 걸린 문 · 물러난 쟁반 없음 · 길잡이 손이 뜨기 전 · 문이 다 닫히기 전. 문이 아닌 곳에 놓은 밧줄 · 들었다 놓은 쟁반 · 뒤집힌 문패를 돌린 것은 깨끗함 그대로. */
@@ -108,9 +112,9 @@ export function events(evBoards, rnd = Math.random, opt = {}){ const ev = { clos
 /** 문이 다 닫히기까지(초): 나들이 셋째 판이 조금 빠르다. */
 export const closeS = (id, board) => (board >= T.BOARDS - 1 ? T.CLOSE_LAST : T.CLOSE_S)[id] || T.CLOSE_S.A03;
 /** 빼꼼: 어느 문인지는 답과 상관없이 뽑는다(문 셋 가운데 고르게 · 문이 하나면 그 문). */
-export const peekAt = (p, rnd = Math.random) => (p.dir === 'ga' ? Math.floor(rnd() * 3) : 0);
+export const peekAt = (p, rnd = Math.random) => (p.dir === 'ga' ? Math.floor(rnd() * 3) : 1);   /* (나) 는 가운데 문 하나뿐 */
 /** 뒤집힌 문패: 어느 문패인지도 답과 상관없이. */
-export const flipAt = (p, rnd = Math.random) => (p.dir === 'ga' ? Math.floor(rnd() * 3) : 0);
+export const flipAt = (p, rnd = Math.random) => (p.dir === 'ga' ? Math.floor(rnd() * 3) : 1);
 
 /** 한 문제를 봇이 끝까지(하네스용): 아무 데나 이어 보고 · 아니면 그 자리는 빗장(가) / 물러남(나) — 남은 것 가운데 다시. → { ok, tries } */
 export function play(p, rnd = Math.random){ let left = [0, 1, 2], tries = 0; for (let g = 0; g < 40 && left.length; g++) { const at = rnd() < .2 ? -1 : left[Math.floor(rnd() * left.length)]; tries++; const j = judge(p, { at });
