@@ -84,7 +84,7 @@ export function deal(id, history = [], rnd = Math.random, opt = {}){ const c = C
   return []; }
 /** 걸음 ① 판: A13 은 「더 큰 수」만 · A14 는 「가장 큰 수」 둘 + 「가장 작은 수」 하나(마지막 문제). 수와 답 자리는 그대로(답 수만 그 자리로 옮긴다). */
 export function handFix(q, start){ return q.map((p, k) => { if (k < start || k >= start + T.PER_BOARD) return p; const ask = CELLS[p.cell].k === 3 && k === start + T.PER_BOARD - 1 ? 'small' : 'big';
-  if (p.ask === ask) return { ...p, hand: true }; return { ...make(p.cell, p.set, ask, p.answer, () => .5), nums: swapIn(p, ask), hand: true }; }); }
+  if (p.ask === ask) return { ...p, hand: true }; return { ...make(p.cell, p.set, ask, p.answer, () => .5), nums: swapIn(p, ask), hand: true, retry: !!p.retry }; }); }
 /** 같은 자리에 새 물음의 답 수가 오게 두 수를 바꾼다(다른 수의 자리는 그대로). */
 function swapIn(p, ask){ const a = ansNum(p.set, ask), n = p.nums.slice(), at = n.indexOf(a); [n[at], n[p.answer]] = [n[p.answer], n[at]]; return n; }
 /** 깨끗하지 못했던 문제를 「문제 둘을 사이에 두고」 다시(같은 수들 · 같은 물음 · 자리는 새로) — 밀어 넣지 않고 **뒤의 문제 하나와 바꾼다**.
@@ -118,14 +118,16 @@ export function pour(a, b, a0 = 0, b0 = 0){ const out = []; let l = a0, r = b0; 
 /** 가려진 자루에서 하나씩 나오는 차례(0 이면 아무것도 안 나온다 — 천만 걷힌다). */
 export const reveal = n => Array.from({ length: Math.max(0, n) }, (_, i) => i + 1);
 
-/** 그 판의 사건. evBoards = 이 낱칸에서 앞서 사건이 붙은 판 수 · opt = { passed, calm, hand }.
+/** 그 판의 사건. evBoards = 이 낱칸에서 앞서 사건이 붙은 판 수 · opt = { passed, calm, hand, fatShown }.
  *  손으로 하는 판(걸음 ①)은 사건 없음. 처음 판들은 INTRO 차례로 하나씩(새는 모래 자루는 한 번 나온 뒤로 늘) · 그 뒤는 판마다 하나.
- *  뚱뚱한 자루는 통과한 뒤만. ?calm = 모래 · 가려진 자루 · 여우 · 뚱뚱한 자루 없음. 사건은 수를 바꾸지 않는다(문제는 deal 이 정하고 사건은 꾸밈만 고른다). */
+ *  뚱뚱한 자루는 통과한 뒤만 — 통과 전에는 그 차례를 건너뛰고(모래만 남는 판이 없게), 통과한 뒤 첫 사건 판에 한 번 보여 준다(fatShown).
+ *  ?calm = 모래 · 가려진 자루 · 여우 · 뚱뚱한 자루 없음. 사건은 수를 바꾸지 않는다(문제는 deal 이 정하고 사건은 꾸밈만 고른다). */
 export function events(evBoards, rnd = Math.random, opt = {}){ const ev = { sand: false, cover: false, fox: false, surprise: false, fat: false, streak: true, intro: null };
   if (opt.hand) return { ...ev, none: true };
-  const can = { sand: true, cover: true, fox: true, surprise: true, fat: !!opt.passed, streak: true };
-  if (evBoards < INTRO.length) { const k = INTRO[evBoards]; ev.intro = k; if (can[k]) ev[k] = true; if (evBoards > 0) ev.sand = true; }
-  else { ev.sand = true; const w = [['cover', T.COVER_P], ['fox', T.FOX_P], ['surprise', T.SURPRISE_P], ['fat', can.fat ? T.FAT_P : 0]], sum = w.reduce((a, x) => a + x[1], 0); let r = rnd() * Math.max(1, sum);
+  const list = INTRO.filter(k => k !== 'fat'), i = evBoards - (opt.fatShown ? 1 : 0);
+  if (opt.passed && !opt.fatShown && evBoards > 0) { ev.intro = 'fat'; ev.fat = true; ev.sand = true; }
+  else if (i < list.length) { const k = list[i]; ev.intro = k; ev[k] = true; if (evBoards > 0) ev.sand = true; }
+  else { ev.sand = true; const w = [['cover', T.COVER_P], ['fox', T.FOX_P], ['surprise', T.SURPRISE_P], ['fat', opt.passed ? T.FAT_P : 0]], sum = w.reduce((a, x) => a + x[1], 0); let r = rnd() * Math.max(1, sum);
     for (const [name, p] of w) { if (r < p) { ev[name] = true; break; } r -= p; } }
   if (opt.calm) { ev.sand = false; ev.cover = false; ev.fox = false; ev.fat = false; }
   return ev; }

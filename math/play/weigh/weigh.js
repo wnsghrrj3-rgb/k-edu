@@ -21,12 +21,12 @@ import * as R from './rules.js?v=1';
 import { ASSETS, MODEL, WATCHERS, SCENERY, SCENERY_NAMES, GRASS, GLOW, ICON } from './art.js?v=1';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
-const T = { PIV_L: .9, BEAM_L: 3.25, BEAM_T: .19, HALF: 1.27, TILT: .2, TILT1: .065, PAN_D: 1.48, PED_H: 1.3, PED_Z: -1.7, SACK_W: .74, SACK_H: .3, SIDE_H: .36, SIDE_Z: 2.25, SIDE_X: 1.27, BOX: .18, BOX_DX: .215, BOX_Z: [.15, -.1],
-  SACK_SPOT: [.33, -.4], GUEST_H: .95, FOX_H: .62, WATCH_H: .8, BOAT: { henry: 2.2, anne: 1.25 }, BIG: 1.35,
-  WIDE: { guest: [2.75, .85], sand: [-2.75, .45], shore: 3.95, moor: { henry: [4.95, -.35], anne: [4.75, 1.15] }, fox: [-8.5, -2.0], watch: [[-4.3, 1.9, .9], [-5.3, -1.4, 2.2], [2.4, -3.0, -1.6]], fov: 34, elev: .85, tilt: 1.0, num: 96 },
-  TALL: { guest: [1.5, 3.65], sand: [-1.55, 3.45], shore: 2.45, moor: { henry: [3.4, 3.0], anne: [3.25, 4.3] }, fox: [-5.5, -2.0], watch: [[-.2, 4.2, .4], [2.3, -3.6, 2.2], [-2.3, -3.4, -1.6]], fov: 46, elev: 1.25, tilt: .78, num: 74, num3: 66 },
+const T = { PIV_L: .9, BEAM_L: 3.25, BEAM_T: .19, HALF: 1.27, TILT: .2, TILT1: .065, PAN_D: 1.56, PED_H: 1.3, PED_Z: -1.7, SACK_W: .74, SACK_H: .3, SIDE_H: .36, SIDE_Z: 2.25, SIDE_X: 1.27, BOX: .2, BOX_DX: .245, BOX_Z: [-.12, .17],
+  SACK_SPOT: [.33, -.5], GUEST_H: .95, FOX_H: .62, WATCH_H: .8, BOAT: { henry: 2.2, anne: 1.25 }, BIG: 1.35,
+  WIDE: { guest: [4.05, .95], sand: [-4.05, .4], shore: 5.2, moor: { henry: [6.2, -.35], anne: [6.0, 1.15] }, fox: [-9.5, -2.0], watch: [[-3.2, 2.6, .9], [-5.9, -1.0, 2.2], [-5.1, -3.3, 1.2]], side: 'out', fov: 34, elev: .85, tilt: 1.0, num: 96 },
+  TALL: { guest: [1.5, 3.65], sand: [-1.55, 3.45], shore: 2.45, moor: { henry: [3.4, 3.0], anne: [3.25, 4.3] }, fox: [-5.5, -2.0], watch: [[-.2, 4.2, .4], [2.6, 1.5, -1.5], [-2.6, 1.4, 1.6]], side: 'front', fov: 46, elev: 1.25, tilt: .78, num: 74, num3: 66 },
   LOW: null, LOW_NUM: 50, HOP_MS: 380, DROP_MS: 360, BOAT_MS: 900, WALK_MS: 750, LOAD_MS: 650, SIDE_MS: 520, BACK_MS: 520, POUR1: .7, TELL_GRACE: 4, STOMP_AT: .82 };
-T.LOW = { ...T.WIDE, elev: .5, fov: 30 };   /* 낮은 가로(전화기를 눕힘): 조금 더 앞에서 본다(세로 몫을 아낀다) */
+T.LOW = { ...T.WIDE, elev: .78, fov: 30 };   /* 낮은 가로(전화기를 눕힘): 조금 더 앞에서 본다(세로 몫을 아낀다) */
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
 const GO = '/math/play/go/';
@@ -74,9 +74,9 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   /* 시소 저울: 받침(통 눕힘) · 판자(기둥 눕힘) */
   pivot = lying(K[MODEL.pivot], T.PIV_L); scene.add(pivot); PIV_Y = new THREE.Box3().setFromObject(pivot).max.y + T.BEAM_T / 2 - .03;
   beam = new THREE.Group(); beam.position.set(0, PIV_Y, 0); beam.add(plank(K[MODEL.beam], T.BEAM_L, T.BEAM_T)); scene.add(beam);
-  for (let k = 0; k < 3; k++) { const o = fitH(K[MODEL.stand], T.PED_H); o.visible = false; scene.add(o); peds.push(o); }
-  for (const sd of ['L', 'R']) { const o = fitH(K[MODEL.side], T.SIDE_H, sd === 'L' ? .4 : 2); o.position.set((sd === 'L' ? -1 : 1) * T.SIDE_X, 0, T.SIDE_Z); o.visible = false; scene.add(o); stands.push(o); }
-  for (let k = 0; k < 3; k++) plates.push(plateObj(k));
+  for (let k = 0; k < 3; k++) { const o = new THREE.Group(), post = fitH(K[MODEL.stand], T.PED_H - .03); post.scale.x *= .7; post.scale.z *= .7; const tray = fitLen(K[MODEL.pan], .62, 0); tray.position.y = T.PED_H - .035; o.add(post, tray); o.visible = false; scene.add(o); peds.push(o); }   /* 받침대 = 가는 말뚝 + 작은 접시(꼬리표 뒤가 깨끗하게) */
+  for (const sd of ['L', 'R']) { const o = fitH(K[MODEL.side], T.SIDE_H, sd === 'L' ? .4 : 2); o.visible = false; o.userData.sd = sd; scene.add(o); stands.push(o); }
+  for (let k = 0; k < 4; k++) plates.push(plateObj(k));   /* 저울 둘 · 옆 받침대 · 남는 하나 */
   for (let k = 0; k < 3; k++) sacks.push(sackObj(k));
   for (let k = 0; k < 30; k++) BOX.push(boxObj());
   /* 손님 · 배 */
@@ -111,7 +111,9 @@ function boxObj(){ const o = fitH(K[MODEL.box], T.BOX); o.visible = false; retur
 // ── 자리(저울 둘레의 자리는 가로 · 세로가 같다 — 화면을 돌려도 움직이는 물체가 새 자리로 그대로 간다)
 const seatX = (k, n = K3()) => (n === 3 ? [-T.HALF, 0, T.HALF][k] : [-T.HALF, T.HALF][k]);
 const pedTop = k => V(seatX(k), T.PED_H, T.PED_Z);
-const standTop = sd => V((sd === 'L' ? -1 : 1) * T.SIDE_X, T.SIDE_H, T.SIDE_Z);
+/** 옆 받침대: 가로 화면은 저울 양 끝 바로 바깥(접시 셋이 한 줄로 나란히) · 전화기 세로는 접시 바로 앞(폭이 좁아서). */
+const standX = () => L().side === 'out' ? T.HALF + T.PAN_D + .12 : T.SIDE_X, standZ = () => L().side === 'out' ? .2 : T.SIDE_Z;
+const standTop = sd => V((sd === 'L' ? -1 : 1) * standX(), T.SIDE_H, standZ());
 function seatPos(sd, ang = beam.rotation.z){ const x = (sd === 'L' ? -1 : 1) * T.HALF, y = T.BEAM_T / 2 - .02; return V(x * Math.cos(ang) - y * Math.sin(ang), PIV_Y + x * Math.sin(ang) + y * Math.cos(ang), 0); }
 const plateAt = sd => plates.find(p => p.at === sd) || null;
 const moving = o => stage.tweens.some(w => w.o === o);
@@ -122,6 +124,7 @@ const sackLocal = pl => V((pl.side === 'L' ? -1 : 1) * T.SACK_SPOT[0], pl.top, T
 function placeWorld(){ const l = L(); for (const kd of ['WIDE', 'TALL']) scen[kd].forEach(o => { o.visible = (kd === 'TALL') === S.tall; });
   field.position.x = l.shore - 110; stage.sea.position.x = l.shore + 85 - .6; stage.deep.position.x = stage.sea.position.x;   /* 물은 오른쪽 끝에만(바다 평면을 땅 밖으로) */ dock.position.set(l.shore + .35, -.3, S.tall ? l.moor.henry[1] - 1.1 : -1.55);
   sandPole.position.set(l.sand[0], 0, l.sand[1]); sandBag.position.set(l.sand[0] + .2, 1.5, l.sand[1] + .14);
+  stands.forEach(o => { const q = standTop(o.userData.sd); o.position.set(q.x, 0, q.z); });
   watchers.forEach((p, k) => { if (moving(p.obj.position)) return; const w = l.watch[k]; p.obj.position.set(w[0], 0, w[1]); p.obj.rotation.y = w[2]; });
   for (const who of ['henry', 'anne']) { const b = boats[who], m = l.moor[who]; if (moving(b.g.position)) b.snap = true; else if (b.g.visible) b.g.position.set(m[0], 0, m[1]); b.g.rotation.y = Math.PI; const gp = guests[who]; if (gp.obj.visible && !S.ending) { if (moving(gp.obj.position)) gp.snap = true; else gp.obj.position.set(l.guest[0], 0, l.guest[1]); } } }
 
@@ -131,13 +134,13 @@ const trayRoom = () => S.tall ? 100 : S.low ? 52 : 124;
 function aim(w, h){ const tall = h > w * 1.05; S.tall = tall; S.low = !tall && h < 560; const l = L(); camera.fov = l.fov; camera.aspect = w / h; placeWorld();
   const z = NS.size(tagPx(), true), top = trayRoom() + 6, bottom = h - (tall ? 14 : S.low ? 30 : 12), mx = tall ? 6 : 14, sk = T.PED_H + T.SACK_H * 1.05, gw = l.guest, sd = l.sand;
   const pts = [[V(-T.HALF, sk, T.PED_Z), z.h + 8, 0, z.w / 2 + 4, 0], [V(T.HALF, sk, T.PED_Z), z.h + 8, 0, 0, z.w / 2 + 4], [V(-T.HALF - T.PAN_D / 2 - .1, PIV_Y, 0), 0, 0, 4, 0], [V(T.HALF + T.PAN_D / 2 + .1, PIV_Y, 0), 0, 0, 0, 4],
-    [V(-T.SIDE_X, 0, K3() === 3 ? T.SIDE_Z + .75 : .9), 0, 6, 0, 0], [V(gw[0] + .3, 0, gw[1] + .3), 0, 4, 0, 4], ...(tall ? [] : [[V(l.moor.henry[0] + .4, .4, l.moor.henry[1]), 0, 0, 0, 4]]), [V(gw[0], T.GUEST_H, gw[1]), tall ? 4 : 64, 0, 0, 0], [V(sd[0] - .3, 1.8, sd[1]), 4, 0, 4, 0], [V(sd[0], 0, sd[1] + .3), 0, 4, 0, 0]];
-  const tz = tall ? (T.PED_Z + gw[1]) / 2 : (T.PED_Z + (K3() === 3 ? T.SIDE_Z : .9)) / 2, tx = tall ? 0 : (sd[0] + gw[0]) / 2; let dist = tall ? 9 : 8;
+    ...(tall ? [[V(-T.SIDE_X, 0, K3() === 3 ? T.SIDE_Z + .75 : .9), 0, 6, 0, 0]] : [[V(0, 0, 1.0), 0, 6, 0, 0], ...(K3() === 3 ? [[V(-standX() - .82, .4, .2), 0, 0, 4, 0], [V(standX() + .82, .4, .2), 0, 0, 0, 4]] : [])]), [V(gw[0] + .3, 0, gw[1] + .3), 0, 4, 0, 4], ...(tall && !S.ending ? [] : [[V(l.moor.henry[0] + .4, .4, l.moor.henry[1]), 0, 0, 0, 4]]), ...(S.ending ? [[V(l.moor.anne[0] + .6, .3, l.moor.anne[1] + .6), 0, 6, 0, 6], [V(l.moor.henry[0] + .9, 1.2, l.moor.henry[1] - .9), 8, 0, 0, 6]] : []),   /* 끝 장면: 두 배가 화면 안에 */ [V(gw[0], T.GUEST_H, gw[1]), tall ? 4 : 64, 0, 0, 0], [V(sd[0] - .3, 1.8, sd[1]), 4, 0, 4, 0], [V(sd[0], 0, sd[1] + .3), 0, 4, 0, 0]];
+  const tz = tall ? (T.PED_Z + gw[1]) / 2 : (T.PED_Z + 1.0) / 2, tx = tall ? 0 : (sd[0] + gw[0]) / 2; let dist = tall ? 9 : 8;
   const box = () => { let a = 1e9, b = -1e9, c = 1e9, e = -1e9; for (const [p, pt, pb, pl, pr] of pts) { const q = p.clone().project(camera), x = (q.x + 1) / 2 * w, y = (1 - q.y) / 2 * h; a = Math.min(a, x - pl); b = Math.max(b, x + pr); c = Math.min(c, y - pt); e = Math.max(e, y + pb); } return { l: a, r: b, t: c, b: e }; };
   for (let k = 0; k < 70; k++) { camera.position.set(tx, dist * l.elev, tz + dist * l.tilt); camera.lookAt(tx, 0, tz); camera.clearViewOffset(); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
     const bx = box(); if (bx.r - bx.l <= w - 2 * mx && bx.b - bx.t <= bottom - top) break; dist *= 1.04; }
   const bx = box(), dx = (bx.l + bx.r) / 2 - w / 2, dy = top - bx.t + Math.max(0, (bottom - top) - (bx.b - bx.t)) * .35;   /* 남는 세로는 조금 아래로 나눠 둔다 */ camera.setViewOffset(w, h, dx, -dy, w, h); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
-  sacks.forEach(tagPaint); $('bubble').hidden = S.tall || !S.bubble; if (S.ready) setTimeout(tellPlace, 80); }
+  sacks.forEach(tagPaint); $('bubble').hidden = S.tall || S.low || !S.bubble; if (S.ready) setTimeout(tellPlace, 80); }
 
 // ── 꼬리표 · 천 · 말풍선 · 모래 · 깃발(화면 위 그림)
 function tagPaint(s){ if (s.where === 'off') { s.wrap.classList.add('off'); return; } NS.paint(s.cv, s.n, { px: tagPx(), compact: true }); s.wrap.classList.remove('off'); }
@@ -152,7 +155,7 @@ const rectOf = el => (el && !el.classList.contains('off') && !el.hidden ? el.get
 function bobEl(el, cls = 'bob', ms = 480){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); clearTimeout(el._bobT); el._bobT = setTimeout(() => el.classList.remove(cls), ms); }
 function clothPlace(){ const c = $('cloth'); if (!c.classList.contains('on') || S.cover < 0) return; const r = rectOf(sacks[S.cover].wrap); if (!r) return; Object.assign(c.style, { left: (r.left - 6) + 'px', top: (r.top - 4) + 'px', width: (r.width + 12) + 'px', height: (r.height + 8) + 'px' }); }
 const headAt = who => stage.screenOf(guests[who].obj.position.clone().add(V(0, T.GUEST_H + .12, 0)));
-function bubble(text){ const b = $('bubble'); S.bubble = text || null; if (!text) { b.hidden = true; return; } if (b.textContent !== text) b.textContent = text; b.hidden = S.tall; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); bubblePlace(); }
+function bubble(text){ const b = $('bubble'); S.bubble = text || null; if (!text) { b.hidden = true; return; } if (b.textContent !== text) b.textContent = text; b.hidden = S.tall || S.low; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); bubblePlace(); }
 function bubblePlace(){ const b = $('bubble'); if (b.hidden || !S.who) return; const q = headAt(S.who); b.style.left = Math.min(innerWidth - b.offsetWidth / 2 - 6, q.x) + 'px'; b.style.top = q.y + 'px'; }
 function sandDraw(run){ const d = $('sand'); const on = !!(run && sandBag.visible); d.classList.toggle('on', on); const k = Math.min(1, S.clock); sandBag.scale.set(1 - .55 * k, 1 - .3 * k, 1 - .55 * k);
   if (on) { const q = stage.screenOf(sandBag.position.clone().add(V(0, -.46 * sandBag.scale.y, 0))); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; } }
@@ -202,11 +205,11 @@ function hitAt(x, y){ const inR = (r, pad = 0) => r && x >= r.left - pad && x <=
   if (S.who && guests[S.who].obj.visible && (inR(rect3(guests[S.who].obj, 1.15), 8) || inR(rectOf($('bubble'))))) return { kind: 'guest' };
   return { kind: 'other', what: inR(uni([rect3(beam), rect3(pivot), ...plates.filter(p => p.at !== 'hide').map(p => rect3(p.g))])) ? 'scale' : 'empty' }; }
 canvas.addEventListener('pointerdown', e => { if (!S.ready || e.button > 0) return; audio(); const x = e.clientX, y = e.clientY; if (!S.active || E.homeOpen()) { H.ripple(x, y); S.log.push({ ignored: 'idle' }); return; }
-  const hit = hitAt(x, y); if (S.busy || S.closed) { H.ripple(x, y); S.log.push({ ignored: 'busy', hit: hit.kind }); return; }
+  const hit = hitAt(x, y); if (S.busy || S.closed) { H.ripple(x, y); S.log.push({ ignored: 'busy', hit: hit.kind }); if (!S.closed && S.phase === 'weigh' && hit.kind === 'sack' && hit.s.where === 'ped' && !S.queued) { S.queued = hit.s; S.log.push({ queued: hit.s.n }); } return; }   /* 올려 보는 중: 쏟는 동안 누른 받침대 자루 하나는 이어서 올린다 */
   touch(); H.ripple(x, y); S.log.push({ tap: hit.kind, what: hit.what, n: hit.s ? hit.s.n : null });
   if (hit.kind === 'fox') { chase(); return; } if (hit.kind === 'sack') { onSack(hit.s, x, y); return; } if (hit.kind === 'guest') { guestTap(); nudge(x, y, 'guest'); return; } nudge(x, y, hit.what); });
 function touch(){ S.lastAct = S.t; H.hide(); S.hinting = false; }
-function onSack(s, x, y){ if (S.fox && S.fox.s === s) { chase(); return; } if (s.where === 'out' || s.where === 'rolling') { nudge(x, y, s.where); return; }
+function onSack(s, x, y){ if (S.fox && S.fox.s === s && S.fox.phase === 'drag') { chase(); return; }   /* 물고 끌어가는 중만 쫓기 · 오는 중 · 무는 중이면 그대로 답(확인할 때 여우가 달아난다) */ if (s.where === 'out' || s.where === 'rolling') { nudge(x, y, s.where); return; }
   if (S.phase === 'weigh') { if (s.where === 'ped') putOn1(s); else nudge(x, y, 'up'); return; } pick(s); }
 /** 자루가 아닌 곳의 누름(5-11): 물결 + 다음에 누를 곳 + 한 줄 안내. 고르는 중이면 고를 자루들이 들썩(손은 답을 짚지 않는다) · 올려 보는 중이면 손이 다음에 올릴 자루를. */
 function nudge(x, y, what){ tone(520, .07, 'triangle', .05); const ls = live().filter(s => s.where !== 'out'); S.log.push({ nudge: true, what, phase: S.phase });
@@ -243,13 +246,14 @@ async function level(ms = 500){ stopTweens(beam.rotation); await stage.tween(bea
 async function toStand(pl){ const sd = pl.at; pl.at = 'S' + sd; const to = standTop(sd), from = pl.g.position.clone(), mid = from.clone().lerp(to, .5); mid.y = Math.max(from.y, to.y) + .35; S.log.push({ stand: pl.sack ? pl.sack.n : null, side: sd });
   await stage.tween(pl.g.position, { x: mid.x, y: mid.y, z: mid.z }, T.SIDE_MS * .45, easeOut); await stage.tween(pl.g.position, { x: to.x, y: to.y, z: to.z }, T.SIDE_MS * .55, easeIn); pl.g.position.copy(standTop(sd)); thump(); }
 /** 빈 접시가 저울 sd 자리에 새로 놓인다. */
-async function spareTo(sd){ let pl = plates.find(p => p.at === 'hide'); if (!pl) return plateAt(sd); clearPlate(pl); pl.at = sd; pl.side = sd; pl.g.visible = true; pl.g.position.copy(seatPos(sd)); pl.g.scale.setScalar(.01); await stage.tween(pl.g.scale, { x: 1, y: 1, z: 1 }, 220, easeOut); return pl; }
+async function spareTo(sd){ let pl = plates.find(p => p.at === 'hide') || plates.find(p => p.at.startsWith('S') && !p.sack && !p.owner && !p.boxes.length); if (!pl) return plateAt(sd); clearPlate(pl); pl.at = sd; pl.side = sd; pl.g.visible = true; pl.g.position.copy(seatPos(sd)); pl.g.scale.setScalar(.01); await stage.tween(pl.g.scale, { x: 1, y: 1, z: 1 }, 220, easeOut); return pl; }
 async function hidePlate(pl){ await stage.tween(pl.g.scale, { x: .01, y: .01, z: .01 }, 180); clearPlate(pl); pl.at = 'hide'; pl.g.visible = false; pl.g.scale.setScalar(1); }
 function clearPlate(pl){ for (const b of pl.boxes) freeBox(b); pl.boxes = []; pl.sack = null; pl.owner = null; pl.glow = false; }
 /** 옆 받침대의 접시를 저울 sd 자리로(자리의 빈 접시는 치운다) — 상자 줄은 그 자리 쪽으로 다시 맞춘다. */
-async function backTo(pl, sd){ const e = plateAt(sd); if (e && e !== pl) await hidePlate(e); pl.at = sd; const to = seatPos(sd); await stage.tween(pl.g.position, { x: to.x, y: to.y, z: to.z }, T.SIDE_MS, easeOut); if (pl.side !== sd) { pl.side = sd; pl.boxes.forEach((b, k) => stage.tween(b.o.position, boxLocal(pl, k), 200)); if (pl.sack) stage.tween(pl.sack.g.position, sackLocal(pl), 200); await sleep(220); } }
+async function backTo(pl, sd){ const e = plateAt(sd); if (e && e !== pl) { if (e.sack || e.owner || e.boxes.length) await toStand(e); else await hidePlate(e); } pl.at = sd; const to = seatPos(sd); await stage.tween(pl.g.position, { x: to.x, y: to.y, z: to.z }, T.SIDE_MS, easeOut); if (pl.side !== sd) { pl.side = sd; pl.boxes.forEach((b, k) => stage.tween(b.o.position, boxLocal(pl, k), 200)); if (pl.sack) stage.tween(pl.sack.g.position, sackLocal(pl), 200); await sleep(220); } }
 /** 자루를 저울 sd 자리로(받침대에서 내려오거나 · 옆 받침대에서 돌아오거나) — 아직 안 쏟은 상자는 쏟는다. */
 async function bringTo(s, sd){ if (s.plate && s.plate.at === sd) { if (s.poured < s.n) await pourOne(s); return; }
+  if (!s.plate) { const own = plates.find(p => p.at !== 'hide' && p.owner === s && !p.sack); if (own) { if (own.at !== sd) await backTo(own, sd); await hopTo(s, own); if (s.poured < s.n) await pourOne(s); return; } }   /* 가려진 자루: 먼저 나온 상자가 있는 접시로 */
   if (s.plate && s.plate.at.startsWith('S')) { await backTo(s.plate, sd); return; }
   let pl = plateAt(sd); if (!pl || (pl.sack && pl.sack !== s) || (pl.owner && pl.owner !== s)) { if (pl) await toStand(pl); pl = await spareTo(sd); }
   await hopTo(s, pl); if (s.poured < s.n) await pourOne(s); }
@@ -265,7 +269,7 @@ async function load(s){ const my = S.oid, who = S.who, bt = boats[who]; stopTwee
   actPlay(guests[who], 'Yes', true); setTimeout(() => { if (S.oid === my) actPlay(guests[who], 'Idle'); }, 1000); tone(660, .1, 'triangle', .08); tone(880, .12, 'triangle', .08, .1);
   const to = bt.g.visible ? bt.g.position.clone().add(V(0, .7, 0)) : guests[who].obj.position.clone().add(V(1.5, .8, 0)), from = s.g.position.clone(), mid = from.clone().lerp(to, .5); mid.y = Math.max(from.y, to.y) + 1.1;
   await stage.tween(s.g.position, { x: mid.x, y: mid.y, z: mid.z }, T.LOAD_MS * .5, easeOut); await stage.tween(s.g.position, { x: to.x, y: to.y, z: to.z }, T.LOAD_MS * .5, easeIn); if (S.oid !== my) return;
-  s.g.visible = false; s.wrap.classList.add('off'); bt.n++; bt.load.visible = true; bt.load.scale.setScalar(.75 + .1 * Math.min(bt.n, 5)); thump(); S.log.push({ loaded: s.n, who }); }
+  s.g.visible = false; s.wrap.classList.add('off'); bt.n++; S.loads[who] = (S.loads[who] | 0) + 1; bt.load.visible = true; bt.load.scale.setScalar(.75 + .1 * Math.min(bt.n, 5)); thump(); S.log.push({ loaded: s.n, who }); }
 
 // ── 손님 · 배
 async function boatIn(who, big){ const b = boats[who], m = L().moor[who], my = S.oid; b.snap = false; stopTweens(b.g.position); b.g.scale.setScalar(big ? T.BIG : 1); b.g.visible = true; b.g.position.set(m[0] + 7, 0, m[1]); b.g.rotation.y = Math.PI; tone(196, .4, 'sine', .04);
@@ -284,7 +288,7 @@ function stomp(){ const g = guests[S.who]; if (!g) return; actPlay(g, 'Jump', tr
 // ── 가려진 자루 · 여우
 function startReveal(){ const s = sacks[S.cover], pl = plateAt(S.cover === 0 ? 'L' : 'R'); pl.owner = s; S.revealing = true; S.revealT = S.t + R.T.REVEAL_GAP; $('cloth').className = 'on'; S.log.push({ cover: s.n, seat: s.seat }); }
 function revealStep(){ const s = sacks[S.cover], pl = plateAt(S.cover === 0 ? 'L' : 'R'); if (!pl) { stopReveal(); return; } if (s.poured < s.n) { boxOut(s, pl); S.log.push({ revealed: s.poured }); S.revealT = S.t + R.T.REVEAL_GAP; return; } stopReveal(); }
-function stopReveal(){ if (!S.revealing && !$('cloth').classList.contains('on')) return; S.revealing = false; const c = $('cloth'); if (c.classList.contains('on')) { c.classList.add('lift'); setTimeout(() => { c.className = ''; }, 460); S.log.push({ uncover: S.cover >= 0 ? sacks[S.cover].poured : -1 }); } }
+function stopReveal(){ if (!S.revealing && !$('cloth').classList.contains('on')) return; S.revealing = false; S.lastAct = S.t; const c = $('cloth'); if (c.classList.contains('on')) { c.classList.add('lift'); setTimeout(() => { c.className = ''; }, 460); S.log.push({ uncover: S.cover >= 0 ? sacks[S.cover].poured : -1 }); } }
 function foxStart(){ const p = S.p; let s = sacks[R.foxAt(p)]; if (s.where !== 'ped' || s.seat === S.cover) s = live().find(x => x.where === 'ped' && x.seat !== S.cover); if (!s) return;
   const f = L().fox, top = pedTop(s.seat); fox.obj.visible = true; fox.obj.position.set(f[0], 0, f[1]); S.fox = { s, phase: 'come', t: 0, to: V(top.x - .55, 0, top.z - .25) }; actPlay(fox, 'Walk'); S.log.push({ fox: s.n, seat: s.seat }); tone(330, .2, 'triangle', .04); }
 function foxStep(dt){ const F = S.fox; if (!F) return; const o = fox.obj;
@@ -310,7 +314,7 @@ async function putOn1(s){ const my = S.oid; S.busy = true; H.hide(); S.log.push(
     if (live().some(x => x.where === 'ped')) { await sleep(900); if (S.oid !== my) return; const light = a.n < b.n ? a : b; glowOff(); await toStand(light.plate); if (S.oid !== my) return; await spareTo(light === a ? 'L' : 'R'); await thud(light === a ? 'right' : 'left', .4); } }   /* A14: 가벼운 쪽이 접시째 옆 받침대로 */
   if (S.oid !== my) return;
   if (!live().some(x => x.where === 'ped')) { await sleep(800); if (S.oid !== my) return; askNow(); }
-  S.busy = false; S.lastAct = S.t; }
+  S.busy = false; S.lastAct = S.t; const nx = S.queued; S.queued = null; if (nx && nx.where === 'ped' && S.phase === 'weigh' && S.active && !S.closed) putOn1(nx); }
 function glowExtras(a, b){ const big = a.n > b.n ? a : b, m = Math.min(a.n, b.n); big.plate.boxes.forEach((x, k) => { x.glow = k >= m; }); S.log.push({ extra: Math.abs(a.n - b.n) }); }
 function glowOff(){ for (const b of BOX) b.glow = false; for (const pl of plates) pl.glow = false; }
 
@@ -332,8 +336,8 @@ async function confirm2(s){ const my = S.oid, p = S.p, a = sacks[0], b = sacks[1
 /** 걸음 ② A14: 찍은 자루가 한 접시에 · 나머지가 차례로 맞은편에 — 쿵, 쿵 두 번. 한 번이라도 지면 찍은 자루가 물러나고 남은 둘 가운데서 다시 찍는다(쏟아진 상자는 보인 채로). */
 async function confirm3(s){ const my = S.oid, p = S.p; S.busy = true; H.hide(); stopReveal(); bobSack(s); s.wrap.classList.add('lit'); await foxOff(); if (S.oid !== my) return;
   const sd = s.plate && (s.plate.at === 'L' || s.plate.at === 'R') ? s.plate.at : sideFor(s), other = sd === 'L' ? 'R' : 'L'; await bringTo(s, sd); if (S.oid !== my) return;
-  const cov = S.cover >= 0 && sacks[S.cover].plate && sacks[S.cover].where === 'plate' ? S.cover : -1, list = R.bouts(p, s.seat, cov, S.out); S.log.push({ bouts: list.map(x => x.vs + (x.win ? '+' : '-')).join(' ') });
-  for (let i = 0; i < list.length; i++) { const o = sacks[list[i].vs]; await bringTo(o, other); if (S.oid !== my) return; const l = plateAt('L').sack, r = plateAt('R').sack; await thud(R.tilt(l.n, r.n)); if (S.oid !== my) return; S.log.push({ bout: [s.n, o.n], win: list[i].win });
+  const cs = S.cover >= 0 ? sacks[S.cover] : null, cov = cs && cs !== s && plates.some(q => q.at !== 'hide' && q.owner === cs) ? S.cover : -1,   /* 가려진 자루의 상자가 접시에 나와 있으면 그 자루가 먼저 */ list = R.bouts(p, s.seat, cov, S.out); S.log.push({ bouts: list.map(x => x.vs + (x.win ? '+' : '-')).join(' ') });
+  for (let i = 0; i < list.length; i++) { const o = sacks[list[i].vs]; await bringTo(o, other); if (S.oid !== my) return; const l = plateAt('L').sack, r = plateAt('R').sack; await thud(R.tilt(l.n, r.n)); if (S.oid !== my) return; S.log.push({ bout: [s.n, o.n], win: list[i].win, vs: o.seat, pans: plates.filter(q => q.at !== 'hide').map(q => ({ at: q.at, n: q.boxes.length, sack: q.sack ? q.sack.n : null, own: q.boxes.every(b => b.owner === q.sack) })) });
     if (!list[i].win) { s.wrap.classList.remove('lit'); S.res.retreat = true; await sleep(300); await retreat(s); if (S.oid !== my) return; S.out.push(s.seat); const left = live().filter(x => x.where !== 'out');
       if (left.length === 1) { await sleep(200); await finish(left[0]); return; }
       S.busy = false; S.lastAct = S.t; S.log.push({ again: left.map(x => x.n).join() }); return; }
@@ -368,7 +372,7 @@ function resetScene(){ for (const pl of plates) { stopTweens(pl.g.position); sto
   stopTweens(beam.rotation); beam.rotation.z = 0; S.revealing = false; $('cloth').className = ''; flagOff(); glowOff();
   if (S.fox) { if (S.fox.s) S.fox.s = null; S.fox = null; } fox.obj.visible = false; S.foxAt = Infinity; sandPole.visible = sandBag.visible = false; sandBag.scale.setScalar(1); $('sand').classList.remove('on'); }
 async function runProblem(p, ctx){ const my = S.oid;
-  S.p = p; S.step = ctx.step; S.ev = ctx.ev; S.ctx = ctx; S.res = { retreat: false, hinted: false, missed: false }; S.closed = false; S.clock = 0; S.busy = true; S.hinting = false; S.out = []; S.stompAt = 0;
+  S.p = p; S.step = ctx.step; S.ev = ctx.ev; S.ctx = ctx; S.res = { retreat: false, hinted: false, missed: false }; S.closed = false; S.clock = 0; S.busy = true; S.hinting = false; S.out = []; S.stompAt = 0; S.queued = null;
   S.sandS = R.sandS(S.cell, ctx.board); S.phase = ctx.step === 1 ? 'weigh' : 'ask'; S.cover = ctx.cover && ctx.step === 2 && !CALM ? R.coverAt(p) : -1; resetScene(); A.trayClear(); H.hide();
   const k = p.nums.length; peds.forEach((o, i) => { o.visible = i < k; o.position.set(i < k ? seatX(i, k) : 0, 0, T.PED_Z); }); stands.forEach(o => { o.visible = k === 3; });
   for (const [i, sd] of [[0, 'L'], [1, 'R']]) { const pl = plates[i]; pl.at = sd; pl.side = sd; pl.g.visible = true; pl.g.position.copy(seatPos(sd)); }
@@ -394,13 +398,13 @@ async function runProblem(p, ctx){ const my = S.oid;
 const TELLS = () => ({ times: M.passed(M.get(S.cell || '')) ? 2 : 1e9 });
 /** 하네스용: 문제를 정해 줌 — { nums, ask }. */
 function forced(id, f){ const nums = f.nums.slice(), set = nums.slice().sort((a, b) => a - b); return { cell: id, nums, ask: f.ask, answer: R.answerOf({ nums, ask: f.ask }), set, key: set.join(','), retry: false }; }
-async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.streak = 0; S.today = []; S.asked = {}; clearEnd(); const day = M.dayKey(); let prevStep = 0;
+async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.streak = 0; S.today = []; S.asked = {}; S.loads = { henry: 0, anne: 0 }; clearEnd(); const day = M.dayKey(); let prevStep = 0;
   let rec = M.get(id); S.back = M.stuckNow(rec) && !!rec.hand;
   let q = R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1, first: rec.lastAsk === 'big' ? 'small' : 'big' }); if (S.forceP) { S.forceP.forEach((f, k) => { if (q[k] && f) q[k] = forced(id, f); }); S.forceP = null; }
   S.q = q; E.lanterns(0); S.log.push({ outing: id, deal: q.map(p => p.nums.join('') + p.ask[0]) });
   const b0 = S.startBoard | 0; S.startBoard = 0;   /* 하네스용: 셋째 판부터 */
   for (let b = b0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = !rec.hand || S.back;
-    let ev = R.events(rec.evBoards, Math.random, { passed: M.passed(rec), calm: CALM, hand }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; }
+    let ev = R.events(rec.evBoards, Math.random, { passed: M.passed(rec), calm: CALM, hand, fatShown: !!rec.fatShown }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; }
     if (hand) { q = R.handFix(q, b * R.T.PER_BOARD); S.q = q; }
     if (S.surpriseCarry && !hand) ev.surprise = true;
     const pickJ = on => (on ? (ev.at != null ? ev.at : Math.floor(Math.random() * 3)) : -1), coverJ = pickJ(ev.cover), foxJ = pickJ(ev.fox), surpJ = pickJ(ev.surprise), fatJ = pickJ(ev.fat);
@@ -411,7 +415,7 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.s
       const r = await runProblem(q[i], { step: hand ? 1 : 2, ev, board: b, j, last, cover: j === coverJ, fox: j === foxJ, surprise: j === surpJ, fat: j === fatJ, firstStep: b === b0 || (hand ? 1 : 2) !== prevStep });
       if (S.oid !== my || r.abort) return; results.push(r); E.marbles(j + 1); if (!r.clean) q = R.requeue(q, i); S.q = q; }
     prevStep = hand ? 1 : 2;
-    const before = rec; rec = M.record(rec, results, day, { counts: !hand, hand, ev: !hand && !ev.none }); if (!hand) rec.lastAsk = pattern; if (hand) S.back = false; else if (M.stuckNow(rec)) S.back = true; M.put(id, rec); S.log.push({ boardEnd: b, clean: M.clean(results), rec: { ...rec } });
+    const before = rec; rec = M.record(rec, results, day, { counts: !hand, hand, ev: !hand && !ev.none }); if (!hand) rec.lastAsk = pattern; if (!hand && ev.intro === 'fat') rec.fatShown = 1; if (hand) S.back = false; else if (M.stuckNow(rec)) S.back = true; M.put(id, rec); S.log.push({ boardEnd: b, clean: M.clean(results), rec: { ...rec } });
     await E.fly($('marbles'), $('coins'), art(ICON.coin), results.filter(r => r.out === 'sent').length); if (S.oid !== my) return; E.lanterns(b + 1); tone(660, .15, 'triangle', .1); tone(990, .2, 'triangle', .1, .12);
     if (!M.passed(before) && M.passed(rec)) { grew(art(ICON.flag) + ' 깃발을 땄어요!'); await sleep(2400); } else if (!M.kept(before) && M.kept(rec)) { grew(art(ICON.star) + ' 깃발에 별이 붙었어요!'); await sleep(2400); }
     if (S.oid !== my) return; await sleep(300); if (S.oid !== my) return; }
@@ -420,12 +424,12 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.s
   const choice = await E.home({ items }); if (S.oid !== my) return;
   if (choice === 'again') outing(id); else location.href = GO; }
 /** 나들이 끝 장면: 헨리의 큰 배와 앤의 나룻배에 오늘 실은 자루가 쌓여 있고 · 빈 저울이 한 번 까딱인 뒤 평평하게 선다. */
-async function endScene(id, my){ S.p = null; A.trayClear(); resetScene(); bubble(null); S.ending = true; H.hide(); { const tl = $('tell'); if (tl) tl.classList.remove('on'); } for (const [i, sd] of [[0, 'L'], [1, 'R']]) { const pl = plates[i]; pl.at = sd; pl.side = sd; pl.g.visible = true; pl.g.position.copy(seatPos(sd, 0)); }   /* 빈 저울(빈 접시 둘) */ const l = L(), n = Math.max(1, S.today.length), hn = S.log.filter(x => x.loaded != null && x.who === 'henry').length, an = S.log.filter(x => x.loaded != null && x.who === 'anne').length;
+async function endScene(id, my){ S.p = null; A.trayClear(); resetScene(); bubble(null); S.ending = true; H.hide(); { const tl = $('tell'); if (tl) tl.classList.remove('on'); } for (const [i, sd] of [[0, 'L'], [1, 'R']]) { const pl = plates[i]; pl.at = sd; pl.side = sd; pl.g.visible = true; pl.g.position.copy(seatPos(sd, 0)); }   /* 빈 저울(빈 접시 둘) */ const l = L(), n = Math.max(1, S.today.length), L0 = S.loads || {}, hn = L0.henry | 0, an = L0.anne | 0;   /* 이 나들이에서 실은 것만 */
   for (const who of ['henry', 'anne']) { const b = boats[who], m = l.moor[who]; stopTweens(b.g.position); b.g.visible = true; b.g.scale.setScalar(who === 'henry' ? T.BIG : 1); b.g.position.set(m[0], 0, m[1]); b.g.rotation.y = Math.PI; b.n = who === 'henry' ? Math.max(1, hn) : Math.max(1, an); b.load.visible = true; b.load.scale.setScalar(.8 + .12 * Math.min(b.n, 5));
     const g = guests[who]; stopTweens(g.obj.position); g.obj.visible = true; g.obj.position.set(l.guest[0] + (who === 'anne' ? .1 : -.4), 0, l.guest[1] + (who === 'anne' ? .75 : -.35)); g.obj.rotation.y = -Math.PI / 2 + .4; actPlay(g, 'Wave'); }
-  S.who = null; await stage.tween(beam.rotation, { z: .12 }, 250); await stage.tween(beam.rotation, { z: -.08 }, 250); await stage.tween(beam.rotation, { z: 0 }, 300, easeOut);
+  S.who = null; aim(innerWidth, innerHeight); await stage.tween(beam.rotation, { z: .12 }, 250); await stage.tween(beam.rotation, { z: -.08 }, 250); await stage.tween(beam.rotation, { z: 0 }, 300, easeOut);
   S.log.push({ endScene: n, henry: hn, anne: an }); confetti(14); [523, 659, 784, 1047].forEach((f, i) => tone(f, .2, 'triangle', .1, .2 + i * .12)); await sleep(1400); }
-function clearEnd(){ S.ending = false; for (const who of ['henry', 'anne']) { const b = boats[who], g = guests[who]; if (!b || !g) continue; stopTweens(b.g.position); b.g.visible = false; b.n = 0; b.load.visible = false; stopTweens(g.obj.position); g.obj.visible = false; actPlay(g, 'Idle'); } S.who = null; }
+function clearEnd(){ const was = S.ending; S.ending = false; if (was && S.ready) aim(innerWidth, innerHeight); for (const who of ['henry', 'anne']) { const b = boats[who], g = guests[who]; if (!b || !g) continue; stopTweens(b.g.position); b.g.visible = false; b.n = 0; b.load.visible = false; stopTweens(g.obj.position); g.obj.visible = false; actPlay(g, 'Idle'); } S.who = null; }
 /** 하네스 · 교사용: 지금 나들이를 거둔다. */
 function abort(){ S.oid++; S.active = false; if (S.done) { const d = S.done; S.done = null; d('abort'); } stage.tweens.length = 0; A.trayClear(); resetScene(); clearEnd(); bubble(null); S.p = null; S.busy = false; TL.stop(); H.hide(); S.phase = 'idle';
   const hm = document.getElementById('home'); if (hm) hm.classList.remove('on'); }
@@ -433,7 +437,7 @@ function abort(){ S.oid++; S.active = false; if (S.done) { const d = S.done; S.d
 // ── 한 장면의 일
 stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
   const thinking = S.active && !S.busy && !S.closed;
-  for (const pl of plates) if ((pl.at === 'L' || pl.at === 'R') && !moving(pl.g.position)) pl.g.position.copy(seatPos(pl.at));   /* 접시는 판자 끝을 따라 오르내리되 늘 평평하다 */
+  for (const pl of plates) if (pl.at !== 'hide' && !moving(pl.g.position)) pl.g.position.copy(pl.at.length === 1 ? seatPos(pl.at) : standTop(pl.at.slice(1)));   /* 옆 받침대 접시도 화면이 바뀌면 새 자리로 */   /* 접시는 판자 끝을 따라 오르내리되 늘 평평하다 */
   const pulse = .3 + .3 * Math.sin(t * 7); for (const b of BOX) if (b.used) b.mats.forEach(m => { m.emissiveIntensity = b.glow ? pulse : 0; }); for (const pl of plates) pl.mats.forEach(m => { m.emissiveIntensity = pl.glow ? pulse + .2 : 0; });
   for (const s of sacks) if (s.gift && s.where !== 'off') s.mats.forEach(m => { m.emissiveIntensity = .35 + .2 * Math.sin(t * 4); });
   if (S.revealing && S.active && !S.busy && !S.closed && t >= S.revealT) revealStep();
@@ -445,7 +449,8 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
   for (const s of sacks) tagPlace(s); tagsApart(); clothPlace(); bubblePlace(); flagPlace();
   /* 길잡이 손: 가만히 있으면 — 고르는 중이면 맞는 자루(뜨면 그 문제는 깨끗하지 않음) · 올려 보는 중이면 다음에 올릴 자루 */
   const wait = R.T.HINT_AFTER * (M.stuck(M.get(S.cell || '')) >= 1 ? .5 : 1);
-  if (thinking && t - S.lastAct > wait && !S.hinting) { S.hinting = true; S.hintAt = t; if (S.phase === 'ask') { S.res.hinted = true; S.log.push({ hinted: true }); } hintShow(); }
+  if (S.revealing) S.lastAct = Math.max(S.lastAct, t - .001);   /* 가려진 자루가 나오는 동안은 길잡이 시계도 멈춘다 */
+  if (thinking && t - S.lastAct > wait && !S.hinting && !S.revealing) { S.hinting = true; S.hintAt = t; if (S.phase === 'ask') { S.res.hinted = true; S.log.push({ hinted: true }); } hintShow(); }
   if (S.hinting && thinking && t - S.hintAt > 1.2) { S.hintAt = t; hintShow(); }
   if (!thinking && S.hinting) { S.hinting = false; H.hide(); } });
 function hintShow(){ if (!S.p) return; const s = S.phase === 'ask' ? sacks[S.p.answer] : live().find(x => x.where === 'ped'); if (!s) return; const r = sackHit(s); if (!r) return; S.log.push({ hintAt: s.seat }); H.show(r.x, r.bottom - 8); }
@@ -460,8 +465,11 @@ window.__weigh = { S, R, M, E, T, TL, NS, stage, wallet, K, fitH, outing, abort,
   plates: () => plates.filter(p => p.at !== 'hide').map(p => ({ at: p.at, n: p.boxes.length, sack: p.sack ? p.sack.n : null, own: p.boxes.every(b => !p.sack || b.owner === p.sack) })), angle: () => beam.rotation.z,
   boxGap: () => { let g = 9; for (const p of plates) { if (p.at === 'hide') continue; const ws = p.boxes.map(b => b.o.getWorldPosition(V())); for (let i = 0; i < ws.length; i++) for (let j = i + 1; j < ws.length; j++) g = Math.min(g, Math.hypot(ws[i].x - ws[j].x, ws[i].z - ws[j].z)); } return g; },
   boxLevel: () => plates.filter(p => p.at !== 'hide' && p.boxes.length).every(p => { const ys = p.boxes.map(b => b.o.getWorldPosition(V()).y); return Math.max(...ys) - Math.min(...ys) < .02; }),
+  /** 하네스: 상자의 화면 간격(같은 줄 이웃 칸 · 윗줄 ↔ 아랫줄) — 상자가 여섯 이상인 접시마다 가장 좁은 값 */
+  boxPx: () => { let col = 1e9, row = 1e9; for (const p of plates) { if (p.at === 'hide' || p.boxes.length < 6) continue; const q = p.boxes.map(b => stage.screenOf(b.o.getWorldPosition(V()).add(V(0, T.BOX / 2, 0)))); col = Math.min(col, Math.hypot(q[0].x - q[1].x, q[0].y - q[1].y)); row = Math.min(row, Math.abs(q[0].y - q[5].y)); } return { col: +col.toFixed(1), row: +row.toFixed(1) }; },
   sackXs: () => live().map(s => ({ seat: s.seat, x: stage.screenOf(s.g.getWorldPosition(V())).x })), who: () => S.who, guestVisible: w => guests[w].obj.visible, boatN: w => boats[w].n, sandScale: () => sandBag.scale.x, sandOn: () => sandBag.visible, foxState: () => S.fox && { phase: S.fox.phase, n: S.fox.s ? S.fox.s.n : null }, chase,
-  sackWhere: () => live().map(s => s.where), boatScale: w => boats[w].g.scale.x,
+  sackWhere: () => live().map(s => s.where),
+  /** 하네스: 끝 장면의 배 · 손님이 화면 안인가 */ endVis: () => ['henry', 'anne'].flatMap(w => [rect3(boats[w].g), rect3(guests[w].obj)]).map(r => !!r && r.left < innerWidth - 4 && r.right > 4 && r.top < innerHeight - 4 && r.bottom > 4 && (r.left + r.right) / 2 > 0 && (r.left + r.right) / 2 < innerWidth && (r.top + r.bottom) / 2 < innerHeight), boatScale: w => boats[w].g.scale.x,
   /** 하네스: 모든 물체가 제자리인가(저울 위 접시 = 판자 끝 · 옆 받침대 접시 = 받침대 위 · 접시 위 자루 = 자루 자리 · 받침대 자루 = 받침대 위) */
   posOk: () => { const bad = []; for (const pl of plates) { if (pl.at === 'hide') continue; const w = pl.g.position, to = pl.at.length === 1 ? seatPos(pl.at) : standTop(pl.at.slice(1)); if (w.distanceTo(to) > .02) bad.push('plate' + pl.at); if (pl.sack && pl.sack.g.position.distanceTo(sackLocal(pl)) > .02) bad.push('sack' + pl.sack.n); pl.boxes.forEach((b, k) => { if (b.o.position.distanceTo(boxLocal(pl, k)) > .02) bad.push('box' + pl.at + k); }); }
     for (const s of live()) if (s.where === 'ped' && s.g.position.distanceTo(pedTop(s.seat)) > .02) bad.push('ped' + s.n); if (S.who) { const g = guests[S.who].obj.position, l = L(); if (Math.hypot(g.x - l.guest[0], g.z - l.guest[1]) > .05) bad.push('guest'); } return bad; }, sackPos: k => { const s = sacks[k], to = pedTop(s.seat), w = s.g.getWorldPosition(V()); return Math.hypot(w.x - to.x, w.z - to.z); } };
