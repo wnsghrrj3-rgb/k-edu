@@ -34,11 +34,12 @@ export const MOVE = {
   HEAD_SHARE: 0.5, HEAD_MAX: 42,                 // 눈길 가운데 머리가 맡는 몫 · 머리가 돌아가는 끝(도)
   BLINK_EVERY: [2.2, 5.2], BLINK_TIME: 0.17,     // 눈 깜박임 사이(초) · 한 번에 걸리는 시간
   LOOK_AFTER: [5, 9],                            // 가만히 두면 두리번거리기까지(초)
+  POSE: 10,                                      // 덧자세(손 내려다보기 · 허둥대기 · 찔러 보기 · 비틀거림)가 들고 나는 빠르기(1/초)
 };
 const MOUTHS = ['smile', 'open', 'oh', 'wavy', 'worry'];
 const BODY = /^(hips|belly|head|arm_|fore_|hand_|leg_|foot_)/;   // 클립이 다루는 뼈(나머지는 코드가 맡는다)
 const D = Math.PI / 180, AXES = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
-const VER = 2;
+const VER = 3;
 
 // ───────────────────────── 모형 + 얼굴 ─────────────────────────
 export async function loadGogo(url = new URL(`./assets/gogo.glb?v=${VER}`, import.meta.url).href) {
@@ -62,9 +63,13 @@ export async function loadGogo(url = new URL(`./assets/gogo.glb?v=${VER}`, impor
     if (z) q.multiply(q2.setFromAxisAngle(r.ax.z, z * D));
     b.quaternion.copy(q); return b;
   }
-  /** 클립이 잡아 놓은 자세 위에 덧돌린다. */
+  /** 클립이 잡아 놓은 자세 위에 덧돌린다. 덧돌린 것은 다음 장면 앞에 unnudge() 로 되돌려야 한다
+   *  (클립은 값이 바뀐 뼈만 다시 쓰기 때문에, 되돌리지 않으면 가만히 있는 뼈에 장면마다 덧쌓인다). */
+  const kept = new Map();
+  function unnudge() { for (const [b, k] of kept) if (k.on) { b.quaternion.copy(k.q); k.on = false; } }
   function nudge(name, x = 0, y = 0, z = 0) {
-    const b = bones[name], r = rest[name];
+    const b = bones[name], r = rest[name]; let k = kept.get(b); if (!k) kept.set(b, k = { q: new THREE.Quaternion(), on: false });
+    if (!k.on) { k.q.copy(b.quaternion); k.on = true; }
     if (y) b.quaternion.multiply(q2.setFromAxisAngle(r.ax.y, y * D));
     if (x) b.quaternion.multiply(q2.setFromAxisAngle(r.ax.x, x * D));
     if (z) b.quaternion.multiply(q2.setFromAxisAngle(r.ax.z, z * D));
@@ -86,7 +91,7 @@ export async function loadGogo(url = new URL(`./assets/gogo.glb?v=${VER}`, impor
   /** 모든 뼈를 쉬는 자세로. */
   function resetPose() { for (const [n, b] of Object.entries(bones)) { const r = rest[n]; b.quaternion.copy(r.q); b.scale.copy(r.s); b.position.copy(r.p); } }
   setFace(FACE.idle);
-  return { root, bones, rest, meshes, mouth, animations: gltf.animations, turn, nudge, size, setFace, resetPose, face };
+  return { root, bones, rest, meshes, mouth, animations: gltf.animations, turn, nudge, unnudge, size, setFace, resetPose, face };
 }
 
 // ───────────────────────── 움직임 ─────────────────────────
@@ -112,7 +117,8 @@ export async function createGogo(scene) {
     lookAt: null, yaw: 0, pitch: 0,                                                    // 눈길
     blinkIn: rnd(MOVE.BLINK_EVERY), blink: 0, idle: 0, lookIn: rnd(MOVE.LOOK_AFTER),
     ant: { L: [0, 0, 0, 0], R: [0, 0, 0, 0], T: [0, 0, 0, 0] }, hp: new THREE.Vector3(), hv: new THREE.Vector3(), first: true,
-    gaitPhase: 0, moving: false,
+    gaitPhase: 0, moving: false, y: 0, busy: false, clock: 0,                          // y = 바닥에서 뜬 높이 · busy = 놀이가 시키는 일을 하는 중(혼자 두리번거리지 않는다)
+    over: { hands: 0, fluster: 0, poke: 0, sway: 0 }, ov: { hands: 0, fluster: 0, poke: 0, sway: 0 },   // 덧자세: 바라는 값 · 지금 값
   }, on = { step: [], arrive: [], actEnd: [] }, tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
   const gait = () => S.size < MOVE.SMALL ? 'scurry' : S.size > MOVE.BIG ? 'heavy' : 'walk';
   const emit = (k, ...a) => on[k].forEach(f => f(...a));
@@ -137,6 +143,8 @@ export async function createGogo(scene) {
     /** 바라볼 곳(세계 좌표). null 이면 앞을 본다. */
     lookAt(v) { S.lookAt = v ? (S.lookAt || new THREE.Vector3()).copy(v) : null; },
     place(x, z, heading = S.heading) { S.pos.set(x, 0, z); S.heading = heading; },
+    /** 덧자세를 켜고 끈다(0~1): hands 제 손 내려다보기 · fluster 허둥대기 · poke 찔러 보기 · sway 비틀거림. 클립 위에 얹힌다. */
+    pose(name, v) { S.over[name] = v; },
     update,
   };
 
@@ -173,7 +181,7 @@ export async function createGogo(scene) {
     const ga = acts[gn], ph = (ga.time / gi.dur) % 1;                                        // 발이 닿는 때를 알린다(쿵쿵 소리 · 흔들림은 듣는 쪽이)
     if (w[gn] > 0.5 && ((S.gaitPhase < 0.5 && ph >= 0.5) || (S.gaitPhase > 0.5 && ph < 0.5))) emit('step', ph < 0.5 ? 'L' : 'R', gn);
     S.gaitPhase = ph;
-    g.root.position.copy(S.pos); g.root.rotation.y = S.heading;
+    g.root.position.copy(S.pos); g.root.position.y = S.y; g.root.rotation.y = S.heading;
 
     // 4) 동작 섞기: 저마다 바라는 무게로 부드럽게 옮기고 합이 1 이 되게 한다
     const go = S.moving ? (stepping ? 1 : clamp(rate / 0.3, 0, 1)) : 0, k = toward(MOVE.FADE, dt); let sum = 0;
@@ -183,10 +191,21 @@ export async function createGogo(scene) {
       w[n] += (to - w[n]) * k; if (w[n] < 0.001 && to === 0) w[n] = 0; sum += w[n];
     }
     for (const n in w) acts[n].setEffectiveWeight(sum > 0 ? w[n] / sum : 0);
-    mixer.update(dt);
+    g.unnudge(); mixer.update(dt);
+    S.clock += dt; const ko = toward(MOVE.POSE, dt), o = S.ov; for (const n in o) o[n] += (S.over[n] - o[n]) * ko;
+    if (o.hands > 0.01) {                                                                    // 제 손을 내려다본다: 두 팔을 앞으로 모으고 고개를 숙인다
+      for (const [n, sd] of [['L', 1], ['R', -1]]) { g.nudge('arm_' + n, -12 * o.hands, -sd * 60 * o.hands, sd * 12 * o.hands); g.nudge('fore_' + n, -38 * o.hands, -sd * 30 * o.hands); }
+      g.nudge('head', 4 * o.hands); g.nudge('belly', 3 * o.hands);
+    }
+    if (o.fluster > 0.01) {                                                                  // 허둥댄다: 두 팔을 번갈아 휘젓고 몸을 좌우로 튼다
+      const a = Math.sin(S.clock * 24), b = Math.sin(S.clock * 13);
+      g.nudge('arm_L', 0, 0, (56 + 28 * a) * o.fluster); g.nudge('arm_R', 0, 0, -(56 - 28 * a) * o.fluster); g.nudge('belly', 0, 11 * b * o.fluster, 4 * a * o.fluster); g.nudge('head', 0, -9 * b * o.fluster);
+    }
+    if (o.poke > 0.01) { g.nudge('arm_R', -80 * o.poke, 0, -4 * o.poke); g.nudge('fore_R', 12 * o.poke); g.nudge('belly', 7 * o.poke, 9 * o.poke); }   // 오른손을 뻗어 찔러 본다
+    if (o.sway > 0.01) { const a = Math.sin(S.clock * 3.1), b = Math.cos(S.clock * 2.3); g.nudge('hips', 4 * b * o.sway, 0, 9 * a * o.sway); g.nudge('head', 0, 0, -7 * a * o.sway); }   // 비틀거린다
 
     // 5) 가만히 있으면 혼자 두리번거린다
-    if (!S.moving && !S.act && !S.target) { S.idle += dt; if (S.idle > S.lookIn) { act('look'); S.lookIn = rnd(MOVE.LOOK_AFTER); } } else if (S.moving) S.idle = 0;
+    if (!S.moving && !S.act && !S.target && !S.busy) { S.idle += dt; if (S.idle > S.lookIn) { act('look'); S.lookIn = rnd(MOVE.LOOK_AFTER); } } else if (S.moving) S.idle = 0;
 
     // 6) 눈길: 눈동자가 먼저 가고 머리가 얼마쯤 따라간다
     let yawTo = 0, pitchTo = 0;
