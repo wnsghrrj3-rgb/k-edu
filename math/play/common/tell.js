@@ -12,8 +12,8 @@ export const on = () => box().off !== true;
 export function voiced(){ try { return can() && on() && speechSynthesis.getVoices().some(v => /^ko/i.test(v.lang)); } catch (_) { return false; } }
 export function stop(){ try { if (can()) speechSynthesis.cancel(); } catch (_) {} }
 /** 말한다 → 말하기를 시작했는가(못 하면 false · 오류 없음). */
-export function say(text){ if (!can() || !on() || !text) return false;
-  try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = TELL.LANG; u.rate = TELL.RATE; u.pitch = TELL.PITCH; try { const v = speechSynthesis.getVoices().find(x => /^ko/i.test(x.lang)); if (v) u.voice = v; } catch (_) {} speechSynthesis.speak(u); return true; } catch (_) { return false; } }
+export function say(text, opt = {}){ if (!can() || !on() || !text) return false;   /* opt.pitch · opt.rate = 그 손님의 목소리(T07 — 굵은 목소리 · 가는 목소리 · 안 주면 예전 그대로) */
+  try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = TELL.LANG; u.rate = opt.rate || TELL.RATE; u.pitch = opt.pitch || TELL.PITCH; try { const v = speechSynthesis.getVoices().find(x => /^ko/i.test(x.lang)); if (v) u.voice = v; } catch (_) {} speechSynthesis.speak(u); return true; } catch (_) { return false; } }
 /** 켜고 끄기 단추(오른쪽 위 · 동전 아래). 누르면 바뀐다. */
 const CSS = `#snd{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));top:calc(96px + env(safe-area-inset-top,0px));z-index:31;width:46px;height:46px;border-radius:50%;border:3px solid rgba(255,255,255,.9);background:rgba(10,20,40,.5);color:#fff;font-size:1.4rem;line-height:1;cursor:pointer;touch-action:manipulation;font-family:inherit}#snd.off{opacity:.6}
 @media (max-width:520px){#snd{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}}`;
