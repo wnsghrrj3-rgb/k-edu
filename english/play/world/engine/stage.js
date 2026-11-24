@@ -23,7 +23,7 @@ export function createStage(o) {
   sun.position.set(...(su.pos || [-3.2, 7.5, 6])); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: box[0], right: box[1], top: box[2], bottom: box[3], near: 1, far: 24 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4; scene.add(sun);
   const C = o.cam, camera = new THREE.PerspectiveCamera(C.FOV, 1, 0.1, 80), camBase = new THREE.Vector3(), aim = new THREE.Vector3(...C.AIM);
-  const st = { shake: 0, ready: false, onResize: null };
+  const st = { shake: 0, ready: false, onResize: null, lift: 0, liftNow: 0, lifted: false };
   function resize() {
     renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight;
     const dist = Math.max(C.MIN_DIST, C.HALF_W / (Math.tan(C.FOV * D / 2) * camera.aspect)), a = C.TILT * D;       // 무대가 가로로 다 들어오게 물러난다
@@ -37,8 +37,12 @@ export function createStage(o) {
   /** 화면의 한 점에서 나간 빛줄기가 평면과 만나는 자리. */
   const worldOn = (plane, x, y, out) => { ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera); return ray.ray.intersectPlane(plane, out); };
   const rayAt = (x, y) => { ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera); return ray.ray; };
-  /** 매 장면 끝에 부른다: 흔들림이 잦아든다. */
-  const tick = dt => { st.shake *= Math.exp(-9 * dt); camera.position.set(camBase.x + rand(-1, 1) * st.shake, camBase.y + rand(-1, 1) * st.shake, camBase.z); };
+  /** 매 장면 끝에 부른다: 흔들림이 잦아들고, 카메라가 st.lift(높이 쌓인 것을 따라 올라갈 만큼)를 부드럽게 따라간다. */
+  const tick = dt => {
+    st.shake *= Math.exp(-9 * dt); st.liftNow += (st.lift - st.liftNow) * (1 - Math.exp(-2.5 * dt)); const l = st.liftNow;
+    camera.position.set(camBase.x + rand(-1, 1) * st.shake, camBase.y + l * 0.85 + rand(-1, 1) * st.shake, camBase.z + l * 1.5);
+    if (l > 0.001 || st.lifted) { camera.lookAt(aim.x, aim.y + l * 0.55, aim.z); camera.updateMatrixWorld(); st.lifted = l > 0.001; }
+  };
   const render = () => renderer.render(scene, camera);
   /** 돌리기 시작(자동 확인 중에는 돌리지 않는다 — auto.js 가 장면을 넘긴다). */
   function play(step) {
