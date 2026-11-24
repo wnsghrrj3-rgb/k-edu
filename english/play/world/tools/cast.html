@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><title>몬스터 넷 보기</title>
+<script type="importmap">{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }</script>
+<link rel="stylesheet" href="../world.css?v=1"></head><body><canvas id="c"></canvas>
+<!-- 확인용: 몬스터 넷을 나란히 세워 본다. ?face=wow|joy|… · ?ry=도 -->
+<script type="module">
+import * as THREE from 'three';
+import { createStage, Q } from '../engine/stage.js?v=1';
+import { createActor } from '../engine/actor.js?v=1';
+const stage = createStage({ canvas: document.getElementById('c'), sky: ['#fff1e0', '#ffe2c6', '#f3c9a3'], cam: { AIM: [0, 0.62, 0], TILT: 9, FOV: 26, HALF_W: 2.9, MIN_DIST: 6 } });
+const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#efdcbb', roughness: 1 })); floor.receiveShadow = true; stage.scene.add(floor);
+const names = ['momo', 'bobo', 'gogo', 'toto'], cast = [];
+for (const [i, n] of names.entries()) { const a = await createActor(stage.scene, { model: n }); a.place((i - 1.5) * 1.35, 0, (+Q.get('ry') || 0) * Math.PI / 180); a.lookAt(stage.camera.position); if (Q.get('face')) a.setMood(Q.get('face'), 99); cast.push(a); }
+for (let i = 0; i < 90; i++) for (const a of cast) a.update(1 / 60);
+stage.st.ready = true; stage.render(); document.title = 'READY cast'; window.__cast = cast;
+</script></body></html>

@@ -15,6 +15,12 @@ export const FACE = {
   joy:     { eye: 1.03, lidU: 2,   lidD: 98, pupil: 1.00, swirl: 0, mouth: { open: 1 } },
   dizzy:   { eye: 1.06, lidU: 30,  lidD: 24, pupil: 0.00, swirl: 1, mouth: { wavy: 1 } },
   fluster: { eye: 1.10, lidU: -22, lidD: 0,  pupil: 0.84, swirl: 0, mouth: { worry: 1 } },
+  want:    { eye: 1.08, lidU: -12, lidD: 0,  pupil: 1.06, swirl: 0, mouth: { open: 0.9 } },             // 먹고 싶다: 입을 벌리고 눈이 반짝
+  chewA:   { eye: 1.00, lidU: 12,  lidD: 60, pupil: 1.00, swirl: 0, mouth: { open: 0.45 } },            // 씹는 중(벌림)
+  chewB:   { eye: 1.00, lidU: 12,  lidD: 60, pupil: 1.00, swirl: 0, mouth: { smile: 0.8 } },            // 씹는 중(다묾)
+  sour:    { eye: 0.92, lidU: 70,  lidD: 62, pupil: 0.90, swirl: 0, mouth: { wavy: 1 } },               // 시다: 눈을 질끈
+  hot:     { eye: 1.20, lidU: -30, lidD: -8, pupil: 0.70, swirl: 0, mouth: { oh: 1 } },                 // 맵다: 눈이 휘둥그레
+  pout:    { eye: 1.00, lidU: 18,  lidD: 10, pupil: 1.00, swirl: 0, mouth: { worry: 0.8 } },            // 삐짐
 };
 export const BLINK = { lidU: 102, lidD: 44 };   // 눈을 감은 값(위 눈꺼풀이 내려오고 아래가 마중 나와, 짙은 눈금이 ◡ 로 남는다)
 export const GAZE = { YAW: 24, PITCH: 17, IN: 3, IN_SMALL: 14 };   // 눈길이 끝까지 갔을 때 눈동자가 도는 각(도) · 두 눈동자를 안쪽으로 모으는 각 · 눈동자가 작아질수록 더 모으는 각(사시처럼 보이지 않게)
@@ -92,7 +98,10 @@ export async function loadGogo(url = new URL(`../assets/gogo.glb?v=${VER}`, impo
   /** 모든 뼈를 쉬는 자세로. */
   function resetPose() { for (const [n, b] of Object.entries(bones)) { const r = rest[n]; b.quaternion.copy(r.q); b.scale.copy(r.s); b.position.copy(r.p); } }
   setFace(FACE.idle);
-  return { root, bones, rest, meshes, mouth, animations: gltf.animations, turn, nudge, unnudge, size, setFace, resetPose, face };
+  const skins = Object.values(meshes).map(m => m.material).filter(m => m && m.name === 'gogo_skin'), tintC = new THREE.Color(), white = new THREE.Color('#ffffff');
+  /** 살빛을 물들인다(매워서 빨개짐 · 얼어서 파래짐). k = 0~1 */
+  const tint = (color, k) => { tintC.set(color); for (const m of skins) { m.emissive.copy(tintC); m.emissiveIntensity = k; } };   // 제 빛깔 위에 그 색이 번진다(파란 몸도 붉어진다)
+  return { tint, root, bones, rest, meshes, mouth, animations: gltf.animations, turn, nudge, unnudge, size, setFace, resetPose, face };
 }
 
 // ───────────────────────── 움직임 ─────────────────────────
@@ -123,7 +132,7 @@ export async function createActor(scene, { model = 'gogo' } = {}) {
     blinkIn: rnd(MOVE.BLINK_EVERY), blink: 0, idle: 0, lookIn: rnd(MOVE.LOOK_AFTER),
     ant: { L: [0, 0, 0, 0], R: [0, 0, 0, 0], T: [0, 0, 0, 0] }, hp: new THREE.Vector3(), hv: new THREE.Vector3(), first: true,
     gaitPhase: 0, moving: false, y: 0, busy: false, clock: 0,                          // y = 바닥에서 뜬 높이 · busy = 놀이가 시키는 일을 하는 중(혼자 두리번거리지 않는다)
-    over: { hands: 0, fluster: 0, poke: 0, sway: 0 }, ov: { hands: 0, fluster: 0, poke: 0, sway: 0 },   // 덧자세: 바라는 값 · 지금 값
+    over: { hands: 0, fluster: 0, poke: 0, sway: 0, lean: 0, reach: 0 }, ov: { hands: 0, fluster: 0, poke: 0, sway: 0, lean: 0, reach: 0 },   // 덧자세: 바라는 값 · 지금 값
   }, on = { step: [], arrive: [], actEnd: [] }, tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
   const gait = () => S.size < MOVE.SMALL ? 'scurry' : S.size > MOVE.BIG ? 'heavy' : 'walk';
   const emit = (k, ...a) => on[k].forEach(f => f(...a));
@@ -148,7 +157,7 @@ export async function createActor(scene, { model = 'gogo' } = {}) {
     /** 바라볼 곳(세계 좌표). null 이면 앞을 본다. */
     lookAt(v) { S.lookAt = v ? (S.lookAt || new THREE.Vector3()).copy(v) : null; },
     place(x, z, heading = S.heading) { S.pos.set(x, 0, z); S.heading = heading; },
-    /** 덧자세를 켜고 끈다(0~1): hands 제 손 내려다보기 · fluster 허둥대기 · poke 찔러 보기 · sway 비틀거림. 클립 위에 얹힌다. */
+    /** 덧자세를 켜고 끈다(0~1): hands 제 손 내려다보기 · fluster 허둥대기 · poke 찔러 보기 · sway 비틀거림 · lean 몸 기울이기(-1~1) · reach 두 팔 뻗기. 클립 위에 얹힌다. */
     pose(name, v) { S.over[name] = v; },
     update,
   };
@@ -207,6 +216,8 @@ export async function createActor(scene, { model = 'gogo' } = {}) {
       g.nudge('arm_L', 0, 0, (56 + 28 * a) * o.fluster); g.nudge('arm_R', 0, 0, -(56 - 28 * a) * o.fluster); g.nudge('belly', 0, 11 * b * o.fluster, 4 * a * o.fluster); g.nudge('head', 0, -9 * b * o.fluster);
     }
     if (o.poke > 0.01) { g.nudge('arm_R', -80 * o.poke, 0, -4 * o.poke); g.nudge('fore_R', 12 * o.poke); g.nudge('belly', 7 * o.poke, 9 * o.poke); }   // 오른손을 뻗어 찔러 본다
+    if (Math.abs(o.lean) > 0.01) { g.nudge('hips', 13 * o.lean); g.nudge('head', 7 * o.lean); }                              // 몸을 앞으로(+) · 뒤로(-) 기울인다
+    if (o.reach > 0.01) for (const [n, sd] of [['L', 1], ['R', -1]]) { g.nudge('arm_' + n, -58 * o.reach, 0, sd * 26 * o.reach); g.nudge('fore_' + n, -18 * o.reach); }   // 두 팔을 앞으로 뻗는다
     if (o.sway > 0.01) { const a = Math.sin(S.clock * 3.1), b = Math.cos(S.clock * 2.3); g.nudge('hips', 4 * b * o.sway, 0, 9 * a * o.sway); g.nudge('head', 0, 0, -7 * a * o.sway); }   // 비틀거린다
 
     // 5) 가만히 있으면 혼자 두리번거린다

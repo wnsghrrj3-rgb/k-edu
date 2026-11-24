@@ -6,7 +6,7 @@ import { clamp } from './stage.js';
 export const CANCEL = Symbol('cancel');
 /** actor = createActor 가 준 것. o = { bounds:{ X, Z0, Z1 }(다닐 수 있는 범위), poses:[끊길 때 끄는 덧자세…], onEnd(), onLand(높이에서 내려앉을 때) } */
 export function createBrain(actor, o = {}) {
-  const timers = [], conds = [], errors = [], bd = o.bounds || { X: 99, Z0: -99, Z1: 99 }, poses = o.poses || ['hands', 'fluster', 'poke', 'sway'];
+  const timers = [], conds = [], errors = [], bd = o.bounds || { X: 99, Z0: -99, Z1: 99 }, poses = o.poses || ['hands', 'fluster', 'poke', 'sway', 'lean', 'reach'];
   const B = { tok: null, where: 'ground', hop: null, idle: 0 }, s = actor.state;
   const calm = () => { for (const k of poses) actor.pose(k, 0); };
   function stop() { if (B.tok) { B.tok.dead = true; B.tok.wake.splice(0).forEach(f => f()); B.tok = null; } calm(); s.busy = false; }
