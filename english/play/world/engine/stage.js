@@ -24,12 +24,17 @@ export function createStage(o) {
   Object.assign(sun.shadow.camera, { left: box[0], right: box[1], top: box[2], bottom: box[3], near: 1, far: 24 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4; scene.add(sun);
   const C = o.cam, camera = new THREE.PerspectiveCamera(C.FOV, 1, 0.1, 80), camBase = new THREE.Vector3(), aim = new THREE.Vector3(...C.AIM);
   const st = { shake: 0, ready: false, onResize: null, lift: 0, liftNow: 0, lifted: false };
+  const F = { x: aim.x, y: aim.y, hw: C.HALF_W, to: null, k: 2.2 };          // 카메라가 보는 곳과 가로로 담는 반 너비(focus 로 옮긴다)
+  function frame() {
+    const dist = Math.max(F.hw < C.HALF_W ? C.MIN_DIST * F.hw / C.HALF_W : C.MIN_DIST, F.hw / (Math.tan(C.FOV * D / 2) * camera.aspect)), a = C.TILT * D;       // 무대가 가로로 다 들어오게 물러난다
+    aim.set(F.x, F.y, aim.z); camBase.set(aim.x, aim.y + Math.sin(a) * dist, aim.z + Math.cos(a) * dist); camera.position.copy(camBase); camera.lookAt(aim); camera.updateMatrixWorld();   // 그리기 전에 눌러도 자리가 맞게
+  }
   function resize() {
-    renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight;
-    const dist = Math.max(C.MIN_DIST, C.HALF_W / (Math.tan(C.FOV * D / 2) * camera.aspect)), a = C.TILT * D;       // 무대가 가로로 다 들어오게 물러난다
-    camBase.set(aim.x, aim.y + Math.sin(a) * dist, aim.z + Math.cos(a) * dist); camera.position.copy(camBase); camera.lookAt(aim); camera.updateProjectionMatrix(); camera.updateMatrixWorld();   // 그리기 전에 눌러도 자리가 맞게
+    renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); frame();
     if (st.onResize) st.onResize(); if (AUTO && st.ready) renderer.render(scene, camera);
   }
+  /** 카메라를 옮긴다: (x, y) 를 보고 가로로 반 너비 hw 만큼 담는다. now = 바로(부드럽게 옮기지 않음). */
+  function focus(x, y, hw, now = false) { F.to = { x, y, hw }; if (now) { F.x = x; F.y = y; F.hw = hw; F.to = null; frame(); } }
   addEventListener('resize', resize); resize();
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), tmp = new THREE.Vector3();
   /** 세계의 한 점이 화면 어디인가(픽셀). */
@@ -39,6 +44,7 @@ export function createStage(o) {
   const rayAt = (x, y) => { ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera); return ray.ray; };
   /** 매 장면 끝에 부른다: 흔들림이 잦아들고, 카메라가 st.lift(높이 쌓인 것을 따라 올라갈 만큼)를 부드럽게 따라간다. */
   const tick = dt => {
+    if (F.to) { const k = 1 - Math.exp(-F.k * dt); F.x += (F.to.x - F.x) * k; F.y += (F.to.y - F.y) * k; F.hw += (F.to.hw - F.hw) * k; if (Math.abs(F.to.x - F.x) + Math.abs(F.to.y - F.y) + Math.abs(F.to.hw - F.hw) < 0.004) F.to = null; frame(); }
     st.shake *= Math.exp(-9 * dt); st.liftNow += (st.lift - st.liftNow) * (1 - Math.exp(-2.5 * dt)); const l = st.liftNow;
     camera.position.set(camBase.x + rand(-1, 1) * st.shake, camBase.y + l * 0.85 + rand(-1, 1) * st.shake, camBase.z + l * 1.5);
     if (l > 0.001 || st.lifted) { camera.lookAt(aim.x, aim.y + l * 0.55, aim.z); camera.updateMatrixWorld(); st.lifted = l > 0.001; }
@@ -49,5 +55,5 @@ export function createStage(o) {
     st.ready = true; if (AUTO) return; let last = performance.now();
     renderer.setAnimationLoop(now => { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); tick(dt); render(); });
   }
-  return { THREE, canvas, renderer, scene, camera, camBase, aim, sun, st, resize, screenOf, worldOn, rayAt, tick, render, play, shake: a => { st.shake = Math.max(st.shake, a); } };
+  return { THREE, canvas, renderer, scene, camera, camBase, aim, sun, st, resize, focus, screenOf, worldOn, rayAt, tick, render, play, shake: a => { st.shake = Math.max(st.shake, a); } };
 }
