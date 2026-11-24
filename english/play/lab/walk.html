@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>고고 움직임 · 영어 놀이터 시험판 2단계</title>
+<script type="importmap">{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{height:100%;overflow:hidden;background:#F7EBD5;touch-action:none;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#back{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));z-index:5;background:rgba(60,40,20,.45);color:#fff;border-radius:999px;padding:8px 16px;font-weight:900;font-size:1rem;text-decoration:none}
+#bar{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:0 10px;pointer-events:none}
+#bar button{pointer-events:auto;font:inherit;font-weight:900;font-size:clamp(.95rem,2.1vw,1.2rem);color:#fff;background:rgba(60,40,20,.5);border:0;border-radius:999px;padding:11px 18px;min-width:64px;transition:transform .12s,background .12s}
+#bar button:active{transform:scale(.92);background:rgba(60,40,20,.75)}
+#bar button.on{background:#4fa565}
+#bar i{width:10px}
+#out{position:fixed;left:0;top:0;z-index:9;font:12px/1.4 monospace;white-space:pre;color:#333;background:rgba(255,255,255,.8);padding:6px;display:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<a id="back" href="../index.html">← 놀이터</a>
+<!-- 2단계 「움직임」 확인용: 빈 바닥에 고고만. 바닥을 누르거나 끌면 고고가 돌아서서 걸어온다. 아래 단추는 눌러 보는 용도(놀이 화면에는 없다). -->
+<div id="bar">
+  <button data-do="surprise">놀람</button><button data-do="fall">넘어짐</button><button data-do="jump">폴짝</button><button data-do="look">두리번</button><button data-do="turn">돌기</button><button data-do="peek">빼꼼</button>
+  <i></i><button data-size="0.45">작게</button><button data-size="1" class="on">보통</button><button data-size="1.8">크게</button>
+</div>
+<pre id="out"></pre>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createGogo } from './gogo.js?v=2';
+
+// ── 수치
+const T = {
+  FLOOR_R: 3.4,                 // 고고가 다닐 수 있는 바닥 반지름
+  CAM: [0, 4.4, 8.0], AIM: [0, 0.6, 0], FOV: 30,
+  MARK_MS: 900,                 // 누른 자리 표시가 사라지는 시간
+};
+const Q = new URLSearchParams(location.search);
+
+// ── 무대: 빈 바닥(발이 미끄러지는지 보이도록 무늬를 둔다)
+const canvas = document.getElementById('c'), renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: Q.has('strip') });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#F7EBD5');
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.45;
+scene.add(new THREE.HemisphereLight('#fff6e6', '#d9b58a', 0.8));
+const sun = new THREE.DirectionalLight('#fff1d6', 2.6); sun.position.set(-3.5, 8, 5.5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -6.5, right: 6.5, top: 6.5, bottom: -6.5, near: 1, far: 26 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4; scene.add(sun);
+const tile = document.createElement('canvas'); tile.width = tile.height = 256;
+{ const x = tile.getContext('2d'); x.fillStyle = '#efdcbb'; x.fillRect(0, 0, 256, 256); x.fillStyle = '#e8d1aa'; x.fillRect(0, 0, 128, 128); x.fillRect(128, 128, 128, 128);
+  x.fillStyle = 'rgba(160,120,70,.16)'; for (const [cx, cy] of [[64, 64], [192, 192], [64, 192], [192, 64]]) { x.beginPath(); x.arc(cx, cy, 7, 0, 7); x.fill(); } }
+const tex = new THREE.CanvasTexture(tile); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(14, 14); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+const floor = new THREE.Mesh(new THREE.CircleGeometry(14, 64).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 })); floor.receiveShadow = true; scene.add(floor);
+const camera = new THREE.PerspectiveCamera(T.FOV, 1, 0.1, 80);
+function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; const far = camera.aspect < 1 ? 1.75 : 1;   // 세로 화면에서는 물러난다
+  camera.position.set(T.CAM[0], T.CAM[1] * far, T.CAM[2] * far); camera.lookAt(...T.AIM); camera.updateProjectionMatrix(); camera.updateMatrixWorld(); }   // 그리기 전에 눌러도 자리가 맞게
+addEventListener('resize', resize); resize();
+
+// 누른 자리 표시(고리가 퍼지며 사라진다)
+const mark = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.22, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#9B8AD4', transparent: true, opacity: 0, depthWrite: false }));
+mark.position.y = 0.012; scene.add(mark); let markT = 1e9;
+
+const gogo = await createGogo(scene);
+gogo.root.traverse(o => { if (o.isMesh) o.receiveShadow = !o.name.startsWith('GogoEyes'); });
+gogo.place(0, 0, 0);
+
+// ── 손: 바닥을 누르거나 끌면 그리로 걸어온다(눈은 손가락을 바로 따라간다). 연출 중에도 막지 않는다.
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3(); let down = false;
+function floorAt(e) { const b = canvas.getBoundingClientRect(); ndc.set((e.clientX - b.left) / b.width * 2 - 1, -(e.clientY - b.top) / b.height * 2 + 1); ray.setFromCamera(ndc, camera);
+  if (!ray.ray.intersectPlane(ground, hit)) return null; const r = Math.hypot(hit.x, hit.z); if (r > T.FLOOR_R) hit.multiplyScalar(T.FLOOR_R / r); return hit; }
+function point(e, press) { const p = floorAt(e); if (!p) return; gogo.lookAt(p); gogo.goTo(p.x, p.z); if (press) { mark.position.x = p.x; mark.position.z = p.z; markT = 0; } }
+canvas.addEventListener('pointerdown', e => { down = true; canvas.setPointerCapture(e.pointerId); point(e, true); });
+canvas.addEventListener('pointermove', e => { if (down) point(e, false); else { const p = floorAt(e); if (p) gogo.lookAt(p); } });
+const up = () => { down = false; }; canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+gogo.on('arrive', () => { gogo.lookAt(camera.position); });   // 할 일이 없으면 화면 밖의 아이를 본다
+gogo.lookAt(camera.position);
+
+const DO = {
+  surprise: () => gogo.act('surprise', { mood: 'wow', hold: 0.45 }),
+  jump: () => gogo.act('jump', { mood: 'joy' }),
+  look: () => gogo.act('look'),
+  turn: () => gogo.turnBy(180),
+  peek: () => (gogo.state.act && gogo.state.act.name === 'peek') ? (gogo.state.act = null) : gogo.act('peek', { mood: 'smile' }),
+  fall: () => { if (gogo.state.act && gogo.state.act.name === 'fall') return; gogo.act('fall', { lock: true }); gogo.setMood('wow', 0.5); falling = 0; },
+};
+let falling = -1;                                             // 넘어지는 동안의 표정: 놀람 → 어지러움 → 평소
+for (const b of document.querySelectorAll('#bar button')) b.addEventListener('click', () => {
+  if (b.dataset.do) DO[b.dataset.do]();
+  else { gogo.setSize(+b.dataset.size); document.querySelectorAll('#bar [data-size]').forEach(x => x.classList.toggle('on', x === b)); }
+});
+
+function step(dt) {
+  if (falling >= 0) { const was = falling; falling += dt; if (was < 0.5 && falling >= 0.5) gogo.setMood('dizzy', 1.5); if (falling > 2.5) falling = -1; }
+  gogo.update(dt);
+  if (markT < T.MARK_MS) { markT += dt * 1000; const k = markT / T.MARK_MS; mark.material.opacity = 0.75 * (1 - k); mark.scale.setScalar(0.6 + 0.9 * (1 - (1 - k) ** 3)); } else mark.material.opacity = 0;
+}
+
+// ── 확인용(머리 없는 브라우저): ?strip=동작&n=칸수 → 한 화면에 시간 차례로 / ?test=slip → 디딘 발이 얼마나 미끄러지는지 잰다
+window.__lab = { gogo, step, DO, scene, camera, renderer };
+if (Q.has('strip')) {
+  const name = Q.get('strip'), n = +(Q.get('n') || 8), size = +(Q.get('size') || 1), span = +(Q.get('span') || (gogo.info[name] ? gogo.info[name].dur : 2)), side = Q.get('cam') || 'side';
+  document.getElementById('bar').style.display = 'none'; document.getElementById('back').style.display = 'none';
+  gogo.setSize(size); for (let i = 0; i < 120; i++) step(1 / 60);
+  if (['walk', 'heavy', 'scurry', 'go'].includes(name)) { gogo.place(-1.2 * size, 0, Math.PI / 2); gogo.goTo(40, 0); }
+  else if (name === 'turn') gogo.turnBy(180); else DO[name]();
+  const W = 1800, cols = Math.min(n, +(Q.get('cols') || 4)), rows = Math.ceil(n / cols), w = W / cols, h = w * 0.95, H = h * rows; let t = 0;
+  removeEventListener('resize', resize); renderer.setPixelRatio(1); renderer.setSize(w, h, false);
+  const sheet = document.createElement('canvas'); sheet.width = W; sheet.height = H; sheet.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:auto;z-index:8'; document.body.append(sheet); const sx = sheet.getContext('2d');
+  for (let i = 0; i < n; i++) {                                 // 칸마다 따로 그려 한 장에 옮겨 붙인다
+    const tTo = span * i / (n - 1 || 1); while (t < tTo - 1e-6) { step(1 / 120); t += 1 / 120; }
+    const p = gogo.state.pos, s = gogo.state.size, d = 5.4 * Math.max(s, 0.6);
+    camera.aspect = w / h; if (side === 'side') camera.position.set(p.x + 0.3 * d, 0.75 * s + 0.12 * d, p.z + d); else camera.position.set(p.x + d * 0.6, 0.75 * s + 0.35 * d, p.z + d * 0.8);
+    camera.lookAt(p.x, 0.62 * s, p.z); camera.updateProjectionMatrix(); renderer.render(scene, camera);
+    sx.drawImage(canvas, (i % cols) * w, Math.floor(i / cols) * h, w, h); sx.fillStyle = '#5a4326'; sx.font = '800 22px sans-serif'; sx.fillText(tTo.toFixed(2) + 's', (i % cols) * w + 12, Math.floor(i / cols) * h + 30);
+  }
+  document.title = 'READY strip ' + name;
+} else if (Q.get('test') === 'slip') {
+  const out = [], v = new THREE.Vector3();
+  for (const [size, gn] of [[1, 'walk'], [1.8, 'heavy'], [0.45, 'scurry']]) {
+    gogo.setSize(size); gogo.place(0, 0, 0); gogo.stop(); for (let i = 0; i < 240; i++) step(1 / 120);
+    gogo.goTo(0, 400); for (let i = 0; i < 240; i++) step(1 / 120);                       // 빠르기가 붙을 때까지
+    const dur = gogo.info[gn].dur, N = Math.round(dur * 4 * 240); let worst = 0, sum = 0, cnt = 0; const last = {};
+    for (let i = 0; i < N; i++) { step(1 / 240);
+      for (const n of ['L', 'R']) { gogo.bones['foot_' + n].getWorldPosition(v); const ph = (gogo.acts[gn].time / dur + (n === 'R' ? 0.5 : 0)) % 1, st = ph > 0.06 && ph < 0.44;   // 디디고 있는 동안
+        if (st && last[n]) { const d = Math.hypot(v.x - last[n].x, v.z - last[n].z) * 240; worst = Math.max(worst, d); sum += d; cnt++; } last[n] = st ? v.clone() : null; } }
+    const speed = gogo.state.v; out.push(`${gn} size ${size}: speed ${speed.toFixed(3)}/s · stance foot drift avg ${(sum / cnt / speed * 100).toFixed(1)}% worst ${(worst / speed * 100).toFixed(1)}% of speed`);
+  }
+  const o = document.getElementById('out'); o.style.display = 'block'; o.textContent = out.join('\n'); document.title = 'READY ' + out.join(' | ');
+} else {
+  if (Q.has('size')) gogo.setSize(+Q.get('size'));
+  let last = performance.now();
+  renderer.setAnimationLoop(now => { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); renderer.render(scene, camera); });
+  document.title = 'READY ' + document.title;
+}
+</script>
+</body>
+</html>

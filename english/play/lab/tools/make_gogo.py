@@ -355,10 +355,10 @@ def build():
         kb.value = 0.0
     return rig, [body, eyes, mouth]
 
-def export(path=OUT, animations=False):
+def export(path=OUT, animations=False, **more):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     kw = dict(filepath=path, export_format='GLB', export_yup=True, export_apply=False, export_skins=True, export_morph=True, export_morph_normal=True,
-              export_animations=animations, export_def_bones=False, export_all_influences=False)
+              export_animations=animations, export_def_bones=False, export_all_influences=False, **more)
     for extra in (dict(export_vertex_color='ACTIVE', export_all_vertex_colors=False), dict(export_colors=True), {}):
         try:
             bpy.ops.export_scene.gltf(**kw, **extra); break
