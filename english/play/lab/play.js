@@ -1,7 +1,7 @@
 /* 커졌다 작아졌다 (Big / Small) — 영어 놀이터 시험판 3단계 「놀이」.
  * 정본: KEDU ENGLISH PLAYGROUND 통합 설계서 §1 · §11 마법 연구소(거대 조림이 → 몬스터 고고) · §21 · §30 · 11부.
  * 하는 일은 하나: 마법 지팡이를 대고 위로 끌면 커지고 아래로 끌면 작아진다(고고 · 사과 · 컵 · 의자 · 공).
- * 정답 · 점수 · 시간제한 · 설명 글 없음. 영어는 크기가 문턱을 넘는 순간에만 "Big!" / "Small!".
+ * 정답 · 점수 · 시간제한 · 설명 글 없음. 영어는 크기가 문턱을 넘는 순간의 "Big!" / "Small!" 과, 만졌을 때 나오는 그것의 이름(Apple · Cup · Chair · Ball).
  * 배운 기록은 어디에도 남기지 않는다(서버 · 기기 모두). 고고와 물건은 블렌더로 직접 빚은 모형(tools/make_*.py).
  * 확인용 주소: ?mute 소리 끔 · ?auto=명령,…(lock:이름 · drag:크기 · release · step:초 · tap:x:z) → 끝나면 제목에 상태를 적는다. */
 import * as THREE from 'three';
@@ -14,6 +14,7 @@ const T = {
   SIZE_MIN: 0.45, SIZE_MAX: 1.8,            // 크기 범위
   BIG_AT: 1.35, SMALL_AT: 0.7, REARM: 0.12,  // "Big!" · "Small!" 문턱 · 다시 말하려면 문턱에서 이만큼 돌아와야 한다
   WORD_GAP: 2.5, WORD_SHOW: 1.15,            // 같은 말을 되풀이하지 않는 시간(초) · 낱말이 떠 있는 시간
+  NAME_GAP: 0.8, NAME_SHOW: 1.0,             // 만졌을 때 나오는 이름(Apple · Cup · Chair · Ball · Gogo): 되풀이하지 않는 시간 · 떠 있는 시간
   DRAG_FULL: 0.42,                           // 화면 높이의 이만큼 끌면 가장 작은 크기에서 가장 큰 크기까지 간다
   SPRING_K: 110, SPRING_C: 9, JELLY: 0.10,   // 물건 크기 용수철: 세기 · 잦아듦 · 출렁일 때 길쭉 · 납작해지는 정도(고고는 gogo.js MOVE.SIZE_*)
   RELEASE_KICK: 1.6,                         // 놓는 순간 한 번 더 출렁이게 미는 힘
@@ -56,14 +57,22 @@ function voice(kind) {
   else if (kind === 'big') { tone(200 * k, 150 * k, 0.3, o); tone(170 * k, 120 * k, 0.34, { ...o, at: 0.3 }); }
   else if (kind === 'small') for (let i = 0; i < 3; i++) tone(820 * k, 1150 * k, 0.07, { ...o, at: i * 0.09 });
 }
-const saidAt = {}, said = [];
-/** 영어 한마디: 낱말이 대상 위에 뜨고 소리가 난다. 같은 말은 T.WORD_GAP 안에 되풀이하지 않는다. */
-function word(t, w) {
-  if (clock - (saidAt[w] ?? -99) < T.WORD_GAP) return; saidAt[w] = clock; said.push(w + '@' + t.name);
-  wordEl.textContent = w; wordEl.className = 'on ' + (w === 'Big!' ? 'big' : 'small'); wordOf = t; wordT = T.WORD_SHOW;
+const saidAt = {}, said = [], NAME = { apple: 'Apple', cup: 'Cup', chair: 'Chair', ball: 'Ball', gogo: 'Gogo' };
+/** 기기 음성(임시 — 녹음한 목소리로 바꿀 자리). 말하는 중이면 끊지 않고 바로 뒤에 한 마디만 줄 세운다("Apple" 다음에 "Big"). */
+const talk = { busy: false, next: null, since: 0 };
+function speak(text, pitch = 1.15, rate = 0.95) {
   if (MUTE || !('speechSynthesis' in window)) return;
-  const u = new SpeechSynthesisUtterance(w.replace('!', '')), gs = gogo.state.size; u.lang = 'en-US';     // 기기 음성(임시)
-  u.pitch = t === GOGO ? clamp(1.25 - (gs - 1) * 0.9, 0.3, 2) : 1.15; u.rate = t === GOGO && gs > 1.2 ? 0.8 : 0.95; speechSynthesis.cancel(); speechSynthesis.speak(u);
+  if (talk.busy && performance.now() - talk.since < 3000) { talk.next = [text, pitch, rate]; return; }
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.pitch = pitch; u.rate = rate; talk.busy = true; talk.since = performance.now();
+  u.onend = u.onerror = () => { talk.busy = false; if (talk.next) { const n = talk.next; talk.next = null; speak(...n); } };
+  speechSynthesis.speak(u);
+}
+/** 영어 한마디: 낱말이 대상 위에 뜨고 소리가 난다. 같은 말은 한동안 되풀이하지 않는다(Big! · Small! 은 T.WORD_GAP, 이름은 T.NAME_GAP). */
+function word(t, w) {
+  const name = !w.endsWith('!'); if (clock - (saidAt[w] ?? -99) < (name ? T.NAME_GAP : T.WORD_GAP)) return; saidAt[w] = clock; said.push(w + '@' + t.name);
+  wordEl.textContent = w; wordEl.className = 'on ' + (w === 'Big!' ? 'big' : w === 'Small!' ? 'small' : 'name'); wordOf = t; wordT = name ? T.NAME_SHOW : T.WORD_SHOW;
+  const gs = gogo.state.size, mine = t === GOGO && !name;                         // 고고가 커지고 작아질 때의 한마디는 고고 목소리(클수록 낮게)
+  speak(w.replace('!', ''), mine ? clamp(1.25 - (gs - 1) * 0.9, 0.3, 2) : 1.15, mine && gs > 1.2 ? 0.8 : 0.95);
 }
 
 // ───────────────────────── 무대 ─────────────────────────
@@ -128,7 +137,7 @@ function pxRadius(t) { const c = screenOf(centerOf(t, v3)), e = screenOf(v3.set(
 function pickAt(x, y) { let best = null, bd = 1e9; for (const t of targets) { if (t.state === 'gone') continue; const c = screenOf(centerOf(t, v3)), d = Math.hypot(c.x - x, c.y - y) / pxRadius(t); if (d < 1 && d < bd) { bd = d; best = t; } } return best; }
 function worldOn(plane, x, y, out) { ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera); return ray.ray.intersectPlane(plane, out); }
 function setTo(t, s) { s = clamp(s, T.SIZE_MIN, T.SIZE_MAX); if (Math.abs(Math.log(s / W.lastPing)) > 0.07) { W.lastPing = s; sfx.ping(s); } t.to = s; }
-function lockOn(t, y) { W.lock = t; W.anchorY = y; W.s0 = t.to; W.lastPing = t.to; B.idle = 0; sfx.tick(); if (t === GOGO) { B.lastTo = t.to; B.dir = 0; stopScript(); gogo.stop(); gogo.state.busy = true; } }
+function lockOn(t, y) { W.lock = t; W.anchorY = y; W.s0 = t.to; W.lastPing = t.to; B.idle = 0; sfx.tick(); word(t, NAME[t.name]); if (t === GOGO) { B.lastTo = t.to; B.dir = 0; stopScript(); gogo.stop(); gogo.state.busy = true; } }
 function dragBy(y) {
   const t = W.lock, span = Math.log(T.SIZE_MAX / T.SIZE_MIN), raw = Math.log(W.s0) + (W.anchorY - y) / (innerHeight * T.DRAG_FULL) * span, ls = clamp(raw, Math.log(T.SIZE_MIN), Math.log(T.SIZE_MAX));
   if (ls !== raw) { W.anchorY = y; W.s0 = Math.exp(ls); }                         // 끝에 닿은 채 더 끌면 그 자리에서 다시 잰다(돌아서면 바로 반응)
@@ -159,7 +168,7 @@ canvas.addEventListener('pointermove', e => {
 });
 const up = () => { if (!P.down) return; P.down = false; if (P.mode === 'wand') { release(); W.state = 'back'; W.back = T.WAND_BACK; } P.mode = null; };
 canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
-sndEl.classList.toggle('off', MUTE); sndEl.addEventListener('click', () => { MUTE = !MUTE; sndEl.classList.toggle('off', MUTE); if (MUTE && 'speechSynthesis' in window) speechSynthesis.cancel(); });
+sndEl.classList.toggle('off', MUTE); sndEl.addEventListener('click', () => { MUTE = !MUTE; sndEl.classList.toggle('off', MUTE); if (MUTE && 'speechSynthesis' in window) { speechSynthesis.cancel(); talk.busy = false; talk.next = null; } });
 
 // ───────────────────────── 고고의 머리(하고 싶은 일) ─────────────────────────
 const CANCEL = Symbol('cancel'), timers = [], conds = [], seen = new Set(), errors = [];
@@ -225,7 +234,7 @@ async function afterThing(tok, t) {
 /** 심심하면 혼자 물건 하나를 건드려 본다. */
 async function poke(tok) {
   const pool = Object.values(things).filter(t => (t.state === 'home' || t.state === 'up') && t.size > 0.6 && t.size < 1.5); if (!pool.length) return;
-  const t = pool[Math.floor(Math.random() * pool.length)]; await toBench(tok); await approach(tok, t); gogo.lookAt(centerOf(t, v3)); gogo.pose('poke', 1); await wait(tok, 0.35); nudge(t); seen.add('poke'); voice('hm'); await wait(tok, 0.4); gogo.pose('poke', 0);
+  const t = pool[Math.floor(Math.random() * pool.length)]; await toBench(tok); await approach(tok, t); gogo.lookAt(centerOf(t, v3)); gogo.pose('poke', 1); await wait(tok, 0.35); nudge(t); seen.add('poke'); word(t, NAME[t.name]); await wait(tok, 0.4); gogo.pose('poke', 0);
   gogo.setMood('smile', 1.2); await wait(tok, 0.7); await walk(tok, rand(-0.6, 0.7), rand(0.3, 0.6)); await face(tok, 0);
 }
 
