@@ -362,9 +362,9 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.s
   for (let b = b0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = !rec.hand || S.back;
     let ev = R.events(rec.evBoards, Math.random, { passed: M.passed(rec), calm: CALM, hand }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; }
     if (hand) { q = R.handFix(q, b * R.T.PER_BOARD); S.q = q; }   /* 걸음 ① 판은 빈 자리 하나~둘(A08) */
-    if (S.surpriseCarry && !hand) ev.surprise = true;
+    const carried = S.surpriseCarry && !hand; if (carried) ev.surprise = true;   /* 못 연 깜짝 짐은 다음 판 첫 문제에 다시 */
     const pick = on => (on ? (ev.at != null ? ev.at : Math.floor(Math.random() * 3)) : -1);
-    const surpJ = pick(ev.surprise), driftJ = pick(ev.drift), shufJ = pick(ev.shuffle), fogJ = pick(ev.fog);
+    const surpJ = carried ? 0 : pick(ev.surprise), driftJ = pick(ev.drift), shufJ = pick(ev.shuffle), fogJ = pick(ev.fog);
     if (fogJ >= 0 && q[b * 3 + fogJ]) { q[b * 3 + fogJ] = R.fogFix(q[b * 3 + fogJ]); S.q = q; }   /* 안개(A08): 양 끝만 보이고 가운데가 다 빈다 — 수는 그대로 */
     S.board = { b, hand, ev }; S.log.push({ board: b, hand, leaveS: R.leaveS(id, b, false), ev: Object.keys(ev).filter(k => ev[k] === true).join(' ') });
     const results = []; E.marbles(0);
