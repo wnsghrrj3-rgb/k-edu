@@ -11,6 +11,9 @@ const CSS = `
 #choose button.dot{height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:3rem}#choose button.dot .num{line-height:1}
 .dots{display:inline-flex;flex-direction:column;gap:4px}.dots i{display:flex;gap:4px}.dots u{width:14px;height:14px;border-radius:50%;border:2px solid #b08550;background:transparent;box-sizing:border-box}.dots u.on{background:#e0662c;border-color:#a8431a}
 @media (max-width:520px){#choose button.dot{height:110px;gap:6px;font-size:2.4rem}#choose button.dot .dots u{width:11px;height:11px}#choose button.dot .dots,#choose button.dot .dots i{gap:3px}}
+#choose.tiles{gap:10px}#choose.tiles button{width:76px;height:76px;font-size:2.6rem;border-radius:20px;border-width:5px}#choose.tiles button.sym{background:#dff1ff;border-color:#2b6a9c;color:#12406a}
+#choose button.gone{visibility:hidden;pointer-events:none;animation:none}
+@media (max-width:520px){#choose.tiles{gap:6px}#choose.tiles button{width:52px;height:52px;font-size:1.9rem;border-radius:14px;border-width:4px}}
 #tray b.hole.ask{animation:holeask 1s infinite}@keyframes holeask{50%{background:rgba(255,211,77,.55);transform:scale(1.08)}}`;
 export const GAP = 14;   /* 띠와 수 셋 사이(px) */
 let cssIn = false; function css(){ if (cssIn || typeof document === 'undefined') return; cssIn = true;   /* node(하네스)에서 점 무늬만 그릴 때는 건너뜀 */ const s = document.createElement('style'); s.id = 'choose-css'; s.textContent = CSS; document.head.appendChild(s); }
@@ -20,9 +23,14 @@ export function dotsHtml(n, lit = n){ css(); const rows = Math.max(1, Math.ceil(
 /** 띠의 「?」 칸 깜박임. */
 export function ask(on){ const e = document.querySelector('#tray b.hole'); if (e) e.classList.toggle('ask', !!on); }
 /** 수 셋을 띄운다. onPick(n, 단추) — 아닌 수면 부르는 쪽이 retreat(단추)를 부른다.
- *  opt.dots = 점 카드(위에 점 무늬 · 아래에 숫자 — 숫자를 배우기 전의 낱칸 · 정본 5-10절). 없으면 숫자만(가르기 틀). */
-export function show(list, onPick, opt = {}){ const c = box(); c.innerHTML = ''; c.className = 'on';
-  for (const n of list) { const b = document.createElement('button'); b.type = 'button'; if (opt.dots) { b.className = 'dot'; b.innerHTML = dotsHtml(n) + `<span class="num">${n}</span>`; } else b.textContent = n; b.dataset.n = n; b.addEventListener('click', () => onPick(n, b)); c.appendChild(b); } place(); ask(true); }
+ *  opt.dots = 점 카드(위에 점 무늬 · 아래에 숫자 — 숫자를 배우기 전의 낱칸 · 정본 5-10절). 없으면 숫자만(가르기 틀).
+ *  opt.tiles = 딱지 통(T08 타고 내리기 틀 · B07 — 띠 바로 아래 한 줄 · 수 딱지 넷 + 기호 딱지 둘까지 · 기호 딱지(수가 아닌 것)는 빛깔이 다르다). 같은 수의 딱지가 둘일 수 있다.
+ *    딱지는 누르면 띠의 깜박이는 칸으로 간다 — 부르는 쪽이 take(단추)로 통에서 빼고(자리는 남는다) give(단추)로 돌려놓는다. */
+export function show(list, onPick, opt = {}){ const c = box(); c.innerHTML = ''; c.className = opt.tiles ? 'on tiles' : 'on';
+  for (const n of list) { const b = document.createElement('button'); b.type = 'button'; if (opt.dots) { b.className = 'dot'; b.innerHTML = dotsHtml(n) + `<span class="num">${n}</span>`; } else b.textContent = n; if (opt.tiles && typeof n !== 'number') b.className = 'sym'; b.dataset.n = n; b.addEventListener('click', () => onPick(n, b)); c.appendChild(b); } place(); ask(true); }
+/** 딱지 통: 딱지를 통에서 뺀다(자리는 남는다) · 돌려놓는다. */
+export function take(btn){ btn.classList.add('gone'); }
+export function give(btn){ btn.classList.remove('gone'); }
 export function hide(){ const c = box(); c.className = ''; c.innerHTML = ''; ask(false); }
 export const shown = () => { const c = document.getElementById('choose'); return !!(c && c.classList.contains('on')); };
 /** 띠 바로 밑 · 화면 가운데(창 크기가 바뀌면 다시 — 틀이 장면마다 부른다). */

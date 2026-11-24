@@ -20,3 +20,6 @@ export const eulW = s => hasJong(s) ? '을' : '를';   /* 하나를 · 둘을 ·
 /** 한자 수말(숫자 이름 — 「셋, 삼」 · T05). */
 export const SINO = ['영', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구', '십'];
 export const sino = n => SINO[n] != null ? SINO[n] : String(n);
+/** 덧셈식 읽기 둘(T08 타고 내리기 틀 · B07 부터 — 교과서 말 그대로 · 토씨는 받침에 맞게): 「3 더하기 2는 5와 같습니다」 · 「3과 2의 합은 5입니다」. */
+export const plusRead = (a, b, c) => `${a} 더하기 ${b}${eun(b)} ${c}${wa(c)} 같습니다`;
+export const sumRead = (a, b, c) => `${a}${wa(a)} ${b}의 합은 ${c}입니다`;
