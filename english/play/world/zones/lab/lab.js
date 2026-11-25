@@ -63,7 +63,7 @@ const name = t => voice.word(word(t.name), () => topOf(t, vWord), { name: true, 
 const benchPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), P = { down: false, x: 0, y: 0, mode: null };
 
 // ───────────────────────── 자리 ─────────────────────────
-const C = { stage, scene, camera, part, gogo, brain, things, GOGO, targets, fx, voice, seen, P, BENCH: T.BENCH, LAB, name, say, benchPlane, toBench: async () => {}, tapBench, ask: null };
+const C = { stage, scene, camera, part, gogo, brain, things, GOGO, targets, fx, voice, seen, P, BENCH: T.BENCH, LAB, name, say, benchPlane, toBench: async () => {}, tapBench, ask: null, wall, learn, by, R0, voiceK, touch: t => touch(t), moving: () => stations.moving, now: () => here };
 /** 빈 실험대를 누르면 고고가 그리로 걸어간다(어느 자리에서나). */
 function tapBench(x, z) {
   x = clamp(x, -T.BENCH.X, T.BENCH.X); z = clamp(z, T.BENCH.Z0, T.BENCH.Z1); B.idle = 0;
@@ -76,6 +76,8 @@ function touch(t) { name(t); sfx.tick(); B.idle = 0; if (t === GOGO) { if (!brai
 function emptyStation(id) {
   const d = ST[id], place = d.T && d.T.PLACE ? Object.fromEntries(Object.entries(d.T.PLACE).filter(([k]) => by(k))) : { ...size.place };
   return { id, title: d.title, asks: [], place, busy: () => true, mime() {}, summary: () => ({}), auto: {},
+    /** 처음 갈 때 그 자리의 파일(stations/<id>.js — create(C) 가 모형까지 받아 자리를 돌려준다)을 받아 이 빈 자리에 끼운다. 파일이 없으면 빈 자리로 남는다. */
+    async load() { try { const m = await import(`./stations/${id}.js?v=1`), st = await m.create(C); Object.assign(all[id], st, { id }); adapt(all[id]); } catch (e) { console.error('자리를 받지 못함: ' + id, e); brain.errors.push('load ' + id + ': ' + (e && e.message || e)); } },
     step(dt) {
       for (const t of Object.values(things)) { t.lit = false; stepThing(t, dt); }
       size.perch();
@@ -105,10 +107,11 @@ function mini(n) {
   for (const sx of [-1, 1]) { ball(0.17, '#ffffff', sx * 0.2, 0.12, 0.38); ball(0.085, '#2a1a3a', sx * 0.2, 0.12, 0.52); ball(0.07, '#f1e7a8', sx * 0.3, 0.86, 0); const a = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.36), mat('#6fbf6a')); a.position.set(sx * 0.25, 0.66, 0); a.rotation.z = -sx * 0.25; g.add(a); }
   return g;
 }
-for (const id in all) { const st = all[id]; Object.assign(st, { moving: () => stations.moving, mini,
+function adapt(st) { const own = st.mini; Object.assign(st, { moving: () => stations.moving, mini: n => (own && own(n)) || (by(n) ? mini(n) : null),
   read: st.read || ((n, k) => { const t = by(n); return !t ? undefined : k === 'size' ? t.size : t[k]; }),
   top: st.top || ((n, out) => by(n) ? topOf(by(n), out) : out.set(s.pos.x, 1.2, s.pos.z)),
   wiggle: st.wiggle || (n => { const t = things[n]; if (t) { t.tvx += rand(-1, 1) * 3; t.tvz += (Math.random() < 0.5 ? -1 : 1) * 6; if (t.y === 0) { t.vy = 1.6; t.y = 0.001; } } else if (n === 'gogo' && !brain.busy) gogo.setMood('wow', 0.8); }) }); }
+for (const id in all) adapt(all[id]);
 const ask = createAsk({ scene, stage, actor: gogo, brain, voice, learn, cfg: LAB.ask, words: LAB.words, states: LAB.thingState, muted: isMuted, holding: () => P.down, voiceK });
 C.ask = ask;
 // 배경 소리(임시 · 합성): 바탕 = 느린 종 다섯 음(자리 ①은 이것뿐). 그 위에 자리마다 한 겹 — ② 높고 성긴 풍경 · ③ 낮은 보글거림과 종 · ④ 바람과 타닥타닥(왼쪽 · 오른쪽은 아직 가르지 않았다)
@@ -143,7 +146,7 @@ const summary = () => ({ gogo: { size: +s.size.toFixed(2), x: +s.pos.x.toFixed(2
   station: stations.now + (stations.moving ? '~' : ''), moves: stations.moves, look: stations.look(), state: Object.fromEntries(targets.map(t => [t.name, t.lift + ' ' + t.color + ' ' + (+t.temp).toFixed(2)])), ask: ask.summary(), recs: learn.log.filter(k => /independent|assisted/.test(k)), bed: { now: bed.now, level: +bed.level.toFixed(2), bells: bed.bells } });
 window.__lab = { T, LAB, gogo, things, B, step, summary, stations, all, size, ask, bed, GOGO, camera, stage, tapBench, W: size.W, lockOn: size.lockOn, setTo: size.setTo, release: size.release, at: size.at };
 const shared = {
-  go: async (a, b, tick) => { stations.go(a); for (let i = 0; i < 4 && stations.loading; i++) await tick(); },
+  go: async (a, b, tick) => { stations.go(a); for (let i = 0; i < 400 && stations.loading; i++) await new Promise(r => setTimeout(r, 25)); await tick(); },
   set: (a, b, tick, c) => { const t = by(a), v = Number.isNaN(+c) ? c : +c; if (b === 'size') { t.to = v; if (t === GOGO) s.size = v; else t.size = v; } else t[b] = v; },
   ask: a => ask.force(stations.cur, +a || 0),
   touch: a => { ask.touch(); touch(by(a)); },
