@@ -12,7 +12,8 @@
   - `learn.js` 배움의 흔적(기기 안에만 · 하루 한 번) · `auto.js` 자동 확인(`?auto=명령,…` → 제목에 상태)
 - `zones/<구역>/` 구역 페이지(수치는 그 파일 맨 위 `T`) — `lab/` 마법 연구소(커졌다 작아졌다) · `float/` 연구소(둥둥 Up · Down) · `potion/` 연구소(무지개 물약 — 색 섞기) · `icefire/` 연구소(얼음과 불 Hot · Cold) — 연구소의 넷은 오른쪽 아래 둥근 단추(`.devs`)로 오간다 · `restaurant/` 몬스터 식당(배고픈 몬스터) · `burger/` 몬스터 식당(세상에서 가장 큰 햄버거) · `intro/` 첫 접속(문 뒤에 누가 있을까? — 끝에 마을이 보이고 집을 누르면 그 놀이로. `?village` = 바로 마을)
 - `data/lab.js` 연구소 자료(낱말 · 부탁 · 발견 거리 · 자리의 빛과 구도 · 수치) — 핸드오프 `kedu/english/world/lab_v1.js` 를 `tools/sync_lab_data.py` 로 옮긴 것(손으로 고치지 않는다 · `--check` 로 견준다). 설계 = 핸드오프 `kedu/영어_플레이_원더랜드_연구소_설계_v1.md`
-- `zones/lab/` 는 껍데기(`lab.js`) + 자리 파일(`stations/size.js` …). 자리 ②③④는 아직 빈 자리다(묶음 3-1~3-3). `zones/float · potion · icefire/` 는 설계 v1 전에 따로 만든 장치 셋 — 재료로 둔다
+- `zones/lab/` 는 껍데기(`lab.js`) + 자리 파일(`stations/size.js` …). 네 자리: `size` 커졌다 작아졌다 · `float` 둥둥 띄우기(방울병 — 씌우기 · 밀기 · 톡) · `potion` 무지개 물약(붓기 · 젓기 · 끼얹기) · `frost` 얼음과 불(눈구름 · 햇살 등 · 물 대접). ②③④의 파일과 모형(`assets/lab_<id>.glb`)은 그 자리에 처음 갈 때 받는다. 물든 색 · 온도의 겉은 `engine/skin_color.js · skin_temp.js` 가 어느 자리에서나 입힌다. `zones/float · potion · icefire/` 는 설계 v1 전에 따로 만든 장치 셋 — 재료로 둔다(주소로만 갈 수 있다)
+- 물약의 색 섞기는 놀이용 모형이다(빨강 + 노랑 = 주황 …). 실제 물감은 재료에 따라 다르게 섞인다 — 아이 화면에는 적지 않는다(교사용 참고)
 - `tools/cast.html` 몬스터 넷을 나란히 세워 보는 확인용
 - `assets/` 모형(GLB) · `tools/` 모형을 빚는 블렌더 스크립트 · `world.css` 공통 화면 요소
 

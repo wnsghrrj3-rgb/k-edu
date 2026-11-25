@@ -1,6 +1,7 @@
 /* 마법 연구소 — 한 방, 네 자리(연구소 설계 v1 · 묶음 3-0 껍데기). 주인공은 몬스터 고고.
  * 이 파일은 껍데기다: 무대 · 방 · 물건 넷 · 고고 · 입력 · 자리 옮기기 · 부탁 · 배경 소리를 묶는 일만 한다. 놀이는 자리 파일(stations/)이 맡는다.
- *   ① size 커졌다 작아졌다(Big · Small — stations/size.js) · ② float 둥둥 · ③ potion 무지개 물약 · ④ frost 얼음과 불 — ②③④는 아직 빈 자리(빛 · 구도 · 도구 그림만 바뀐다. 묶음 3-1~3-3).
+ *   ① size 커졌다 작아졌다(Big · Small) · ② float 둥둥 띄우기(Up · Down) · ③ potion 무지개 물약(Red · Blue · Yellow · Pink · Mix) · ④ frost 얼음과 불(Hot · Cold) — 자리마다 stations/<id>.js.
+ *   ②③④의 파일과 모형은 그 자리에 처음 갈 때 받는다(빈 자리의 load). 물든 색과 온도의 겉(engine/skin_color.js · skin_temp.js)은 어느 자리에서나 보인다.
  * 자리를 바꾸면 페이지가 바뀌는 것이 아니라 방이 변신한다(engine/station.js). 물건과 고고는 크기 · 색 · 온도를 지닌 채 남는다.
  * 낱말 · 부탁 · 자리의 빛과 구도는 자료(data/lab.js ← 핸드오프 lab_v1.js)에서만 읽는다. 정답 · 점수 · 시간제한 · 설명 글 없음.
  * 확인용 주소: ?mute 소리 끔 · ?auto=명령,…  → 끝나면 제목에 상태를 적는다.
@@ -16,9 +17,10 @@ import { createThing, stepThing, topOf, pickAt, actorTarget } from '../../engine
 import { createLearn } from '../../engine/learn.js?v=2';
 import { runAuto } from '../../engine/auto.js?v=2';
 import { createActor } from '../../engine/actor.js?v=2';
-import { createAsk } from '../../engine/ask.js?v=2';
+import { createAsk } from '../../engine/ask.js?v=3';
 import { createStations } from '../../engine/station.js?v=2';
 import { createColorSkin } from '../../engine/skin_color.js?v=1';
+import { createTempSkin } from '../../engine/skin_temp.js?v=1';
 import { LAB } from '../../data/lab.js?v=1';
 import { createSize, T as SIZE_T } from './stations/size.js?v=1';
 
@@ -90,7 +92,7 @@ function emptyStation(id) {
     onDown(e) { const t = pickAt(stage, targets, e.clientX, e.clientY); if (t) touch(t); else if (stage.worldOn(benchPlane, e.clientX, e.clientY, v3)) tapBench(v3.x, v3.z); }, onMove() {}, onUp() {},
   };
 }
-const colorSkin = createColorSkin(C);                                                  // 물든 색을 겉에 입힌다(어느 자리에서나 보인다)
+const colorSkin = createColorSkin(C), tempSkin = createTempSkin(C);                                                  // 물든 색을 겉에 입힌다(어느 자리에서나 보인다)
 const size = createSize(C), all = { size };
 for (const id of ['float', 'potion', 'frost']) all[id] = emptyStation(id);
 const stations = createStations({
@@ -138,7 +140,7 @@ function step(dt) {
   stations.cur.step(dt);
   for (const id in all) if (all[id].bg) all[id].bg(dt);
   for (const t of targets) if (t.temp) t.temp -= Math.sign(t.temp) * Math.min(Math.abs(t.temp), T.TEMP_BACK * dt);      // 온도는 아주 느리게 미지근한 쪽으로
-  colorSkin.tick(dt);
+  colorSkin.tick(dt); tempSkin.tick(dt);
   stations.tick(dt); ask.tick(dt, stations.cur); bed.tick(dt, voice.talking);
   gogo.update(dt); voice.tick(dt); fx.tick(dt);
 }

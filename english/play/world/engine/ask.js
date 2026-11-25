@@ -85,6 +85,7 @@ export function createAsk(o) {
   }
   /** 반대로 했는가(Big 을 졸랐는데 작게 만들었다): 그 낱말의 짝이 가리키는 상태가 됐을 때. */
   function opposite(st, a) {
+    if (a.need) return false;                                                            // 앞 조건이 있는 부탁(떨고 있을 때 "Hot, please!")은 시작이 곧 반대 상태다 — 반대로 했다고 보지 않는다
     const pw = PAIR[a.words[0]], c = want(a), def = o.states && o.states[c.key] && o.states[c.key].words && o.states[c.key].words[pw]; if (!def) return false;
     const m = /^(>=|<=)\s*(-?[\d.]+)$/.exec(def); return m ? holds({ op: m[1], val: +m[2] }, read(st, c, a)) : false;
   }
