@@ -9,7 +9,7 @@ export const SCENERY_NAMES = ['Environment_Cliff1', 'Environment_Cliff4', 'Envir
 /** 밤(달빛 · 등불): 하늘 · 안개 · 바다 · 빛 */
 export const NIGHT = { SKY: ['#08122b', '#18264f', '#2d3a6a'], FOG: '#141f40', SEA: '#123e66', DEEP: '#06182e', HEMI: ['#7d93c8', '#1a2236', .55], MOON: ['#b4c8ff', .75], LAMP: ['#ffb45a', 3.2, 7], FLASH: ['#fff3c4', 7, 4.5] };
 /** 빛깔: 판자(덧문은 조금 밝게) · 통의 두 빛깔(사건 — 수는 그대로) · 금빛 폭죽 · 폭죽 몸 */
-export const WOOD = { door: '#e0b27a', wall: '#a77443', floor: '#8a5c32', cover: '#d9a566', pallet: .62 };
+export const WOOD = { door: '#e0b27a', wall: '#a77443', floor: '#8a5c32', cover: '#d9a566', pallet: .62, seam: '#f3d79e' };   /* seam = 닫힌 덧문 위 칸 금(밝은 띠 — 칸 셋으로 읽히게) */
 export const TINTS = ['#e8604c', '#4f8fe6'];
 export const GOLD = '#ffcf3a';
 export const ROCKET = '#d8463a';

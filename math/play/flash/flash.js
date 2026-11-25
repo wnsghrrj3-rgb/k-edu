@@ -12,19 +12,19 @@ import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=11';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=10';
+import * as M from '../common/map.js?v=11';
 import * as C from '../common/choose.js?v=4';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
-import * as R from './rules.js?v=1';
-import * as V from './review.js?v=2';
-import { ASSETS, MODEL, SCENERY, NIGHT, WOOD, TINTS, GOLD, ROCKET, FIRE, SPARK, SMOKE, ICON } from './art.js?v=1';
+import * as R from './rules.js?v=2';
+import * as V from './review.js?v=3';
+import { ASSETS, MODEL, SCENERY, NIGHT, WOOD, TINTS, GOLD, ROCKET, FIRE, SPARK, SMOKE, ICON } from './art.js?v=2';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T · 복습은 ./review.js 의 MOVE
 const T = { DECK: .45, WALL: .42, OPEN: 1.72, OPEN_MS: 110, CLOSE_MS: 110, PULL_MS: 260,
   WIDE: { anne: [-2.3, .3], rocket: [2.2, .35], span: 3.7, el: 1.02, fov: 38 }, TALL: { anne: [-1.05, 1.62], rocket: [1.0, 1.55], span: 1.78, el: 1.08, fov: 46 },
   ROCKET_S: [.42, 1.2], ROCKET_BIG: 1.25, BURST_Y: [1.55, 2.05], FUSE_N: 18, FUSE_LEN: .75,
-  COUNT_MS: 430, STAMP_MS: 90, FIT_HOLD: 1300, MISS_HOLD: 1200, ROLL_MS: 420, ROLL_GAP: 300, ROLL_HOLD: 900, TELL_GRACE: 5, HINT_PICK_X: 1,
+  COUNT_MS: 430, TELL_LEAD: 1600, GROUP_BOB: .5, STAMP_MS: 90, FIT_HOLD: 1300, MISS_HOLD: 1200, ROLL_MS: 420, ROLL_GAP: 300, ROLL_HOLD: 900, TELL_GRACE: 5, HINT_PICK_X: 1,
   PARTS: LITE ? 520 : 1500, BURST: [50, 80, 120, 170, 230], SPEED: [1.0, 1.3, 1.6, 1.9, 2.3], SKY_FULL: 5, BOTTOM_TALL: 74, BOTTOM_WIDE: 22 };
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
@@ -94,6 +94,7 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   S.dividers = [0, 1, 2].map(() => { const m = plank(1, wallM); m.rotation.set(0, 0, Math.PI / 2); m.scale.set(T.WALL * .62 / pwid, .8, (R.T.CRATE.D) / plen); m.position.y = fy + T.WALL * .31; m.visible = false; S.crate.add(stage.shadows(m)); return m; });
   const door = side => { const g = new THREE.Group(), n = 4, st = (W2 + .08) / n; g.position.set(side * (W2 + .08), fy + T.WALL + pth / 2 + .01, 0); for (let k = 0; k < n; k++) { const m = plank(k + (side > 0 ? 2 : 0), doorM); m.scale.set(st / pwid * 1.12, 1, (R.T.CRATE.D + .22) / plen); m.position.set(-side * st * (k + .5), 0, 0); g.add(stage.shadows(m)); } S.crate.add(g); return g; };
   S.doorL = door(-1); S.doorR = door(1);
+  /* 칸 금(닫힌 덧문 위 — 셋째 칸으로 나뉠 때 칸막이 머리가 보이게 · 덧문과 같이 젖혀진다) */ const seamM = wm(WOOD.seam); seamM.emissive = new THREE.Color(WOOD.seam); seamM.emissiveIntensity = .35; S.seams = [[S.doorL, -1], [S.doorR, 1]].map(([dg, sx]) => { const m = plank(2, seamM); m.scale.set(.1 / pwid, .7, (R.T.CRATE.D + .2) / plen); m.position.set(sx * R.T.CRATE.W / 6 - sx * (W2 + .08), pth * .75, 0); m.visible = false; dg.add(m); return m; });
   S.pallet = new THREE.Group(); { const n = 7, st = 2.5 / n; for (let k = 0; k < n; k++) { const m = plank(k, palM); m.scale.set(st / pwid * 1.04, .35, .98 / plen); m.position.set(-1.25 + st * (k + .5), fy + pth / 2 + .004, 0); S.pallet.add(m); } } S.pallet.visible = false; S.crate.add(S.pallet);
   for (let k = 0; k < 30; k++) POOL.push(barrelMesh());
   for (let k = 0; k < 10; k++) { const g = K[MODEL.barrel].scene.clone(); g.traverse(m => { if (m.isMesh) { m.material = mats.ghost; m.castShadow = false; m.renderOrder = 2; } }); g.visible = false; scene.add(g); GHOSTS.push(g); }
@@ -154,6 +155,7 @@ function placeBarrel(o, x, z, r, mat){ const s = (2 * r) / BK.d; o.scale.set(s, 
 /** 문제의 그림 → 궤짝 안. spec = { groups: [{ n, pts, r, region }], ten, signs, tint } */
 function fill(spec){ clearCrate(); let k = 0; S.items = [];
   const regs = spec.groups.map(g => g.region); const thirds = regs.some(r => /^c/.test(r)), halves = regs.some(r => /^h/.test(r)) || (regs.includes('L') && regs.includes('R'));
+  S.seams.forEach(m => { m.visible = thirds; });
   if (thirds) [-1, 1].forEach((sx, i) => { const d = S.dividers[i]; d.visible = true; d.position.x = sx * R.T.CRATE.W / 6; }); else if (halves) { S.dividers[0].visible = true; S.dividers[0].position.x = 0; }
   spec.groups.forEach((g, gi) => { const pts = g.pts || R.fives(g.n, R.region(g.region), g.r); pts.forEach((p, j) => { const o = POOL[k++]; const mat = spec.tint ? (j % 2 ? mats.tA : mats.tB) : null; placeBarrel(o, p.x, p.z, g.r, mat); o.userData.gi = gi; o.userData.k = j; S.items.push(o); }); });
   if (spec.ten) { S.pallet.visible = true; const sl = R.tenSlots(); sl.forEach((p, j) => { const g = GHOSTS[j]; const s = (2 * R.T.R) / BK.d; g.scale.set(s, s * .85, s); g.position.set(p.x, fy(), p.z); g.userData.slot = j; S.inCrate.push(g); });
@@ -168,7 +170,7 @@ const topOf = o => V3(o.position.x, o.position.y + BK.h * o.scale.y + .05, o.pos
 
 // ── 띠 · 고르기
 function trayDraw(closed = false){ A.trayClear(); const t = $('tray'), p = S.p; if (!p) return; const b = (v, c = '') => `<b class="${c}">${v}</b>`, w = s => `<i class="w">${s}</i>`;
-  t.innerHTML = p.band.map(x => V.partWord(x, closed) != null ? w(V.partWord(x, closed)) : x.hole != null ? (closed ? b(x.hole, 'done') : b('?', 'hole')) : x.n != null ? b(x.n) : x.dots != null ? `<b class="dotsb">${C.dotsHtml(x.dots)}</b>` : `<i class="op">${x.op}</i>`).join('');
+  t.innerHTML = (closed && p.closedBand ? p.closedBand : p.band).map(x => V.partWord(x, closed) != null ? w(V.partWord(x, closed)) : x.hole != null ? (closed ? b(x.hole, 'done') : b('?', 'hole')) : x.n != null ? b(x.n) : x.dots != null ? `<b class="dotsb">${C.dotsHtml(x.dots)}</b>` : `<i class="op">${x.op}</i>`).join('');
   t.className = 'on' + (p.band.length > 6 ? ' story' : '') + (p.band.length === 1 && p.band[0].n != null ? ' num1' : ''); C.ask(!closed && !!S.choosing); trayFit(); }
 function trayFit(){ const t = $('tray'); if (t.classList.contains('story')) return; t.style.fontSize = ''; const room = innerWidth * .96; if (t.offsetWidth > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / t.offsetWidth) + 'px'; }
 /** 고를 것: row = 단추 줄(점 + 숫자 · 자리 고정) · num = 수 셋 · eq = 식 카드 셋 · group · side = 궤짝 안의 칸을 누른다(단추 없음). */
@@ -204,15 +206,17 @@ function doorNumPlace(){ if (!DOORNUM || !DOORNUM.classList.contains('on')) retu
 /** 문제 하나: 궤짝을 채우고 → 폭죽이 서고 → 보여 주고 → 누름을 기다린다. → 결과 { clean, retreat, hinted, missed, early, peeks } */
 async function runProblem(p, ctx){ const my = S.oid; S.p = p; S.res = { retreat: false, hinted: false, missed: false, early: 0, peeks: 0, nudges: 0 }; S.closed = false; S.clock = 0; S.fuseOff = false; S.busy = true; S.phase = 'set'; S.handTo = null; S.cornerSide = ctx.corner || null; S.ctx = ctx;
   S.peekLeft = isPeekable() ? R.T.PEEK : 0; S.fuseS = ctx.fuseS; S.fuseShown = !!ctx.fuse; S.gold = !!ctx.gold; S.rocketBig = !!ctx.last; S.clockOn = false;
-  CNT.forEach(d => d.classList.remove('on', 'all')); GSUM.forEach(d => d.classList.remove('on', 'away')); S.awayG = null; if (S.open.L > .001 || S.open.R > .001) await allClosed(); if (S.oid !== my) return { abort: true };   /* 앞 문제의 덧문을 먼저 닫는다(새 통이 보이지 않게) */
+  CNT.forEach(d => d.classList.remove('on', 'all')); GSUM.forEach(d => d.classList.remove('on', 'away', 'all')); S.awayG = null; S.tellHold = false; if (S.open.L > .001 || S.open.R > .001) await allClosed(); if (S.oid !== my) return { abort: true };   /* 앞 문제의 덧문을 먼저 닫는다(새 통이 보이지 않게) */
   fill(ctx.spec); if (p.signs) signsDraw(false); trayDraw(); chooseShow(); E.marbles(ctx.j, ctx.of || 3, 0); reaim();
   await rocketPop(); if (S.oid !== my) return { abort: true };
   if (p.say) TL.say(p.say);
   S.active = true; S.busy = false; S.lastAct = S.t + 99;   /* 덧문이 열린 동안의 누름도 받는다(물결 + 「닫히면 눌러 줘」) */
+  let told = false; const flashy = ['flash', 'flashLR', 'flashLeft', 'flashCover'].includes(lookOf());
+  if (ctx.tell && flashy) { told = H.tell(ctx.tell.key, ctx.tell.text, ctx.tell.opt); if (told) { tellPlace(); S.tellHold = true; await sleep(T.TELL_LEAD); if (S.oid !== my) return { abort: true }; } }   /* 번쩍 꼴은 안내를 먼저 읽고 나서 연다(닫힌 뒤에 뜨면 읽는 동안 심지가 탄다) */
   await present(); if (S.oid !== my) return { abort: true };
   S.log.push({ start: p.key, cell: p.cell || S.cell, n: p.answer, step: S.step, look: lookOf(), show: Math.round(showMs()), ev: Object.keys(S.ev).filter(k => S.ev[k] === true).join(' ') });
-  const told = ctx.tell ? H.tell(ctx.tell.key, ctx.tell.text, ctx.tell.opt) : false; if (told) tellPlace();
-  S.active = true; S.busy = false; S.lastAct = S.t + (told ? T.TELL_GRACE : 0); S.clockOn = true;
+  if (ctx.tell && !flashy) { told = H.tell(ctx.tell.key, ctx.tell.text, ctx.tell.opt); if (told) { tellPlace(); S.tellHold = true; } }
+  S.groupBob = false; S.active = true; S.busy = false; S.lastAct = S.t + (told ? T.TELL_GRACE : 0); S.clockOn = true;
   const out = await new Promise(res => { S.done = res; }); S.active = false; S.done = null; S.clockOn = false; H.hide();
   const r = { ...S.res, clean: R.clean(S.res), out, cell: p.cell || S.cell, key: p.key }; S.log.push({ problem: p.key, cell: r.cell, ...r }); return r; }
 /** 새 폭죽이 선다(금빛 · 마지막은 크게). */
@@ -239,7 +243,7 @@ function early(x, y){ H.ripple(x, y); S.res.early++; const t = earlyText(); S.lo
 function earlyText(){ const look = lookOf(); if (S.p && S.p.roll) return '다 들어오면 눌러 줘.'; if (look === 'stay' || look === 'numStay') return '문이 열리면 눌러 줘.'; if (look === 'flashLeft' || look === 'flashCover') return '문이 다시 열리면 눌러 줘.'; return '닫히면 눌러 줘.'; }
 async function answer(v, btn){ const my = S.oid, p = S.p, how = (S.mode === 'cell' ? R.judge(v, { n: p.answer }) : V.judge(v, p)); S.log.push({ pick: v, how }); S.busy = true; S.clockOn = false;
   if (how === 'fit') { await fit(btn); return; }
-  S.res.retreat = true; S.fuseOff = true; fizzle(); stage.play(S.anne, 'No', true); if (btn) C.retreat(btn); else groupAway(v);
+  S.res.retreat = true; S.fuseOff = true; S.peekLeft = 0; fizzle();   /* 아닌 수 뒤에는 덧문이 열린 채 — 궤짝 누름은 헛누름(한 번 더 보기 없음) */ stage.play(S.anne, 'No', true); if (btn) C.retreat(btn); else groupAway(v);
   await reveal(); if (S.oid !== my) return; bob(); S.busy = false; S.lastAct = S.t; S.clockOn = true; }
 /** 맞음: 폭죽이 올라가 터지고 · 덧문이 열려 수가 찍히고 · 띠가 닫힌다. */
 async function fit(btn){ const my = S.oid, p = S.p, cleanNow = R.clean(S.res); S.closed = true; S.phase = 'done'; stage.play(S.anne, 'Yes', true);
@@ -268,7 +272,7 @@ function label(i, o, n, last){ const d = CNT[i]; if (!d) return; d.textContent =
 function labelPlace(d){ const o = d._o; if (!o) return; const q = stage.screenOf(topOf(o)); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; }
 /** 묶음 · 쪽의 수(칸 위). */
 function sum(g, n, away){ const d = GSUM[g]; if (!d) return; d.textContent = n; d.classList.add('on'); d.classList.toggle('away', !!away); d._g = g; sumPlace(d); }
-function sums(){ S.p.groups.forEach((gr, g) => sum(g, gr.n)); }
+function sums(){ S.p.groups.forEach((gr, g) => { sum(g, gr.n, g !== S.p.answer); GSUM[g].classList.toggle('all', g === S.p.answer); }); }   /* 답 칸만 노랑 · 나머지는 흐리게(놓쳤을 때도 답이 보이게) */
 function sumPlace(d){ const g = d._g, reg = R.region(S.p.groups[g].region), q = stage.screenOf(V3((reg.x0 + reg.x1) / 2, T.DECK + T.WALL + .12, D2 + .05)); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; }
 function groupAway(g){ const d = GSUM[g]; S.awayG = (S.awayG || new Set()).add(g); for (const o of S.items) if (o.userData.gi === g) stage.tween(o.position, { y: fy() - .04 }, 300); if (d) d.classList.add('away'); }
 /** A08 · A09: 수 팻말 셋(가운데 하나가 빈 줄) — 맞으면 빈 팻말에 수가 들어간다. */
@@ -298,6 +302,8 @@ async function peek(){ const my = S.oid; S.peekLeft--; S.res.peeks++; S.clockOn 
 function nudge(x, y){ H.ripple(x, y); S.res.nudges++; S.log.push({ nudge: true }); snd(520, .07, 'triangle', .05); bob(); const t = nudgeText(); if (H.tell('flash.nudge', t, { times: 1e9 })) tellPlace(); }
 function nudgeText(){ const p = S.p; if (S.mode === 'cell') return FIRST[S.step]; return todayLine(p); }
 /** 복습의 한 줄 — 무엇을 누르는지부터(정본 5-11). 「한 번 더 보려면 궤짝을」은 한 번 더 볼 수 있는 꼴에만(묶음 · 쪽을 누르는 꼴에서는 궤짝 누름이 답이다). */
+/** 안내가 같은 꼴(같은 한 줄)끼리 묶는 열쇠. */
+function todayKind(p){ return p.form === 'group' || p.form === 'side' || p.form === 'eq' ? p.form : p.look === 'blind' || p.look === 'stay' ? p.look : V.canPeek(p) ? 'peek' : 'stay'; }
 function todayLine(p){ if (p.form === 'group') return '알맞은 묶음을 궤짝에서 눌러 줘.'; if (p.form === 'side') return '잠깐 보고 알맞은 쪽을 궤짝에서 눌러 줘.'; if (p.form === 'eq') return '잠깐 보고 알맞은 식을 눌러 줘. 한 번 더 보려면 궤짝을 눌러.'; if (p.look === 'blind') return '식을 보고 알맞은 수를 눌러 줘.'; if (p.look === 'stay') return '잘 보고 알맞은 수를 눌러 줘.'; return V.canPeek(p) ? TODAY_LINE : '잘 보고 알맞은 수를 눌러 줘.'; }
 /** 한 줄 안내 자리: 단추 줄 바로 아래에 자리가 있으면 그곳 · 없으면 아래쪽(소리 단추 · 동전 위) — 띠 · 단추 · 궤짝을 가리지 않게. */
 function tellPlace(){ const tl = $('tell'); if (!tl) return; Object.assign(tl.style, S.low ? { left: 'calc(10px + env(safe-area-inset-left,0px))', transform: 'none', maxWidth: '24vw', fontSize: '1rem', padding: '6px 12px' } : { left: '', transform: '', maxWidth: '', fontSize: '', padding: '' });
@@ -312,11 +318,13 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return; partsTick(dt); doorTick(
   for (const d of CNT) if (d.classList.contains('on')) labelPlace(d); for (const d of GSUM) if (d.classList.contains('on')) sumPlace(d); for (const d of SIGNS) if (d.classList.contains('on')) signPlace(d); doorNumPlace(); if (S.choosing) C.place();
   /* 심지: 덧문이 닫힌 뒤 · 생각하는 동안에만 · 끝이 가까우면 불똥이 튄다 */
   const thinking = S.active && !S.busy && S.phase === 'think' && !S.closed && S.clockOn;
-  if (thinking && S.ev.fuse && S.fuseShown && !S.fuseOff && !CALM) { S.clock = Math.min(1, S.clock + dt / S.fuseS); fuseDraw(); const tip = fusePt(1 - S.clock); tipLight.position.copy(tip).add(V3(0, .1, 0)); tipLight.intensity = 1.2 + Math.random() * .6;
+  if (S.tellHold && !(document.getElementById('tell') && document.getElementById('tell').classList.contains('on'))) S.tellHold = false;   /* 첫 안내가 떠 있는 동안은 심지가 타지 않는다 */
+  if (thinking && !S.groupBob && S.mode === 'today' && S.p && S.p.form === 'group' && t - (S.thinkT0 || t) > (S.p.fuse || 10) * T.GROUP_BOB) { S.groupBob = true; bob(); S.log.push({ groupBob: true }); }   /* 묶음 꼴: 심지 절반쯤 묶음들이 들썩(답은 안 짚음 — 단추가 없으니 누를 곳을 알려 줌) */
+  if (thinking && S.ev.fuse && S.fuseShown && !S.fuseOff && !CALM && !S.tellHold) { S.clock = Math.min(1, S.clock + dt / S.fuseS); fuseDraw(); const tip = fusePt(1 - S.clock); tipLight.position.copy(tip).add(V3(0, .1, 0)); tipLight.intensity = 1.2 + Math.random() * .6;
     const n = S.clock > .75 ? 4 : 1; for (let k = 0; k < n; k++) emit(tip.x, tip.y + .02, tip.z, (Math.random() - .5) * (S.clock > .75 ? 1.6 : .5), .4 + Math.random() * (S.clock > .75 ? 1.2 : .4), (Math.random() - .5) * (S.clock > .75 ? 1.6 : .5), .35 + Math.random() * .3, SPARK, 1.4, 1.6);
     if (S.clock >= 1) miss(); } else tipLight.intensity = 0;
   /* 길잡이 손: 가만히 있으면 — (한 번 더 볼 수 있으면) 궤짝 → 맞는 단추(뜨면 그 문제는 깨끗하지 않음) */
-  const wait = S.mode === 'cell' ? R.T.HINT_AFTER * (M.stuck(M.get(S.cell)) >= 1 ? .5 : 1) : ((S.p && S.p.hint) || R.T.HINT_AFTER);   /* 복습은 낱칸마다(review.js hintS — 세는 꼴은 심지 끝까지 답을 짚지 않음) */
+  const wait = S.mode === 'cell' ? R.T.HINT_AFTER * (M.stuck(M.get(S.cell)) >= 1 ? .5 : 1) : (S.res && S.res.retreat ? R.T.HINT_AFTER : (S.p && S.p.hint) || R.T.HINT_AFTER);   /* 아닌 수를 고른 뒤에는(이미 세어 보여 줌) 6초 */   /* 복습은 낱칸마다(review.js hintS — 세는 꼴은 심지 끝까지 답을 짚지 않음) */
   if (thinking && t - S.lastAct > wait && (!H.shown() || S.handTo === 'crate')) { if (S.peekLeft > 0 && isPeekable() && S.handTo !== 'crate') { const q = crateQuad(), c = { x: q.reduce((s, v) => s + v.x, 0) / 4, y: q.reduce((s, v) => s + v.y, 0) / 4 }; H.show(c.x, c.y); S.handTo = 'crate'; S.lastAct = t; S.log.push({ hand: 'crate' }); }
     else { const q = answerAt(); if (q) { H.show(q.x, q.y); S.handTo = 'answer'; S.res.hinted = true; S.log.push({ hinted: true }); } } } });
 /** 맞는 것의 화면 자리(길잡이 손 · 하네스). */
@@ -363,15 +371,15 @@ async function today(){ const my = ++S.oid, day = M.dayKey(), m = M.all(), st = 
   S.bonus = status.look === 'done'; S.cells = V.pick(m, day); S.fire = 0; S.streak = 0; S.launched = []; S.goldCarry = false; S.level = 0; S.maxFire = 0; S.starred = []; E.showBar(true);
   let list = S.forceList ? S.forceList.map(x => ({ ...x })) : V.deal(S.cells, Math.random, { bonus: S.bonus }); S.forceList = null; S.q = list; const boards = Math.ceil(list.length / R.T.PER_BOARD); E.lanterns(0, boards);
   S.log.push({ today: S.cells.join(), bonus: S.bonus, deal: list.map(p => p.cell + ':' + p.key) }); S.ev = { fuse: !CALM, gold: false, streak: true };
-  const results = [];
+  const results = [], seenKind = new Set();
   for (let b = 0; b < boards; b++) { const part = list.slice(b * R.T.PER_BOARD, (b + 1) * R.T.PER_BOARD); let goldJ = -1; if (S.goldCarry || Math.random() < R.T.GOLD_P) goldJ = Math.floor(Math.random() * part.length); if (S.forceGold != null) { goldJ = S.forceGold; S.forceGold = null; }
     S.board = { b }; E.marbles(0, part.length); S.step = 2;
     for (let j = 0; j < part.length; j++) { const p = part[j], spec = { groups: p.groups, ten: p.ten, tint: false };
-      const r = await runProblem(p, { spec, j, of: part.length, fuse: !CALM, fuseS: p.fuse, gold: j === goldJ, last: b === boards - 1 && j === part.length - 1, tell: b === 0 && j === 0 ? { key: 'flash.today', text: todayLine(p), opt: {} } : null });
+      const r = await runProblem(p, { spec, j, of: part.length, fuse: !CALM, fuseS: p.fuse, gold: j === goldJ, last: b === boards - 1 && j === part.length - 1, tell: !seenKind.has(todayKind(p)) ? (seenKind.add(todayKind(p)), { key: 'flash.today.' + todayKind(p), text: todayLine(p), opt: {} }) : null });   /* 꼴마다 그 꼴이 처음 나오는 문제에(처음 두 번) — 묶음 꼴은 단추가 없어 첫 문제가 아니어도 안내가 있어야 */
       if (S.oid !== my || r.abort) return; results.push(r); E.marbles(j + 1, part.length); if (S.bonus && !CALM && ['flash', 'flashLR', 'flashLeft', 'flashCover'].includes(p.look)) S.level = R.step(S.level, r.clean); }
-    await E.fly($('marbles'), $('coins'), art(ICON.coin), part.length); if (S.oid !== my) return; E.lanterns(b + 1, boards); snd(660, .15, 'triangle', .1); snd(990, .2, 'triangle', .1, .12); await sleep(300); }
+    await E.fly($('marbles'), $('coins'), art(ICON.coin), results.slice(-part.length).filter(r => r.out === 'fit').length);   /* 맞힌 문제의 동전만 */ if (S.oid !== my) return; E.lanterns(b + 1, boards); snd(660, .15, 'triangle', .1); snd(990, .2, 'triangle', .1, .12); await sleep(300); }
   /* 기록: 복습만(덤 한 판은 세지 않는다) · 하루 한 번 · 오늘 가장 큰 불꽃 */
-  const st2 = V.today(day); if (!S.bonus) { const out = V.settle(M.all(), results, day, M.keep); for (const c of Object.keys(out.m)) M.put(c, out.m[c]); S.starred = out.starred; st2.done = true; }
+  const st2 = V.today(day); if (!S.bonus) { const out = V.settle(M.all(), results, day, M.keep); for (const c of Object.keys(out.m)) M.put(c, out.m[c]); S.starred = out.starred; st2.done = true; st2.stars = out.starred.length; }
   st2.best = Math.max(st2.best | 0, S.maxFire); V.save(st2); S.log.push({ todayEnd: true, bonus: S.bonus, starred: S.starred.join(), best: st2.best });
   await finale(); if (S.oid !== my) return;
   const flags = S.starred.map(() => `<span class="fl">${art(ICON.flag)}<i>${art(ICON.star)}</i></span>`), items = [...flags, ...S.launched.map(f => art(f.gold ? ICON.spark : ICON.burst))];

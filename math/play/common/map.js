@@ -12,7 +12,7 @@
 import { BUILT, STARTS } from './built.js?v=8';
 
 // ── 내가 정한 수치(정본 5-4절 기본안 — 준호가 바꾼다)
-export const RULE = { PASS_CLEAN: 2, KEEP_DAYS: 1, STUCK: 3 };
+export const RULE = { PASS_CLEAN: 2, KEEP_DAYS: 1, STUCK: 3, KEEP_Q: 3 };   /* KEEP_Q = 복습에서 별을 따려면 그 낱칸의 문제가 이만큼(모두 깨끗) — flash/review.js REVIEW_Q 와 같게 */
 export const KEY = 'kedu_mathplay_map';
 /** 익힘을 「오늘의 번쩍」 복습으로 옮긴 낱칸(옮김 표의 「켬」 — flash/review.js MOVE 의 열쇠와 같다 · T09). 새 틀이 생기면 그 묶음에서 둘 다에 줄을 더한다. */
 export const MOVED = ['A01', 'A02', 'A03', 'A04', 'A05', 'A06', 'A07', 'A08', 'A09', 'A13', 'A14', 'B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'C02', 'C03'];
@@ -45,7 +45,7 @@ export function record(rec, results, day = dayKey(), opt = {}){ const r = { ...b
 /** 복습의 익힘(순수 — T09 「오늘의 번쩍」): 그날 복습에서 그 낱칸의 문제(셋)가 모두 깨끗하고 통과한 날에서 KEEP_DAYS 이상 지났으면 별.
  *  복습으로는 통과되지 않는다(통과는 그 틀의 걸음 ② 에서만) · 별 · 깃발은 내려가지 않는다 · 복습한 날(revDay)을 남긴다(별이 있는 낱칸의 「복습한 지 오래된 것」 차례). */
 export function keep(rec, results, day = dayKey()){ const r = { ...blank(), ...(rec || {}) }; if (r.state < 2) return r; r.revDay = day;
-  const ok = Array.isArray(results) && results.length > 0 && results.every(x => x && x.clean); if (r.state === 2 && ok && (!r.passDay || days(r.passDay, day) >= RULE.KEEP_DAYS)) { r.state = 3; r.keptDay = day; }   /* 통과한 날을 모르는 옛 기록은 앞날로 친다 */
+  const ok = Array.isArray(results) && results.length >= RULE.KEEP_Q && results.every(x => x && x.clean); if (r.state === 2 && ok && (!r.passDay || days(r.passDay, day) >= RULE.KEEP_DAYS)) { r.state = 3; r.keptDay = day; }   /* 통과한 날을 모르는 옛 기록은 앞날로 친다 */
   r.state = Math.max(r.state, (rec && rec.state) | 0); return r; }
 export const passed = rec => !!rec && rec.state >= 2;
 export const kept = rec => !!rec && rec.state >= 3;
@@ -72,7 +72,9 @@ function load(){ let o = null; try { o = JSON.parse(store.get(KEY) || 'null'); }
 export function save(){ try { store.set(KEY, JSON.stringify({ v: 1, cells: M })); } catch (_) {} }
 /** 낱칸 기록(없으면 빈 기록). */
 export function get(id){ if (!M) load(); return { ...blank(), ...(M[id] || {}), id }; }   /* id = 그 낱칸(record 가 옮김 표를 볼 때 · T09) */
-export function put(id, rec){ if (!M) load(); M[id] = rec; save(); return rec; }
+/** 낱칸 하나를 쓴다 — 쓰기 직전에 저장 칸을 다시 읽어 그 낱칸만 합친다(뒤로 가기로 되살아난 쪽 · 탭 둘이 옛 기록으로 다른 낱칸의 깃발 · 별을 지우지 않게). 다른 쪽이 그사이 올린 state 는 큰 쪽(기록은 거꾸로 가지 않는다). */
+export function put(id, rec){ const mine = M && M[id] ? M[id].state | 0 : 0; load(); const old = M[id], r = { ...rec }; if (old && (old.state | 0) > mine) r.state = Math.max(rec.state | 0, old.state | 0);   /* 다른 쪽(탭 · 되살아난 쪽)이 올려 둔 state 는 내려가지 않는다 · 이 쪽이 읽은 그대로면 받은 대로(하네스의 되돌리기) */
+  M[id] = r; save(); return r; }
 /** 기록 전체 { id: rec }(읽기용 복사). */
 export function all(){ if (!M) load(); const o = {}; for (const k of Object.keys(M)) o[k] = { ...M[k] }; return o; }
 /** 하네스·교사용: 저장 칸에서 다시 읽는다. */

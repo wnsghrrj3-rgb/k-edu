@@ -6,16 +6,16 @@
  *   하루 한 번 = 저장 `kedu_mathplay_flash` { day, done, best }(/kedu_scope.js 규칙 그대로 · 서버 호출 0).
  * 각 틀의 rules.js 는 고치지 않는다 — 그 pool(cellId) 만 가져다 쓴다(풀 이름이 다른 틀은 없다: 모두 pool). 문제를 「번쩍」 꼴로 옮기는 것은 아래 MOVE 한 곳.
  * 물건은 통 하나로 통일(수를 보는 눈은 하나 — 다섯씩 한 줄 · 열 칸) · 세어야 하는 낱칸은 가리지 않는다(머묾) · 띠는 그 낱칸의 교과서 말(식 기호는 B07 부터). */
-import { pool as countPool } from '../count/rules.js?v=1';     /* 각 틀이 싣는 버전과 같게(count 1 · serve 1 · match 2 · line 2 · weigh 1 · split 3 · ride 2) */
+import { pool as countPool } from '../count/rules.js?v=1';     /* 각 틀이 싣는 버전과 같게(count 1 · serve 1 · match 2 · line 2 · weigh 1 · split 3 · ride 3) */
 import { pool as servePool } from '../serve/rules.js?v=1';
 import { pool as matchPool } from '../match/rules.js?v=2';
 import { pool as linePool, CELLS as LINE } from '../line/rules.js?v=2';
 import { pool as weighPool } from '../weigh/rules.js?v=1';
 import { pool as splitPool } from '../split/rules.js?v=3';
-import { pool as ridePool } from '../ride/rules.js?v=2';
-import * as F from './rules.js?v=1';
+import { pool as ridePool } from '../ride/rules.js?v=3';
+import * as F from './rules.js?v=2';
 import { wa, eul, garu, moeu, word } from '../common/say.js?v=4';
-import { MOVED, RULE, passed, kept, days, dayKey } from '../common/map.js?v=10';
+import { MOVED, RULE, passed, kept, days, dayKey } from '../common/map.js?v=11';
 
 // ── 내가 정한 수치(설계 기본안 — 열어 둔 것 1 · 2 · 5 의 기본안)
 export const RT = { REVIEW_CELLS: 3, REVIEW_Q: 3, BONUS_Q: 3 };
@@ -112,13 +112,13 @@ export function make(cell, it, rnd = Math.random){ const mv = MOVE[cell], base =
       const band = kind === 'merge' ? [W('왼쪽에서'), N(a), W('개,'), W('오른쪽에서'), N(b), W('개가 들어왔어요.'), W('모두'), H(c), W('개')] : [N(a), W('개가 있었는데'), N(b), W('개가 더 들어왔어요.'), W('모두'), H(c), W('개')];
       return { ...base, key: `${a}+${b}:${kind}`, a, b, kind, opts: near3(c, lim[0], lim[1], rnd, [a, b]), answer: c, band, groups: [grp(a, 'L'), grp(b, 'R')], roll: kind, reveal: 'join', nums: [a, b, c] }; }
     case 'B07': { const { a, b } = it, opts = eqCards(a, b, rnd), right = `${a} + ${b} = ${a + b}`;
-      return { ...base, key: `${a}+${b}`, a, b, opts, answer: right, band: [W('알맞은 식은?')], groups: [grp(a, 'L'), grp(b, 'R')], reveal: 'join', nums: [a, b, a + b, ...opts.flatMap(s => s.match(/\d+/g).map(Number))] }; }
+      return { ...base, key: `${a}+${b}`, a, b, opts, answer: right, band: [W('알맞은 식은?')], closedBand: [N(a), O('+'), N(b), O('='), N(a + b)],   /* 닫히면(맞히거나 놓치면) 띠에 맞는 식이 남는다 */ groups: [grp(a, 'L'), grp(b, 'R')], reveal: 'join', nums: [a, b, a + b, ...opts.flatMap(s => s.match(/\d+/g).map(Number))] }; }
     case 'B08': case 'B09': { const { a, b } = it, c = a + b;
       return { ...base, key: `${a}+${b}`, a, b, opts: near3(c, lim[0], lim[1], rnd, [a, b]), answer: c, band: [N(a), O('+'), N(b), O('='), H(c)], groups: [grp(a, 'L'), grp(b, 'R')], reveal: 'join', nums: [a, b, c] }; }
   }
   return null; }
 /** 띠의 글(하네스 · 소리 없는 기기): 「?」 칸은 '?' · closed 면 답. */
-export const bandText = (p, closed = false) => p.band.map(x => partWord(x, closed) != null ? partWord(x, closed) : x.hole != null ? (closed ? String(x.hole) : '?') : x.n != null ? String(x.n) : x.dots != null ? '' : x.op).join(' ').replace(/\s+/g, ' ').trim();
+export const bandText = (p, closed = false) => (closed && p.closedBand ? p.closedBand : p.band).map(x => partWord(x, closed) != null ? partWord(x, closed) : x.hole != null ? (closed ? String(x.hole) : '?') : x.n != null ? String(x.n) : x.dots != null ? '' : x.op).join(' ').replace(/\s+/g, ' ').trim();
 /** 띠 조각의 말(「?」 뒤의 토씨는 닫히면 답의 받침을 따라간다 — C02 「6과 ?를 모으면 10」 → 「6과 4를 모으면 10」 · 「7과 3을 모으면 10」). 말이 아닌 조각이면 null. */
 export const partWord = (x, closed) => x.w != null ? x.w : x.moeu != null ? moeu(closed ? x.moeu : '?') : null;
 /** 판정: 누른 것(row · num 의 수 · eq 의 식 · group · side 의 칸 번호)이 답인가 → 'fit' | 'off'. */
@@ -156,11 +156,11 @@ const scope = () => (typeof window !== 'undefined' && window.__keduScope) || nul
 const mem = {};
 const store = { get(k){ try { if (scope()) return localStorage.getItem(k); } catch (_) {} return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
   set(k, v){ try { if (scope()) { localStorage.setItem(k, v); return; } } catch (_) {} mem[k] = v; } };
-const blank = () => ({ day: '', done: false, best: 0 });
+const blank = () => ({ day: '', done: false, best: 0, stars: 0 });
 /** 오늘의 기록 { day, done, best } — 날이 바뀌면 새로. */
 export function today(day = dayKey()){ let o = null; try { o = JSON.parse(store.get(KEY) || 'null'); } catch (_) {} const s = { ...blank(), ...(o || {}) }; return s.day === day ? s : { ...blank(), day }; }
-export function save(s){ try { store.set(KEY, JSON.stringify({ day: s.day, done: !!s.done, best: Math.max(0, Math.min(F.T.FIRE_MAX, s.best | 0)) })); } catch (_) {} }
+export function save(s){ try { store.set(KEY, JSON.stringify({ day: s.day, done: !!s.done, best: Math.max(0, Math.min(F.T.FIRE_MAX, s.best | 0)), stars: Math.max(0, Math.min(RT.REVIEW_CELLS, s.stars | 0)) })); } catch (_) {} }   /* stars = 그날 복습으로 딴 별 수(고르는 화면의 별 테를 채움) */
 /** 고르는 화면의 단추 모습: off(통과한 낱칸 없음) · on(오늘 할 것이 있음) · done(오늘 끝) + 오늘 별을 딸 수 있는 깃발 수(셋까지) · 오늘 가장 큰 불꽃. */
 export function status(m, day = dayKey(), st = today(day)){ const ids = deck(m); if (!ids.length) return { look: 'off', stars: 0, best: 0 };
-  if (st.done) return { look: 'done', stars: 0, best: st.best | 0 };
+  if (st.done) return { look: 'done', stars: st.stars | 0, best: st.best | 0 };
   return { look: 'on', stars: pick(m, day).filter(id => canStar(m[id], day)).length, best: st.best | 0 }; }

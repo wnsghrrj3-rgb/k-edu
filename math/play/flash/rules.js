@@ -57,11 +57,16 @@ export function deal(id, history = [], rnd = Math.random, opt = {}){ const c = C
 /** 판 자리 start 부터 셋이 걸음 ① 이 된다(막혀서 돌아갈 때): 그 셋을 1~3 으로(뒤의 1~3 문제와 바꾼다 · 연달아 같은 n 이 생기지 않게 · 안 되면 그대로). */
 export function fixHand(q, start, id = 'A04'){ const hi = CELLS[id].rows[1].slice(-1)[0], a = q.slice(); if (a.slice(start, start + T.PER_BOARD).every(p => p.n <= hi)) return a;
   const head = a.slice(0, start), rest = a.slice(start), Ns = rest.map(p => p.n), byN = {}; rest.forEach(p => (byN[p.n] = byN[p.n] || []).push(p));
-  const ord = arrange(Ns, head.length ? head[head.length - 1].n : null, Math.random, 'shuffle', (k, v) => k >= T.PER_BOARD || v <= hi); if (!ord) return a;
-  return [...head, ...ord.map(n => byN[n].shift())]; }
+  const ord = arrange(Ns, head.length ? head[head.length - 1].n : null, Math.random, 'shuffle', (k, v) => k >= T.PER_BOARD || v <= hi); if (ord) return [...head, ...ord.map(n => byN[n].shift())];
+  /* 늘어놓을 수 없으면(남은 1~3 이 모자람 — 셋째 판이 걸음 ① 이 될 때) 그 판의 4 · 5 를 1~3 새 문제로 바꾼다(앞뒤와 같은 n 이 아니게 · 안 쓴 꼴) — 단추 1 · 2 · 3 에 늘 답이 있게 */
+  for (let k = start; k < Math.min(a.length, start + T.PER_BOARD); k++) { if (a[k].n <= hi) continue; const prev = k ? a[k - 1].n : null, nxt = k + 1 < a.length ? a[k + 1].n : null;
+    const ns = [1, 2, 3].filter(v => v <= hi && v !== prev && v !== nxt), n = ns.length ? ns[Math.floor(Math.random() * ns.length)] : 1 + (prev % hi), used = new Set(a.filter(x => x.n === n).map(x => x.shape)), fresh = SHAPES[n].filter(x => !used.has(x)), pick = (fresh.length ? fresh : SHAPES[n]);
+    a[k] = make(n, pick[Math.floor(Math.random() * pick.length)]); }
+  return a; }
 /** 깨끗하지 못했던 문제를 「문제 둘을 사이에 두고」 다시(같은 수 · 다른 꼴 · 길이 그대로 — 끝의 문제 하나가 빠진다). 앞뒤가 같은 n 이면 한 칸씩 뒤로 · 자리가 없으면 그대로. */
-export function requeue(q, i, rnd = Math.random){ const p = q[i], used = new Set(q.filter(x => x.n === p.n).map(x => x.shape)), others = SHAPES[p.n].filter(s => s !== p.shape), fresh = others.filter(s => !used.has(s)), shape = (fresh.length ? fresh : others.length ? others : [p.shape])[Math.floor(rnd() * (fresh.length || others.length || 1))];
-  for (let at = i + T.RETRY_GAP + 1; at < q.length; at++) { const a = q.slice(); a.splice(at, 0, { ...make(p.n, shape), retry: true }); a.length = q.length;
+export function requeue(q, i, rnd = Math.random){ const p = q[i], others = SHAPES[p.n].filter(s => s !== p.shape);
+  for (let at = i + T.RETRY_GAP + 1; at < q.length; at++) { const keep = q.slice(0, q.length - 1), cnt = s => keep.filter(x => x.n === p.n && x.shape === s).length, best = others.length ? Math.min(...others.map(cnt)) : 0, pool = others.filter(s => cnt(s) === best), shape = pool.length ? pool[Math.floor(rnd() * pool.length)] : p.shape;   /* 다른 꼴 가운데 나들이에 덜(되도록 안) 나온 꼴 — 남은 꼴이 없으면(1 · 4 처럼 꼴이 적을 때) 겹칠 수 있다 */
+    const a = q.slice(); a.splice(at, 0, { ...make(p.n, shape), retry: true }); a.length = q.length;
     if (!same(a[at - 1], a[at]) && !same(a[at], a[at + 1])) return a; }
   return q.slice(); }
 

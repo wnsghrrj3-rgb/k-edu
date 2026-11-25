@@ -3,13 +3,13 @@
  * 학년 · 단원 꼬리표는 이 화면(과 부모 화면)에만. 깃발 줄은 내용 지도 차례 · 사이의 아직 없는 낱칸은 빈 깃대 하나(지도에 구멍이 있다는 것을 숨기지 않는다).
  * 시작점과 열림: built.js STARTS · map.js openSet — 이미 열렸거나 딴 깃발은 닫지 않는다. 누름에는 늘 답이 있다(5-11): 잠긴 깃발 · 빈 곳 → 물결 + 손이 열린 깃발을 짚는다.
  * 「오늘의 번쩍」 단추(T09): 깃발 줄들 위에 하나(낱칸이 아니라 줄에 끼우지 않는다 · 꼬리표 없음). 세 모습 — 꺼짐(통과한 낱칸 없음) · 켜짐(오늘 할 것 — 심지가 반짝 · 오늘 별을 딸 수 있는 깃발 수만큼 별 테 · 셋까지) · 터짐(오늘 끝 · 그날 가장 큰 불꽃). */
-import * as M from '../common/map.js?v=10';
+import * as M from '../common/map.js?v=11';
 import * as H from '../common/hint.js?v=5';
 import { BUILT } from '../common/built.js?v=8';
 import { art } from '../common/art.js?v=11';
 import { audio, tone, wallet } from '../common/kit.js?v=8';
 import { cell as cellOf, tag, CELLS } from '../common/cells.js?v=1';
-import * as V from '../flash/review.js?v=2';
+import * as V from '../flash/review.js?v=3';
 
 const ICON = { flag: 'flag', star: 'flag.star', fuse: 'flash.fuse', burst: 'flash.burst' };
 const $ = id => document.getElementById(id);
@@ -29,8 +29,8 @@ function draw(){ const g = $('gate'), m = M.all(), ids = BUILT, open = M.openSet
   const row = u => { const out = []; let gap = false; for (let k = lo; k <= hi; k++) { const id = all[k]; if (cellOf(id).unit !== u) continue; if (ids.includes(id)) { if (gap) out.push(pole); gap = false; out.push(flag(id)); } else gap = true; }
     if (gap) out.push(pole); return `<div class="unit"><div class="tag">${tag(ids.find(id => cellOf(id).unit === u))}</div><div class="flags">${out.join('')}</div></div>`; };
   const ts = V.status(m, M.dayKey()), tsub = ts.look === 'off' ? '깃발을 하나 따면 켜져요' : ts.look === 'done' ? '오늘은 다 했어요. 내일 또 만나요' : '',
-    stars = ts.look === 'on' && ts.stars ? `<span class="rings">${Array.from({ length: Math.min(3, ts.stars) }, () => `<i>${art(ICON.star)}</i>`).join('')}</span>` : '',
-    today = `<button id="today" class="today ${ts.look}" type="button" data-look="${ts.look}" data-stars="${ts.look === 'on' ? Math.min(3, ts.stars) : 0}"${ts.look === 'off' ? ' aria-disabled="true"' : ''}><span class="pic" style="--best:${ts.best | 0}">${art(ts.look === 'done' ? ICON.burst : ICON.fuse)}</span><span class="tx"><span class="nm">오늘의 번쩍</span>${tsub ? `<span class="sub">${tsub}</span>` : ''}</span>${stars}</button>`;
+    stars = ts.look !== 'off' && ts.stars ? `<span class="rings">${Array.from({ length: Math.min(3, ts.stars) }, () => `<i class="${ts.look === 'on' ? 'empty' : 'got'}"><b>${art(ICON.star)}</b></i>`).join('')}</span>` : '',   /* 켜짐 = 오늘 딸 수 있는 별의 빈 테(흐린 별) · 터짐 = 오늘 딴 별만 채움 */
+    today = `<button id="today" class="today ${ts.look}" type="button" data-look="${ts.look}" data-stars="${ts.look !== 'off' ? Math.min(3, ts.stars) : 0}"${ts.look === 'off' ? ' aria-disabled="true"' : ''}><span class="pic" style="--best:${ts.best | 0}">${art(ts.look === 'done' ? ICON.burst : ICON.fuse)}</span><span class="tx"><span class="nm">오늘의 번쩍</span>${tsub ? `<span class="sub">${tsub}</span>` : ''}</span>${stars}</button>`;
   g.innerHTML = `<div class="title">수학 길</div>${today}${units.map(row).join('')}${can ? `<div class="can"><b>할 수 있어요</b>${can}</div>` : ''}`;
   g.querySelectorAll('.flag').forEach(b => b.addEventListener('click', e => { audio(); const id = b.dataset.id;
     if (b.classList.contains('locked')) { H.ripple(e.clientX, e.clientY); tone(200, .12, 'sine', .06); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); pointOpen(); log.push({ locked: id }); return; }
