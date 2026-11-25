@@ -28,7 +28,7 @@ const T = { HS: 1.3, WALL_Z: .85, DOOR_W: .5, DOOR_H: .78, DOOR_Y: .17, WIN_W: 1
   OUT_GAP: .22, OUT_WALK: .8, HOP_GAP: .42, HOP_S: .38, HOP_Y: .3, RE_DX: 1.15, RE_S: 2.1, SPIN_S: .8, BIG: 1.12, DOOR_OPEN: 105, WIN_OPEN: 100,
   /* 화면 꼴마다: 마당 두 줄의 z · 양쪽 무리의 자리 [첫 칸 x, 윗줄 z, 아랫줄 z] · 들어올 x 너비(span) · 문패 크기 · 세는 수 크기 */
   WIDE: { fov: 34, elev: .58, plate: 60, cnt: 1.2, an: 1.1, rows: [1.7, 2.7], clL: [-2.45, 1.7, 2.7], clR: [.85, 1.7, 2.7], span: 2.75 },
-  TALL: { fov: 44, elev: .66, plate: 46, cnt: 1.05, an: 1.35, rows: [1.75, 2.8], clL: [-1.78, 1.45, 2.15], clR: [.18, 3.0, 3.7], span: 2.02 },
+  TALL: { fov: 44, elev: .66, plate: 46, cnt: 1.05, an: 1.42, rows: [1.75, 2.8], clL: [-1.78, 1.45, 2.15], clR: [.18, 3.0, 3.7], span: 2.02 },
   LOW: { fov: 30, elev: .44, plate: 40, cnt: .8, an: 1.3, rows: [1.7, 2.65], clL: [-2.45, 1.7, 2.65], clR: [.85, 1.7, 2.65], span: 2.75 },
   TELL_GRACE: 4, CLOSE_MS: 1500, READ_MS: 2600 };
 const $ = id => document.getElementById(id);
