@@ -147,10 +147,12 @@ export function where(sc, t){ const o = { in: 0, yard: 0, road: 0 }; for (const 
 export function events(evBoards, rnd = Math.random, opt = {}){ const ev = { dusk: false, rush: false, wind: false, surprise: false, blind: false, streak: true, intro: null };
   if (opt.hand) return { ...ev, none: true };
   const noWind = opt.cell && CELLS[opt.cell] && CELLS[opt.cell].mode === 'story', list = INTRO.filter(k => k !== 'blind' && !(noWind && k === 'wind')), i = evBoards - (opt.blindShown ? 1 : 0);
+  /* 판마다 깜짝 하나: 몫(.3 : .3 : .25 : .3)대로 꼭 하나 고른다(몫의 합이 1 보다 작아도 빈 판이 없게) */
+  const one = () => { const w = [['rush', T.RUSH_P], ['wind', noWind ? 0 : T.WIND_P], ['surprise', T.SURPRISE_P], ['blind', opt.passed ? T.BLIND_P : 0]], sum = w.reduce((a, x) => a + x[1], 0); let r = rnd() * sum;
+    for (const [name, pr] of w) { if (pr > 0 && r < pr) { ev[name] = true; return; } r -= pr; } const last = w.filter(x => x[1] > 0).pop(); ev[last[0]] = true; };
   if (opt.passed && !opt.blindShown && evBoards > 0) { ev.intro = 'blind'; ev.blind = true; ev.dusk = true; }
-  else if (i < list.length) { const k = list[i]; ev.intro = k; ev[k] = true; if (evBoards > 0) ev.dusk = true; }
-  else { ev.dusk = true; const w = [['rush', T.RUSH_P], ['wind', noWind ? 0 : T.WIND_P], ['surprise', T.SURPRISE_P], ['blind', opt.passed ? T.BLIND_P : 0]], sum = w.reduce((a, x) => a + x[1], 0); let r = rnd() * Math.max(1, sum);
-    for (const [name, pr] of w) { if (r < pr) { ev[name] = true; break; } r -= pr; } }
+  else if (i < list.length) { const k = list[i]; ev.intro = k; ev[k] = true; if (evBoards > 0) ev.dusk = true; if (k === 'streak') one(); }   /* 신바람 판에도 깜짝 하나 */
+  else { ev.dusk = true; one(); }
   if (opt.calm) { ev.dusk = false; ev.rush = false; ev.wind = false; }
   return ev; }
 /** 해가 다 지기까지(초): 나들이 셋째 판이 조금 빠르다. */

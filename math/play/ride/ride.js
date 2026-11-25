@@ -13,19 +13,19 @@ import * as A from '../common/ask.js?v=2';
 import * as C from '../common/choose.js?v=3';
 import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
-import { art } from '../common/art.js?v=9';
+import { art } from '../common/art.js?v=10';
 import * as E from '../common/ends.js?v=1';
 import * as M from '../common/map.js?v=8';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
-import * as R from './rules.js?v=1';
-import { ASSETS, MODEL, ANIMALS, ANIMAL, SCENERY, SCENERY_NAMES, GRASS, GLOW, DOOR_TINT, DARK, SHUTTER_TINT, LAMP, DAY, DUSK, ICON } from './art.js?v=1';
+import * as R from './rules.js?v=2';
+import { ASSETS, MODEL, ANIMALS, ANIMAL, SCENERY, SCENERY_NAMES, GRASS, GLOW, DOOR_TINT, DARK, SHUTTER_TINT, LAMP, DAY, DUSK, ICON } from './art.js?v=2';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
 const T = { HS: 1.3, WALL_Z: .85, DOOR_W: .5, DOOR_H: .78, DOOR_Y: .17, WIN_W: 1.86, WIN_H: .86, WIN_Y: 1.5, CELL: .36,
   COL: .5, GAP: .28, CL_DX: .4, LANE_Z: .85, DF_Z: .85, DI: [0, .17, -.3],
   BELL: [1.0, .3], BELL_H: .42, STUMP_H: .26, PLATE: [.9, 1.16, .3], PAW: [-.9, .64, .2], STAMP: [2.1, 0, 1.9], FENCE_H: .5,
-  OUT_GAP: .22, OUT_WALK: .8, HOP_GAP: .42, HOP_S: .38, HOP_Y: .3, RE_DX: 1.15, RE_S: 2.1, SPIN_S: .8, BIG: 1.12, DOOR_OPEN: 105, WIN_OPEN: 100,
+  OUT_GAP: .22, OUT_WALK: .8, HOP_GAP: .42, HOP_S: .38, HOP_Y: .3, RE_DX: 1.15, RE_S: 2.1, SPIN_S: .8, REG_S: .9, BIG: 1.12, DOOR_OPEN: 105, WIN_OPEN: 100,
   /* 화면 꼴마다: 마당 두 줄의 z · 양쪽 무리의 자리 [첫 칸 x, 윗줄 z, 아랫줄 z] · 들어올 x 너비(span) · 문패 크기 · 세는 수 크기 */
   WIDE: { fov: 34, elev: .58, plate: 60, cnt: 1.2, an: 1.1, rows: [1.7, 2.7], clL: [-2.45, 1.7, 2.7], clR: [.85, 1.7, 2.7], span: 2.75 },
   TALL: { fov: 44, elev: .66, plate: 46, cnt: 1.05, an: 1.42, rows: [1.75, 2.8], clL: [-1.78, 1.45, 2.15], clR: [.18, 3.0, 3.7], span: 2.02 },
@@ -77,7 +77,7 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   /* 화면 위 그림: 동전 · 문패 · 발자국 · 세는 수 · 무리 이름표 · 찍힌 수 · 방울 · 해 · 저녁 빛 · 읽는 말 */
   const c = document.createElement('div'); c.id = 'coins'; document.body.appendChild(c); coinsDraw(); wallet.onChange(() => coinsDraw());
   for (const id of ['plate', 'paw', 'stamp', 'sun', 'veil', 'readline', 'jingle']) { const d = document.createElement('div'); d.id = id; document.body.appendChild(d); }
-  $('plate').className = 'off'; $('plate').appendChild(NS.numsign(1, { px: 60, compact: true, back: true })); $('paw').className = 'off'; $('paw').innerHTML = '<i></i><i></i><i></i><i></i><i></i>'; $('stamp').appendChild(NS.numsign(1, { px: 60, compact: true })); $('sun').innerHTML = art(ICON.sun); $('jingle').className = 'jingle'; $('jingle').innerHTML = art(ICON.bell);
+  $('plate').className = 'off'; $('plate').appendChild(NS.numsign(1, { px: 60, compact: true, back: true })); $('paw').className = 'off'; $('paw').innerHTML = art(ICON.paw); $('stamp').appendChild(NS.numsign(1, { px: 60, compact: true })); $('sun').innerHTML = art(ICON.sun); $('jingle').className = 'jingle'; $('jingle').innerHTML = art(ICON.bell);
   for (let k = 0; k < 9; k++) { const d = document.createElement('div'); d.className = 'cnt'; document.body.appendChild(d); CNT.push(d); }
   for (let k = 0; k < 3; k++) { const d = document.createElement('div'); d.className = 'grp' + (k === 2 ? ' all' : ''); document.body.appendChild(d); GRP.push(d); }
   A.trayClear(); $('tray').addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('b.fill'); if (b) { e.stopPropagation(); audio(); onCell(+b.dataset.k); } });
@@ -121,7 +121,11 @@ function outPose(i, t, v){ const e = i * T.OUT_GAP, an = AN[i], spot = lineSpot(
   if (v.hop) { const u = (t - (v.hop.t0 + i * T.HOP_GAP)) / T.HOP_S; if (u > 0 && u < 1) pos.y = T.HOP_Y * Math.sin(Math.PI * u); }
   if (v.re) { const u = t - v.re.t0; if (i >= v.a) pos.x += T.RE_DX * (u < 0 ? 0 : u < .5 ? u / .5 : u < 1.3 ? 1 : u < 1.9 ? 1 - (u - 1.3) / .6 : 0); else if (u > 0 && u < .4) pos.y = .16 * Math.sin(Math.PI * u / .4); }
   if (v.spin) { const u = (t - v.spin.t0) / T.SPIN_S; if (u > 0 && u < 1) face = Math.PI * 2 * u; }
+  if (v.reg) { const u = clamp01((t - v.reg.t0) / T.REG_S); if (u > 0) { const to = regSpot(i, v), e2 = u < .5 ? 2 * u * u : 1 - (2 - 2 * u) ** 2 / 2, y = pos.y; pos.copy(spot.clone().lerp(to, e2)); pos.y = y; if (u < 1) return { state: 'out', vis: true, pos, dir: to.clone().sub(spot), moving: true }; } }
   return { state: 'out', vis: true, pos, face }; }
+/** B07 을 맞힌 뒤 「식의 수 아래로 가서 선다」: 식에 먼저 적힌 수의 무리가 왼쪽 · 다음 수의 무리가 오른쪽(무리마다 다섯씩 한 줄 — 양쪽에서 모일 때 서는 자리). */
+const regFirst = (i, v) => { const inA = i < v.a; return v.reg.swap ? !inA : inA; };
+function regSpot(i, v){ const inA = i < v.a; return sideSpot(inA ? i : i - v.a, regFirst(i, v) ? -1 : 1); }
 function poseAll(){ const v = S.v;
   for (const an of AN) { let r = { state: 'off', vis: false };
     if (v.mode === 'scene' && an.i < v.sc.n) r = scenePose(an.i, v.t, v); else if (v.mode === 'out' && an.i < v.n) r = outPose(an.i, v.t, v); else if (v.mode === 'end' && an.i < v.n) r = { state: 'out', vis: true, pos: V((an.i - (v.n - 1) / 2) * (S.tall ? .44 : T.COL), 0, (L().rows[0] + L().rows[1]) / 2), face: 0 };
@@ -148,7 +152,7 @@ function aim(w = innerWidth, h = innerHeight){ const tall = h > w * 1.05; S.tall
 const hw = (x, y, z) => stage.screenOf(houseG.localToWorld(V(x, y, z)));
 const rectOf = el => (el && !el.classList.contains('off') && !el.hidden && getComputedStyle(el).display !== 'none' ? el.getBoundingClientRect() : null);
 function bobEl(el, cls = 'bob', ms = 480){ if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); clearTimeout(el._bobT); el._bobT = setTimeout(() => el.classList.remove(cls), ms); }
-function platePaint(){ const pl = $('plate'); if (!pl) return; const n = S.w && mode() === 'sum' ? S.w[0] : null; NS.paint(pl.firstChild, n == null ? 1 : n, { px: L().plate, compact: true, back: n == null }); pl.dataset.n = n == null ? '' : n; }
+function platePaint(){ const pl = $('plate'); if (!pl) return; const n = S.w && mode() === 'sum' && !S.stamped ? S.w[0] : null; NS.paint(pl.firstChild, n == null ? 1 : n, { px: L().plate, compact: true, back: n == null }); pl.dataset.n = n == null ? '' : n; }
 function plateShow(on){ const pl = $('plate'); pl.className = on ? '' : 'off'; if (on) platePaint(); }
 function overlays(){ const v = S.v, pl = $('plate'), pw = $('paw');
   if (!pl.classList.contains('off')) { const q = hw(...T.PLATE); pl.style.left = q.x + 'px'; pl.style.top = q.y + 'px'; }
@@ -159,18 +163,23 @@ function overlays(){ const v = S.v, pl = $('plate'), pw = $('paw');
     else if (an.vis && v.mode === 'out' && v.hop && v.t >= v.hop.t0 + an.i * T.HOP_GAP) txt = an.i + 1;
     if (txt == null) { if (d.classList.contains('on')) d.classList.remove('on'); continue; }
     if (d.textContent !== String(txt)) d.textContent = txt; if (!d.classList.contains('on')) { d.classList.add('on'); if (v.mode === 'out') tone(520 + an.i * 55, .09, 'triangle', .08); } d.style.fontSize = L().cnt + 'rem';
-    const q = stage.screenOf(an.pos.clone().add(V(0, an.a.h * an.sc + .03, 0))); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; }
+    const below = S.low && v.mode === 'out' && an.i >= 5, q = stage.screenOf(below ? an.pos.clone().add(V(0, 0, .12)) : an.pos.clone().add(V(0, an.a.h * an.sc + .03, 0))); d.style.transform = below ? 'translate(-50%,2px)' : ''; d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; }   /* 낮은 가로는 줄 사이가 좁아 아랫줄의 수를 발 아래에(윗줄 수와 포개지지 않게) */
   { const j = $('jingle'), an = S.bellI >= 0 ? AN[S.bellI] : null; if (an && an.vis && v.mode !== 'end') { const q = stage.screenOf(an.pos.clone().add(V(0, an.head ? an.a.h * an.a.win * 1.02 : an.a.h * an.sc + .04, an.head ? .2 : 0))); j.style.left = q.x + 'px'; j.style.top = q.y + 'px'; j.classList.add('on'); } else j.classList.remove('on'); }
   if (S.labels) labelsPlace();
   /* 해 질 녘: 해가 왼쪽 가장자리를 따라 내려간다(숫자 · 눈금 없음) · 저녁 빛 */
   const sn = $('sun'), dk = S.dusk; if (sn.classList.contains('on')) { const y0 = room() + 26, y1 = Math.max(y0 + 40, stage.screenOf(V(0, 0, 0)).y); sn.style.top = lerp(y0, y1, dk) + 'px'; sn.style.opacity = dk > .93 ? Math.max(.15, 1 - (dk - .93) / .07) : 1; }
   $('veil').style.opacity = (dk * .22).toFixed(3); }
-function labelsPlace(){ const p = S.p; if (!p || S.v.mode !== 'out') return; const at = (ks, dy) => { let x = 0, y = -1e9; for (const k of ks) { const q = stage.screenOf(lineSpot(k, p.a).add(V(0, 0, .16))); x += q.x; y = Math.max(y, q.y); } return { x: x / ks.length, y: y + dy }; };
-  const ia = Array.from({ length: p.a }, (_, k) => k), ib = Array.from({ length: p.b }, (_, k) => p.a + k), qa = at(ia, 4), qb = at(ib, 4), yy = Math.max(qa.y, qb.y), qc = at([...ia, ...ib], 4); let xa = qa.x, xb = qb.x; const wa2 = GRP[0].offsetWidth / 2 + 3, wb2 = GRP[1].offsetWidth / 2 + 3; if (xb - xa < wa2 + wb2) { const m = (xa + xb) / 2; xa = m - (wa2 + wb2) / 2; xb = m + (wa2 + wb2) / 2; }
-  GRP[0].style.left = xa + 'px'; GRP[0].style.top = yy + 'px'; GRP[1].style.left = xb + 'px'; GRP[1].style.top = yy + 'px'; GRP[2].style.left = (xa + xb) / 2 + 'px'; GRP[2].style.top = (yy + GRP[0].offsetHeight + 4) + 'px'; void qc; }
-function labels(on){ S.labels = !!on; const p = S.p; GRP.forEach(g => g.classList.toggle('on', !!on)); if (on && p) { GRP[0].textContent = p.a + '마리'; GRP[1].textContent = p.b + '마리'; GRP[2].textContent = R.total(p); labelsPlace(); } }
+function labelsPlace(){ const p = S.p, v = S.v; if (!p || v.mode !== 'out') return;
+  /* 무리 이름표: 무리가 서는 자리(다시 모인 자리 · 아니면 마당 줄)에서 실제로 선 범위의 가운데 · 그 무리 맨 아랫줄 아래 */
+  const spotOf = i => (v.reg ? regSpot(i, v) : lineSpot(i, p.a)), all = Array.from({ length: p.a + p.b }, (_, i) => i), g1 = all.filter(i => (v.reg ? regFirst(i, v) : i < p.a)), g2 = all.filter(i => !g1.includes(i));
+  const at = ks => { let l = 1e9, r = -1e9, y = -1e9; for (const k of ks) { const q = stage.screenOf(spotOf(k).add(V(0, 0, .16))); l = Math.min(l, q.x); r = Math.max(r, q.x); y = Math.max(y, q.y); } return { x: (l + r) / 2, y: y + 4 }; };
+  const q1 = at(g1), q2 = at(g2); let x1 = q1.x, x2 = q2.x; const w1 = GRP[0].offsetWidth / 2 + 3, w2 = GRP[1].offsetWidth / 2 + 3; if (Math.abs(q1.y - q2.y) < GRP[0].offsetHeight + 4 && x2 - x1 < w1 + w2) { const m = (x1 + x2) / 2; x1 = m - (w1 + w2) / 2; x2 = m + (w1 + w2) / 2; }
+  GRP[0].style.left = x1 + 'px'; GRP[0].style.top = q1.y + 'px'; GRP[1].style.left = x2 + 'px'; GRP[1].style.top = q2.y + 'px'; const yT = Math.max(q1.y, q2.y) + GRP[0].offsetHeight + 4; if (yT + GRP[2].offsetHeight > innerHeight - 34) { GRP[2].style.left = Math.min(innerWidth - GRP[2].offsetWidth / 2 - 4, x2 + w2 + GRP[2].offsetWidth / 2 + 6) + 'px'; GRP[2].style.top = q2.y + 'px'; }   /* 아래가 모자라면(낮은 가로) 「모두」 는 둘째 이름표 옆에 */
+  else { GRP[2].style.left = (x1 + x2) / 2 + 'px'; GRP[2].style.top = yT + 'px'; } }
+/** 이름표 셋: 식에 적힌 차례(먼저 적은 수 · 다음 수 · 모두). */
+function labels(on){ S.labels = !!on; const p = S.p, v = S.v; GRP.forEach(g => g.classList.toggle('on', !!on)); if (on && p) { const sw = !!(v.reg && v.reg.swap); GRP[0].textContent = (sw ? p.b : p.a) + '마리'; GRP[1].textContent = (sw ? p.a : p.b) + '마리'; GRP[2].textContent = R.total(p); labelsPlace(); } }
 /** 문패의 수가 마당에 찍힌다(B08 · B09 — 맞게 열었을 때). */
-function stampGo(n){ const st = $('stamp'), pl = $('plate').getBoundingClientRect(); NS.paint(st.firstChild, n, { px: L().plate, compact: true }); st.style.transition = 'none'; st.style.left = (pl.left + pl.width / 2) + 'px'; st.style.top = (pl.top + pl.height / 2) + 'px'; st.className = 'on'; void st.offsetWidth; st.style.transition = '';
+function stampGo(n){ const st = $('stamp'), pl = $('plate').getBoundingClientRect(); NS.paint(st.firstChild, n, { px: L().plate, compact: true }); st.style.transition = 'none'; st.style.left = (pl.left + pl.width / 2) + 'px'; st.style.top = (pl.top + pl.height / 2) + 'px'; st.className = 'on'; void st.offsetWidth; st.style.transition = ''; S.stamped = true; platePaint();   /* 수는 마당으로 옮겨 간다 — 문패는 빈 판(같은 수가 둘 보이지 않게) */
   const q = stage.screenOf(V(T.STAMP[0], .3, L().rows[0] + .2)); q.x = Math.min(q.x, innerWidth - L().plate * .62 - 4); st.style.left = q.x + 'px'; st.style.top = q.y + 'px'; setTimeout(() => { if (st.classList.contains('on')) { st.classList.add('hit'); tone(160, .16, 'sine', .12, 0, 90); } }, 560); S.log.push({ stamp: n }); }
 function applyDusk(k){ if (S.duskShown != null && (k === S.duskShown || (Math.abs(k - S.duskShown) < .012 && k !== 0 && k !== 1))) return; S.duskShown = k; const mix = (a, b) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), k).getHexString();
   stage.paintSky(DAY.SKY.map((c, i) => mix(c, DUSK.SKY[i]))); stage.sun.color.set(mix(DAY.SUN, DUSK.SUN)); stage.sun.intensity = lerp(DAY.I, DUSK.I, k); stage.hemi.intensity = lerp(DAY.HEMI, DUSK.HEMI, k); stage.sun.position.set(4 + 6 * k, 9 - 6.2 * k, 6);   /* 해가 기울면 집 그림자가 길어진다 */
@@ -195,7 +204,7 @@ const ring = () => { tone(1568, .5, 'sine', .1); tone(2093, .4, 'sine', .05, .02
 function stopTweens(o){ for (let i = stage.tweens.length - 1; i >= 0; i--) { const w = stage.tweens[i]; if (w.o === o) { stage.tweens.splice(i, 1); w.res(); } } }
 /** 한 줄 안내 자리: 띠 · 카드 · 집의 문과 창 · 문패 · 발자국 · 종 · 동물 · 위쪽 표시를 가리지 않는 곳. */
 function tellPlace(){ const tl = $('tell'); if (!tl || !tl.classList.contains('on')) return; const w = innerWidth, h = innerHeight;
-  Object.assign(tl.style, { maxWidth: (S.low ? Math.max(180, w * .3) : Math.min(w * .92, 560)) + 'px', fontSize: S.tall || S.low ? '1.02rem' : '', bottom: 'auto', transform: 'none' }); const tw = tl.offsetWidth, th = tl.offsetHeight, keys = keyRects();
+  Object.assign(tl.style, { maxWidth: (S.low ? Math.max(180, w * .3) : Math.min(w * .92, 760)) + 'px', fontSize: S.tall || S.low ? '1.02rem' : '', bottom: 'auto', transform: 'none' }); const tw = tl.offsetWidth, th = tl.offsetHeight, keys = keyRects();
   const pref = { x: (w - tw) / 2, y: h - th - (S.tall ? 70 : 34) }; let best = null, s0 = Infinity;
   for (let y = 56; y <= h - th - 6; y += 10) for (let x = 6; x <= w - tw - 6; x += 12) { let ov = 0; for (const r of keys) { const ix = Math.max(0, Math.min(x + tw, r.right) - Math.max(x, r.left)), iy = Math.max(0, Math.min(y + th, r.bottom) - Math.max(y, r.top)); ov += ix * iy; }
     const sc = ov * 50 + Math.hypot(x - pref.x, y - pref.y); if (sc < s0) { s0 = sc; best = { x, y }; } }
@@ -205,12 +214,14 @@ function say1(key, text, opt){ if (H.tell(key, text, opt)) { tellPlace(); return
 /** 가리면 안 되는 것들의 화면 네모. */
 function keyRects(){ const out = [], add = r => { if (r && r.width > 0) out.push(r); };
   for (const id of ['tray', 'choose', 'readline', 'plate', 'paw', 'stamp', 'marbles', 'lanterns', 'coins', 'snd', 'note']) { const e = $(id); if (e && getComputedStyle(e).display !== 'none' && !e.classList.contains('off')) add(e.getBoundingClientRect()); }
-  add(document.querySelector('.back') && document.querySelector('.back').getBoundingClientRect()); add(doorRect()); add(winRect()); if (bellG.visible) add(rect3(bellG)); add(herdRect()); add(yardRect()); for (const g of GRP) if (g.classList.contains('on')) add(g.getBoundingClientRect()); return out; }
+  add(document.querySelector('.back') && document.querySelector('.back').getBoundingClientRect()); add(doorRect()); add(winRect()); add(wallRect()); if (bellG.visible) add(rect3(bellG)); add(herdRect()); add(yardRect()); for (const g of GRP) if (g.classList.contains('on')) add(g.getBoundingClientRect()); return out; }
 function rect3(o, grow = 1){ if (!o || !o.visible) return null; o.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(o); if (b.isEmpty()) return null; if (grow !== 1) { const c = b.getCenter(V()), s = b.getSize(V()).multiplyScalar(grow / 2); b.min.copy(c).sub(s); b.max.copy(c).add(s); }
   let l = 1e9, r = -1e9, t = 1e9, bt = -1e9; for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) { const q = stage.screenOf(V(x, y, z)); l = Math.min(l, q.x); r = Math.max(r, q.x); t = Math.min(t, q.y); bt = Math.max(bt, q.y); }
   return { left: l, right: r, top: t, bottom: bt, width: r - l, height: bt - t }; }
 const quad = pts => { const q = pts.map(p => hw(...p)), l = Math.min(...q.map(a => a.x)), r = Math.max(...q.map(a => a.x)), t = Math.min(...q.map(a => a.y)), b = Math.max(...q.map(a => a.y)); return { left: l, right: r, top: t, bottom: b, width: r - l, height: b - t, x: (l + r) / 2, y: (t + b) / 2 }; };
 const doorRect = () => quad([[-T.DOOR_W / 2 - .04, T.DOOR_Y - .12, .12], [T.DOOR_W / 2 + .04, T.DOOR_Y - .12, .12], [-T.DOOR_W / 2 - .04, T.DOOR_Y + T.DOOR_H + .06, .12], [T.DOOR_W / 2 + .04, T.DOOR_Y + T.DOOR_H + .06, .12]]);
+/** 집 앞벽(창 너비 · 창 위 끝 ~ 문 아래 끝) — 안내 글이 집을 가리지 않게. */
+const wallRect = () => quad([[-T.WIN_W / 2 - .1, T.DOOR_Y - .12, .12], [T.WIN_W / 2 + .1, T.DOOR_Y - .12, .12], [-T.WIN_W / 2 - .1, T.WIN_Y + T.WIN_H + .1, .12], [T.WIN_W / 2 + .1, T.WIN_Y + T.WIN_H + .1, .12]]);
 const winRect = () => quad([[-T.WIN_W / 2, T.WIN_Y, .12], [T.WIN_W / 2, T.WIN_Y, .12], [-T.WIN_W / 2, T.WIN_Y + T.WIN_H, .12], [T.WIN_W / 2, T.WIN_Y + T.WIN_H, .12]]);
 /** 한 마리의 화면 네모(발 · 머리 끝 · 어깨 너비로 어림). */
 function animalRect(an){ const hgt = an.a.h * an.sc, a = stage.screenOf(an.pos), b = stage.screenOf(an.pos.clone().add(V(0, hgt, 0))), wd = Math.abs(stage.screenOf(an.pos.clone().add(V(hgt * .3, 0, 0))).x - a.x); return { left: a.x - wd, right: a.x + wd, top: b.y, bottom: a.y, width: wd * 2, height: a.y - b.y }; }
@@ -264,7 +275,7 @@ function outAct(kind){ const v = S.v; if (v.mode !== 'out') return Promise.resol
   if (kind === 'hop') { v.hop = { t0: v.t + .15 }; v.until = v.t + .15 + (v.n - 1) * T.HOP_GAP + T.HOP_S + .5; } else if (kind === 're') { v.re = { t0: v.t + .1 }; v.until = v.t + T.RE_S; tone(392, .12, 'triangle', .07); tone(523, .14, 'triangle', .07, 1.35); } else { v.spin = { t0: v.t + .05 }; v.until = v.t + T.SPIN_S + .1; }
   v.run = true; S.log.push({ outAct: kind }); return new Promise(res => { v.res = res; }); }
 /** 발자국: 장면을 한 번 더 본다(수는 띄우지 않는다 · 깨끗함 그대로 · 몇 번이든 · 손은 막지 않는다). 나와 선 뒤에는 마당에서 다시 보여 준다. */
-function again(){ if (!S.played || S.phase === 'door') { nudge('paw'); return; } bobEl($('paw')); tone(660, .08, 'triangle', .07); S.replays = (S.replays | 0) + 1; S.log.push({ again: S.replays, outside: S.outside }); const my = S.oid, p = S.p, rid = S.rid = (S.rid | 0) + 1, pr = S.outside ? outAct('re') : showScene({ replay: true, slow: true }); S.replaying = true;
+function again(){ if (!S.played) { nudge('paw'); return; } bobEl($('paw')); tone(660, .08, 'triangle', .07); S.replays = (S.replays | 0) + 1; S.log.push({ again: S.replays, outside: S.outside }); const my = S.oid, p = S.p, rid = S.rid = (S.rid | 0) + 1, pr = S.outside ? outAct('re') : showScene({ replay: true, slow: true }); S.replaying = true;
   pr.then(() => { if (S.oid === my && S.p === p && S.rid === rid) { S.replaying = false; S.lastAct = S.t; } }); }
 
 // ── 적기: 수 카드(B06 · B08 · B09) · 딱지(B07) · 문패
@@ -278,8 +289,8 @@ function beginWrite(){ S.phase = 'write'; const m = mode();
   else if (m === 'sum') { S.w = [null]; S.upto = 3; plateShow(true); }
   else { S.w = Array(S.step === 1 ? 3 : 5).fill(null); S.cellsOn = true; }
   S.btn = []; $('paw').classList.toggle('off', !S.played); showChoices(); S.windAt = !S.windDone && m === 'write' ? S.t + 2 : Infinity; }
-function onCard(n, btn){ if (!S.active || S.closed || !S.p) return; audio(); if (S.busy) { S.log.push({ ignored: 'busy', card: n }); return; } touch(); const p = S.p, m = mode();
-  if (S.phase === 'count') { S.log.push({ count: n, hinted: S.res.hinted }); if (n === p.sum) { S.f.sum = n; tone(880, .12, 'triangle', .09); close(); } else { C.retreat(btn); S.gone.sum.push(n); S.res.back = true; tone(300, .14, 'sine', .07); tone(220, .2, 'sine', .06, .12); S.log.push({ back: 'sum', n }); } return; }
+function onCard(n, btn){ if (!S.active || S.closed || !S.p) return; audio(); if (S.busy) { S.log.push({ ignored: 'busy', card: n }); say1('ride.watch', WAIT, { times: 1e9, ms: 2600 }); return; } touch(); const p = S.p, m = mode();
+  if (S.phase === 'count') { S.log.push({ count: n, hinted: S.res.hinted }); if (n === p.sum) { S.f.sum = n; tone(880, .12, 'triangle', .09); close(); } else { C.retreat(btn); S.gone.sum.push(n); S.res.back = true; tone(440, .1, 'triangle', .05); S.log.push({ back: 'sum', n }); } return; }
   if (S.phase !== 'write') return;
   if (m === 'story') { const k = cur(); if (k < 0) return; const slot = slotsOf()[k]; S.w[k] = n; S.f[slot] = n; tone(700, .08, 'triangle', .08); S.log.push({ fill: slot, n, hinted: S.res.hinted }); showChoices(); return; }
   if (m === 'sum') hang(n, btn); }
@@ -287,7 +298,7 @@ function onCard(n, btn){ if (!S.active || S.closed || !S.p) return; audio(); if 
 function hang(n, btn){ windOff(); if (S.btn[0] && S.btn[0] !== btn) C.give(S.btn[0]); S.w[0] = n; S.btn[0] = btn; C.take(btn); platePaint(); bobEl($('plate'), 'set'); S.door.wig = true; tone(700, .08, 'triangle', .08); S.log.push({ hang: n, hinted: S.res.hinted }); C.ask(false); if (!S.windDone) S.windAt = S.t + .7; }
 function plateTap(){ if (S.wind && S.wind.on && S.wind.el === $('plate')) { windCatch(); return; } if (S.phase !== 'write' || S.w[0] == null) { nudge('plate'); return; }
   C.give(S.btn[0]); S.log.push({ unhang: S.w[0] }); S.w[0] = null; S.btn[0] = null; platePaint(); S.door.wig = false; tone(420, .08, 'triangle', .06); C.ask(true); }
-function onTile(v, btn){ if (!S.active || S.closed || !S.p) return; audio(); if (S.wind && S.wind.on && S.wind.el === btn) { touch(); windCatch(); return; } if (S.busy) { S.log.push({ ignored: 'busy', tile: v }); return; } if (S.phase !== 'write') return; touch();
+function onTile(v, btn){ if (!S.active || S.closed || !S.p) return; audio(); if (S.wind && S.wind.on && S.wind.el === btn) { touch(); windCatch(); return; } if (S.busy) { S.log.push({ ignored: 'busy', tile: v }); say1('ride.watch', WAIT, { times: 1e9, ms: 2600 }); return; } if (S.phase !== 'write') return; touch();
   const k = cur(); if (k < 0) { nudge('full'); return; } S.w[k] = v; S.btn[k] = btn; flyTile(btn, k); C.take(btn); tone(typeof v === 'number' ? 700 : 560, .08, 'triangle', .08); S.log.push({ tile: v, k, hinted: S.res.hinted }); strip(); if (filled()) bellWig(); }
 /** 딱지가 띠의 칸으로 날아간다(화면 꾸밈). */
 function flyTile(btn, k){ const a = btn.getBoundingClientRect(), cell = document.querySelector(`#tray b[data-k="${k}"]`); if (!cell) return; const b = cell.getBoundingClientRect(), d = btn.cloneNode(true); Object.assign(d.style, { position: 'fixed', left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', margin: 0, zIndex: 8, pointerEvents: 'none', animation: 'none', transition: 'transform .22s ease-in,opacity .22s', fontFamily: 'inherit' }); d.className = btn.className + ' flying'; d.style.borderRadius = getComputedStyle(btn).borderRadius; d.style.border = getComputedStyle(btn).border; d.style.background = getComputedStyle(btn).backgroundColor; d.style.color = getComputedStyle(btn).color; d.style.fontWeight = 900; d.style.fontSize = getComputedStyle(btn).fontSize;
@@ -300,7 +311,7 @@ function onCell(k){ if (!S.active || S.closed || S.busy || S.phase !== 'write' |
 // ── 바람(B07 딱지 하나 · B08 · B09 문패): 굴러간다 → 눌러 잡는다. 놓치면 굴러갔다가 제자리로 — 시간만 잃는다(수는 그대로)
 function windGo(){ S.windAt = Infinity; if (S.windDone || S.busy || S.closed || S.phase !== 'write') return; let el = null; const m = mode();
   if (m === 'write') { const bs = chooseBtns().filter(b => !b.classList.contains('sym')); if (!bs.length) return; el = bs[Math.floor(Math.random() * bs.length)]; } else if (m === 'sum') { if (S.w[0] == null) return; el = $('plate'); } else return;
-  S.windDone = true; const r = el.getBoundingClientRect(), right = m === 'sum' ? r.left + r.width / 2 >= doorRect().x : r.left + r.width / 2 < innerWidth / 2,   /* 문패는 문에서 먼 쪽으로 굴러간다(문 · 발자국을 덮지 않게) */ bx = right ? Math.min(170, innerWidth - r.right - 12) : -Math.min(170, r.left - 12), by = m === 'sum' ? 56 : 64; el.style.setProperty('--bx', bx + 'px'); el.style.setProperty('--by', by + 'px'); el.classList.add('blown');
+  S.windDone = true; const r = el.getBoundingClientRect(), right = m === 'sum' ? r.left + r.width / 2 >= doorRect().x : r.left + r.width / 2 < innerWidth / 2,   /* 문패는 문에서 먼 쪽으로 굴러간다(문 · 발자국을 덮지 않게) */ bx = m === 'sum' ? (right ? Math.min(170, innerWidth - r.right - 12) : -Math.min(170, r.left - 12)) : (right ? 1 : -1) * Math.round(r.width * .35), by = m === 'sum' ? 56 : Math.round(r.height + 24);   /* 딱지는 통 바로 아래 빈자리로(이웃 딱지 위에 포개지지 않게) */ el.style.setProperty('--bx', bx + 'px'); el.style.setProperty('--by', by + 'px'); el.classList.add('blown');
   S.wind = { on: true, el, until: S.t + R.T.WIND_S }; tone(900, .5, 'sine', .04, 0, 300); S.log.push({ wind: m === 'sum' ? 'plate' : +el.dataset.n }); }
 function windCatch(){ if (!S.wind || !S.wind.on) return; tone(880, .08, 'triangle', .07); tone(1100, .08, 'triangle', .06, .08); S.log.push({ windCaught: true }); windOff(); }
 function windOff(back){ const w = S.wind; if (!w) return; if (w.on) { w.on = false; w.el.classList.remove('blown'); if (back) S.log.push({ windBack: true }); S.lastAct = S.t; } S.wind = null; }
@@ -311,28 +322,30 @@ function submit(kind){ if (!S.active || S.closed || S.busy || !S.p) return; if (
   if (S.phase !== 'write' || !filled() || (S.wind && S.wind.on && S.wind.el === $('plate'))) { nudge(kind); return; }
   if (kind === 'bell') ring(); else knock(); judgeNow(); }
 /** B06 걸음 ①: 문이 열리고 모두 나와 선다 → 「모두 ?마리」 를 세어서 고른다. */
-async function openCount(){ const my = S.oid; S.busy = true; S.phase = 'watch'; H.hide(); tellOff(); S.door.wig = false; S.log.push({ knock: true }); await showOut(); if (S.oid !== my) return; S.outside = true; countPhase(); }
-function countPhase(){ S.phase = 'count'; S.f.sum = '?'; S.mine = {}; S.cards.sum = S.cards.sum || R.cards(S.p, 'sum'); C.show(S.cards.sum, onCard); S.slot = 'sum'; S.busy = false; S.lastAct = S.t; strip(); setTimeout(tellPlace, 30); }
+async function openCount(){ const my = S.oid; S.busy = true; S.phase = 'watch'; H.hide(); tellOff(); skipScene(); S.door.wig = false; S.log.push({ knock: true }); await showOut(); if (S.oid !== my) return; S.outside = true; countPhase(); }
+function countPhase(){ S.phase = 'count'; S.f.sum = '?'; S.mine = {}; $('paw').classList.remove('off'); S.cards.sum = S.cards.sum || R.cards(S.p, 'sum'); C.show(S.cards.sum, onCard); S.slot = 'sum'; S.busy = false; S.lastAct = S.t; strip(); setTimeout(tellPlace, 30); }
 async function judgeNow(){ const my = S.oid, p = S.p, m = mode(); S.busy = true; H.hide(); tellOff(); skipScene(); windOff(); S.door.wig = false; const w = S.w.slice(), j = R.judge(w, p); S.log.push({ judge: j.res, w: w.join(' '), at: j.at, hinted: S.res.hinted }); C.ask(false);
   if (m === 'story') { const sl = slotsOf();
     if (j.res === 'fit') { C.hide(); S.mine = {}; strip(); await showOut(); if (S.oid !== my) return; S.outside = true; if (sl.length === 3) { await close(); return; } countPhase(); return; }
-    S.res.back = true; C.hide(); S.phase = 'watch'; tone(300, .14, 'sine', .07); await showScene({ counts: true, replay: true, slow: true }); if (S.oid !== my) return;   /* 문이 열리는 대신 장면이 한 번 다시 흐른다(머리 위에 수가 오른다) */
+    S.res.back = true; C.hide(); S.phase = 'watch'; tone(440, .1, 'triangle', .05); await showScene({ counts: true, replay: true, slow: true }); if (S.oid !== my) return;   /* 문이 열리는 대신 장면이 한 번 다시 흐른다(머리 위에 수가 오른다) */
     for (const k of j.bad) { S.gone[sl[k]].push(S.w[k]); S.log.push({ back: sl[k], n: S.w[k] }); S.w[k] = null; S.f[sl[k]] = '?'; } S.phase = 'write'; S.busy = false; S.lastAct = S.t; showChoices(); for (const k of j.bad) bobEl(document.querySelector(`#tray b.hole`), 'back'); return; }
   if (m === 'write') { if (!S.outside) { await showOut(); if (S.oid !== my) return; S.outside = true; }   /* 닫힌 채 적었으면 이제 연다 */
     if (j.res === 'fit') { await close(); return; }
-    S.res.back = true; S.phase = 'watch'; tone(300, .14, 'sine', .07); await outAct('re'); if (S.oid !== my) return;   /* 동물들이 장면을 다시 보여 준다 */
+    S.res.back = true; S.phase = 'watch'; await outAct('re'); if (S.oid !== my) return;   /* 동물들이 장면을 다시 보여 준다 */
     for (const k of j.bad) { if (S.btn[k]) C.give(S.btn[k]); S.log.push({ back: k, v: S.w[k] }); S.w[k] = null; S.btn[k] = null; } S.phase = 'write'; S.busy = false; S.lastAct = S.t; strip(); return; }
   const fit = j.res === 'fit'; S.phase = 'watch';
   if (!S.outside) { if (S.first && !S.played) { await showScene({}); if (S.oid !== my) return; S.played = true; await sleep(250); if (S.oid !== my) return; }   /* 식 먼저: 이제야 장면이 빠르게 흐른다 */
     await showOut({ hop: !fit }); if (S.oid !== my) return; S.outside = true; }
   else if (!fit) { await outAct('hop'); if (S.oid !== my) return; }
-  if (fit) { stampGo(p.sum); await sleep(650); if (S.oid !== my) return; await close(); return; }
-  S.res.back = true; const btn = S.btn[0], pl = $('plate'); pl.classList.add('away'); tone(300, .14, 'sine', .07); tone(220, .2, 'sine', .06, .12); S.log.push({ back: 'plate', n: S.w[0] }); await sleep(520); if (S.oid !== my) return;   /* 문패의 수가 물러난다 */
+  if (fit) { S.door.want = true; stampGo(p.sum); await sleep(650); if (S.oid !== my) return; await close(); return; }
+  S.res.back = true; const btn = S.btn[0], pl = $('plate'); pl.classList.add('away'); tone(440, .1, 'triangle', .05); S.log.push({ back: 'plate', n: S.w[0] }); await sleep(520); if (S.oid !== my) return;   /* 문패의 수가 물러난다 */
   if (btn) { C.give(btn); C.retreat(btn); } S.gone.sum.push(S.w[0]); S.w[0] = null; S.btn[0] = null; pl.classList.remove('away'); platePaint(); S.door.want = false; $('paw').classList.remove('off'); S.phase = 'write'; S.busy = false; S.lastAct = S.t; C.ask(true); }
+/** 아이가 지은 식에서 먼저 적힌 더하는 수(`3 + 2 = 5` → 3 · `5 = 2 + 3` → 2 · 수 셋 [3, 2, 5] → 3). */
+const firstAddend = w => (w.length === 5 ? (w[1] === '=' ? w[2] : w[0]) : w[0]);
 /** 문제를 닫는다: 띠가 닫히고(「모두 5마리」 · 「3 + 2 = 5」 + 읽는 말) 소리로 읽어 준다. */
 async function close(){ const my = S.oid, p = S.p, m = mode(); if (S.closed) return; S.closed = true; S.busy = true; S.phase = 'closed'; H.hide(); C.hide(); windOff(); skipScene(); S.door.wig = false; $('paw').classList.add('off');
   let said = '';
-  if (m === 'story') { S.mine = {}; S.f = { a: p.a, b: p.b, sum: p.sum }; said = R.total(p); } else if (m === 'sum') { S.upto = 3; said = R.read(p, 0); } else { const w = S.w.slice(); said = R.read(p, S.readK++, w); S.cellsOn = true; readLine(said); labels(true); }
+  if (m === 'story') { S.mine = {}; S.f = { a: p.a, b: p.b, sum: p.sum }; said = R.total(p); } else if (m === 'sum') { S.upto = 3; said = R.read(p, 0); readLine(said); } else { const w = S.w.slice(); said = R.read(p, S.readK++, w); S.cellsOn = true; readLine(said); if (S.v.mode === 'out') S.v.reg = { t0: S.v.t + .15, swap: firstAddend(w) !== p.a }; labels(true); }
   strip(); TL.say(said);
   const cleanNow = R.clean(S.res); if (S.step === 2) { if (cleanNow) { S.streak++; if (S.streak % R.T.STREAK === 0 && S.v.mode === 'out') { outAct('spin'); confetti(16); S.log.push({ spin: S.streak }); } } else S.streak = 0; }   /* 신바람: 셋 이어지면 나와 선 동물들이 한 바퀴 */
   if (S.bellI >= 0) { if (cleanNow) { wallet.earn(R.T.SURPRISE_COINS, 'ride'); confetti(10); tone(1319, .2, 'triangle', .1); S.surpriseCarry = false; const r = doorRect(), d = document.createElement('div'); Object.assign(d.style, { position: 'fixed', left: r.x + 'px', top: r.y + 'px', width: '2px', height: '2px' }); document.body.appendChild(d); E.fly(d, $('coins'), art(ICON.coin), R.T.SURPRISE_COINS).then(() => d.remove()); S.log.push({ surpriseOpen: true }); } else { S.surpriseCarry = true; S.log.push({ surpriseKept: true }); } }
@@ -347,7 +360,7 @@ async function miss(){ if (!S.active || S.busy || S.closed) return; const my = S
 
 // ── 한 문제의 시작 · 끝
 function resetScene(){ S.v = { mode: 'none', t: 0 }; for (const an of AN) { an.p.obj.visible = false; an.state = 'off'; an.vis = false; an.head = false; for (const m of an.mats) m.emissiveIntensity = 0; } CNT.forEach(d => d.classList.remove('on')); labels(false); readLine(''); $('stamp').className = ''; $('jingle').classList.remove('on');
-  windOff(); S.wind = null; S.windAt = Infinity; C.hide(); A.trayClear(); $('tray').dataset.h = ''; plateShow(false); $('plate').classList.remove('away', 'blown', 'set'); $('paw').classList.add('off'); S.door.want = false; S.door.wig = false; S.replaying = false; S.labels = false; S.cellsOn = false; S.upto = 0; S.f = {}; S.mine = {}; S.w = []; S.btn = []; S.tiles = null; S.cards = {}; S.gone = { a: [], b: [], sum: [] };
+  windOff(); S.wind = null; S.windAt = Infinity; C.hide(); A.trayClear(); $('tray').dataset.h = ''; plateShow(false); $('plate').classList.remove('away', 'blown', 'set'); $('paw').classList.add('off'); S.door.want = false; S.door.wig = false; S.replaying = false; S.labels = false; S.stamped = false; S.cellsOn = false; S.upto = 0; S.f = {}; S.mine = {}; S.w = []; S.btn = []; S.tiles = null; S.cards = {}; S.gone = { a: [], b: [], sum: [] };
   stopTweens(bellIn.rotation); bellIn.rotation.z = 0; document.querySelectorAll('.flying').forEach(e => e.remove()); }
 async function runProblem(p, ctx){ const my = S.oid, c = R.CELLS[p.cell], m = c.mode;
   S.p = p; S.step = ctx.step; S.ev = ctx.ev; S.ctx = ctx; S.res = { back: false, hinted: false, missed: false }; S.closed = false; S.clock = 0; S.busy = true; S.active = true; S.hinting = false; S.phase = 'watch'; S.outside = false; S.played = false; S.replays = 0; resetScene(); H.hide();
@@ -356,9 +369,9 @@ async function runProblem(p, ctx){ const my = S.oid, c = R.CELLS[p.cell], m = c.
   E.marbles(ctx.j, 3, 0); aim(); poseAll();
   S.log.push({ start: p.key, kind: p.kind, step: S.step, ev: Object.keys(S.ev).filter(x => S.ev[x] === true).join(' '), last: !!ctx.last, retry: !!p.retry, first: S.first, blind: S.blind, bell: S.bellI, wind: !S.windDone, rush: S.sc.rush, big: S.big });
   if (S.first) { S.upto = 3; strip(); await sleep(350); if (S.oid !== my) return { abort: true }; }
-  else { await sleep(250); if (S.oid !== my) return { abort: true }; await showScene({ write: true }); if (S.oid !== my) return { abort: true }; S.played = true; await sleep(200); if (S.oid !== my) return { abort: true };
+  else { await sleep(250); if (S.oid !== my) return { abort: true }; await showScene({ write: m !== 'story' || ctx.step === 1 }); if (S.oid !== my) return { abort: true }; S.played = true;   /* 이야기 낱칸은 걸음 ① 만 띠가 저절로 적힌다(② · 닫힌 판에서 답을 미리 보이거나 읽어 주지 않게) */ await sleep(200); if (S.oid !== my) return { abort: true };
     if (m === 'write' && !S.blind) { await showOut(); if (S.oid !== my) return { abort: true }; S.outside = true; } }   /* B07: 문이 저절로 열려 모두 나와 선다(합이 보인다) */
-  if (m === 'story' && ctx.step === 1) { S.phase = 'door'; S.door.wig = true; } else beginWrite();
+  if (m === 'story' && ctx.step === 1) { S.phase = 'door'; S.door.wig = true; $('paw').classList.remove('off'); } else beginWrite();
   let told = false; if (ctx.j === 0 && ctx.firstStep) { told = say1('ride.' + S.cell + ctx.step, firstLine(), TELLS()); if (told) S.log.push({ told: firstLine() }); }   /* 장면이 끝나 손이 풀린 뒤에 */
   S.busy = false; S.lastAct = S.t + (told ? T.TELL_GRACE : 0); strip();
   const out = await new Promise(res => { S.done = res; }); S.active = false; S.done = null; H.hide(); if (out === 'abort' || S.oid !== my) return { abort: true };
@@ -398,7 +411,7 @@ async function endScene(my){ S.p = null; resetScene(); S.ending = true; S.big = 
   S.log.push({ endScene: S.today.length, kind: S.kind }); confetti(14); [523, 659, 784, 1047].forEach((f, i) => tone(f, .2, 'triangle', .1, .2 + i * .12)); await sleep(1700); }
 function clearEnd(){ S.ending = false; S.duskTo = null; S.dusk = 0; applyDusk(0); S.v = { mode: 'none', t: 0 }; }
 /** 하네스 · 교사용: 지금 나들이를 거둔다(표시 · 세는 칸을 모두 처음으로). */
-function abort(){ S.oid++; S.active = false; if (S.done) { const d = S.done; S.done = null; d('abort'); } if (S.v && S.v.res) { const r = S.v.res; S.v.res = null; r('abort'); } stage.tweens.length = 0; resetScene(); clearEnd(); S.p = null; S.busy = false; S.closed = false; S.clock = 0; S.streak = 0; S.outside = false; S.played = false; S.first = false; S.blind = false; S.bellI = -1; S.windDone = true; S.hinting = false; S.res = { back: false, hinted: false, missed: false }; S.big = 1; S.win.open = false; bellG.visible = false; $('sun').classList.remove('on'); TL.stop(); H.hide(); S.phase = 'idle'; { const tl = $('tell'); if (tl) tl.classList.remove('on'); }
+function abort(){ S.oid++; S.active = false; if (S.done) { const d = S.done; S.done = null; d('abort'); } if (S.v && S.v.res) { const r = S.v.res; S.v.res = null; r('abort'); } stage.tweens.length = 0; resetScene(); clearEnd(); S.p = null; S.busy = false; S.closed = false; S.clock = 0; S.streak = 0; S.outside = false; S.played = false; S.first = false; S.blind = false; S.bellI = -1; S.windDone = true; S.hinting = false; S.surpriseCarry = false; S.res = { back: false, hinted: false, missed: false }; S.big = 1; S.win.open = false; bellG.visible = false; $('sun').classList.remove('on'); TL.stop(); H.hide(); S.phase = 'idle'; { const tl = $('tell'); if (tl) tl.classList.remove('on'); }
   const hm = document.getElementById('home'); if (hm) hm.classList.remove('on'); if (S.ready) aim(); }
 
 // ── 한 장면의 일

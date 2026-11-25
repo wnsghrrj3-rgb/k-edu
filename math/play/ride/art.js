@@ -28,4 +28,4 @@ export const LAMP = '#ffcf6a';
 export const DAY = { SKY: ['#5fb8ea', '#bfe6f5', '#e8f6fb'], SUN: '#fff1d8', I: 2.4, HEMI: 1.25 };
 export const DUSK = { SKY: ['#3b3a78', '#e0785a', '#ffc27a'], SUN: '#ff9146', I: 1.5, HEMI: .95 };
 /** 화면 위 그림(common/art.js 이름표): 방울 = 종 그림 · 해 */
-export const ICON = { flag: 'flag', star: 'flag.star', coin: 'coin', bell: 'shop.bell', sun: 'deco.sun' };
+export const ICON = { flag: 'flag', star: 'flag.star', coin: 'coin', bell: 'shop.bell', sun: 'deco.sun', paw: 'ride.paw' };
