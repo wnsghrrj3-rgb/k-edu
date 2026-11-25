@@ -21,9 +21,9 @@ import * as V from './review.js?v=1';
 import { ASSETS, MODEL, SCENERY, NIGHT, WOOD, TINTS, GOLD, ROCKET, FIRE, SPARK, SMOKE, ICON } from './art.js?v=1';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T · 복습은 ./review.js 의 MOVE
-const T = { DECK: .45, WALL: .42, OPEN: 2.25, OPEN_MS: 110, CLOSE_MS: 110, PULL_MS: 260,
-  WIDE: { anne: [-2.25, .25], rocket: [2.15, .3], span: 3.15, el: 1.0, fov: 38 }, TALL: { anne: [-1.05, 1.62], rocket: [1.0, 1.55], span: 1.6, el: 1.08, fov: 46 },
-  ROCKET_S: [.42, 1.2], ROCKET_BIG: 1.25, BURST_Y: [2.3, 3.1], FUSE_N: 18, FUSE_LEN: .75,
+const T = { DECK: .45, WALL: .42, OPEN: 1.72, OPEN_MS: 110, CLOSE_MS: 110, PULL_MS: 260,
+  WIDE: { anne: [-2.3, .3], rocket: [2.2, .35], span: 3.7, el: 1.02, fov: 38 }, TALL: { anne: [-1.05, 1.62], rocket: [1.0, 1.55], span: 1.78, el: 1.08, fov: 46 },
+  ROCKET_S: [.42, 1.2], ROCKET_BIG: 1.25, BURST_Y: [1.55, 2.05], FUSE_N: 18, FUSE_LEN: .75,
   COUNT_MS: 430, STAMP_MS: 90, FIT_HOLD: 1300, MISS_HOLD: 1200, ROLL_MS: 420, ROLL_GAP: 300, ROLL_HOLD: 900, TELL_GRACE: 5, HINT_PICK_X: 1,
   PARTS: LITE ? 520 : 1500, BURST: [50, 80, 120, 170, 230], SPEED: [1.0, 1.3, 1.6, 1.9, 2.3], SKY_FULL: 5, BOTTOM_TALL: 74, BOTTOM_WIDE: 22 };
 const $ = id => document.getElementById(id);
@@ -53,7 +53,8 @@ const tipLight = new THREE.PointLight(SPARK, 0, 1.6, 2); scene.add(tipLight);
 // ── 입자(불꽃 · 불똥 · 연기 · 꼬리) — 하나의 Points 에 정해진 수만
 const P = { n: T.PARTS, pos: new Float32Array(T.PARTS * 3), col: new Float32Array(T.PARTS * 3), vel: new Float32Array(T.PARTS * 3), life: new Float32Array(T.PARTS), max: new Float32Array(T.PARTS), base: new Float32Array(T.PARTS * 3), drag: new Float32Array(T.PARTS), grav: new Float32Array(T.PARTS), next: 0 };
 const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute('position', new THREE.BufferAttribute(P.pos, 3)); pGeo.setAttribute('color', new THREE.BufferAttribute(P.col, 3));
-const pMat = new THREE.PointsMaterial({ size: .11, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true, fog: false });
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.35, 'rgba(255,255,255,.85)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();   /* 알갱이 하나의 둥근 빛(화면 위 빛 — 물체 아님) */
+const pMat = new THREE.PointsMaterial({ size: .2, map: dotTex, alphaTest: .01, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true, fog: false });
 const points = new THREE.Points(pGeo, pMat); points.frustumCulled = false; scene.add(points); for (let i = 0; i < P.n; i++) P.pos[i * 3 + 1] = -50;
 const tmpC = new THREE.Color();
 function emit(x, y, z, vx, vy, vz, life, color, drag = 1.6, grav = 1.4){ const i = P.next; P.next = (P.next + 1) % P.n; P.pos.set([x, y, z], i * 3); P.vel.set([vx, vy, vz], i * 3); P.life[i] = life; P.max[i] = life; tmpC.set(color); P.base.set([tmpC.r, tmpC.g, tmpC.b], i * 3); P.drag[i] = drag; P.grav[i] = grav; }
@@ -93,7 +94,7 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   S.dividers = [0, 1, 2].map(() => { const m = plank(1, wallM); m.rotation.set(0, 0, Math.PI / 2); m.scale.set(T.WALL * .62 / pwid, .8, (R.T.CRATE.D) / plen); m.position.y = fy + T.WALL * .31; m.visible = false; S.crate.add(stage.shadows(m)); return m; });
   const door = side => { const g = new THREE.Group(), n = 4, st = (W2 + .08) / n; g.position.set(side * (W2 + .08), fy + T.WALL + pth / 2 + .01, 0); for (let k = 0; k < n; k++) { const m = plank(k + (side > 0 ? 2 : 0), doorM); m.scale.set(st / pwid * 1.12, 1, (R.T.CRATE.D + .22) / plen); m.position.set(-side * st * (k + .5), 0, 0); g.add(stage.shadows(m)); } S.crate.add(g); return g; };
   S.doorL = door(-1); S.doorR = door(1);
-  S.pallet = new THREE.Group(); { const n = 7, st = 2.5 / n; for (let k = 0; k < n; k++) { const m = plank(k, palM); m.scale.set(st / pwid * 1.04, 1, .98 / plen); m.position.set(-1.25 + st * (k + .5), fy + .025, 0); S.pallet.add(m); } } S.pallet.visible = false; S.crate.add(S.pallet);
+  S.pallet = new THREE.Group(); { const n = 7, st = 2.5 / n; for (let k = 0; k < n; k++) { const m = plank(k, palM); m.scale.set(st / pwid * 1.04, .35, .98 / plen); m.position.set(-1.25 + st * (k + .5), fy + pth / 2 + .004, 0); S.pallet.add(m); } } S.pallet.visible = false; S.crate.add(S.pallet);
   for (let k = 0; k < 30; k++) POOL.push(barrelMesh());
   for (let k = 0; k < 10; k++) { const g = K[MODEL.barrel].scene.clone(); g.traverse(m => { if (m.isMesh) { m.material = mats.ghost; m.castShadow = false; m.renderOrder = 2; } }); g.visible = false; scene.add(g); GHOSTS.push(g); }
   for (let k = 0; k < 10; k++) { const c = plank(k, coverM); c.visible = false; scene.add(stage.shadows(c)); COVERS.push(c); }
@@ -107,7 +108,7 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   if (!wallet.persists()) { const n = document.createElement('div'); n.id = 'note'; n.textContent = '지금은 구경 중이에요 · 화면을 나가면 깃발이 처음으로 돌아가요'; document.body.appendChild(n); }
   CNT = Array.from({ length: 30 }, () => { const d = document.createElement('div'); d.className = 'cnt'; document.body.appendChild(d); return d; });
   GSUM = Array.from({ length: 3 }, () => { const d = document.createElement('div'); d.className = 'gsum'; document.body.appendChild(d); return d; });
-  SIGNS = Array.from({ length: 3 }, () => { const d = document.createElement('div'); d.className = 'sign'; document.body.appendChild(d); return d; });
+  SIGNS = Array.from({ length: 3 }, () => { const d = document.createElement('div'); d.className = 'fsign'; document.body.appendChild(d); return d; });
   DOORNUM = document.createElement('div'); DOORNUM.id = 'doornum'; document.body.appendChild(DOORNUM);
   TL.button();
   $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500); S.ready = true;
@@ -124,7 +125,7 @@ function aim(w = innerWidth, h = innerHeight){ const tall = h > w * 1.05; S.tall
     const far = V3(0, T.DECK + T.WALL + .3, -D2 - .15).project(camera), near = V3(0, T.DECK, tall ? D2 + 1.0 : D2 + .35).project(camera), yF = (1 - far.y) / 2 * h, yN = (1 - near.y) / 2 * h;
     if (yN - yF > (bot - top) && it < 5) { dist *= (yN - yF) / Math.max(60, bot - top) * 1.02; continue; }
     const dy = (top + bot) / 2 - (yF + yN) / 2; camera.setViewOffset(w, h, 0, -dy, w, h); break; }
-  layout(); }
+  layout(); const tl = $('tell'); if (tl && tl.classList.contains('on')) tellPlace(); }   /* 화면을 돌리면 한 줄 안내 자리도 새로(소리 단추에 가리지 않게) */
 function layout(){ const l = L(); if (S.anne) { S.anne.obj.position.set(l.anne[0], T.DECK + .02, l.anne[1]); S.anne.obj.rotation.y = S.tall ? Math.PI * .8 : Math.PI * .62; lamp.position.set(l.anne[0] - .2, T.DECK + 1.5, l.anne[1] + .4); }
   if (S.rocket && !S.flying) rocketPlace(); if (S.fuse) fuseDraw(); }
 function reaim(){ const t = topUI(); if (Math.abs(t - S.topUI) > 4) aim(); }
@@ -141,14 +142,14 @@ function doorTick(){ S.doorL.rotation.z = S.open.L * T.OPEN; S.doorR.rotation.z 
   const vis = side => S.open[side] > .04; for (const o of S.inCrate) { const side = o.position.x < 0 ? 'L' : 'R'; o.visible = vis(side) && !o.userData.off; }
   S.shown.L = vis('L'); S.shown.R = vis('R'); }
 async function doors(want, ms){ const tw = []; for (const side of ['L', 'R']) { if (want[side] == null) continue; const to = want[side] ? 1 : 0; if (Math.abs(S.open[side] - to) < .001) continue; tw.push(stage.tween(S.open, { [side]: to }, ms != null ? ms : to ? T.OPEN_MS : T.CLOSE_MS, t => t)); }
-  if (tw.length && want.L !== false && want.R !== false) snd(420, .05, 'square', .04); await Promise.all(tw); if (!want.L && !want.R) snd(180, .06, 'square', .05); }
+  if (tw.length && want.L !== false && want.R !== false) snd(420, .05, 'square', .04); await Promise.all(tw); doorTick(); if (!want.L && !want.R) snd(180, .06, 'square', .05); }
 const allOpen = () => doors({ L: true, R: true }), allClosed = () => doors({ L: false, R: false });
 
 // ── 궤짝 안 채우기(통 · 열 칸 · 칸막이 · 팻말)
 S.inCrate = [];
 function clearCrate(){ for (const o of [...POOL, ...GHOSTS, ...COVERS]) { o.visible = false; o.userData.off = false; o.userData.gi = -1; o.userData.k = -1; } S.inCrate = []; S.items = []; S.pallet.visible = false; S.dividers.forEach(d => { d.visible = false; });
   CNT.forEach(d => { d.classList.remove('on', 'all'); d.dataset.i = ''; }); GSUM.forEach(d => d.classList.remove('on', 'away')); SIGNS.forEach(d => { d.classList.remove('on'); d.innerHTML = ''; }); if (DOORNUM) DOORNUM.classList.remove('on'); }
-const fy = () => T.DECK + .03;
+const fy = () => T.DECK + .02 + (S.plank ? S.plank.pth / 2 : .05) + .004;   /* 궤짝 바닥 판자 윗면 */
 function placeBarrel(o, x, z, r, mat){ const s = (2 * r) / BK.d; o.scale.set(s, s * .85, s); o.position.set(x, fy(), z); o.rotation.set(0, Math.random() * Math.PI * 2, 0); paint(o, mat); o.userData.r = r; o.userData.home = { x, z }; S.inCrate.push(o); return o; }
 /** 문제의 그림 → 궤짝 안. spec = { groups: [{ n, pts, r, region }], ten, signs, tint } */
 function fill(spec){ clearCrate(); let k = 0; S.items = [];
@@ -159,7 +160,7 @@ function fill(spec){ clearCrate(); let k = 0; S.items = [];
     for (let j = 0; j < (spec.ten.full ? 10 : spec.ten.a); j++) { const o = POOL[k++]; placeBarrel(o, sl[j].x, sl[j].z, R.T.R); o.userData.gi = j < spec.ten.a ? 0 : 1; o.userData.k = j; o.userData.slot = j; S.items.push(o); } }
   doorTick(); }
 /** C03: 오른쪽 b 칸을 작은 덧문(판자)으로 가린다 · 걷는다. */
-function covers(b, on){ const sl = R.tenSlots(), st = S.plank, a = 10 - b; COVERS.forEach(c => { c.visible = false; c.userData.off = true; }); if (!on) { S.inCrate = S.inCrate.filter(o => !COVERS.includes(o)); return; }
+function covers(b, on){ const sl = R.tenSlots(), st = S.plank, a = 10 - b; COVERS.forEach(c => { c.visible = false; c.userData.off = true; }); for (const o of S.items) if (o.userData.slot != null) o.userData.off = false; if (!on) { S.inCrate = S.inCrate.filter(o => !COVERS.includes(o)); doorTick(); return; }
   for (let j = a; j < 10; j++) { const c = COVERS[j - a], p = sl[j]; c.scale.set(.46 / st.pwid, 1, .46 / st.plen); c.position.set(p.x, fy() + BK.h * (2 * R.T.R / BK.d) * .85 + .04, p.z); c.userData.off = false; if (!S.inCrate.includes(c)) S.inCrate.push(c); }
   for (const o of S.items) if (o.userData.slot >= a) o.userData.off = true; doorTick(); }
 const worldOf = o => o.position.clone();
@@ -183,7 +184,7 @@ function showMs(){ const p = S.p; if (S.mode === 'cell') return R.showTime(CALM 
 /** 보여 주기(덧문의 박자) — 번쩍(낱칸 · 복습) · 두 짝 차례로 · 번쩍 → 왼짝 · 열 칸 가림 · 숫자 → 머묾 · 닫힌 채. 끝나면 생각하는 차례(phase think). */
 async function present(again = false){ const my = S.oid, look = lookOf(), ms = showMs(), side = S.cornerSide; S.phase = 'show'; holdLook();
   const pull = () => { stage.play(S.anne, 'Sword', true); snd(300, .05, 'triangle', .04); return sleep(again ? 60 : T.PULL_MS); };
-  const flash = async want => { await pull(); if (S.oid !== my) return; await doors(want); if (S.oid !== my) return; const t0 = performance.now(); S.log.push({ open: Object.keys(want).filter(k => want[k]).join(''), ms: Math.round(ms) }); await sleep(ms); if (S.oid !== my) return; await allClosed(); S.log.push({ shut: Math.round(performance.now() - t0) }); };
+  const flash = async want => { await pull(); if (S.oid !== my) return; await doors(want); if (S.oid !== my) return; const t0 = performance.now(); S.log.push({ open: Object.keys(want).filter(k => want[k]).join(''), ms: Math.round(ms) }); await sleep(ms); while (S.holdShow && S.oid === my) await sleep(50);   /* holdShow = 하네스가 열린 동안을 붙잡아 둘 때만 */ if (S.oid !== my) return; await allClosed(); S.log.push({ shut: Math.round(performance.now() - t0) }); };
   if (look === 'flash') await flash(side ? { [side]: true } : { L: true, R: true });
   else if (look === 'flashLR') { await flash({ L: true }); if (S.oid !== my) return; await sleep(180); await flash({ R: true }); }
   else if (look === 'flashLeft') { await flash({ L: true, R: true }); if (S.oid !== my) return; await sleep(220); await doors({ L: true }); }
@@ -201,9 +202,11 @@ function doorNumPlace(){ if (!DOORNUM || !DOORNUM.classList.contains('on')) retu
 /** 문제 하나: 궤짝을 채우고 → 폭죽이 서고 → 보여 주고 → 누름을 기다린다. → 결과 { clean, retreat, hinted, missed, early, peeks } */
 async function runProblem(p, ctx){ const my = S.oid; S.p = p; S.res = { retreat: false, hinted: false, missed: false, early: 0, peeks: 0, nudges: 0 }; S.closed = false; S.clock = 0; S.fuseOff = false; S.busy = true; S.phase = 'set'; S.handTo = null; S.cornerSide = ctx.corner || null; S.ctx = ctx;
   S.peekLeft = isPeekable() ? R.T.PEEK : 0; S.fuseS = ctx.fuseS; S.fuseShown = !!ctx.fuse; S.gold = !!ctx.gold; S.rocketBig = !!ctx.last; S.clockOn = false;
+  CNT.forEach(d => d.classList.remove('on', 'all')); GSUM.forEach(d => d.classList.remove('on', 'away')); S.awayG = null; if (S.open.L > .001 || S.open.R > .001) await allClosed(); if (S.oid !== my) return { abort: true };   /* 앞 문제의 덧문을 먼저 닫는다(새 통이 보이지 않게) */
   fill(ctx.spec); if (p.signs) signsDraw(false); trayDraw(); chooseShow(); E.marbles(ctx.j, ctx.of || 3, 0); reaim();
   await rocketPop(); if (S.oid !== my) return { abort: true };
   if (p.say) TL.say(p.say);
+  S.active = true; S.busy = false; S.lastAct = S.t + 99;   /* 덧문이 열린 동안의 누름도 받는다(물결 + 「닫히면 눌러 줘」) */
   await present(); if (S.oid !== my) return { abort: true };
   S.log.push({ start: p.key, cell: p.cell || S.cell, n: p.answer, step: S.step, look: lookOf(), show: Math.round(showMs()), ev: Object.keys(S.ev).filter(k => S.ev[k] === true).join(' ') });
   const told = ctx.tell ? H.tell(ctx.tell.key, ctx.tell.text, ctx.tell.opt) : false; if (told) tellPlace();
@@ -213,12 +216,14 @@ async function runProblem(p, ctx){ const my = S.oid; S.p = p; S.res = { retreat:
 /** 새 폭죽이 선다(금빛 · 마지막은 크게). */
 async function rocketPop(){ S.flying = false; paint(S.rocket, S.gold ? mats.gold : mats.rocket); rocketPlace(); S.rocket.visible = true; const s = S.rocket.scale.clone(); S.rocket.scale.multiplyScalar(.01); fuseDraw(); await stage.tween(S.rocket.scale, { x: s.x, y: s.y, z: s.z }, 240, t => 1 - (1 - t) ** 3); }
 /** 폭죽이 올라가 터진다 → 잠시 뒤 끝남. level = 불꽃 단계 · big = 하늘 가득. */
-async function launch(level, gold, big){ const my = S.oid, o = S.rocket, x = o.position.x, z = o.position.z, y1 = T.BURST_Y[0] + Math.random() * (T.BURST_Y[1] - T.BURST_Y[0]); S.flying = true; fuseDraw(); snd(380, .5, 'sawtooth', .025, 0, 900);
+/** 하늘의 한 자리(가로 화면은 궤짝 둘레 · 세로 화면은 궤짝 위쪽 둘레) — 터지는 곳. */
+const skyAt = () => S.tall ? V3((Math.random() - .5) * 2.6, T.DECK + 1.2 + Math.random() * .8, -.6 + Math.random() * 1.6) : V3((Math.random() < .5 ? -1 : 1) * (1.6 + Math.random() * 1.6), T.DECK + 1.1 + Math.random() * .9, -1.2 + Math.random() * 1.4);
+async function launch(level, gold, big){ const my = S.oid, o = S.rocket, x = o.position.x - (S.tall ? .35 : .15), z = o.position.z - (S.tall ? .9 : .5), y1 = T.DECK + T.BURST_Y[0] + Math.random() * (T.BURST_Y[1] - T.BURST_Y[0]); S.flying = true; fuseDraw(); snd(380, .5, 'sawtooth', .025, 0, 900);
   const t0 = S.t; const trail = () => { if (!S.flying) return; emit(o.position.x, o.position.y, o.position.z, (Math.random() - .5) * .2, -.3, (Math.random() - .5) * .2, .45, SPARK, 2, .4); requestAnimationFrame(trail); }; trail();
-  await stage.tween(o.position, { y: y1 }, 520, t => t * (2 - t)); S.flying = false; o.visible = false; if (S.oid !== my) return;
-  const col = gold ? GOLD : FIRE[S.launched.length % FIRE.length]; burst(x, y1, z - .3, level, gold); S.launched.push({ level, gold, col });
+  await Promise.all([stage.tween(o.position, { y: y1 }, 520, t => t * (2 - t)), stage.tween(o.position, { x, z }, 520, t => t)]); S.flying = false; o.visible = false; if (S.oid !== my) return;
+  const col = gold ? GOLD : FIRE[S.launched.length % FIRE.length]; burst(x, y1, z, level, gold); S.launched.push({ level, gold, col });
   const f = 330 * Math.pow(2, (level - 1) * 2 / 12); snd(f * 2, .25, 'triangle', .06); snd(110, .3, 'sine', .07);
-  if (big) { S.log.push({ skyFull: true }); for (let k = 1; k < T.SKY_FULL; k++) setTimeout(() => { if (S.oid !== my) return; burst((Math.random() - .5) * 5, T.BURST_Y[0] + Math.random() * 1.1, -1 - Math.random() * 2, Math.min(R.T.FIRE_MAX, level), gold); snd(f * 2 * (1 + k * .06), .2, 'triangle', .05); }, k * 160); }
+  if (big) { S.log.push({ skyFull: true }); for (let k = 1; k < T.SKY_FULL; k++) setTimeout(() => { if (S.oid !== my) return; const q = skyAt(); burst(q.x, q.y, q.z, Math.min(R.T.FIRE_MAX, level), gold); snd(f * 2 * (1 + k * .06), .2, 'triangle', .05); }, k * 160); }
   void t0; }
 function fizzle(){ const o = S.rocket; puff(o.position.x, o.position.y + BK.h * o.scale.y, o.position.z); snd(220, .3, 'sine', .06, 0, 110); stage.tween(o.rotation, { z: .25 }, 220).then(() => stage.tween(o.rotation, { z: 0 }, 260)); S.fuseShown = false; fuseDraw(); }
 
@@ -244,7 +249,7 @@ const countsStreak = () => !(S.mode === 'cell' && S.step === 1);
 /** 맞은 뒤 확인: 덧문이 열리고 통 위에 수가 찍힌다(빨리 — 세어 보이는 것이 아니라 「봤지?」). */
 async function confirmShow(){ const p = S.p, my = S.oid; if (p.cover || (p.ten && p.ten.cover)) covers(0, false); for (const o of S.items) o.userData.off = false; await allOpen(); if (S.oid !== my) return;
   if (p.form === 'side' || p.form === 'group') { sums(true); return; } if (p.signs) { signsDraw(true); return; }
-  const list = countList(); for (let k = 0; k < list.length; k++) { label(k, list[k], k + 1, k === list.length - 1); await sleep(T.STAMP_MS); if (S.oid !== my) return; } }
+  const list = (p.ten && !p.ten.full) || p.reveal === 'split' ? countList(true) : countList(); for (let k = 0; k < list.length; k++) { label(k, list[k], k + 1, k === list.length - 1); await sleep(T.STAMP_MS); if (S.oid !== my) return; } }
 /** 아니었을 때의 세계의 답: 덧문이 열린 채 통이 하나씩 톡톡 세어진다(모으기 = 이어 세기 · 가르기 = 가려진 쪽 · 열 칸 = 빈 칸). */
 async function reveal(){ const my = S.oid, p = S.p; CNT.forEach(d => d.classList.remove('on', 'all')); if (p.ten && p.ten.cover) covers(0, false); for (const o of S.items) o.userData.off = false; await allOpen(); if (S.oid !== my) return;
   if (p.signs) { SIGNS.forEach(d => { d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop'); }); await sleep(500); return; }
@@ -263,10 +268,10 @@ function sums(){ S.p.groups.forEach((gr, g) => sum(g, gr.n)); }
 function sumPlace(d){ const g = d._g, reg = R.region(S.p.groups[g].region), q = stage.screenOf(V3((reg.x0 + reg.x1) / 2, T.DECK + T.WALL + .12, D2 + .05)); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; }
 function groupAway(g){ const d = GSUM[g]; S.awayG = (S.awayG || new Set()).add(g); for (const o of S.items) if (o.userData.gi === g) stage.tween(o.position, { y: fy() - .04 }, 300); if (d) d.classList.add('away'); }
 /** A08 · A09: 수 팻말 셋(가운데 하나가 빈 줄) — 맞으면 빈 팻말에 수가 들어간다. */
-function signsDraw(filled){ const p = S.p; p.signs.forEach((s, k) => { const d = SIGNS[k], px = S.tall ? 46 : 58; d.innerHTML = ''; d.appendChild(NS.numsign(s.hole && !filled ? 0 : s.hole ? p.answer : +s.text, { px, compact: true, ghost: s.hole && !filled })); if (s.hole && !filled) { const c = d.firstChild, x = c.getContext('2d'); x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height); x.restore(); NS.paint(c, '?', { px, compact: true, ghost: true }); } d.classList.add('on'); d._k = k; if (filled && s.hole) { d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop'); } signPlace(d); }); }
+function signsDraw(filled){ const p = S.p; p.signs.forEach((s, k) => { const d = SIGNS[k], px = S.tall ? 46 : 58; d.innerHTML = ''; d.appendChild(NS.numsign(s.hole && !filled ? '?' : s.hole ? p.answer : +s.text, { px, compact: true, ghost: s.hole && !filled })); d.classList.add('on'); d._k = k; if (filled && s.hole) { d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop'); } signPlace(d); }); }
 function signPlace(d){ const s = S.p && S.p.signs && S.p.signs[d._k]; if (!s) return; const q = stage.screenOf(V3(s.pt.x, T.DECK + BK.h * .5 + .1, s.pt.z)); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; }
 /** 고를 것들이 들썩(헛누름 · 아닌 것을 고른 뒤 — 답은 짚지 않는다). */
-function bob(){ const c = $('choose'); if (c && c.classList.contains('on')) { c.querySelectorAll('button:not(.away)').forEach((b, i) => { b.classList.remove('bob'); void b.offsetWidth; setTimeout(() => b.classList.add('bob'), i * 50); }); return; }
+function bob(){ const c = $('choose'); if (c && c.classList.contains('on')) { c.querySelectorAll('button:not(.away)').forEach((b, i) => { b.classList.remove('bob'); void b.offsetWidth; b.style.animationDelay = (i * .05) + 's'; b.classList.add('bob'); }); return; }
   if (S.p && (S.p.form === 'group' || S.p.form === 'side')) for (const o of S.items) { if (S.awayG && S.awayG.has(o.userData.gi)) continue; const y0 = fy(); stage.tween(o.position, { y: y0 + .1 }, 160, t => t * (2 - t)).then(() => stage.tween(o.position, { y: y0 }, 200, t => t * t)); } }
 
 // 화면 누름: 궤짝(한 번 더 · 칸 고르기) · 빈 곳
@@ -284,13 +289,15 @@ canvas.addEventListener('pointerdown', e => { audio(); if (!S.ready || E.homeOpe
   if (hit.kind === 'crate' && S.peekLeft > 0 && isPeekable() && !S.closed) { H.ripple(x, y); peek(); return; }
   nudge(x, y); });
 /** 한 번 더 보기(문제마다 한 번 · 보이는 시간은 같다 · 깨끗함 그대로 · 심지는 멈춘다). */
-async function peek(){ const my = S.oid; S.peekLeft--; S.res.peeks++; S.busy = true; S.clockOn = false; S.log.push({ peek: true }); await present(true); if (S.oid !== my) return; S.busy = false; S.clockOn = true; S.lastAct = S.t; }
+async function peek(){ const my = S.oid; S.peekLeft--; S.res.peeks++; S.clockOn = false; S.log.push({ peek: true }); await present(true); if (S.oid !== my) return; S.clockOn = true; S.lastAct = S.t; }   /* 다시 열린 동안의 누름 = 이른 누름(phase show) */
 /** 헛누름: 물결 + 고를 것들이 들썩 + 한 줄 안내를 다시. 깨끗함에는 세지 않는다 — 답이 아니라 「어디를 누르는지」만. */
 function nudge(x, y){ H.ripple(x, y); S.res.nudges++; S.log.push({ nudge: true }); snd(520, .07, 'triangle', .05); bob(); const t = nudgeText(); if (H.tell('flash.nudge', t, { times: 1e9 })) tellPlace(); }
 function nudgeText(){ const p = S.p; if (S.mode === 'cell') return FIRST[S.step]; if (p.form === 'group') return '알맞은 묶음을 궤짝에서 눌러 줘.'; if (p.form === 'side') return '알맞은 쪽을 궤짝에서 눌러 줘.'; return TODAY_LINE; }
 /** 한 줄 안내 자리: 단추 줄 바로 아래에 자리가 있으면 그곳 · 없으면 아래쪽(소리 단추 · 동전 위) — 띠 · 단추 · 궤짝을 가리지 않게. */
-function tellPlace(){ const tl = $('tell'); if (!tl) return; const top = topUI(), q = crateQuad(), crateTop = Math.min(...q.map(v => v.y)), hgt = tl.offsetHeight || 54;
-  if (crateTop - top >= hgt + 6) { tl.style.top = (top - 6) + 'px'; tl.style.bottom = ''; } else { tl.style.top = 'auto'; tl.style.bottom = S.tall ? 'calc(120px + env(safe-area-inset-bottom,0px))' : 'calc(18px + env(safe-area-inset-bottom,0px))'; } }
+function tellPlace(){ const tl = $('tell'); if (!tl) return; Object.assign(tl.style, S.low ? { left: 'calc(10px + env(safe-area-inset-left,0px))', transform: 'none', maxWidth: '24vw', fontSize: '1rem', padding: '6px 12px' } : { left: '', transform: '', maxWidth: '', fontSize: '', padding: '' });
+  if (S.low) { tl.style.top = (topUI() - 4) + 'px'; tl.style.bottom = ''; return; }   /* 낮은 가로: 궤짝이 가운데를 다 쓰니 왼쪽 옆에 작게 */
+  const top = topUI(), q = crateQuad(), crateTop = Math.min(...q.map(v => v.y)), hgt = tl.offsetHeight || 54;
+  if (crateTop - top >= hgt + 6) { tl.style.top = (top - 6) + 'px'; tl.style.bottom = ''; } else { tl.style.top = 'auto'; tl.style.bottom = S.tall ? 'calc(120px + env(safe-area-inset-bottom,0px))' : 'calc(36px + env(safe-area-inset-bottom,0px))'; } }
 
 // ── 심지 · 길잡이(한 장면의 일)
 function miss(){ if (!S.active || S.busy) return; const my = S.oid; S.busy = true; S.res.missed = true; S.clockOn = false; S.log.push({ missed: true }); fizzle(); chooseHide(); if (S.gold) S.goldCarry = true;
@@ -304,7 +311,7 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return; partsTick(dt); doorTick(
     if (S.clock >= 1) miss(); } else tipLight.intensity = 0;
   /* 길잡이 손: 가만히 있으면 — (한 번 더 볼 수 있으면) 궤짝 → 맞는 단추(뜨면 그 문제는 깨끗하지 않음) */
   const wait = R.T.HINT_AFTER * (S.mode === 'cell' && M.stuck(M.get(S.cell)) >= 1 ? .5 : 1);
-  if (thinking && t - S.lastAct > wait && !H.shown()) { if (S.peekLeft > 0 && isPeekable() && S.handTo !== 'crate') { const q = crateQuad(), c = { x: q.reduce((s, v) => s + v.x, 0) / 4, y: q.reduce((s, v) => s + v.y, 0) / 4 }; H.show(c.x, c.y); S.handTo = 'crate'; S.lastAct = t; S.log.push({ hand: 'crate' }); }
+  if (thinking && t - S.lastAct > wait && (!H.shown() || S.handTo === 'crate')) { if (S.peekLeft > 0 && isPeekable() && S.handTo !== 'crate') { const q = crateQuad(), c = { x: q.reduce((s, v) => s + v.x, 0) / 4, y: q.reduce((s, v) => s + v.y, 0) / 4 }; H.show(c.x, c.y); S.handTo = 'crate'; S.lastAct = t; S.log.push({ hand: 'crate' }); }
     else { const q = answerAt(); if (q) { H.show(q.x, q.y); S.handTo = 'answer'; S.res.hinted = true; S.log.push({ hinted: true }); } } } });
 /** 맞는 것의 화면 자리(길잡이 손 · 하네스). */
 function answerAt(){ const p = S.p; if (!p) return null; if (p.form === 'group' || p.form === 'side') { const r = R.region(p.groups[p.answer].region), q = stage.screenOf(V3((r.x0 + r.x1) / 2, T.DECK + T.WALL * .6, (r.z0 + r.z1) / 2)); return q; }
@@ -320,7 +327,7 @@ function a04Spec(p, ev){ let shape = p.shape, corner = null; if (ev.loose && (p.
   let pts = null; if (ev.corner && !CALM) { corner = Math.random() < .5 ? 'L' : 'R'; pts = R.layout(p.n, shape, Math.random, { corner }); if (!pts) corner = null; }
   if (!pts) pts = R.layout(p.n, shape, Math.random) || R.layout(p.n, R.SHAPES[p.n][0], Math.random);
   return { spec: { groups: [{ n: p.n, r: R.T.R, pts, region: 'all' }], tint: !!ev.tint }, corner, shape }; }
-async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.fire = 0; S.streak = 0; S.launched = []; S.goldCarry = false; S.level = 0; S.maxFire = 0; const day = M.dayKey(); let prevStep = 0;
+async function outing(id){ const my = ++S.oid; E.showBar(true); S.mode = 'cell'; S.bonus = false; S.cell = id; S.fire = 0; S.streak = 0; S.launched = []; S.goldCarry = false; S.level = 0; S.maxFire = 0; const day = M.dayKey(); let prevStep = 0;
   let rec = M.get(id); S.back = M.stuckNow(rec) && !!rec.hand;
   let q = R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1, hand: !rec.hand || S.back }); S.q = q; E.lanterns(0); S.log.push({ outing: id, deal: q.map(R.key) });
   for (let b = 0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = !rec.hand || S.back; if (hand && b > 0) { q = R.fixHand(q, b * R.T.PER_BOARD, id); S.q = q; } if (hand) S.level = 0;
@@ -342,11 +349,11 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.f
   if (choice === 'again') outing(id); else location.href = GO; }
 /** 나들이 끝: 오늘 올린 불꽃이 한꺼번에 다시 터진다. */
 async function finale(){ const my = S.oid; S.p = null; A.trayClear(); chooseHide(); clearCrate(); await allClosed(); S.rocket.visible = false; S.fuseShown = false; fuseDraw();
-  S.launched.forEach((f, k) => setTimeout(() => { if (S.oid !== my) return; burst((Math.random() - .5) * 5.5, T.BURST_Y[0] + Math.random() * 1.2, -1 - Math.random() * 2.5, f.level, f.gold); snd(500 + k * 40, .2, 'triangle', .04); }, k * 120));
+  S.launched.forEach((f, k) => setTimeout(() => { if (S.oid !== my) return; const q = skyAt(); burst(q.x, q.y, q.z, f.level, f.gold); snd(500 + k * 40, .2, 'triangle', .04); }, k * 120));
   S.log.push({ finale: S.launched.length }); stage.play(S.anne, 'Wave', true); await sleep(900 + S.launched.length * 120); }
 
 /** 오늘의 번쩍: 더미에서 낱칸 셋까지 → 낱칸마다 문제 셋 → 판마다 한 문제씩. 끝나면 별(다른 날 · 셋 다 깨끗) · 하루 한 번 · 그 뒤 덤 한 판. */
-async function today(){ const my = ++S.oid, day = M.dayKey(), m = M.all(), st = V.today(day), status = V.status(m, day, st); if (status.look === 'off') { location.replace(GO); return; }
+async function today(){ const my = ++S.oid, day = M.dayKey(), m = M.all(), st = V.today(day), status = V.status(m, day, st); S.mode = 'today'; S.cell = null; if (status.look === 'off') { location.replace(GO); return; }
   S.bonus = status.look === 'done'; S.cells = V.pick(m, day); S.fire = 0; S.streak = 0; S.launched = []; S.goldCarry = false; S.level = 0; S.maxFire = 0; S.starred = []; E.showBar(true);
   let list = S.forceList ? S.forceList.map(x => ({ ...x })) : V.deal(S.cells, Math.random, { bonus: S.bonus }); S.forceList = null; S.q = list; const boards = Math.ceil(list.length / R.T.PER_BOARD); E.lanterns(0, boards);
   S.log.push({ today: S.cells.join(), bonus: S.bonus, deal: list.map(p => p.cell + ':' + p.key) }); S.ev = { fuse: !CALM, gold: false, streak: true };

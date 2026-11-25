@@ -10,12 +10,12 @@
  * 누름에는 늘 답이 있다(5-11). 소리는 common/tell.js — 없으면 조용히 넘어간다. 그림은 기성 3D 재료만(./assets · 이름표 ./art.js) — 코드로 그린 것은 땅(풀밭 평면)뿐이고, 문패 · 발자국 · 세는 수 · 해는 화면 위 그림. */
 import { createStage, THREE, CALM, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=2';
-import * as C from '../common/choose.js?v=3';
+import * as C from '../common/choose.js?v=4';
 import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=10';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=8';
+import * as M from '../common/map.js?v=9';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
 import * as R from './rules.js?v=2';

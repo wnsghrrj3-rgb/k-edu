@@ -21,7 +21,7 @@ export const T = {
   STREAK: 3, FIRE_MAX: 5, HINT_AFTER: 6,          // 하늘 가득까지 깨끗한 문제 수 · 불꽃 단계 · 가만히 이만큼(초)이면 길잡이 손
   PER_BOARD: 3, BOARDS: 3, RETRY_GAP: 2,          // 판 = 문제 셋 · 나들이 = 판 셋 · 깨끗하지 못한 문제는 문제 둘을 사이에 두고 다시
   GOLD_COINS: 3, COIN_PER: 1,                     // 금빛 폭죽의 덤 동전 · 문제 하나에 동전(코드가 정함)
-  CRATE: { W: 2.6, D: 1.6 }, R: .17, GAP: .06, EDGE: .07, PAT: .44,   // 궤짝 안쪽 크기 · 통 반지름 · 통 사이 · 벽과의 틈 · 무늬의 칸(코드가 정함)
+  CRATE: { W: 2.6, D: 1.9 }, R: .19, GAP: .06, EDGE: .07, PAT: .48,   // 궤짝 안쪽 크기 · 통 반지름 · 통 사이 · 벽과의 틈 · 무늬의 칸(코드가 정함)
 };
 /** 꼴: 1~3 은 아무 꼴 · 4 · 5 는 무늬(PATTERN) · 흩어진 꼴(LOOSE — 통과 뒤 사건). 1 의 「꼴」은 놓인 자리. */
 export const SHAPES = { 1: ['mid', 'left', 'right'], 2: ['row', 'col', 'slash', 'back'], 3: ['row', 'col', 'slash', 'tri', 'vee'], 4: ['square', 'diamond'], 5: ['line', 'quin'] };
