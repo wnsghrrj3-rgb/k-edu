@@ -3,21 +3,20 @@
  * 학년 · 단원 꼬리표는 이 화면(과 부모 화면)에만. 깃발 줄은 내용 지도 차례 · 사이의 아직 없는 낱칸은 빈 깃대 하나(지도에 구멍이 있다는 것을 숨기지 않는다).
  * 시작점과 열림: built.js STARTS · map.js openSet — 이미 열렸거나 딴 깃발은 닫지 않는다. 누름에는 늘 답이 있다(5-11): 잠긴 깃발 · 빈 곳 → 물결 + 손이 열린 깃발을 짚는다.
  * 「오늘의 번쩍」 단추(T09): 깃발 줄들 위에 하나(낱칸이 아니라 줄에 끼우지 않는다 · 꼬리표 없음). 세 모습 — 꺼짐(통과한 낱칸 없음) · 켜짐(오늘 할 것 — 심지가 반짝 · 오늘 별을 딸 수 있는 깃발 수만큼 별 테 · 셋까지) · 터짐(오늘 끝 · 그날 가장 큰 불꽃). */
-import * as M from '../common/map.js?v=9';
+import * as M from '../common/map.js?v=10';
 import * as H from '../common/hint.js?v=5';
 import { BUILT } from '../common/built.js?v=8';
 import { art } from '../common/art.js?v=11';
 import { audio, tone, wallet } from '../common/kit.js?v=8';
 import { cell as cellOf, tag, CELLS } from '../common/cells.js?v=1';
-import * as V from '../flash/review.js?v=1';
+import * as V from '../flash/review.js?v=2';
 
 const ICON = { flag: 'flag', star: 'flag.star', fuse: 'flash.fuse', burst: 'flash.burst' };
-const DAYQ = (() => { const d = new URLSearchParams(location.search).get('day'); return d ? '&day=' + encodeURIComponent(d) : ''; })();   /* 하네스 · 교사가 날짜를 바꿔 볼 때만(아이 화면에는 안 보임) */
 const $ = id => document.getElementById(id);
 const log = [];
 /** 낱칸이 갈 곳(틀 주소). */
-export const href = id => `/math/play/${cellOf(id).frame}/?cell=${id}${DAYQ}`;
-export const todayHref = () => `/math/play/flash/?today=1${DAYQ}`;
+export const href = id => `/math/play/${cellOf(id).frame}/?cell=${id}`;
+export const todayHref = () => '/math/play/flash/?today=1';
 
 function draw(){ const g = $('gate'), m = M.all(), ids = BUILT, open = M.openSet(m, ids); for (const id of open) if (!(m[id] || {}).seen) M.put(id, { ...M.get(id), seen: 1 });   /* 한 번 열린 채 보인 깃발은 닫지 않는다 */
   const can2 = id => open.includes(id) || M.passed(m[id]), back = id => { for (let k = ids.indexOf(id) - 1; k >= 0; k--) if (can2(ids[k])) return ids[k]; return null; };

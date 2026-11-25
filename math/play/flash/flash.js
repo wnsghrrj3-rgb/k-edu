@@ -12,12 +12,12 @@ import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=11';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=9';
+import * as M from '../common/map.js?v=10';
 import * as C from '../common/choose.js?v=4';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
 import * as R from './rules.js?v=1';
-import * as V from './review.js?v=1';
+import * as V from './review.js?v=2';
 import { ASSETS, MODEL, SCENERY, NIGHT, WOOD, TINTS, GOLD, ROCKET, FIRE, SPARK, SMOKE, ICON } from './art.js?v=1';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T · 복습은 ./review.js 의 MOVE
@@ -28,7 +28,7 @@ const T = { DECK: .45, WALL: .42, OPEN: 1.72, OPEN_MS: 110, CLOSE_MS: 110, PULL_
   PARTS: LITE ? 520 : 1500, BURST: [50, 80, 120, 170, 230], SPEED: [1.0, 1.3, 1.6, 1.9, 2.3], SKY_FULL: 5, BOTTOM_TALL: 74, BOTTOM_WIDE: 22 };
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
-const GO = '/math/play/go/' + (Q.get('day') ? '?day=' + Q.get('day') : '');
+const GO = '/math/play/go/';
 const WANT = Q.get('cell'), TODAY = Q.has('today'), MODE = WANT && R.CELLS[WANT] ? 'cell' : TODAY ? 'today' : null;
 if (!MODE) location.replace(GO);
 const W2 = R.T.CRATE.W / 2, D2 = R.T.CRATE.D / 2;
@@ -168,7 +168,7 @@ const topOf = o => V3(o.position.x, o.position.y + BK.h * o.scale.y + .05, o.pos
 
 // ── 띠 · 고르기
 function trayDraw(closed = false){ A.trayClear(); const t = $('tray'), p = S.p; if (!p) return; const b = (v, c = '') => `<b class="${c}">${v}</b>`, w = s => `<i class="w">${s}</i>`;
-  t.innerHTML = p.band.map(x => x.w != null ? w(x.w) : x.hole != null ? (closed ? b(x.hole, 'done') : b('?', 'hole')) : x.n != null ? b(x.n) : x.dots != null ? `<b class="dotsb">${C.dotsHtml(x.dots)}</b>` : `<i class="op">${x.op}</i>`).join('');
+  t.innerHTML = p.band.map(x => V.partWord(x, closed) != null ? w(V.partWord(x, closed)) : x.hole != null ? (closed ? b(x.hole, 'done') : b('?', 'hole')) : x.n != null ? b(x.n) : x.dots != null ? `<b class="dotsb">${C.dotsHtml(x.dots)}</b>` : `<i class="op">${x.op}</i>`).join('');
   t.className = 'on' + (p.band.length > 6 ? ' story' : '') + (p.band.length === 1 && p.band[0].n != null ? ' num1' : ''); C.ask(!closed && !!S.choosing); trayFit(); }
 function trayFit(){ const t = $('tray'); if (t.classList.contains('story')) return; t.style.fontSize = ''; const room = innerWidth * .96; if (t.offsetWidth > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / t.offsetWidth) + 'px'; }
 /** 고를 것: row = 단추 줄(점 + 숫자 · 자리 고정) · num = 수 셋 · eq = 식 카드 셋 · group · side = 궤짝 안의 칸을 누른다(단추 없음). */
@@ -192,10 +192,12 @@ async function present(again = false){ const my = S.oid, look = lookOf(), ms = s
   else if (look === 'numStay') { if (!again) { DOORNUM.innerHTML = ''; DOORNUM.appendChild(NS.numsign(S.p.doorNum, { px: S.tall ? 96 : 120, compact: true })); DOORNUM.classList.add('on'); doorNumPlace(); snd(660, .08, 'triangle', .06); await sleep(ms); if (S.oid !== my) return; DOORNUM.classList.remove('on'); } await pull(); await allOpen(); }
   else if (look === 'stay') { await pull(); if (S.oid !== my) return; if (S.p && S.p.roll) await rollIn(); else await allOpen(); }
   else if (look === 'blind') { /* 닫힌 채 — 식 먼저 */ }
-  if (S.oid !== my) return; S.phase = 'think'; holdLook(); }
+  while (S.holdShow && S.oid === my) await sleep(50);   /* holdShow = 하네스가 「보여 주는 중」을 붙잡아 둘 때만 */
+  if (S.oid !== my) return; S.phase = 'think'; S.thinkT0 = S.t; holdLook(); }
 /** B06: 왼짝 a 가 머문 뒤 오른짝으로 b 가 굴러 들어온다(덧문은 열린 채). */
-async function rollIn(){ const my = S.oid, right = S.items.filter(o => o.userData.gi === 1); right.forEach(o => { o.userData.off = true; }); await allOpen(); await sleep(T.ROLL_HOLD); if (S.oid !== my) return;
-  for (const o of right) { const h = o.userData.home; o.position.set(W2 + .7, fy() + .45, h.z); o.userData.off = false; snd(500, .05, 'triangle', .05); stage.tween(o.position, { x: h.x }, T.ROLL_MS, t => 1 - (1 - t) ** 2); stage.tween(o.position, { y: fy() }, T.ROLL_MS, t => t * t); stage.tween(o.rotation, { z: o.rotation.z + 3 }, T.ROLL_MS); await sleep(T.ROLL_GAP); if (S.oid !== my) return; }
+async function rollIn(){ const my = S.oid, both = S.p.roll === 'merge', right = S.items.filter(o => o.userData.gi === 1 || (both && o.userData.gi === 0)); right.forEach(o => { o.userData.off = true; }); await allOpen(); if (!both) await sleep(T.ROLL_HOLD); if (S.oid !== my) return;   /* 양쪽에서 모임(merge) = 왼쪽 무리는 왼쪽에서 · 오른쪽 무리는 오른쪽에서 번갈아 굴러 들어옴 */
+  if (both) { const L0 = right.filter(o => o.userData.gi === 0), R0 = right.filter(o => o.userData.gi === 1); right.length = 0; for (let k = 0; k < Math.max(L0.length, R0.length); k++) { if (L0[k]) right.push(L0[k]); if (R0[k]) right.push(R0[k]); } }
+  for (const o of right) { const h = o.userData.home, sx = o.userData.gi === 0 ? -1 : 1; o.position.set(sx * (W2 + .7), fy() + .45, h.z); o.userData.off = false; snd(500, .05, 'triangle', .05); stage.tween(o.position, { x: h.x }, T.ROLL_MS, t => 1 - (1 - t) ** 2); stage.tween(o.position, { y: fy() }, T.ROLL_MS, t => t * t); stage.tween(o.rotation, { z: o.rotation.z - 3 * sx }, T.ROLL_MS); await sleep(T.ROLL_GAP); if (S.oid !== my) return; }
   await sleep(T.ROLL_MS); right.forEach(o => { o.rotation.z = 0; }); }
 function doorNumPlace(){ if (!DOORNUM || !DOORNUM.classList.contains('on')) return; const q = stage.screenOf(V3(0, T.DECK + T.WALL + .1, 0)); DOORNUM.style.left = q.x + 'px'; DOORNUM.style.top = q.y + 'px'; }
 
@@ -232,10 +234,12 @@ async function onPick(v, btn){ audio(); const r = btn.getBoundingClientRect(); i
   if (S.phase !== 'think') { early(r.left + r.width / 2, r.top + r.height / 2); return; }
   await answer(v, btn); }
 /** 덧문이 열린 동안의 누름: 물결 + 「닫히면 눌러 줘」(벌이 아니다 · 깨끗함 그대로). */
-function early(x, y){ H.ripple(x, y); S.res.early++; S.log.push({ early: true }); if (H.tell('flash.early', '닫히면 눌러 줘.', { times: 1e9, ms: 2200 })) tellPlace(); snd(520, .05, 'triangle', .04); }
+function early(x, y){ H.ripple(x, y); S.res.early++; const t = earlyText(); S.log.push({ early: true, text: t }); if (H.tell('flash.early', t, { times: 1e9, ms: 2200 })) tellPlace(); snd(520, .05, 'triangle', .04); }
+/** 보여 주는 중의 누름에 띄울 글 — 덧문이 닫히는 꼴만 「닫히면」 · 열린 채 머무는 꼴은 「열리면」 · 굴러 들어오는 꼴은 「다 들어오면」. */
+function earlyText(){ const look = lookOf(); if (S.p && S.p.roll) return '다 들어오면 눌러 줘.'; if (look === 'stay' || look === 'numStay') return '문이 열리면 눌러 줘.'; if (look === 'flashLeft' || look === 'flashCover') return '문이 다시 열리면 눌러 줘.'; return '닫히면 눌러 줘.'; }
 async function answer(v, btn){ const my = S.oid, p = S.p, how = (S.mode === 'cell' ? R.judge(v, { n: p.answer }) : V.judge(v, p)); S.log.push({ pick: v, how }); S.busy = true; S.clockOn = false;
   if (how === 'fit') { await fit(btn); return; }
-  S.res.retreat = true; S.fuseOff = true; S.streakBreak = true; fizzle(); stage.play(S.anne, 'No', true); if (btn) C.retreat(btn); else groupAway(v);
+  S.res.retreat = true; S.fuseOff = true; fizzle(); stage.play(S.anne, 'No', true); if (btn) C.retreat(btn); else groupAway(v);
   await reveal(); if (S.oid !== my) return; bob(); S.busy = false; S.lastAct = S.t; S.clockOn = true; }
 /** 맞음: 폭죽이 올라가 터지고 · 덧문이 열려 수가 찍히고 · 띠가 닫힌다. */
 async function fit(btn){ const my = S.oid, p = S.p, cleanNow = R.clean(S.res); S.closed = true; S.phase = 'done'; stage.play(S.anne, 'Yes', true);
@@ -292,7 +296,9 @@ canvas.addEventListener('pointerdown', e => { audio(); if (!S.ready || E.homeOpe
 async function peek(){ const my = S.oid; S.peekLeft--; S.res.peeks++; S.clockOn = false; S.log.push({ peek: true }); await present(true); if (S.oid !== my) return; S.clockOn = true; S.lastAct = S.t; }   /* 다시 열린 동안의 누름 = 이른 누름(phase show) */
 /** 헛누름: 물결 + 고를 것들이 들썩 + 한 줄 안내를 다시. 깨끗함에는 세지 않는다 — 답이 아니라 「어디를 누르는지」만. */
 function nudge(x, y){ H.ripple(x, y); S.res.nudges++; S.log.push({ nudge: true }); snd(520, .07, 'triangle', .05); bob(); const t = nudgeText(); if (H.tell('flash.nudge', t, { times: 1e9 })) tellPlace(); }
-function nudgeText(){ const p = S.p; if (S.mode === 'cell') return FIRST[S.step]; if (p.form === 'group') return '알맞은 묶음을 궤짝에서 눌러 줘.'; if (p.form === 'side') return '알맞은 쪽을 궤짝에서 눌러 줘.'; return TODAY_LINE; }
+function nudgeText(){ const p = S.p; if (S.mode === 'cell') return FIRST[S.step]; return todayLine(p); }
+/** 복습의 한 줄 — 무엇을 누르는지부터(정본 5-11). 「한 번 더 보려면 궤짝을」은 한 번 더 볼 수 있는 꼴에만(묶음 · 쪽을 누르는 꼴에서는 궤짝 누름이 답이다). */
+function todayLine(p){ if (p.form === 'group') return '알맞은 묶음을 궤짝에서 눌러 줘.'; if (p.form === 'side') return '잠깐 보고 알맞은 쪽을 궤짝에서 눌러 줘.'; if (p.form === 'eq') return '잠깐 보고 알맞은 식을 눌러 줘. 한 번 더 보려면 궤짝을 눌러.'; if (p.look === 'blind') return '식을 보고 알맞은 수를 눌러 줘.'; if (p.look === 'stay') return '잘 보고 알맞은 수를 눌러 줘.'; return V.canPeek(p) ? TODAY_LINE : '잘 보고 알맞은 수를 눌러 줘.'; }
 /** 한 줄 안내 자리: 단추 줄 바로 아래에 자리가 있으면 그곳 · 없으면 아래쪽(소리 단추 · 동전 위) — 띠 · 단추 · 궤짝을 가리지 않게. */
 function tellPlace(){ const tl = $('tell'); if (!tl) return; Object.assign(tl.style, S.low ? { left: 'calc(10px + env(safe-area-inset-left,0px))', transform: 'none', maxWidth: '24vw', fontSize: '1rem', padding: '6px 12px' } : { left: '', transform: '', maxWidth: '', fontSize: '', padding: '' });
   if (S.low) { tl.style.top = (topUI() - 4) + 'px'; tl.style.bottom = ''; return; }   /* 낮은 가로: 궤짝이 가운데를 다 쓰니 왼쪽 옆에 작게 */
@@ -300,7 +306,7 @@ function tellPlace(){ const tl = $('tell'); if (!tl) return; Object.assign(tl.st
   if (crateTop - top >= hgt + 6) { tl.style.top = (top - 6) + 'px'; tl.style.bottom = ''; } else { tl.style.top = 'auto'; tl.style.bottom = S.tall ? 'calc(120px + env(safe-area-inset-bottom,0px))' : 'calc(36px + env(safe-area-inset-bottom,0px))'; } }
 
 // ── 심지 · 길잡이(한 장면의 일)
-function miss(){ if (!S.active || S.busy) return; const my = S.oid; S.busy = true; S.res.missed = true; S.clockOn = false; S.log.push({ missed: true }); fizzle(); chooseHide(); if (S.gold) S.goldCarry = true;
+function miss(){ if (!S.active || S.busy) return; const my = S.oid; S.busy = true; S.res.missed = true; S.clockOn = false; S.log.push({ missed: true }); fizzle(); chooseHide(); if (S.gold) S.goldCarry = true; if (countsStreak()) { S.fire = 0; S.streak = 0; }   /* 놓치면 불꽃 잇기도 끊긴다(다음 불꽃은 1단계) */
   (async () => { await reveal(); if (S.oid !== my) return; S.closed = true; trayDraw(true); if (S.p.signs) signsDraw(true); if (S.p.form === 'side' || S.p.form === 'group') sums(); await sleep(T.MISS_HOLD); if (S.oid !== my) return; S.done && S.done('missed'); })(); }
 stage.frame((dt, t) => { S.t = t; if (!S.ready) return; partsTick(dt); doorTick(); boomLight.intensity *= Math.exp(-dt * 5);
   for (const d of CNT) if (d.classList.contains('on')) labelPlace(d); for (const d of GSUM) if (d.classList.contains('on')) sumPlace(d); for (const d of SIGNS) if (d.classList.contains('on')) signPlace(d); doorNumPlace(); if (S.choosing) C.place();
@@ -310,7 +316,7 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return; partsTick(dt); doorTick(
     const n = S.clock > .75 ? 4 : 1; for (let k = 0; k < n; k++) emit(tip.x, tip.y + .02, tip.z, (Math.random() - .5) * (S.clock > .75 ? 1.6 : .5), .4 + Math.random() * (S.clock > .75 ? 1.2 : .4), (Math.random() - .5) * (S.clock > .75 ? 1.6 : .5), .35 + Math.random() * .3, SPARK, 1.4, 1.6);
     if (S.clock >= 1) miss(); } else tipLight.intensity = 0;
   /* 길잡이 손: 가만히 있으면 — (한 번 더 볼 수 있으면) 궤짝 → 맞는 단추(뜨면 그 문제는 깨끗하지 않음) */
-  const wait = R.T.HINT_AFTER * (S.mode === 'cell' && M.stuck(M.get(S.cell)) >= 1 ? .5 : 1);
+  const wait = S.mode === 'cell' ? R.T.HINT_AFTER * (M.stuck(M.get(S.cell)) >= 1 ? .5 : 1) : ((S.p && S.p.hint) || R.T.HINT_AFTER);   /* 복습은 낱칸마다(review.js hintS — 세는 꼴은 심지 끝까지 답을 짚지 않음) */
   if (thinking && t - S.lastAct > wait && (!H.shown() || S.handTo === 'crate')) { if (S.peekLeft > 0 && isPeekable() && S.handTo !== 'crate') { const q = crateQuad(), c = { x: q.reduce((s, v) => s + v.x, 0) / 4, y: q.reduce((s, v) => s + v.y, 0) / 4 }; H.show(c.x, c.y); S.handTo = 'crate'; S.lastAct = t; S.log.push({ hand: 'crate' }); }
     else { const q = answerAt(); if (q) { H.show(q.x, q.y); S.handTo = 'answer'; S.res.hinted = true; S.log.push({ hinted: true }); } } } });
 /** 맞는 것의 화면 자리(길잡이 손 · 하네스). */
@@ -331,7 +337,7 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.mode = 'cell';
   let rec = M.get(id); S.back = M.stuckNow(rec) && !!rec.hand;
   let q = R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1, hand: !rec.hand || S.back }); S.q = q; E.lanterns(0); S.log.push({ outing: id, deal: q.map(R.key) });
   for (let b = 0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = !rec.hand || S.back; if (hand && b > 0) { q = R.fixHand(q, b * R.T.PER_BOARD, id); S.q = q; } if (hand) S.level = 0;
-    let ev = R.events(rec.evBoards, Math.random, { passed: M.passed(rec), calm: CALM, hand }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; } if (S.goldCarry && !hand) ev.gold = true;
+    let ev = R.events(rec.evBoards, Math.random, { passed: M.passed(rec), calm: CALM, hand }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; } if (S.goldCarry && !hand) ev = { ...ev, corner: false, tint: false, loose: false, gold: true };   /* 넘어온 금빛 폭죽 판에는 다른 사건을 붙이지 않는다(판마다 하나) */
     S.ev = ev; S.step = hand ? 1 : 2; const goldJ = !ev.gold ? -1 : ev.goldJ != null ? ev.goldJ : Math.floor(Math.random() * 3); S.board = { b, hand, ev }; S.log.push({ board: b, hand, ev: Object.keys(ev).filter(k => ev[k] === true).join(' ') });
     const results = []; E.marbles(0);
     for (let j = 0; j < R.T.PER_BOARD; j++) { const i = b * R.T.PER_BOARD + j; let p = q[i]; if (S.forceP && S.forceP.length) { const f = S.forceP.shift(); p = R.make(f.n, f.shape || R.SHAPES[f.n][0]); q[i] = p; }
@@ -361,7 +367,7 @@ async function today(){ const my = ++S.oid, day = M.dayKey(), m = M.all(), st = 
   for (let b = 0; b < boards; b++) { const part = list.slice(b * R.T.PER_BOARD, (b + 1) * R.T.PER_BOARD); let goldJ = -1; if (S.goldCarry || Math.random() < R.T.GOLD_P) goldJ = Math.floor(Math.random() * part.length); if (S.forceGold != null) { goldJ = S.forceGold; S.forceGold = null; }
     S.board = { b }; E.marbles(0, part.length); S.step = 2;
     for (let j = 0; j < part.length; j++) { const p = part[j], spec = { groups: p.groups, ten: p.ten, tint: false };
-      const r = await runProblem(p, { spec, j, of: part.length, fuse: !CALM, fuseS: p.fuse, gold: j === goldJ, last: b === boards - 1 && j === part.length - 1, tell: b === 0 && j === 0 ? { key: 'flash.today', text: TODAY_LINE, opt: {} } : null });
+      const r = await runProblem(p, { spec, j, of: part.length, fuse: !CALM, fuseS: p.fuse, gold: j === goldJ, last: b === boards - 1 && j === part.length - 1, tell: b === 0 && j === 0 ? { key: 'flash.today', text: todayLine(p), opt: {} } : null });
       if (S.oid !== my || r.abort) return; results.push(r); E.marbles(j + 1, part.length); if (S.bonus && !CALM && ['flash', 'flashLR', 'flashLeft', 'flashCover'].includes(p.look)) S.level = R.step(S.level, r.clean); }
     await E.fly($('marbles'), $('coins'), art(ICON.coin), part.length); if (S.oid !== my) return; E.lanterns(b + 1, boards); snd(660, .15, 'triangle', .1); snd(990, .2, 'triangle', .1, .12); await sleep(300); }
   /* 기록: 복습만(덤 한 판은 세지 않는다) · 하루 한 번 · 오늘 가장 큰 불꽃 */

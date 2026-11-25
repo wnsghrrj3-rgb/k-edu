@@ -21,8 +21,8 @@ export const moved = id => MOVED.includes(id);
 /** 낱칸 기록 하나. state: 0 안 함 · 1 하는 중 · 2 통과 · 3 익힘 / cleanRun: 세는 판에서 깨끗한 판 연달아 / stuckRun: 깨끗하지 못한 판 연달아 / hand: 손으로 하는 판(걸음 ①)을 깨끗하게 마쳤는가 / evBoards: 사건이 붙은 판 수(틀이 사건을 차례로 보여 줄 때) */
 export const blank = () => ({ state: 0, cleanRun: 0, stuckRun: 0, plays: 0, lastDay: '', passDay: '', hand: 0, evBoards: 0 });
 
-/** 오늘(YYYY-MM-DD). 하네스 · 교사가 날짜를 바꿔 볼 때만 window.__keduDay 나 주소의 day= 가 앞선다(아이 화면에는 보이지 않는다 · T09). */
-const dayOverride = () => { try { if (typeof window === 'undefined') return null; const v = window.__keduDay || new URLSearchParams(location.search).get('day'); return /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null; } catch (_) { return null; } };
+/** 오늘(YYYY-MM-DD). 하네스가 날짜를 바꿔 볼 때만 window.__keduDay(addInitScript)가 앞선다 — 운영 주소의 day= 는 받지 않는다(기록에 남지 않게 · T09 검수). */
+const dayOverride = () => { try { if (typeof window === 'undefined') return null; const v = window.__keduDay; return /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null; } catch (_) { return null; } };
 export function dayKey(d){ if (!d) { const o = dayOverride(); if (o) return o; d = new Date(); } return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
 /** 두 날짜(YYYY-MM-DD) 사이의 날 수(b − a). */
 export function days(a, b){ if (!a || !b) return 0; const t = s => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)); return Math.round((t(b) - t(a)) / 864e5); }
