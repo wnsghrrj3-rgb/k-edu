@@ -15,10 +15,10 @@ import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=10';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=10';
+import * as M from '../common/map.js?v=11';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
-import * as R from './rules.js?v=2';
+import * as R from './rules.js?v=3';
 import { ASSETS, MODEL, ANIMALS, ANIMAL, SCENERY, SCENERY_NAMES, GRASS, GLOW, DOOR_TINT, DARK, SHUTTER_TINT, LAMP, DAY, DUSK, ICON } from './art.js?v=2';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
@@ -30,13 +30,13 @@ const T = { HS: 1.3, WALL_Z: .85, DOOR_W: .5, DOOR_H: .78, DOOR_Y: .17, WIN_W: 1
   WIDE: { fov: 34, elev: .58, plate: 60, cnt: 1.2, an: 1.1, rows: [1.7, 2.7], clL: [-2.45, 1.7, 2.7], clR: [.85, 1.7, 2.7], span: 2.75 },
   TALL: { fov: 44, elev: .66, plate: 46, cnt: 1.05, an: 1.42, rows: [1.75, 2.8], clL: [-1.78, 1.45, 2.15], clR: [.18, 3.0, 3.7], span: 2.02 },
   LOW: { fov: 30, elev: .44, plate: 40, cnt: .8, an: 1.3, rows: [1.7, 2.65], clL: [-2.45, 1.7, 2.65], clR: [.85, 1.7, 2.65], span: 2.75 },
-  TELL_GRACE: 4, CLOSE_MS: 1500, READ_MS: 2600 };
+  TELL_GRACE: 4, CLOSE_MS: 1500, READ_MS: 2600, CARD_HOLD: 300 };
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
 const GO = '/math/play/go/';
 const WANT = Q.get('cell'), GO_NOW = !WANT || !R.CELLS[WANT];   /* ?cell= 없이 열리면 모형을 불러오기 전에 고르는 화면으로 */
 if (GO_NOW) location.replace(GO);
-const S = { ready: false, busy: true, active: false, t: 0, oid: 0, cell: null, p: null, res: null, step: 2, ev: {}, ctx: {}, board: null, clock: 0, duskS: 16, streak: 0, closed: false, lastAct: 0, back: false, surpriseCarry: false, hist: {}, log: [],
+const S = { carry: {}, ready: false, busy: true, active: false, t: 0, oid: 0, cell: null, p: null, res: null, step: 2, ev: {}, ctx: {}, board: null, clock: 0, duskS: 16, streak: 0, closed: false, lastAct: 0, back: false, surpriseCarry: false, hist: {}, log: [],
   tall: false, low: false, small: false, phase: 'idle', w: [], btn: [], gone: {}, cards: {}, f: {}, upto: 0, outside: false, played: false, first: false, blind: false, replaying: false, bellI: -1, wind: null, windDone: true, windAt: Infinity, big: 1, kind: null, lastKind: null,
   v: { mode: 'none', t: 0 }, door: { want: false, wig: false, ang: 0 }, win: { open: false, ang: 0 }, today: [], hinting: false, hintAt: 0, told: {}, readK: 0, laneX: 6, dusk: 0 };
 
@@ -271,16 +271,16 @@ function showOut(o = {}){ const p = S.p, n = p.a + p.b; S.door.want = true; S.do
   const walk = (n - 1) * T.OUT_GAP + T.OUT_WALK; S.v = { mode: 'out', t: 0, n, a: p.a, run: true, hop: o.hop ? { t0: walk + .25 } : null, until: o.hop ? walk + .25 + (n - 1) * T.HOP_GAP + T.HOP_S + .5 : walk + .3, gallop: S.streak > 0 && S.step === 2 };
   S.log.push({ doorOpen: true, n, hop: !!o.hop }); return new Promise(res => { S.v.res = res; }); }
 /** 나와 선 채로: 다시 폴짝 세기 · 장면을 다시 보여 주기(처음 무리가 서고 → 온 무리가 붙는다) · 한 바퀴. → 끝나면 풀린다 */
-function outAct(kind){ const v = S.v; if (v.mode !== 'out') return Promise.resolve(); if (v.res) { const r = v.res; v.res = null; r('skip'); } v.hop = null; v.re = null;
-  if (kind === 'hop') { v.hop = { t0: v.t + .15 }; v.until = v.t + .15 + (v.n - 1) * T.HOP_GAP + T.HOP_S + .5; } else if (kind === 're') { v.re = { t0: v.t + .1 }; v.until = v.t + T.RE_S; tone(392, .12, 'triangle', .07); tone(523, .14, 'triangle', .07, 1.35); } else { v.spin = { t0: v.t + .05 }; v.until = v.t + T.SPIN_S + .1; }
+function outAct(kind, quiet = false){ const v = S.v; if (v.mode !== 'out') return Promise.resolve(); if (v.res) { const r = v.res; v.res = null; r('skip'); } v.hop = null; v.re = null;
+  if (kind === 'hop') { v.hop = { t0: v.t + .15 }; v.until = v.t + .15 + (v.n - 1) * T.HOP_GAP + T.HOP_S + .5; } else if (kind === 're') { v.re = { t0: v.t + .1 }; v.until = v.t + T.RE_S; if (!quiet) { tone(392, .12, 'triangle', .07); tone(523, .14, 'triangle', .07, 1.35); } }   /* 판정에서 부를 때는 소리 없음(발자국 다시 보기에서만) */ else { v.spin = { t0: v.t + .05 }; v.until = v.t + T.SPIN_S + .1; }
   v.run = true; S.log.push({ outAct: kind }); return new Promise(res => { v.res = res; }); }
 /** 발자국: 장면을 한 번 더 본다(수는 띄우지 않는다 · 깨끗함 그대로 · 몇 번이든 · 손은 막지 않는다). 나와 선 뒤에는 마당에서 다시 보여 준다. */
-function again(){ if (!S.played) { nudge('paw'); return; } bobEl($('paw')); tone(660, .08, 'triangle', .07); S.replays = (S.replays | 0) + 1; S.log.push({ again: S.replays, outside: S.outside }); const my = S.oid, p = S.p, rid = S.rid = (S.rid | 0) + 1, pr = S.outside ? outAct('re') : showScene({ replay: true, slow: true }); S.replaying = true;
+function again(){ if (!S.played) { nudge('paw'); return; } bobEl($('paw')); tone(660, .08, 'triangle', .07); S.replays = (S.replays | 0) + 1; S.log.push({ again: S.replays, outside: S.outside }); const my = S.oid, p = S.p, rid = S.rid = (S.rid | 0) + 1, hadHop = !!(S.outside && S.v && S.v.hop), pr0 = S.outside ? outAct('re') : showScene({ replay: true, slow: true }), pr = hadHop ? pr0.then(r => (S.oid === my && S.p === p && S.rid === rid && S.v.mode === 'out' ? outAct('hop') : r)) : pr0;   /* 세어진 수가 있었으면 다시 보여 준 뒤 다시 세어 준다(검수 T08-10) */ S.replaying = true;
   pr.then(() => { if (S.oid === my && S.p === p && S.rid === rid) { S.replaying = false; S.lastAct = S.t; } }); }
 
 // ── 적기: 수 카드(B06 · B08 · B09) · 딱지(B07) · 문패
 function showChoices(){ const p = S.p, m = mode();
-  if (m === 'story') { const k = cur(); if (k < 0) { C.hide(); S.door.wig = true; strip(); return; } S.door.wig = false; const slot = slotsOf()[k]; S.cards[slot] = S.cards[slot] || R.cards(p, slot); C.show(S.cards[slot], onCard); S.slot = slot; for (const b of document.querySelectorAll('#choose button')) if (S.gone[slot].includes(+b.dataset.n)) C.retreat(b); }
+  if (m === 'story') { const k = cur(); if (k < 0) { C.hide(); S.door.wig = true; strip(); return; } S.door.wig = false; S.cardHold = performance.now() + T.CARD_HOLD; const slot = slotsOf()[k];   /* 새 카드가 같은 자리에 뜨므로 잠깐은 받지 않는다(두 번 연달아 → 두 칸이 한꺼번에 차지 않게) */ S.cards[slot] = S.cards[slot] || R.cards(p, slot); C.show(S.cards[slot], onCard); S.slot = slot; for (const b of document.querySelectorAll('#choose button')) if (S.gone[slot].includes(+b.dataset.n)) C.retreat(b); }
   else if (m === 'sum') { S.cards.sum = S.cards.sum || R.cards(p, 'sum'); C.show(S.cards.sum, onCard); S.slot = 'sum'; }
   else { S.tiles = S.tiles || R.tiles(p, S.step); C.show(S.tiles, onTile, { tiles: true }); }
   strip(); if (S.ready) setTimeout(tellPlace, 30); }
@@ -289,7 +289,7 @@ function beginWrite(){ S.phase = 'write'; const m = mode();
   else if (m === 'sum') { S.w = [null]; S.upto = 3; plateShow(true); }
   else { S.w = Array(S.step === 1 ? 3 : 5).fill(null); S.cellsOn = true; }
   S.btn = []; $('paw').classList.toggle('off', !S.played); showChoices(); S.windAt = !S.windDone && m === 'write' ? S.t + 2 : Infinity; }
-function onCard(n, btn){ if (!S.active || S.closed || !S.p) return; audio(); if (S.busy) { S.log.push({ ignored: 'busy', card: n }); say1('ride.watch', WAIT, { times: 1e9, ms: 2600 }); return; } touch(); const p = S.p, m = mode();
+function onCard(n, btn){ if (!S.active || S.closed || !S.p) return; audio(); if (S.cardHold && performance.now() < S.cardHold && S.phase === 'write') { const r = btn.getBoundingClientRect(); H.ripple(r.left + r.width / 2, r.top + r.height / 2); S.log.push({ ignored: 'hold', card: n }); return; } if (S.busy) { S.log.push({ ignored: 'busy', card: n }); say1('ride.watch', WAIT, { times: 1e9, ms: 2600 }); return; } touch(); const p = S.p, m = mode();
   if (S.phase === 'count') { S.log.push({ count: n, hinted: S.res.hinted }); if (n === p.sum) { S.f.sum = n; tone(880, .12, 'triangle', .09); close(); } else { C.retreat(btn); S.gone.sum.push(n); S.res.back = true; tone(440, .1, 'triangle', .05); S.log.push({ back: 'sum', n }); } return; }
   if (S.phase !== 'write') return;
   if (m === 'story') { const k = cur(); if (k < 0) return; const slot = slotsOf()[k]; S.w[k] = n; S.f[slot] = n; tone(700, .08, 'triangle', .08); S.log.push({ fill: slot, n, hinted: S.res.hinted }); showChoices(); return; }
@@ -331,7 +331,7 @@ async function judgeNow(){ const my = S.oid, p = S.p, m = mode(); S.busy = true;
     for (const k of j.bad) { S.gone[sl[k]].push(S.w[k]); S.log.push({ back: sl[k], n: S.w[k] }); S.w[k] = null; S.f[sl[k]] = '?'; } S.phase = 'write'; S.busy = false; S.lastAct = S.t; showChoices(); for (const k of j.bad) bobEl(document.querySelector(`#tray b.hole`), 'back'); return; }
   if (m === 'write') { if (!S.outside) { await showOut(); if (S.oid !== my) return; S.outside = true; }   /* 닫힌 채 적었으면 이제 연다 */
     if (j.res === 'fit') { await close(); return; }
-    S.res.back = true; S.phase = 'watch'; await outAct('re'); if (S.oid !== my) return;   /* 동물들이 장면을 다시 보여 준다 */
+    S.res.back = true; S.phase = 'watch'; await outAct('re', true); if (S.oid !== my) return;   /* 동물들이 장면을 다시 보여 준다 */
     for (const k of j.bad) { if (S.btn[k]) C.give(S.btn[k]); S.log.push({ back: k, v: S.w[k] }); S.w[k] = null; S.btn[k] = null; } S.phase = 'write'; S.busy = false; S.lastAct = S.t; strip(); return; }
   const fit = j.res === 'fit'; S.phase = 'watch';
   if (!S.outside) { if (S.first && !S.played) { await showScene({}); if (S.oid !== my) return; S.played = true; await sleep(250); if (S.oid !== my) return; }   /* 식 먼저: 이제야 장면이 빠르게 흐른다 */
@@ -343,17 +343,17 @@ async function judgeNow(){ const my = S.oid, p = S.p, m = mode(); S.busy = true;
 /** 아이가 지은 식에서 먼저 적힌 더하는 수(`3 + 2 = 5` → 3 · `5 = 2 + 3` → 2 · 수 셋 [3, 2, 5] → 3). */
 const firstAddend = w => (w.length === 5 ? (w[1] === '=' ? w[2] : w[0]) : w[0]);
 /** 문제를 닫는다: 띠가 닫히고(「모두 5마리」 · 「3 + 2 = 5」 + 읽는 말) 소리로 읽어 준다. */
-async function close(){ const my = S.oid, p = S.p, m = mode(); if (S.closed) return; S.closed = true; S.busy = true; S.phase = 'closed'; H.hide(); C.hide(); windOff(); skipScene(); S.door.wig = false; $('paw').classList.add('off');
+async function close(){ const my = S.oid, p = S.p, m = mode(); if (S.closed) return; S.closed = true; S.busy = true; S.phase = 'closed'; H.hide(); C.hide(); windOff(); skipScene(); if (S.v && S.v.re) S.v.re = null;   /* 다시 보여 주던 중이면 끝 자리로(무리가 벌어진 채 닫히지 않게) */ S.door.wig = false; $('paw').classList.add('off');
   let said = '';
   if (m === 'story') { S.mine = {}; S.f = { a: p.a, b: p.b, sum: p.sum }; said = R.total(p); } else if (m === 'sum') { S.upto = 3; said = R.read(p, 0); readLine(said); } else { const w = S.w.slice(); said = R.read(p, S.readK++, w); S.cellsOn = true; readLine(said); if (S.v.mode === 'out') S.v.reg = { t0: S.v.t + .15, swap: firstAddend(w) !== p.a }; labels(true); }
   strip(); TL.say(said);
-  const cleanNow = R.clean(S.res); if (S.step === 2) { if (cleanNow) { S.streak++; if (S.streak % R.T.STREAK === 0 && S.v.mode === 'out') { outAct('spin'); confetti(16); S.log.push({ spin: S.streak }); } } else S.streak = 0; }   /* 신바람: 셋 이어지면 나와 선 동물들이 한 바퀴 */
+  const cleanNow = R.clean(S.res); if (S.step === 2) { if (cleanNow) { S.streak++; if (S.streak % R.T.STREAK === 0 && S.v.mode === 'out') { const reg = S.v.reg; outAct('spin'); if (reg && S.v.spin) { S.v.spin.t0 = reg.t0 + T.REG_S + .05; S.v.until = S.v.spin.t0 + T.SPIN_S + .1; } confetti(16); S.log.push({ spin: S.streak }); }   /* B07 은 식의 수 아래로 다 걸어간 뒤에 한 바퀴 */ } else S.streak = 0; }   /* 신바람: 셋 이어지면 나와 선 동물들이 한 바퀴 */
   if (S.bellI >= 0) { if (cleanNow) { wallet.earn(R.T.SURPRISE_COINS, 'ride'); confetti(10); tone(1319, .2, 'triangle', .1); S.surpriseCarry = false; const r = doorRect(), d = document.createElement('div'); Object.assign(d.style, { position: 'fixed', left: r.x + 'px', top: r.y + 'px', width: '2px', height: '2px' }); document.body.appendChild(d); E.fly(d, $('coins'), art(ICON.coin), R.T.SURPRISE_COINS).then(() => d.remove()); S.log.push({ surpriseOpen: true }); } else { S.surpriseCarry = true; S.log.push({ surpriseKept: true }); } }
   if (!S.res.missed) { wallet.earn(R.T.COIN_PER, 'ride'); coinsDraw(true); }   /* 동전은 아이가 연 문제만 */
   S.today.push(p.sum); S.log.push({ closed: said, clean: cleanNow, tally: tally() }); tone(1046, .2, 'triangle', .1);
-  await sleep(m === 'write' ? T.READ_MS : T.CLOSE_MS); if (S.oid !== my) return; if (S.done) S.done(S.res.missed ? 'missed' : 'sent'); }
+  await sleep(m === 'write' || m === 'sum' ? T.READ_MS : T.CLOSE_MS);   /* 읽는 말이 뜨는 낱칸(B07 · B08 · B09)은 읽을 시간 */ if (S.oid !== my) return; if (S.done) S.done(S.res.missed ? 'missed' : 'sent'); }
 /** 해가 다 졌다 — 문이 저절로 열리고 모두 나와 선다(답이 보인다 · 띠가 저절로 적힌다). 깨끗하지 않음 · 동전 없음 · 두 문제 뒤에 다시. */
-async function miss(){ if (!S.active || S.busy || S.closed) return; const my = S.oid, p = S.p, m = mode(); S.busy = true; S.res.missed = true; S.streak = 0; S.phase = 'watch'; H.hide(); tellOff(); skipScene(); windOff(); C.hide(); S.door.wig = false; S.log.push({ missed: true });
+async function miss(){ if (!S.active || S.busy || S.closed) return; const my = S.oid, p = S.p, m = mode(); S.busy = true; S.res.missed = true; S.streak = 0; S.phase = 'watch'; H.hide(); tellOff(); skipScene(); windOff(); C.hide(); S.door.wig = false; S.door.want = true; S.log.push({ missed: true });   /* 한 번 틀려 닫힌 문도 해가 지면 열린다 */
   if (m === 'sum') { for (const b of S.btn) if (b) C.give(b); S.w = [null]; platePaint(); } else if (m === 'write') { S.w = R.forms(p, S.w.length === 3 ? 3 : 5)[0].slice(); S.btn = []; } else { S.mine = {}; S.f = { a: p.a, b: p.b }; } strip();
   if (!S.outside) { if (S.first && !S.played) { await showScene({}); if (S.oid !== my) return; S.played = true; } await showOut(); if (S.oid !== my) return; S.outside = true; }
   S.log.push({ autoOpen: true, tally: tally() }); await sleep(300); if (S.oid !== my) return; await close(); }
@@ -385,18 +385,18 @@ const forced = (id, f) => ({ ...R.make(id, f.a, f.b, f.kind || 'join'), retry: f
 async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.streak = 0; S.today = []; S.readK = 0; clearEnd(); const day = M.dayKey(); let prevStep = 0;
   { const kinds = ANIMALS.filter(k => k !== S.lastKind), kind = S.forceKind || (S.lastKind ? kinds[Math.floor(Math.random() * kinds.length)] : ANIMALS[0]); S.forceKind = null; await herd(kind); if (S.oid !== my) return; S.lastKind = kind; }
   let rec = M.get(id); S.back = M.stuckNow(rec) && !!rec.hand;
-  let q = R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1 }); if (S.forceP) { S.forceP.forEach((f, k) => { if (q[k] && f) q[k] = forced(id, f); }); S.forceP = null; }
+  let q = R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1 }); if ((S.carry[id] || []).length) { q = R.carryIn(q, S.carry[id]); S.log.push({ carried: S.carry[id].map(p => p.key).join() }); S.carry[id] = []; } if (S.forceP) { S.forceP.forEach((f, k) => { if (q[k] && f) q[k] = forced(id, f); }); S.forceP = null; }
   S.q = q; E.lanterns(0); S.log.push({ outing: id, kind: S.kind, deal: q.map(p => p.key + p.kind[0]) });
   const b0 = S.startBoard | 0; S.startBoard = 0;   /* 하네스용: 셋째 판부터 */
   for (let b = b0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = !rec.hand || S.back;
-    let ev = R.events(rec.evBoards, Math.random, { cell: id, passed: M.passed(rec), calm: CALM, hand, blindShown: !!rec.blindShown }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; }
+    let ev = R.events(rec.evBoards, Math.random, { cell: id, passed: M.passed(rec) && (R.CELLS[id].mode === 'sum' || M.passed(M.get('B08'))), calm: CALM, hand, blindShown: !!rec.blindShown });   /* 가려진 집(보지 않고 합 구하기)은 B08 내용 — B06 · B07 에서는 그 아이가 B08 을 통과한 뒤에만(감독 결정 · 페이블 8) */ if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; }
     if (S.surpriseCarry && !hand) ev.surprise = true;
-    const pickJ = on => (on ? (ev.at != null ? ev.at : Math.floor(Math.random() * 3)) : -1), rushJ = pickJ(ev.rush), windJ = pickJ(ev.wind), surpJ = pickJ(ev.surprise);
+    const noThird = R.CELLS[id].mode === 'sum' && !hand, pickJ = (on, two) => (on ? (ev.at != null ? ev.at : Math.floor(Math.random() * (two ? 2 : 3))) : -1), rushJ = pickJ(ev.rush, noThird), windJ = pickJ(ev.wind), surpJ = pickJ(ev.surprise, noThird);   /* B08 · B09 걸음 ② 의 셋째는 식 먼저(장면이 빠르게 · 덧문 닫힘) — 우르르 · 방울은 첫째 · 둘째에만(바람은 셋째도) */
     S.board = { b, hand, ev }; S.log.push({ board: b, hand, duskS: R.duskS(id, b), ev: Object.keys(ev).filter(x => ev[x] === true).join(' ') });
     const results = []; E.marbles(0);
     for (let j = 0; j < R.T.PER_BOARD; j++) { const i = b * R.T.PER_BOARD + j, last = i === R.T.PER_BOARD * R.T.BOARDS - 1;
       const r = await runProblem(q[i], { step: hand ? 1 : 2, ev, board: b, j, last, rush: j === rushJ, wind: j === windJ, surprise: j === surpJ, firstStep: b === b0 || (hand ? 1 : 2) !== prevStep });
-      if (S.oid !== my || r.abort) return; results.push(r); E.marbles(j + 1); if (!r.clean) q = R.requeue(q, i); S.q = q; }
+      if (S.oid !== my || r.abort) return; results.push(r); E.marbles(j + 1); if (!r.clean) { const q2 = R.requeue(q, i); if (q2.some((x, k) => x.retry && !q[k].retry)) q = q2; else (S.carry[id] = S.carry[id] || []).push(q[i]); } S.q = q; }   /* 다시 낼 자리가 없던 문제(일곱째~)는 다음 나들이 첫 판으로 */
     prevStep = hand ? 1 : 2;
     const before = rec; rec = M.record(rec, results, day, { counts: !hand, hand, ev: !hand && !ev.none }); if (!hand && ev.intro === 'blind') rec.blindShown = 1; if (hand) S.back = false; else if (M.stuckNow(rec)) S.back = true; M.put(id, rec); S.log.push({ boardEnd: b, clean: M.clean(results), rec: { ...rec } });
     await E.fly($('marbles'), $('coins'), art(ICON.coin), results.filter(r => r.out === 'sent').length); if (S.oid !== my) return; E.lanterns(b + 1); tone(660, .15, 'triangle', .1); tone(990, .2, 'triangle', .1, .12);

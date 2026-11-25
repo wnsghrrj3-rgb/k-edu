@@ -58,13 +58,22 @@ export function deal(id, history = [], rnd = Math.random, opt = {}){ const c = C
  *  마지막 문제(아홉째)는 바꾸지 않는다 · 이미 다시 낸 자리는 건너뜀 · 앞뒤로 같은 문제(차례만 바꾼 것 포함) · 같은 합 셋 연달아가 되지 않게 ·
  *  낱칸의 비율(합 5까지 / 6~9)이 무너지지 않게 같은 쪽 문제와 먼저 바꾼다(그런 자리가 없으면 비율보다 다시 내기를 앞세운다). 자리가 없으면 다시 내지 않는다.
  *  사건 꼴(「식 먼저」 · 방울 · 바람)은 문제에 붙지 않고 판의 자리에 붙는다 — 다시 낸 문제는 들고 가지 않는다. */
+/** 바꾼 자리 at 를 지나는 「같은 합 셋 연달아」가 생겼는가(앞뒤에 이미 있던 연달아 때문에 다시 낼 자리를 놓치지 않게 — 그 자리를 지나는 것만 본다). */
+const runAt = (a, at) => { for (let s = Math.max(0, at - 2); s <= at && s + 2 < a.length; s++) if (a[s].sum === a[s + 1].sum && a[s + 1].sum === a[s + 2].sum) return true; return false; };
 export function requeue(q, i, rnd = Math.random){ const p = q[i]; if (!p || !CELLS[p.cell]) return q.slice();
   const lowOf = x => x.sum <= LOW, kind = p.kind === 'join' ? 'merge' : 'join';
-  for (const strict of [true, false]) for (let at = i + T.RETRY_GAP + 1; at < q.length - 1; at++) { if (q[at].retry) continue; if (strict && lowOf(q[at]) !== lowOf(p)) continue;
+  for (const strict of [true, false]) for (let at = i + T.RETRY_GAP + 1; at < q.length; at++) { if (q[at].retry) continue;   /* 아홉째 자리도 쓴다(큰 집 · 식 먼저는 자리에 붙어 따라가지 않는다) — 여섯째까지는 늘 그 나들이에서 다시 */ if (strict && lowOf(q[at]) !== lowOf(p)) continue;
     const a = q.slice(); a[at] = { ...make(p.cell, p.a, p.b, kind), retry: true };
-    if (twin(a[at - 1], a[at]) || twin(a[at], a[at + 1])) continue; if (run(a.map(x => x.sum), 3)) continue;
+    if (twin(a[at - 1], a[at]) || twin(a[at], a[at + 1])) continue; if (runAt(a, at)) continue;
     return a; }
+  if (i <= q.length - 1 - T.RETRY_GAP - 1) { const at = q.length - 1, a = q.slice(); a[at] = { ...make(p.cell, p.a, p.b, kind), retry: true }; if (!twin(a[at - 1], a[at])) return a; if (twin(q[at - 1], p)) { const c = q.slice(); c[at - 1] = { ...q[at - 1], retry: true }; return c; } }   /* 여섯째까지는 못 박는다: 자리가 없으면 아홉째와(같은 합 셋 연달아는 눈감음) · 여덟째가 이미 그 짝(차례만 바뀐)이면 그것이 다시 냄 */
   return q.slice(); }
+
+/** 이 나들이에서 다시 낼 자리가 없던 문제(일곱째~아홉째)를 다음 나들이에 넣는다: 둘째 자리(안 되면 셋째) 문제와 바꾼다 · 앞뒤로 같은 문제(차례만 바꾼 것 포함) · 같은 합 셋 연달아가 되지 않게. carry = [문제…](둘까지). */
+export function carryIn(q, carry = []){ const a = q.slice(); let used = 0;
+  for (const p of carry.slice(0, 2)) for (const at of [1, 2, 3]) { if (at >= a.length || a[at].retry) continue; const b = a.slice(); b[at] = { ...make(p.cell, p.a, p.b, p.kind === 'join' ? 'merge' : 'join'), retry: true, carried: true };
+    if (twin(b[at - 1], b[at]) || twin(b[at], b[at + 1])) continue; if (runAt(b, at)) continue; a.splice(0, a.length, ...b); used++; break; }
+  return a; }
 
 // ── 고르는 것
 const inTop = (id, v) => Number.isInteger(v) && v >= 1 && v <= CELLS[id].top;
@@ -80,8 +89,8 @@ export function cards(p, slot = 'sum', rnd = Math.random){ const id = p.cell, an
  *  가까운 수는 다른 참인 식을 지을 수 없는 수로 고른다(1 · 2 · 3 에 4 를 주면 1 + 3 = 4 가 지어진다). 수는 섞고 기호는 오른쪽 끝에 둔다. */
 export function tiles(p, step = 2, rnd = Math.random){ const { a, b, sum } = p, has = [a, b, sum], free = v => inTop(p.cell, v) && !has.includes(v);
   const safe = v => { if (!free(v)) return false; const t = [a, b, sum, v]; for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) for (let k = 0; k < 4; k++) if (i !== j && i !== k && j !== k && t[i] + t[j] === t[k] && (i === 3 || j === 3 || k === 3)) return false; return true; };
-  const nearOf = v => has.some(h => Math.abs(h - v) === 1); let cand = [];
-  for (const f of [v => safe(v) && nearOf(v), v => safe(v), v => free(v)]) { cand = []; for (let v = 1; v <= CELLS[p.cell].top; v++) if (f(v)) cand.push(v); if (cand.length) break; }
+  const nearOf = v => has.some(h => Math.abs(h - v) === 1), dist = v => Math.min(...has.map(h => Math.abs(h - v))); let cand = [];
+  for (const f of [v => safe(v) && nearOf(v), v => safe(v), v => free(v)]) { cand = []; for (let v = 1; v <= CELLS[p.cell].top; v++) if (f(v)) cand.push(v); if (cand.length) { const d0 = Math.min(...cand.map(dist)); cand = cand.filter(v => dist(v) === d0); break; } }   /* 가까운 수가 없으면 세 수와 가장 가까운 수(1 + 3 에 9 가 아니라 5 · 6) */
   const nums = shuffle([a, b, sum, pick1(cand, rnd)], rnd); return step >= 2 ? [...nums, '+', '='] : nums; }
 /** 맞는 것으로 받는 꼴들(B07): 걸음 ① 은 `□ + □ = □` 의 수 셋 · 걸음 ② 는 다섯 칸. `2 + 3 = 5` · `5 = 3 + 2` 도 참이고 장면의 세 수를 다 썼다. */
 export function forms(p, n){ const { a, b, sum } = p; return n === 3 ? [[a, b, sum], [b, a, sum]] : [[a, '+', b, '=', sum], [b, '+', a, '=', sum], [sum, '=', a, '+', b], [sum, '=', b, '+', a]]; }
