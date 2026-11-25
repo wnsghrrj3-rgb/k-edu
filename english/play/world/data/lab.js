@@ -59,12 +59,32 @@ const ask = {
   never: ['아이가 무언가 잡고 있을 때', '고고가 넘어지는 중 · 떠 있는 중 · 얼어 있는 중', '자리를 옮기는 중', '소리를 꺼 둔 때(낱말이 들리지 않으므로)'],
 };
 
+// ───────── 첫 손길 (v1.1 · 2026-11-25 준호 「뭘 어떻게 하는 건지 모르니까 안 해 봤다」) ─────────
+// 자리에 들어간 아이가 설명 없이도 5초 안에 「아, 저걸 누르면 되는구나」를 알게 하는 규칙. 네 자리가 다 지킨다.
+const firstTouch = {
+  rules: [
+    { id: 'F1', rule: '들어가면 이미 일이 벌어지고 있다 — 가만히 놓인 물건만 있는 첫 화면은 없다' },
+    { id: 'F2', rule: '3초 안에 고고가 그 자리의 일을 한 번 해 보인다(낱말도 같이 나온다). 아이는 보기만 해도 무엇을 하는 곳인지 안다' },
+    { id: 'F3', rule: '해 보인 뒤 고고가 다음 것을 아이 쪽으로 내밀고, 누를 것 하나에 빛 고리가 숨 쉬듯 뛴다(글자 없음)' },
+    { id: 'F4', rule: '첫 손길은 「누르기 한 번」으로 끝까지 간다 — 끌기 · 원 그리기 · 들고 있기를 몰라도 큰 일이 일어나고 낱말이 나온다' },
+    { id: 'F5', rule: '손을 쉬면 고고가 다른 것으로 다시 해 보인다. 아이가 한 일이 넷이 되기 전에는 부탁하지 않고 해 보이기만 한다' },
+    { id: 'F6', rule: '끌기 · 젓기 · 들고 머물기 같은 손짓은 둘째 층이다 — 고고가 하는 것을 보고 따라 하면 더 많은 일이 일어난다. 몰라도 놀이는 끝까지 된다' },
+  ],
+  showWithin: 3,      // 들어가서 고고가 해 보이기까지(초)
+  ring: { after: 1.0, pulse: 1.2, color: '#fff3c4' },   // 해 보인 뒤 빛 고리가 뜨기까지 · 한 번 뛰는 시간
+  ghost: 5,           // 빛 고리가 뜨고도 이만큼(초) 손이 없으면 반투명 손이 누르는 시늉을 한 번 한다
+  again: 6,           // 손을 이만큼(초) 쉬면 다른 것으로 다시 해 보인다
+  untilActs: 4,       // 아이가 한 일이 이만큼이 되면 해 보이기를 그만두고 부탁으로 넘어간다
+  tapResult: 0.15,    // 누른 뒤 이 안에 눈에 보이는 반응
+};
+
 // ───────── 네 자리 ─────────
 const stations = {
   // ① 있는 것(본판 world/zones/lab — 놀이는 바꾸지 않는다). 부탁만 붙는다.
   size: {
     title: '커졌다 작아졌다', cell: 'L1-3-1', built: true, tool: 'wand', verbs: ['대고 위아래로 끌기'], easy: '대상을 누르면 지팡이가 날아와 붙는다',
     time: '낮', look: { wall: '#b9a7e0', sky: ['#e6dcf6', '#d6cbee', '#b9a8dc'], sun: '#fff1d6', hemi: 0.85 }, cam: { AIM: [0, 1.15, 0], TILT: 17, HALF_W: 4.05 },
+    first: { already: '고고가 지팡이를 들고 제 몸을 살짝 키웠다 줄였다 하고 있다', show: '고고가 사과에 지팡이를 대고 키운다 → "Big!"', hand: '지팡이를 아이 쪽으로 내밀어 실험대 앞에 놓는다', ring: '의자', tap: '물건을 누르면 지팡이가 날아와 붙고 한 번 커진다 → "Big!" · 다시 누르면 작아진다 → "Small!"', next: '지팡이를 대고 위아래로 끌면 손을 따라 이어서 변한다' },
     brings: ['지팡이 꽂이'], bed: '느린 종 다섯 음',
     says: [{ w: 'big', when: '크기가 1.35 를 넘는 순간' }, { w: 'small', when: '크기가 0.7 아래로 내려가는 순간' }],
     asks: [
@@ -88,6 +108,7 @@ const stations = {
   float: {
     title: '둥둥 띄우기', cell: 'L1-3-3', built: false, tool: 'bubbleBottle', verbs: ['씌우기', '밀기', '톡 터뜨리기'], easy: '대상을 누르면 방울병이 날아와 씌운다 · 방울은 살짝만 눌러도 터진다',
     time: '늦은 오후', look: { wall: '#e9c9b4', sky: ['#ffe9cf', '#f7cfae', '#e3a98f'], sun: '#ffd09a', hemi: 0.8 }, cam: { AIM: [0, 2.05, 0], TILT: 9, HALF_W: 4.05 },
+    first: { already: '사과가 방울에 담겨 허공에 떠 있고 작은 방울들이 둥실 떠다닌다', show: '고고가 방울병을 불어 공을 띄운다 → "Up!"', hand: '사과 방울이 아이 앞으로 천천히 흘러온다', ring: '떠 있는 사과 방울', tap: '방울을 누르면 퐁 터져 사과가 떨어져 튄다 → "Down!" · 실험대의 물건을 누르면 방울이 씌워져 떠오른다 → "Up!"', next: '방울을 밀어 부딪치고 합치고 창을 연다' },
     brings: ['천장 들보와 매달린 등(천장에서 내려온다)', '높은 선반', '방울병(지팡이 꽂이 자리)'], bed: '높고 성긴 풍경 소리',
     T: {
       BUBBLE_R: 1.25,            // 방울 반지름 = 대상의 큰 쪽 반지름 × 이 값
@@ -131,28 +152,29 @@ const stations = {
     sounds: ['방울 부풂', '방울 퐁', '말랑 부딪힘', '바람', '등 삐걱', '쿵 납작'],
   },
 
-  // ③ 무지개 물약
+  // ③ 무지개 물약 — v1.2(2026-11-25 준호 「더 크게 · 큰 수조에 · 조금씩 따라서 색깔 변화를 확실하게」): 냄비 → 큰 유리 수조
   potion: {
-    title: '무지개 물약', cell: 'L1-3-2', built: false, tool: 'ladle', verbs: ['기울여 붓기', '원을 그려 젓기', '떠서 끼얹기'], easy: '병을 누르면 스스로 날아가 조금 붓는다 · 냄비를 문지르기만 해도 저어진다 · 국자를 누르고 대상을 누르면 끼얹는다',
-    time: '저녁', look: { wall: '#6f5aa8', sky: ['#4b3a86', '#5b4796', '#3a2c6b'], sun: '#b9a0ff', hemi: 0.45, glow: '냄비 속 물약의 색이 방을 물들인다(점 빛 하나)' }, cam: { AIM: [0, 1.25, 0], TILT: 14, HALF_W: 3.6 },
-    brings: ['냄비(실험대 가운데 뚜껑문에서 솟는다)', '병 걸이와 물약 병 넷(위에서 내려온다)', '국자', '수도꼭지(오른쪽 뒤)'], bed: '낮게 보글거리는 소리와 종',
+    title: '무지개 물약', cell: 'L1-3-2', built: false, tool: 'tank', verbs: ['한 모금씩 붓기', '휘저어 섞기', '퐁당 담그기'], easy: '병을 누르면 스스로 날아가 한 모금 붓는다 · 색이 둘이 되면 고고가 젓는다 · 물건을 누르면 스스로 수조에 뛰어든다',
+    time: '저녁', look: { wall: '#4f3f86', sky: ['#3b2f6e', '#46387c', '#2c2256'], sun: '#b9a0ff', hemi: 0.4, glow: '방은 어둑하고 수조만 뒤에서 빛을 받아 환하다(수족관처럼) — 물 색이 화면에서 가장 밝고, 그 색이 방을 물들인다' }, cam: { AIM: [0, 1.3, 0], TILT: 8, HALF_W: 3.2 },
+    brings: ['큰 유리 수조(실험대 가운데 — 화면 너비의 절반)', '수조 뒤 빛 판', '병 걸이와 물약 병 넷(수조 위)', '젓는 노', '물 빼는 꼭지와 물 채우는 대롱'], bed: '수조의 물소리와 낮은 종',
     T: {
-      CAULDRON: { at: [0, -0.3], r: 0.62, rim: 0.62, cap: 8 },   // 자리 · 반지름 · 테두리 높이 · 들어가는 양(단위)
-      RAIL: { y: 2.25, z: -0.6, xs: [-0.9, -0.3, 0.3, 0.9], order: ['red', 'yellow', 'blue', 'white'] },
-      PLACE: { chair: [-2.6, -0.45], apple: [-1.55, -0.3], cup: [1.5, -0.3], ball: [2.5, -0.15], gogo: [-0.75, 0.55], tap: [3.0, -0.8] },
-      POUR_PAD: 0.75,            // 병이 냄비 가운데에서 이 거리 안에 오면 스스로 기울어 붓는다
-      POUR: 2,                   // 붓는 빠르기(단위/초). 병은 비지 않는다
-      TILT: 0.25,                // 병이 기울어지는 시간(초)
-      STIR_TURN: 1.25,           // 이만큼(바퀴) 저으면 다 섞인다. 저은 만큼 섞인다(0~1)
-      STIR_R: [0.15, 0.7],       // 젓는 것으로 보는 손의 반지름 범위(냄비 반지름의 배수)
-      OVER: 8, OVER_SPILL: 3,    // 이보다 많이 부으면 넘친다 · 넘치면 이만큼 덜어진다
-      SCOOP: 1, SPLASH_PAD: 0.6, // 국자 한 번에 뜨는 양 · 대상 위 이 거리 안에서 스스로 기울어 끼얹는다
-      DYE: 0.35,                 // 물드는 시간(초)
-      BIG_NEEDS: 2,              // 큰 것은 두 번 끼얹어야 다 물든다(한 번이면 위쪽 반만)
-      DUNK_SMALL: 0.7,           // 이보다 작은 것은 냄비에 통째로 담글 수 있다
-      WASH: 0.6,                 // 수돗물에 씻겨 제 색으로 돌아가는 시간(초)
-      DRAIN: 1.2,                // 마개를 뽑으면 비는 시간(초)
-      IDLE_STIR: 10, RAINBOW: 4, // 가만두면 고고가 혼자 젓는다 · 서로 다른 색 넷이면 무지개
+      TANK: { at: [0, -0.35], w: 3.3, h: 1.7, d: 0.95, water: 0.55, cap: 12 },   // 자리 · 너비 · 높이 · 깊이 · 처음 물 높이(수조 높이의 비율 — 맑은 물) · 물감이 들어가는 양(모금)
+      RAIL: { y: 2.55, z: -0.35, xs: [-1.05, -0.35, 0.35, 1.05], order: ['red', 'yellow', 'blue', 'white'] },
+      PLACE: { chair: [-2.75, 0.55], apple: [-2.2, 0.75], cup: [2.2, 0.75], ball: [2.75, 0.55], gogo: [-1.1, 0.8], drain: [1.9, 0.2] },   // 물건은 수조 앞 양옆으로 비켜 선다
+      SIP: 1,                    // 누르기 한 번 = 한 모금. 병을 끌어 수조 위에 들고 있으면 초당 POUR 모금씩 이어서
+      POUR: 1.5,
+      PLUME: { fall: 0.6, curl: 1.4, linger: 8 },   // 물감 줄기가 가라앉는 시간 · 구름처럼 말려 퍼지는 시간 · 젓지 않으면 얼룩으로 남아 있는 시간(초)
+      SELF_MIX: 0.5,             // 젓지 않아도 저절로 섞이는 데까지(0~1) — 반까지만. 나머지는 저어야 한 색이 된다
+      STIR_TURN: 1.0,            // 이만큼(바퀴) 저으면 다 섞인다
+      SHADE: [0.18, 0.38, 0.6, 0.8, 1],   // 모금 수(1 · 2 · 3 · 4 · 5 이상)에 따른 물 색의 짙기 — 한 모금마다 눈에 보이게 짙어진다
+      HUE_STEP: 0.35,            // 색이 옮겨 가는 것을 눈으로 따라갈 수 있게, 물 전체의 색은 초당 이만큼만 따라간다(색 띠 위의 거리)
+      LEVEL: 0.03,               // 한 모금에 올라가는 물 높이(수조 높이의 비율)
+      OVER: 12, OVER_SPILL: 4,   // 이보다 많이 부으면 넘친다 · 넘치면 이만큼 덜어진다
+      DUNK: { in: 0.5, soak: 0.9, out: 0.5 },   // 뛰어들기 · 물속에서 물드는 시간 · 나오기(초)
+      BIG_HALF: 1.35,            // 이보다 큰 것은 다 못 들어가 아래쪽 반만 물든다(한 번 더 넣으면 위아래를 뒤집어 다 물든다)
+      DUNK_SMALL: 0.7,           // 이보다 작은 것은 물에 동동 떠다닌다
+      WASH: 0.6, DRAIN: 1.5, REFILL: 1.5,
+      IDLE_STIR: 10, RAINBOW: 4,
     },
     // 색 모형(놀이용 — 실제 물감은 재료에 따라 다르다. README 에 적고 화면에는 적지 않는다)
     colors: {
@@ -165,43 +187,53 @@ const stations = {
         '흰색이 25% 이상 + 빨강만 → pink · 흰색 + 다른 색 → 그 색의 옅은 빛(이름은 그대로) · 흰색뿐 → white',
       ],
       show: '보이는 색은 화면 색을 평균하지 않는다(파랑 + 노랑이 회색이 된다). 고른 색 띠 빨강→주황→노랑→초록→파랑→보라→빨강 위에서 비율대로 잡고, 흰색만큼 #FFF7EC 쪽으로 옅게(최대 70%), 갈색은 #8A6A4A',
-      before: '젓기 전에는 부은 색들이 따로 소용돌이친다(얼룩) — 저어야 한 색이 되고, 그 순간 색 이름이 나온다',
+      before: '부은 물감은 물속에서 구름처럼 말리며 퍼진다. 두 색 구름이 만나는 자리부터 섞인 색이 보인다. 젓지 않으면 반쯤 섞인 얼룩으로 남고, 저으면 물 전체가 한 색이 되며 그 순간 색 이름이 나온다',
+      gradual: [
+        '맑은 물 + 파랑 한 모금 → 아주 옅은 하늘빛 · 두 모금 → 옅은 파랑 · 세 모금 → 파랑 · 네 모금 → 짙은 파랑',
+        '파랑 세 모금 + 노랑 한 모금 → 청록 쪽으로 한 걸음(아직 Blue) · 노랑 두 모금 → 초록("Green!") · 노랑 여섯 모금 → 연두를 지나 노랑 쪽',
+        '한 모금마다 물 전체의 색이 색 띠 위를 한 걸음씩 옮겨 간다 — 색이 「바뀐다」가 아니라 「옮겨 간다」로 보여야 한다',
+      ],
     },
     says: [
-      { w: 'red', when: '빨강 병을 집을 때(이름) · 대상이 빨갛게 물들 때' }, { w: 'blue', when: '파랑 병을 집을 때 · 파랗게 물들 때' }, { w: 'yellow', when: '노랑 병을 집을 때 · 노랗게 물들 때' },
-      { w: 'white', when: '흰 병을 집을 때' }, { w: 'mix', when: '저어서 섞임이 0.5 를 넘는 순간' },
+      { w: 'red', when: '빨강 병이 부을 때(이름) · 대상이 빨갛게 물들 때' }, { w: 'blue', when: '파랑 병이 부을 때 · 파랗게 물들 때' }, { w: 'yellow', when: '노랑 병이 부을 때 · 노랗게 물들 때' },
+      { w: 'white', when: '흰 병이 부을 때' }, { w: 'mix', when: '저어서 섞임이 0.75 를 넘는 순간' },
       { w: 'pink', when: '다 섞여 분홍이 된 순간 · 분홍으로 물들 때' }, { w: 'purple', when: '다 섞여 보라가 된 순간' }, { w: 'orange', when: '다 섞여 주황이 된 순간' }, { w: 'green', when: '다 섞여 초록이 된 순간' }, { w: 'brown', when: '다 섞여 갈색이 된 순간' },
-      { w: 'splash', when: '냄비가 넘칠 때' }, { w: 'water', when: '수도꼭지를 틀 때(이름)' },
+      { w: 'splash', when: '수조가 넘칠 때 · 고고가 뛰어들 때(세 번에 한 번)' }, { w: 'water', when: '꼭지를 열어 맑은 물로 바꿀 때(이름)' },
     ],
     asks: [
       { say: 'Blue apple!', thing: 'apple', want: 'color=blue', words: ['blue', 'apple'] }, { say: 'Red ball!', thing: 'ball', want: 'color=red', words: ['red', 'ball'] },
       { say: 'Yellow chair!', thing: 'chair', want: 'color=yellow', words: ['yellow', 'chair'] }, { say: 'Pink cup!', thing: 'cup', want: 'color=pink', words: ['pink', 'cup'] },
       { say: 'Red Gogo!', thing: 'gogo', want: 'color=red', words: ['red', 'gogo'] }, { say: 'Blue Gogo!', thing: 'gogo', want: 'color=blue', words: ['blue', 'gogo'] },
-      { say: 'Mix, please!', thing: 'cauldron', want: 'mixed>=1', words: ['mix'], need: 'poured>=2colors' }, { say: 'Yellow, please!', thing: 'cauldron', want: 'pour=yellow', words: ['yellow'] },
-      { say: 'Pink, please!', thing: 'cauldron', want: 'potion=pink', words: ['pink'] },
+      { say: 'Mix, please!', thing: 'tank', want: 'mixed>=1', words: ['mix'], need: 'poured>=2colors' }, { say: 'Yellow, please!', thing: 'tank', want: 'pour=yellow', words: ['yellow'] },
+      { say: 'Pink, please!', thing: 'tank', want: 'potion=pink', words: ['pink'] },
     ],
+    first: { already: '큰 수조에 맑은 물이 차 있고 뒤에서 빛이 비친다. 공기 방울이 올라가고 병 넷이 수조 위에서 살랑살랑 흔들린다', show: '고고가 파랑 병을 당겨 한 모금 붓는다 → 파란 구름이 물속에서 말리며 퍼지고 수조가 옅은 파랑이 된다 → "Blue!"', hand: '고고가 걸이를 쳐서 나머지 병 셋을 흔들고 아이를 본다', ring: '노랑 병', tap: '병을 누르면 스스로 한 모금 붓고 물 색이 한 걸음 옮겨 간다 → 색 이름 · 색이 둘이 되면 고고가 노로 젓는다 → "Mix!" → 새 색 이름 · 물건을 누르면 스스로 수조에 뛰어들었다 그 색이 되어 나온다 → "Blue!"', next: '병을 수조 위로 가져가 오래 부으면 넘치고, 수조를 문지르면 내가 젓고, 꼭지를 열어 맑은 물로 바꾼다' },
     finds: [
-      { id: 'overflow', who: 'gogo', do: '계속 붓는다', see: '부글부글 넘쳐 거품이 실험대로 흘러내리고 고고가 발을 든다', auto: 'pour:red:5,pour:blue:5,step:3' },
-      { id: 'brownBurp', who: 'thing', do: '세 색을 다 넣고 젓는다', see: '갈색이 되고 냄비가 큰 방울을 꺼억 뱉는다', auto: 'pour:red:2,pour:yellow:2,pour:blue:2,stir:2,step:3' },
-      { id: 'gogoDye', who: 'gogo', do: '고고에게 끼얹는다', see: '그 색이 된 제 손을 내려다보고 몸을 털어 색 방울을 튀긴다', auto: 'pour:blue:2,scoop,splash:gogo,step:5' },
-      { id: 'sipHiccup', who: 'gogo', do: '국자를 고고 입에 가져간다', see: '한 모금 마시고 딸꾹질마다 그 색 방울이 나온다', auto: 'pour:red:1,pour:white:1,stir:2,scoop,feed:gogo,step:5' },
-      { id: 'roomGlow', who: 'thing', do: '물약 색을 바꾼다', see: '방 전체가 그 색 빛으로 물든다', auto: 'pour:yellow:3,step:2' },
+      { id: 'shadeSteps', who: 'thing', do: '같은 색을 한 모금씩 다섯 번 붓는다', see: '옅은 빛에서 짙은 빛까지 다섯 걸음으로 짙어진다', auto: 'sip:blue,step:2,sip:blue,step:2,sip:blue,step:2,sip:blue,step:2,sip:blue,step:2' },
+      { id: 'hueWalk', who: 'gogo', do: '파랑 물에 노랑을 한 모금씩 붓는다', see: '파랑 → 청록 → 초록 → 연두로 한 걸음씩 옮겨 가고, 고고가 수조 유리에 얼굴을 대고 눈으로 따라간다', auto: 'sip:blue,sip:blue,sip:blue,stir:1,sip:yellow,stir:1,sip:yellow,stir:1,sip:yellow,stir:1,step:2' },
+      { id: 'cloudMeet', who: 'thing', do: '젓지 않고 두 색을 양쪽에 붓는다', see: '두 색 구름이 가운데서 만나 그 자리부터 섞인 색이 번진다', auto: 'sip:red:left,sip:yellow:right,step:4' },
+      { id: 'overflow', who: 'gogo', do: '계속 붓는다', see: '물이 수조 테두리를 넘어 실험대로 쏟아지고 고고가 발을 든다', auto: 'pour:red:7,pour:blue:7,step:3' },
+      { id: 'brownBurp', who: 'thing', do: '세 색을 다 넣고 젓는다', see: '갈색이 되고 수조 바닥에서 큰 공기 방울이 꺼억 올라온다', auto: 'sip:red,sip:red,sip:yellow,sip:yellow,sip:blue,sip:blue,stir:1,step:3' },
+      { id: 'gogoDive', who: 'gogo', do: '물이 물들었을 때 고고를 누른다', see: '수조에 뛰어들어 헤엄치다 그 색이 되어 나와 몸을 털어 색 방울을 튀긴다', auto: 'sip:blue,sip:blue,stir:1,dunk:gogo,step:6' },
+      { id: 'gulpHiccup', who: 'gogo', do: '고고가 헤엄치는 동안 한 모금 더 붓는다', see: '물을 꿀꺽 삼키고 딸꾹질마다 그 색 방울이 나온다', auto: 'sip:red,stir:1,dunk:gogo,sip:white,step:5' },
+      { id: 'roomGlow', who: 'thing', do: '물 색을 바꾼다', see: '방 전체가 그 색 빛으로 물든다', auto: 'sip:yellow,sip:yellow,sip:yellow,step:2' },
       { id: 'rainbow', who: 'gogo', do: '넷을 서로 다른 색으로 물들인다', see: '창에 무지개가 뜨고 고고가 손뼉을 친다', auto: 'paint:apple:red,paint:cup:yellow,paint:chair:blue,paint:ball:pink,step:4' },
-      { id: 'sameShine', who: 'thing', do: '빨간 사과에 빨강을 끼얹는다', see: '반짝반짝 윤이 난다', auto: 'pour:red:2,scoop,splash:apple,step:2' },
-      { id: 'drain', who: 'thing', do: '냄비 마개를 뽑는다', see: '꾸르륵 소용돌이치며 비고 색 빛이 꺼진다', auto: 'pour:blue:3,plug,step:3' },
-      { id: 'dunkSmall', who: 'thing', cross: 'size', do: '작게 만든 것을 냄비에 넣는다', see: '퐁당 빠졌다가 물들어 떠오른다', auto: 'set:ball:size:0.5,pour:yellow:3,dunk:ball,step:4' },
-      { id: 'bigHalf', who: 'thing', cross: 'size', do: '크게 만든 것에 한 번 끼얹는다', see: '위쪽 반만 물든다 — 한 번 더 끼얹으면 다 물든다', auto: 'set:apple:size:1.8,pour:blue:3,scoop,splash:apple,step:2' },
+      { id: 'freshWater', who: 'thing', do: '꼭지를 연다', see: '물든 물이 소용돌이치며 빠지고 맑은 물이 다시 차오른다', auto: 'sip:blue,sip:blue,drain,step:4' },
+      { id: 'floatSmall', who: 'thing', cross: 'size', do: '작게 만든 것을 넣는다', see: '가라앉지 않고 동동 떠다니며 물든다', auto: 'set:ball:size:0.5,sip:yellow,sip:yellow,dunk:ball,step:4' },
+      { id: 'bigHalf', who: 'thing', cross: 'size', do: '크게 만든 것을 넣는다', see: '다 못 들어가 아래쪽 반만 물든다 — 한 번 더 넣으면 뒤집혀 들어가 다 물든다', auto: 'set:apple:size:1.8,sip:blue,sip:blue,dunk:apple,step:3' },
     ],
-    gogo: ['병을 눈으로 따라가고 붓는 줄기를 올려다봄', '젓는 손을 따라 고개를 빙글빙글 돌림', '다 섞여 색이 바뀌면 눈이 커짐', '넘치면 발을 번갈아 들며 허둥댐', '물든 물건에 다가가 견주어 봄(제 몸 색과)', '제가 물들면 손을 내려다보고 몸을 턺', '갈색에는 코를 쥠', '가만두면 혼자 국자로 젓고 한 모금 맛봄'],
-    clips: ['stir', 'sip', 'hiccup', 'shake', 'hopFeet', 'noseHold'],
-    models: ['냄비와 받침', '국자', '병 걸이', '물약 병 넷', '수도꼭지', '마개와 줄'], code: ['물약 겉면(얼룩 → 한 색)', '붓는 줄기', '거품과 넘침', '물든 겉(색 섞기 · 위쪽 반만)', '무지개'],
-    sounds: ['코르크 뽁', '조르륵', '보글', '젓는 소리', '다 섞임 종', '끼얹기 찰박', '넘침', '꾸르륵', '딸꾹'],
+    gogo: ['붓는 줄기와 퍼지는 물감 구름을 유리에 얼굴을 대고 따라감', '색이 한 걸음 옮겨 갈 때마다 눈이 조금씩 커짐', '색이 둘이 되면 노를 들고 와 저음', '다 섞여 새 색이 되면 두 팔을 번쩍', '넘치면 발을 번갈아 들며 허둥댐', '물든 물건을 제 팔과 견주어 봄', '물에 뛰어들어 헤엄치고 나와 몸을 턺', '갈색에는 코를 쥠', '가만두면 혼자 한 모금 붓고 저어 봄'],
+    clips: ['stir', 'dive', 'hiccup', 'shake', 'hopFeet', 'noseHold'],
+    models: ['큰 유리 수조와 받침', '수조 뒤 빛 판', '병 걸이', '물약 병 넷', '젓는 노', '꼭지와 대롱'], code: ['물(옆에서 보이는 물 덩이 · 물 높이 · 색)', '물감 구름(말리며 퍼짐 · 두 색이 만나는 자리)', '붓는 줄기', '공기 방울', '넘치는 물', '물든 겉(아래쪽 반만)', '무지개'],
+    sounds: ['코르크 뽁', '조르륵 한 모금', '물속 보글', '노 젓는 소리', '다 섞임 종', '퐁당', '넘침', '물 빠지는 소리', '딸꾹'],
   },
 
   // ④ 얼음과 불
   frost: {
-    title: '얼음과 불', cell: 'L1-3-4', built: false, tool: 'cloudAndLamp', verbs: ['들고 머물기', '기울여 쏟기', '밀어 미끄러뜨리기'], easy: '눈구름 · 햇살 등을 누르고 대상을 누르면 그 위에 가서 머문다 · 대접을 길게 누르면 쏟아진다',
+    title: '얼음과 불', cell: 'L1-3-4', built: false, tool: 'cloudAndLamp', verbs: ['밀어 미끄러뜨리기', '들고 머물기', '기울여 쏟기'], easy: '눈구름 · 햇살 등을 누르고 대상을 누르면 그 위에 가서 머문다 · 대접을 길게 누르면 쏟아진다',
     time: '아침', look: { wall: '#cfdcee', sky: ['#eef6ff', '#dbe9f7', '#bfd3ea'], sun: '#ffffff', hemi: 0.95, split: '왼쪽은 창에서 드는 푸른 눈빛, 오른쪽은 난로의 주황빛 — 왼쪽 = Cold, 오른쪽 = Hot' }, cam: { AIM: [0, 0.8, 0], TILT: 26, HALF_W: 4.05 },
+    first: { already: '실험대 왼쪽 절반은 벌써 빙판이고 눈구름이 그 위에서 눈을 내린다. 오른쪽 절반은 햇살 등 아래 따뜻하다. 고고가 빙판을 지치고 있다', show: '고고가 사과를 왼쪽으로 민다 → 쭉 미끄러지며 서리가 낀다 → "Cold!"', hand: '고고가 공을 가리키고 오른쪽(햇살 쪽)을 가리킨다', ring: '공', tap: '물건을 누르면 지금 있는 쪽의 반대편으로 쭉 미끄러져 간다 — 왼쪽에 닿으면 얼고 "Cold!", 오른쪽에 닿으면 데워져 "Hot!"', next: '물건을 끌어 원하는 쪽에 두고, 눈구름과 햇살 등을 끌어 고고 · 물 · 옥수수에 대 본다' },
+    halves: { cold: 'x < 0 (눈구름 아래 · 빙판)', hot: 'x > 0 (햇살 등 아래)', note: '낱말의 뜻이 자리로 읽힌다 — 왼쪽으로 보내면 Cold, 오른쪽으로 보내면 Hot. 눈구름과 등을 끌어 옮기면 차갑고 뜨거운 자리도 따라 옮겨 간다' },
     brings: ['눈구름(창이 열리며 들어와 왼쪽 걸이에)', '햇살 등(오른쪽 걸이에)', '물 대접(가운데 뚜껑문에서)', '옥수수 접시(오른쪽 앞)', '작은 난로(오른쪽 벽)'], bed: '왼쪽의 바람과 오른쪽의 타닥타닥',
     T: {
       PLACE: { chair: [-2.55, -0.45], apple: [-1.3, -0.3], cup: [1.25, -0.3], ball: [2.4, -0.15], gogo: [0.1, 0.6], bowl: [0, -0.25], corn: [2.9, 0.75], cloud: [-3.0, 1.7], lamp: [3.0, 1.7] },
@@ -258,7 +290,7 @@ const commonClips = ['ask', 'cheer', 'shrug'];
 const clips = {
   ask: [1.2, true, '두 손을 모으고 아이 쪽을 올려다본다. 몸을 살짝 앞으로'], cheer: [1.2, false, '두 팔을 번쩍 들고 두 번 뛴다'], shrug: [0.9, false, '어깨를 으쓱하고 고개를 갸웃'], pat: [1.0, false, '한 손으로 앞의 것을 두 번 쓰다듬는다'],
   flail: [0.8, true, '팔다리를 허우적(몸이 뒤로 젖혀짐)'], swim: [1.0, true, '개구리헤엄 — 팔다리를 모았다 편다'], hang: [1.6, true, '두 손을 위로 뻗어 매달려 앞뒤로 흔들림'], splat: [1.6, false, '쿵 납작(세로 0.55배) → 출렁 → 일어섬'], reachJump: [1.0, false, '한 손을 뻗으며 뛰어오른다'], blow: [1.4, false, '방울 고리를 입에 대고 볼을 부풀려 분다'],
-  stir: [1.2, true, '두 손으로 국자를 잡고 크게 원을 그린다'], sip: [1.1, false, '국자를 입에 대고 후루룩'], hiccup: [0.5, false, '온몸이 한 번 튀고 입이 벌어짐'], shake: [1.0, false, '젖은 강아지처럼 몸을 좌우로 턴다'], hopFeet: [0.6, true, '발을 번갈아 들며 제자리에서 동동'], noseHold: [1.0, false, '한 손으로 코(얼굴 가운데)를 쥐고 고개를 돌림'],
+  stir: [1.2, true, '두 손으로 긴 노를 잡고 수조를 크게 젓는다'], dive: [1.2, false, '두 팔을 모으고 뛰어올라 수조로 퐁당'], hiccup: [0.5, false, '온몸이 한 번 튀고 입이 벌어짐'], shake: [1.0, false, '젖은 강아지처럼 몸을 좌우로 턴다'], hopFeet: [0.6, true, '발을 번갈아 들며 제자리에서 동동'], noseHold: [1.0, false, '한 손으로 코(얼굴 가운데)를 쥐고 고개를 돌림'],
   shiver: [0.4, true, '어깨를 움츠리고 잘게 떤다'], slip: [1.4, false, '발이 앞으로 빠지며 엉덩방아 → 눈을 끔벅'], skate: [1.2, true, '양팔을 벌리고 한 발씩 밀며 지친다'], fan: [0.6, true, '한 손으로 얼굴에 부채질'], warm: [1.5, true, '두 손을 앞으로 내밀고 쬔다'], catchMouth: [0.7, false, '고개를 젖히고 입을 벌려 받아먹는다'], rollSnow: [1.6, true, '몸을 숙여 눈 덩이를 굴린다'], sneeze: [0.9, false, '고개를 젖혔다 앞으로 숙이며 에취'],
 };
 // 새 표정(코드 — actor.js FACE 에 더한다)
@@ -269,8 +301,8 @@ const cross = [
   { a: 'size', b: 'float', rule: '큰 것은 무겁다 — 방울 하나로는 조금만 뜬다. 작은 것은 쏜살같이 올라 천장에 통통 튄다' },
   { a: 'color', b: 'float', rule: '물든 것을 감싼 방울은 그 색이 비친다' },
   { a: 'temp', b: 'float', rule: '언 것의 방울은 서리가 끼어 천천히 가라앉는다 · 뜨거운 것의 방울은 빨리 오르다 김에 저절로 퐁 터진다' },
-  { a: 'size', b: 'potion', rule: '큰 것은 두 번 끼얹어야 다 물든다 · 작은 것은 냄비에 통째로 담글 수 있다' },
-  { a: 'temp', b: 'potion', rule: '뜨거운 것을 끼얹으면 그 색 김이 오른다 · 언 것은 서리 밑으로 색이 비친다' },
+  { a: 'size', b: 'potion', rule: '큰 것은 수조에 다 못 들어가 아래쪽 반만 물든다 · 작은 것은 물에 동동 떠다닌다' },
+  { a: 'temp', b: 'potion', rule: '뜨거운 것이 들어가면 치익 그 색 김이 오른다 · 언 것이 들어가면 물에 얼음 조각이 뜬다' },
   { a: 'size', b: 'frost', rule: '큰 것은 천천히 얼고 녹는다 · 작은 것은 금방' },
   { a: 'color', b: 'frost', rule: '물든 작은 것을 물에 담그면 물이 그 색 → 얼리면 색 얼음' },
 ];
@@ -279,7 +311,7 @@ const combo = { order: ['size', 'temp', 'color'], max: 2, every: 2, sample: ['Bi
 
 // ───────── 자리 옮기기 ─────────
 const move = {
-  tray: { where: '화면 아래 가운데', n: 4, px: 64, gap: 14, pictures: ['지팡이', '방울', '냄비', '눈송이와 불꽃'], text: false, now: '지금 자리의 그림은 살짝 올라와 있다' },
+  tray: { where: '화면 아래 가운데', n: 4, px: 64, gap: 14, pictures: ['지팡이', '방울', '수조', '눈송이와 불꽃'], text: false, now: '지금 자리의 그림은 살짝 올라와 있다' },
   steps: [
     { t: 0.00, what: '누른 그림이 눌리고(0.1초) 지금 도구가 제자리로 돌아간다' },
     { t: 0.10, what: '빛 · 벽 색이 새 때(낮 · 늦은 오후 · 저녁 · 아침)로 옮겨 가기 시작한다(1.0초)' },
@@ -298,8 +330,9 @@ const bundles = [
   { id: '3-1', title: '둥둥 띄우기', does: 'stations.float 전부', done: '발견 거리 아홉이 자동 확인에서 다 일어난다 · "Up!" 과 "Down!" 이 제때에만 난다' },
   { id: '3-2', title: '무지개 물약', does: 'stations.potion 전부', done: '발견 거리 열 · 색 규칙 표의 모든 줄이 자동 확인으로 그 이름을 낸다' },
   { id: '3-3', title: '얼음과 불', does: 'stations.frost 전부', done: '발견 거리 열하나 · "Hot!" 과 "Cold!" 가 제때에만 난다' },
+  { id: '3-5', title: '첫 손길 고침', does: '**무지개 물약을 큰 수조로 다시 짓기**(stations.potion v1.2 — 한 모금씩 · 색이 옮겨 가는 것이 보이게) + firstTouch 규칙 여섯 + 자리마다 first(이미 벌어진 일 · 해 보이기 · 내밀기 · 빛 고리 · 누르기 한 번) · 얼음과 불의 왼쪽 Cold / 오른쪽 Hot 반반 · 따로 판 셋(zones/float · potion · icefire) 지우기', done: '자리마다 ?auto=enter,step:4 에서 고고가 해 보이고 낱말이 나온다 · ?auto=enter,step:4,tapRing,step:3 (빛 고리를 한 번 누르기)만으로 핵심 낱말이 나온다 · 누르기만으로(끌기 없이) 그 자리의 핵심 낱말이 전부 나온다 · 물약: 발견 거리 열둘 전부 — 특히 shadeSteps(다섯 걸음의 짙기가 화면에서 서로 다르다) · hueWalk(파랑 → 초록 사이에 눈에 보이는 중간 색이 둘 이상)' },
   { id: '3-4', title: '잇기', does: 'cross 일곱 줄 · 겹친 낱말(combo) · 녹음 대본 뽑기(tools/voice_script → 낱말과 문장의 목록)', done: 'cross 일곱 줄이 자동 확인에서 다 일어난다 · 네 자리를 돌아도 크기 · 색 · 온도가 남아 있다' },
 ];
 
-export const LAB = { version: 1, zone: 'world-lab', words, thingState, things, ask, stations, commonClips, clips, faces, cross, combo, move, bundles };
+export const LAB = { version: 1.2, zone: 'world-lab', words, thingState, things, ask, firstTouch, stations, commonClips, clips, faces, cross, combo, move, bundles };
 export default LAB;

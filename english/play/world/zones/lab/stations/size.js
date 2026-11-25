@@ -2,6 +2,7 @@
  * 하는 일은 하나: 마법 지팡이를 대고 위로 끌면 커지고 아래로 끌면 작아진다(고고 · 사과 · 컵 · 의자 · 공).
  * 영어는 크기가 문턱을 넘는 순간의 "Big!" / "Small!" 과, 만졌을 때 나오는 그것의 이름. 그리고 고고의 부탁 여섯("Big apple!" …).
  * 본판 lab.js 에 있던 놀이를 그대로 옮긴 것이다(연구소 설계 v1 · 묶음 3-0) — 놀이는 바꾸지 않았다. 무대 · 물건 · 고고 · 입력은 껍데기(lab.js)가 쥐고 여기는 이 자리의 일만 한다.
+ * 첫 손길(설계 v1.1): 들어가면 고고가 제 몸을 살짝 키웠다 줄였다 하고 → 물건 하나를 키워 보이고("Big!") → 지팡이를 앞에 내민다. 물건을 **누르기만 해도** 한 번 커지고, 다시 누르면 작아진다.
  * 자동 확인 명령: lock:이름 · drag:크기 · release · tap:x:z */
 import * as THREE from 'three';
 import { clamp, rand } from '../../../engine/stage.js?v=2';
@@ -23,6 +24,9 @@ export const T = {
   IDLE_POKE: 10,                             // 가만두면 혼자 물건을 건드려 보기까지(초)
   CUP_STAY: 9, PERCH_STAY: 6, CUP_UP: 5,     // 컵 안에 · 사과 위에 머무는 시간 · 쓰러진 컵이 일어나기까지
   SHAKE: 0.05,
+  OTHER_GAP: 0.6,                            // 같은 낱말이라도 다른 물건의 것이면 이만큼만 지나면 말한다(고고가 해 보인 직후 아이가 다른 것을 키웠을 때 조용하지 않게 — 같은 물건은 2.5초 그대로)
+  TAP_PX: 10, TAP_BIG: 1.6, TAP_SMALL: 0.55, TAP_SEC: 0.4,   // 이만큼(픽셀)도 안 끌고 떼면 「누르기」: 한 번에 이 크기로(커짐 → 작아짐 → 커짐 …) · 걸리는 시간
+  PRE: 1.6, PRE_AMP: 0.15, OFFER: [0.25, 0.95, 1.0],        // 들어가면 고고가 제 몸을 키웠다 줄였다 하는 시간 · 폭 · 해 보인 뒤 지팡이를 내미는 자리(고고 옆 · 높이 · 깊이)
   FURN: 4.5, FURN_DROP: 1.6,                 // 자리를 떠나면 지팡이 꽂이가 실험대 속으로 들어가는 빠르기 · 깊이
 };
 
@@ -37,7 +41,7 @@ export function createSize(C) {
   W.obj.material = W.obj.material.clone(); W.obj.material.emissive = new THREE.Color('#ffd766'); W.obj.material.emissiveIntensity = 0.25; scene.add(W.obj);
 
   // ───────────────────────── 고고가 하고 싶은 일 ─────────────────────────
-  const L = { lastTo: 1, tBig: -99, tSmall: -99, dizzy: false, fallT: -1, dir: 0, dirT: 0, watch: 0, clock: 0 };
+  const L = { lastTo: 1, tBig: -99, tSmall: -99, dizzy: false, fallT: -1, dir: 0, dirT: 0, watch: 0, clock: 0, pre: C.nofirst ? 0 : T.PRE, lastBy: {} }, K = { x0: 0, y0: 0, drag: false }, vRing = new THREE.Vector3();
   const cupY = () => Math.max(0.07 * cup.size, cup.h * cup.size + 0.03 - 0.74 * s.size);      // 컵 안에서 눈이 테두리 위로 나오는 높이
   async function toBench(tok) {
     if (B.hop) await until(tok, () => !B.hop); if (B.where === 'bench') return;
@@ -112,28 +116,36 @@ export function createSize(C) {
     const t = W.lock; if (!t) return; W.lock = null; sfx.pop(); C.ask.act();
     if (t === GOGO) { s.sizeV += Math.sign(t.to - 1 || 1) * T.RELEASE_KICK * 0.5; run(afterSelf); } else { t.v += Math.sign(t.to - 1 || 1) * T.RELEASE_KICK; run(tok => afterThing(tok, t)); }
   }
+  /** 누르기 한 번: 지팡이가 붙은 채 한 걸음에 커진다(이미 크면 작아진다). 끝나면 놓은 것과 같다. */
+  function tapStep(t) { W.tap = { t, from: t.to, to: t.to < T.BIG_AT ? T.TAP_BIG : T.TAP_SMALL, k: 0 }; }
+  const endPre = () => { if (L.pre > 0) { L.pre = 0; GOGO.to = 1; } W.demo = null; if (W.tap) { W.tap = null; release(); } };
   function onDown(e) {
+    endPre(); K.x0 = e.clientX; K.y0 = e.clientY; K.drag = false;
     const tip = stage.screenOf(W.pos), t = pickAt(stage, targets, e.clientX, e.clientY);
     if (W.state !== 'held' && Math.hypot(tip.x - e.clientX, tip.y - e.clientY + 40) < 70) { W.state = 'held'; P.mode = 'wand'; sfx.tick(); B.idle = 0; }       // 지팡이를 집는다
     else if (t) { W.state = 'held'; P.mode = 'wand'; lockOn(t, e.clientY); }                                                                                   // 대상을 바로 누르면 지팡이가 날아온다
     else { P.mode = 'walk'; if (stage.worldOn(C.benchPlane, e.clientX, e.clientY, v3)) C.tapBench(v3.x, v3.z); }
   }
   function onMove(e) {
+    if (!K.drag && Math.hypot(e.clientX - K.x0, e.clientY - K.y0) > T.TAP_PX) K.drag = true;
     if (P.mode === 'wand') {
       if (W.lock) { dragBy(e.clientY); const c = stage.screenOf(centerOf(W.lock, v3)); if (Math.abs(c.x - e.clientX) > pxRadius(stage, W.lock) + T.BREAK_PAD || W.lock.state === 'gone') release(); }
       else { const tip = stage.screenOf(W.pos), t = pickAt(stage, targets, tip.x, tip.y) || pickAt(stage, targets, e.clientX, e.clientY); if (t) lockOn(t, e.clientY); }
     } else if (P.mode === 'walk' && stage.worldOn(C.benchPlane, e.clientX, e.clientY, v3) && s.target && B.where === 'bench') gogo.goTo(clamp(v3.x, -BENCH.X, BENCH.X), clamp(v3.z, BENCH.Z0, BENCH.Z1));
   }
-  function onUp() { if (P.mode === 'wand') { release(); W.state = 'back'; W.back = T.WAND_BACK; } }
+  function onUp() { if (P.mode === 'wand') { if (W.lock && !K.drag) tapStep(W.lock); else { release(); W.state = 'back'; W.back = T.WAND_BACK; } } }
 
   // ───────────────────────── 매 장면 ─────────────────────────
   function crossing(t) {
-    const sz = t.size, mine = t === GOGO, o = { by: t.name, pitch: mine ? clamp(1.25 - (sz - 1) * 0.9, 0.3, 2) : undefined, rate: mine && sz > 1.2 ? 0.8 : undefined };   // 고고의 한마디는 고고 목소리(클수록 낮게)
-    if (!t.big && sz > T.BIG_AT) { t.big = true; voice.word(W_BIG.text + '!', () => topOf(t, vWord), { ...o, cls: W_BIG.cls }); sfx.spark(false); fx.spark(topOf(t, v3), '#ffcc70', 18, 0.3 * sz, 1.6); if (t === ball) t.t = 0.5; } else if (t.big && sz < T.BIG_AT - T.REARM) t.big = false;
-    if (!t.small && sz < T.SMALL_AT) { t.small = true; voice.word(W_SMALL.text + '!', () => topOf(t, vWord), { ...o, cls: W_SMALL.cls }); sfx.spark(true); fx.spark(topOf(t, v3), '#83c9ea', 14, 0.2, 1.2); } else if (t.small && sz > T.SMALL_AT + T.REARM) t.small = false;
+    const sz = t.size, mine = t === GOGO, gapFor = w => { const g = L.lastBy[w] && L.lastBy[w] !== t.name ? T.OTHER_GAP : undefined; L.lastBy[w] = t.name; return g; }, o = { by: t.name, pitch: mine ? clamp(1.25 - (sz - 1) * 0.9, 0.3, 2) : undefined, rate: mine && sz > 1.2 ? 0.8 : undefined };   // 고고의 한마디는 고고 목소리(클수록 낮게)
+    if (!t.big && sz > T.BIG_AT) { t.big = true; voice.word(W_BIG.text + '!', () => topOf(t, vWord), { ...o, cls: W_BIG.cls, gap: gapFor('big') }); sfx.spark(false); fx.spark(topOf(t, v3), '#ffcc70', 18, 0.3 * sz, 1.6); if (t === ball) t.t = 0.5; } else if (t.big && sz < T.BIG_AT - T.REARM) t.big = false;
+    if (!t.small && sz < T.SMALL_AT) { t.small = true; voice.word(W_SMALL.text + '!', () => topOf(t, vWord), { ...o, cls: W_SMALL.cls, gap: gapFor('small') }); sfx.spark(true); fx.spark(topOf(t, v3), '#83c9ea', 14, 0.2, 1.2); } else if (t.small && sz > T.SMALL_AT + T.REARM) t.small = false;
   }
   function step(dt) {
     L.clock += dt; const gs = s.size, clock = L.clock;
+    // 첫 손길: 들어가면 고고가 지팡이 곁에서 제 몸을 살짝 키웠다 줄였다 하고 있다(문턱은 넘지 않는다 — 낱말 없음)
+    if (L.pre > 0 && !W.lock) { L.pre -= dt; GOGO.to = L.pre > 0 ? 1 + T.PRE_AMP * Math.sin((T.PRE - L.pre) * 7) : 1; W.state = 'demo'; W.to.set(s.pos.x + 0.55, 1.15 + 0.1 * Math.sin(clock * 6), s.pos.z + 0.35); if (Math.random() < dt * 25) fx.spark(W.pos, '#ffe9a8', 1, 0.1, 0.5); }
+    for (const k of ['tap', 'demo']) { const a = W[k]; if (!a) continue; a.k = Math.min(1, a.k + dt / T.TAP_SEC); const e = a.k * a.k * (3 - 2 * a.k); setTo(a.t, a.from + (a.to - a.from) * e); if (a.k >= 1) { W[k] = null; if (k === 'tap') { release(); W.state = 'back'; W.back = T.WAND_BACK; } } }
     // 지팡이: 든 동안에는 손가락 위쪽에 별이 오게 따라온다. 놓으면 잠깐 있다가 꽂이로 돌아간다.
     if (W.state === 'held' && stage.worldOn(wandPlane, P.x, P.y, v3)) W.to.set(v3.x + T.WAND_TIP[0], v3.y + T.WAND_TIP[1], T.WAND_Z);
     else if (W.state === 'back' && (W.back -= dt) <= 0) { W.to.copy(wandRest); if (W.pos.distanceTo(wandRest) < 0.03) W.state = 'rest'; }
@@ -144,7 +156,7 @@ export function createSize(C) {
     if (Math.random() < dt * (W.lock ? 60 : W.state === 'rest' ? 3 : 10)) fx.spark(W.pos, '#ffe9a8', 1, 0.12, 0.5);
     if (W.lock) { const c = centerOf(W.lock, v3), k = Math.random(); fx.spark(v3b.copy(W.pos).lerp(c, k), k < 0.5 ? '#ffd766' : '#c9b8ff', 1, 0.05, 0.3); if (W.lock.state === 'gone' || W.lock.state === 'fall') release(); }
 
-    for (const t of Object.values(things)) { t.lit = W.lock === t; stepThing(t, dt); crossing(t); }
+    for (const t of Object.values(things)) { t.lit = W.lock === t || !!(W.demo && W.demo.t === t); stepThing(t, dt); crossing(t); }
     crossing(GOGO);
 
     // 지팡이가 고고에게 닿아 있는 동안: 커지면 놀라서 제 손을 내려다보고, 작아지면 허둥댄다
@@ -188,13 +200,34 @@ export function createSize(C) {
     if (gait === 'heavy') { stage.shake(T.SHAKE * gs / 1.8); for (const t of Object.values(things)) if (t.y === 0 && t.state !== 'down') { t.vy = 0.9; t.y = 0.001; t.tvz += rand(-2, 2); } fx.spark(v3.set(s.pos.x, 0.05, s.pos.z), '#f7ebd5', 5, 0.3, 0.6); }
   });
 
+  // ───────────────────────── 첫 손길 ─────────────────────────
+  const usable = t => (t.state === 'home' || t.state === 'up') && t.y < 0.05 && t.size > 0.8 && t.size < 1.25;
+  const first = {
+    /** n 번째 해 보이기: 물건 하나에 지팡이를 대고 키워 보인다(홀수 번째는 줄여 보인다) → 제 크기로 돌려놓고 → 지팡이를 아이 쪽으로 내민다. */
+    show(n) {
+      const order = ['apple', 'ball', 'cup', 'chair'].map(k => things[k]), t = [...order.slice(n % 4), ...order.slice(0, n % 4)].find(usable); first.done = false; if (!t) return;
+      run(async tok => {
+        L.pre = 0; GOGO.to = 1; await toBench(tok); await approach(tok, t); gogo.lookAt(centerOf(t, v3)); gogo.pose('reach', 1); W.state = 'demo'; topOf(t, W.to); W.to.y += 0.3; W.to.z += 0.25;
+        await wait(tok, 0.3); first.t = t; first.done = false; W.demo = { t, from: t.to, to: n % 2 ? T.TAP_SMALL : T.TAP_BIG, k: 0 }; await until(tok, () => !W.demo, 2); first.done = true;
+        gogo.pose('reach', 0); gogo.setMood(n % 2 ? 'smile' : 'wow', 1.3); say(n % 2 ? 'hm' : 'wow'); gogo.lookAt(topOf(t, v3)); await wait(tok, 1.3);
+        W.demo = { t, from: t.to, to: 1, k: 0 }; await until(tok, () => !W.demo, 2);
+        await face(tok, 0); gogo.pose('reach', 1); gogo.lookAt(camera.position); gogo.setMood('smile', 1.6); W.to.set(clamp(s.pos.x + T.OFFER[0], -2.6, 2.6), T.OFFER[1], T.OFFER[2]); await wait(tok, 0.9); gogo.pose('reach', 0);
+      });
+    },
+    /** 빛 고리: 방금 해 보인 것이 아닌, 제 크기의 물건 하나(의자부터). */
+    pick: () => ['chair', 'cup', 'ball', 'apple'].map(k => things[k]).find(t => usable(t) && t !== first.t) || null,
+    ring() { const t = first.pick(); return t ? centerOf(t, vRing) : null; },
+    r() { const t = first.pick(); return t ? Math.max(t.r, t.h * 0.5) * t.size + 0.14 : 0.4; },
+    ready: () => first.done, t: null, done: false,
+  };
   const by = n => n === 'gogo' ? GOGO : things[n];
   return {
+    first,
     id: 'size', title: LAB.stations.size.title, T, W, L, asks: LAB.stations.size.asks, place: { ...T.PLACE, gogo: T.HOME },
     step, bg, perch, onDown, onMove, onUp, lockOn, setTo, release,
-    enter() { W.here = true; },
+    enter() { W.here = true; if (!C.nofirst) L.pre = T.PRE; },
     /** 자리를 떠난다: 든 지팡이는 놓고, 컵 안 · 사과 위의 고고는 내려온다. */
-    leave() { if (W.lock) release(); W.state = 'rest'; W.here = false; P.mode = null; if (B.where !== 'bench') run(toBench); },
+    leave() { endPre(); if (W.lock) release(); W.state = 'rest'; W.here = false; P.mode = null; if (B.where !== 'bench') run(toBench); },
     /** 조르면 안 되는 때: 컵 안 · 사과 위 · 넘어지는 중 · 지팡이가 닿아 있는 중. */
     busy: () => B.where !== 'bench' || L.fallT >= 0 || !!W.lock || !!B.hop,
     /** 몸으로 흉내: Big = 두 팔을 번쩍 벌리며 펄쩍 · Small = 두 손을 모으고 몸을 옹송그린다. */

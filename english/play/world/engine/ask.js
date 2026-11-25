@@ -122,7 +122,9 @@ export function createAsk(o) {
     /** 아이가 화면을 건드렸다(쉬는 시간을 다시 잰다). */
     touch() { A.idle = 0; },
     /** 아이가 그 자리에서 일 하나를 했다(넷을 넘어야 처음 조른다). */
-    act() { A.acts++; A.idle = 0; },
+    act() { A.acts++; A.idle = 0; if (this.onAct) this.onAct(); },
+    /** 아이가 일 하나를 했을 때 같이 알릴 곳(첫 손길 부품이 듣는다). */
+    onAct: null,
     /** 확인용: 때를 기다리지 않고 그 자리의 n 번째 부탁을 바로 한다(고르는 조건은 보지 않는다). */
     force(st, i) { if (A.cur) end('left'); A.stId = st.id; start(st, st.asks[i]); },
     get active() { return !!A.cur; },
