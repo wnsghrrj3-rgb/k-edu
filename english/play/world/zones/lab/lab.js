@@ -18,6 +18,7 @@ import { runAuto } from '../../engine/auto.js?v=2';
 import { createActor } from '../../engine/actor.js?v=2';
 import { createAsk } from '../../engine/ask.js?v=2';
 import { createStations } from '../../engine/station.js?v=2';
+import { createColorSkin } from '../../engine/skin_color.js?v=1';
 import { LAB } from '../../data/lab.js?v=1';
 import { createSize, T as SIZE_T } from './stations/size.js?v=1';
 
@@ -89,6 +90,7 @@ function emptyStation(id) {
     onDown(e) { const t = pickAt(stage, targets, e.clientX, e.clientY); if (t) touch(t); else if (stage.worldOn(benchPlane, e.clientX, e.clientY, v3)) tapBench(v3.x, v3.z); }, onMove() {}, onUp() {},
   };
 }
+const colorSkin = createColorSkin(C);                                                  // 물든 색을 겉에 입힌다(어느 자리에서나 보인다)
 const size = createSize(C), all = { size };
 for (const id of ['float', 'potion', 'frost']) all[id] = emptyStation(id);
 const stations = createStations({
@@ -101,7 +103,7 @@ const stations = createStations({
 // ───────────────────────── 부탁 · 배경 소리 ─────────────────────────
 /** 생각 방울에 넣을 작은 모형: 물건은 그 모형을 제 색으로, 고고는 동글한 얼굴로. 상태(크기 · 색 · 온도)는 보여 주지 않는다 — 어떻게는 귀로 알아들어야 한다. */
 function mini(n) {
-  if (n !== 'gogo') { const m = things[n].mesh.clone(); m.material = part[n].material; m.castShadow = m.receiveShadow = false; m.position.set(0, 0, 0); m.rotation.set(0, 0.4, 0); return m; }
+  if (n !== 'gogo') { const m = things[n].mesh.clone(); m.material = part[n].material; m.geometry = colorSkin.plain(n) || m.geometry; m.castShadow = m.receiveShadow = false; m.position.set(0, 0, 0); m.rotation.set(0, 0.4, 0); return m; }
   const g = new THREE.Group(), mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 }), ball = (r, c, x, y, z) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat(c)); m.position.set(x, y, z); g.add(m); return m; };
   ball(0.5, '#8fd68a', 0, 0, 0).scale.set(1, 1.08, 0.9); ball(0.3, '#f4efdc', 0, -0.2, 0.3).scale.set(1, 0.9, 0.5);
   for (const sx of [-1, 1]) { ball(0.17, '#ffffff', sx * 0.2, 0.12, 0.38); ball(0.085, '#2a1a3a', sx * 0.2, 0.12, 0.52); ball(0.07, '#f1e7a8', sx * 0.3, 0.86, 0); const a = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.36), mat('#6fbf6a')); a.position.set(sx * 0.25, 0.66, 0); a.rotation.z = -sx * 0.25; g.add(a); }
@@ -136,13 +138,14 @@ function step(dt) {
   stations.cur.step(dt);
   for (const id in all) if (all[id].bg) all[id].bg(dt);
   for (const t of targets) if (t.temp) t.temp -= Math.sign(t.temp) * Math.min(Math.abs(t.temp), T.TEMP_BACK * dt);      // 온도는 아주 느리게 미지근한 쪽으로
+  colorSkin.tick(dt);
   stations.tick(dt); ask.tick(dt, stations.cur); bed.tick(dt, voice.talking);
   gogo.update(dt); voice.tick(dt); fx.tick(dt);
 }
 
 // ───────────────────────── 돌리기 ─────────────────────────
 const summary = () => ({ gogo: { size: +s.size.toFixed(2), x: +s.pos.x.toFixed(2), z: +s.pos.z.toFixed(2), y: +s.y.toFixed(2), where: B.where, mood: s.mood, act: s.act ? s.act.name : '', gait: gogo.gait() },
-  things: Object.fromEntries(Object.values(things).map(t => [t.name, t.size.toFixed(2) + ' ' + t.state + ' x' + t.x.toFixed(1) + ' y' + t.y.toFixed(1)])), said: voice.said, seen: [...seen], ...size.summary(), learned: learn.log.length, errors: brain.errors,
+  things: Object.fromEntries(Object.values(things).map(t => [t.name, t.size.toFixed(2) + ' ' + t.state + ' x' + t.x.toFixed(1) + ' y' + t.y.toFixed(1)])), said: voice.said, seen: [...seen], ...size.summary(), learned: learn.log.length, errors: brain.errors, here: here === 'size' ? undefined : stations.cur.summary(),
   station: stations.now + (stations.moving ? '~' : ''), moves: stations.moves, look: stations.look(), state: Object.fromEntries(targets.map(t => [t.name, t.lift + ' ' + t.color + ' ' + (+t.temp).toFixed(2)])), ask: ask.summary(), recs: learn.log.filter(k => /independent|assisted/.test(k)), bed: { now: bed.now, level: +bed.level.toFixed(2), bells: bed.bells } });
 window.__lab = { T, LAB, gogo, things, B, step, summary, stations, all, size, ask, bed, GOGO, camera, stage, tapBench, W: size.W, lockOn: size.lockOn, setTo: size.setTo, release: size.release, at: size.at };
 const shared = {
