@@ -7,6 +7,9 @@
  * 방울은 모형이 아니라 코드로 그린다(얇은 막 · 가장자리 무지갯빛 · 움직이는 반대쪽으로 늘어지는 꼬리 · 터질 때 물방울 여덟 알).
  * 물리는 손으로 짰다(라이브러리 없음): 방울 = 공 하나 · 떠오르는 힘과 공기 저항 · 공과 면의 부딪힘 · 세게 부딪히면 하나로 합쳐짐. 떨어진 것은 things.js 의 중력과 튐.
  * 무대 · 물건 · 고고 · 입력 · 부탁 · 배경 소리는 껍데기(lab.js)가 쥐고, 여기는 이 자리의 일만 한다. 소리는 전부 합성(임시)이다.
+ * 첫 손길(설계 v1.1 · 0장 · 자료 stations.float.first): 들어가면 사과가 이미 방울에 담겨 떠 있고 작은 방울들이 떠다닌다 → 고고가 방울병을 불어 공을 띄운다("Up!")
+ *   → 사과 방울이 아이 앞으로 흘러오고 빛 고리가 따라다닌다 → 방울을 누르면 퐁 "Down!", 실험대의 물건을 누르면 방울이 씌워져 "Up!"(누르기만으로 둘 다).
+ *   「톡」과 「밀기」는 손이 움직인 거리로만 가른다(TAP_PX 안이면 얼마나 오래 눌렀든 톡 — 자료의 TAP_MS 는 쓰지 않는다. 천천히 누르는 1학년 때문).
  * 자동 확인 명령: wrap:이름[:near] · pop:이름 · fling:이름:이름(세게 끌어다 부딪침) · push:이름:이름(살살 끌어다 댐 — 방울이 아닌 것이면 그 위로) · window · bottle:이름(방울병을 끌어다 씌움) · lamp:번호 */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -41,6 +44,10 @@ export const T = {
   HEAVY_FREE: 0.8,                           // 큰 것이 방울 둘로 HEAVY_TOP 보다 이만큼 더 오르면 「천장까지 간다」
   AUTO_FLING: 5, AUTO_PUSH: 1.2, AUTO_ABOVE: 0.7,   // 자동 확인: 세게 끄는 빠르기 · 살살 끄는 빠르기 · 방울이 아닌 것 위로 댈 때의 높이
   ALL_GAP: 2.6,                              // 다섯이 다 떴을 때의 "Up! Up! Up!" 은 마지막 "Up!" 뒤 이만큼(초) 지나서(같은 말을 2.5초 안에 되풀이하지 않게)
+  PRE: { y: 1.9, k: 6, c: 4, hand: [-0.55, 1.5, 0.7], bob: 0.07 },   // 첫 손길 — 차려 놓은 사과 방울이 떠 있는 높이 · 그 자리에 머무는 용수철 · 해 보인 뒤 아이 앞으로 흘러오는 자리(x, y, z) · 둥실거림
+  SHOT: 0.3, SHOW_BLOW: 0.38, SHOW_POP: 0.45,   // 해 보이기: 고고가 분 방울이 날아가는 시간 · 불기 시작해서 방울이 나오기까지 · 뛰어올라 터뜨리기까지
+  OTHER_GAP: 0.6,                            // 다른 물건으로 같은 낱말을 내면 이만큼만 지나도 말한다(고고가 해 보인 직후 아이의 첫 누르기가 조용하지 않게 — 같은 물건이면 2.5초 그대로)
+  DECOR: { n: 6, r: [0.06, 0.13], up: [0.12, 0.3], back: 2.5 },   // 꾸밈 방울(물건을 싣지 않는다 · 방울 한도에 넣지 않는다): 수 · 반지름 · 떠오르는 빠르기 · 터뜨린 뒤 다시 나오기까지
   SHAKE: 0.05,
 };
 const LITE = Q.has('lite');   // 느린 기기: 무지갯빛을 끈다(주소 꼬리 ?lite — 무대에 가벼운 판이 생기면 그것을 따른다)
@@ -143,6 +150,21 @@ export async function create(C) {
       uniforms: { uTime: { value: 0 }, uWob: { value: 0 }, uVel: { value: new THREE.Vector3() }, uIris: { value: LITE ? 0 : 1 }, uTint: { value: new THREE.Color('#ffffff') }, uTintK: { value: 0 }, uFrost: { value: 0 }, uAlpha: { value: 1 } } }));
     m.visible = false; m.frustumCulled = false; m.renderOrder = 4; m.userData.on = false; scene.add(m); return m;
   });
+  // 꾸밈 방울(첫 손길의 「이미 벌어진 일」 — 작은 방울들이 둥실 떠다닌다. 물건을 싣지 않고 부딪히지도 않는다. 눌러 터뜨릴 수는 있다 — 낱말은 없다)
+  const mkFilm = () => new THREE.ShaderMaterial({ vertexShader: BUBBLE_VERT, fragmentShader: BUBBLE_FRAG, transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { uTime: { value: 0 }, uWob: { value: 0 }, uVel: { value: new THREE.Vector3() }, uIris: { value: LITE ? 0 : 1 }, uTint: { value: new THREE.Color('#ffffff') }, uTintK: { value: 0 }, uFrost: { value: 0 }, uAlpha: { value: 1 } } });
+  const decoMat = mkFilm(), decoGeo = new THREE.SphereGeometry(1, 20, 14), deco = Array.from({ length: T.DECOR.n }, (_, i) => { const m = new THREE.Mesh(decoGeo, decoMat); m.visible = false; m.renderOrder = 3; scene.add(m); return { m, x: 0, y: 0, z: 0, r: 0.1, v: 0.2, ph: i * 1.7, k: 0, wait: i * 0.25, first: true }; });
+  const shotMesh = new THREE.Mesh(decoGeo, decoMat); shotMesh.visible = false; shotMesh.renderOrder = 4; scene.add(shotMesh);
+  function stepDeco(dt) {
+    const on = F.here && !C.nofirst; decoMat.uniforms.uTime.value = F.clock;
+    for (const d of deco) {
+      if (d.wait > 0 || !on) { d.wait -= dt; d.k = Math.max(0, d.k - dt * 5); if (d.wait <= 0 && on) { d.r = rand(...T.DECOR.r); d.v = rand(...T.DECOR.up); d.x = rand(-3.4, 3.4); d.z = rand(-0.9, 0.7); d.y = d.first ? rand(0.5, F.ceil - 0.5) : 0.15; d.first = false; d.k = 0; } }
+      else { d.k = Math.min(1, d.k + dt * 2.5); d.y += d.v * dt; d.x += Math.sin(F.clock * 0.7 + d.ph) * 0.12 * dt + (WN.wind > 0 && WN.k > 0.6 ? D.WIND * 0.6 * dt : 0); if (d.y > F.ceil - d.r - 0.05 || Math.abs(d.x) > D.WALL_X) d.wait = rand(0.3, 1.5); }
+      d.m.visible = d.k > 0.02; d.m.position.set(d.x, d.y, d.z); d.m.scale.setScalar(d.r * d.k);
+    }
+  }
+  // 첫 손길의 상태: b = 차려 놓은 방울(사과) · hand = 해 보인 뒤(아이 앞으로 흘러온다) · shot = 고고가 분 방울이 날아가는 중 · t = 고고가 띄워 보인 물건 · done = 해 보이기에서 낱말까지 나왔다
+  const PRE = { b: null, hand: false, shot: null, t: null, done: false, showing: false, tok: null, gen: 0, lastBy: {} }, vRing = new THREE.Vector3();
+  const gapFor = (w, t) => { const g = PRE.lastBy[w] && PRE.lastBy[w] !== t.name ? T.OTHER_GAP : undefined; PRE.lastBy[w] = t.name; return g; };
   const half = t => (t.ball ? t.r : t.h * 0.5) * t.size, big = t => Math.max(t.r, t.h * 0.5) * t.size;      // 바닥에서 가운데까지 · 안에 들어가는 반지름
   const baseY = t => t === GOGO ? s.y : t.y, holds = (b, t) => b.items.some(i => i.t === t);
   const free = () => !of.has(GOGO) && !G.fall && G.splat <= 0 && G.dizzy <= 0 && !TR.on && !G.ride && B.where === 'bench' && !B.hop;      // 고고가 실험대에 멀쩡히 서 있는가
@@ -190,7 +212,7 @@ export async function create(C) {
   function blowOne(x, y, z) { const b = newBubble(x, y, z, T.EMPTY_R); if (!b) return null; b.empty = true; b.mode = 'float'; b.k = 0.15; b.vx = rand(-0.5, 0.5); b.vy = 0.5; snd.inflate(); return b; }
   /** 방울이 터진다. 안의 것은 떨어지고 "Down!"(떴던 것만 · 조용히 터질 때는 말하지 않는다). o = { quiet:자리를 떠날 때, steam:뜨거워서 저절로 } */
   function pop(b, o = {}) {
-    const i = bubbles.indexOf(b); if (i < 0) return; bubbles.splice(i, 1); b.mesh.visible = false; b.mesh.userData.on = false; if (H.b === b) H.b = null; if (H.w === b) H.w = null; if (G.ride === b) G.ride = null; if (b.hang) b.hang.hung = false;
+    const i = bubbles.indexOf(b); if (i < 0) return; bubbles.splice(i, 1); b.mesh.visible = false; b.mesh.userData.on = false; if (H.b === b) H.b = null; if (H.w === b) H.w = null; if (G.ride === b) G.ride = null; if (b.hang) b.hang.hung = false; if (PRE.b === b) PRE.b = null;
     if (o.quiet) snd.soft(); else { burst(b); snd.pop(b.R); fx.spark(v3.set(b.x, b.y, b.z), o.steam ? '#fff0e0' : '#ffffff', o.steam ? 14 : 5, b.R * 0.6, 1.1, { up: !!o.steam }); }
     let said = false;
     for (const it of b.items) {
@@ -201,7 +223,7 @@ export async function create(C) {
         if (t.y > 0) { t.vy = Math.min(b.vy, 0) - 0.01; falls.set(t, { h: t.y, n: 0 }); if (t.ball) { t.vx = b.vx * 0.5; t.home.x = clamp(t.x + b.vx * 0.5, -BENCH.X, BENCH.X); } else drift.set(t, b.vx * 0.5); }
         if (t.ball && t.y > 1.2 && free() && !o.quiet) t.home.x = clamp(s.pos.x + (t.x >= s.pos.x ? 1 : -1) * (0.36 * s.size + t.r * t.size + 0.14), -BENCH.X, BENCH.X);      // 튕겨 온 공은 고고 곁으로 굴러온다(고고가 받아 낸다)
       }
-      if (was && !o.quiet && !said) said = voice.word(W_DOWN.text + '!', () => topOf(t, vWord), { by: t.name, cls: W_DOWN.cls, pitch: pitchOf(t) }) || true;
+      if (was && !o.quiet && !said) said = voice.word(W_DOWN.text + '!', () => topOf(t, vWord), { by: t.name, cls: W_DOWN.cls, pitch: pitchOf(t), gap: gapFor('down', t) }) || true;
     }
   }
   /** 두 방울이 하나로 합쳐져 둘을 같이 싣는다. */
@@ -210,7 +232,7 @@ export async function create(C) {
     for (const it of items) { const src = a.items.includes(it) ? a : b; it.ox += src.x - (a.x * wa + b.x * wb) / w; it.oy += src.y - (a.y * wa + b.y * wb) / w; if (it.t !== GOGO) of.set(it.t, a); else of.set(GOGO, a); }
     a.x = (a.x * wa + b.x * wb) / w; a.y = (a.y * wa + b.y * wb) / w; a.z = (a.z * wa + b.z * wb) / w; a.vx = (a.vx * wa + b.vx * wb) / w; a.vy = (a.vy * wa + b.vy * wb) / w;
     a.items = items; a.lifts += b.lifts; a.empty = a.empty && b.empty; a.grab = a.grab || b.grab; a.hand = Math.min(a.hand, b.hand); a.ride = false; a.hot = 0; a.wobV += 4; a.hang = null; if (b.hang) b.hang.hung = false;
-    b.items = []; const i = bubbles.indexOf(b); bubbles.splice(i, 1); b.mesh.visible = false; b.mesh.userData.on = false; if (H.b === b) H.b = a;
+    b.items = []; if (PRE.b === a || PRE.b === b) { a.pre = null; PRE.b = null; } const i = bubbles.indexOf(b); bubbles.splice(i, 1); b.mesh.visible = false; b.mesh.userData.on = false; if (H.b === b) H.b = a;
     snd.merge(); fx.spark(v3.set(a.x, a.y, a.z), '#ffffff', 10, a.R * 0.7, 1.2); A.merges++;
     if (items.length >= 2) seen.add('merge');
     if (A.merges % 3 === 1) voice.word(W_POP.text + '!', () => vWord.set(a.x, a.y + a.R, a.z), { by: 'bubble' });      // 세 번에 한 번
@@ -333,14 +355,15 @@ export async function create(C) {
   }
   const fingerOn = (z, out) => { zPlane.constant = -z; return stage.worldOn(zPlane, P.x, P.y, out); };
   function grab(b, x, y) { H.b = b; H.t = 0; H.moved = 0; H.x0 = x; H.y0 = y; H.drag = false; P.mode = 'bubble'; b.grab = true; b.wobV += 2.4; sfx.tick(); B.idle = 0; if (fingerOn(b.z, v3)) { H.ox = b.x - v3.x; H.oy = b.y - v3.y; } else H.ox = H.oy = 0; }
-  /** 손을 뗐다: 짧게 눌렀고 거의 안 움직였으면 「톡」(터진다), 아니면 「밀기」(미끄러지듯 흘러간다). */
-  function letGo() { const b = H.b; H.b = null; if (!b || !bubbles.includes(b)) return; b.grab = false; if (!H.drag && H.t * 1000 <= D.TAP_MS && H.moved <= D.TAP_PX) tapPop(b); else { b.hand = 0; C.ask.act(); } }
+  /** 손을 뗐다: 거의 안 움직였으면(TAP_PX 안 — 얼마나 오래 눌렀든) 「톡」(터진다), 움직였으면 「밀기」(미끄러지듯 흘러간다). */
+  function letGo() { const b = H.b; H.b = null; if (!b || !bubbles.includes(b)) return; b.grab = false; if (!H.drag) tapPop(b); else { b.hand = 0; C.ask.act(); } }
   function tapPop(b) { pop(b); C.ask.act(); B.idle = 0; }
   /** 대상을 바로 눌렀다: 방울병이 날아와 씌운다(쉬운 길). */
   function pressThing(t) { name(t); sfx.tick(); B.idle = 0; if (!canWrap(t)) { if (t !== GOGO) t.tvx += rand(-3, 3); return; } BT.state = 'fly'; BT.on = t; H.w = wrap(t, true); P.mode = 'easy'; }
   function onDown(e) {
-    const x = e.clientX, y = e.clientY, b = pickBubble(x, y); H.x0 = x; H.y0 = y; H.moved = 0;
+    endPre(); const x = e.clientX, y = e.clientY, b = pickBubble(x, y); H.x0 = x; H.y0 = y; H.moved = 0;
     if (b) return grab(b, x, y);
+    for (const d of deco) { if (d.k < 0.5) continue; const c = stage.screenOf(v3.set(d.x, d.y, d.z)), cx = c.x, cy = c.y, e2 = stage.screenOf(v3.set(d.x + d.r, d.y, d.z)); if (Math.hypot(cx - x, cy - y) < Math.abs(e2.x - cx) + 16) { burst({ x: d.x, y: d.y, z: d.z, R: d.r * 1.6, vx: 0 }); snd.pop(d.r); d.wait = T.DECOR.back; d.k = 0; B.idle = 0; return; } }      // 꾸밈 방울도 누르면 퐁(낱말은 없다)
     const tip = stage.screenOf(v3.copy(BT.pos).setY(BT.pos.y + 0.3));
     if (BT.state !== 'held' && Math.hypot(tip.x - x, tip.y - y) < 64) { BT.state = 'held'; P.mode = 'bottle'; sfx.grab(); B.idle = 0; return; }      // 방울병을 집는다
     const t = pickAt(stage, targets.filter(q => !of.has(q)), x, y); if (t) return pressThing(t);
@@ -361,7 +384,7 @@ export async function create(C) {
     // 쥔 방울: 손을 느리게 따라온다
     const b = H.b;
     if (b && P.mode === 'bubble') {
-      H.t += dt; if (!H.drag && (H.t * 1000 > D.TAP_MS || H.moved > D.TAP_PX)) { H.drag = true; if (b.hang) { b.hang.hung = false; b.hang.av += 1.5; b.hang = null; b.hangCool = 1.2; G.hung = false; } }
+      H.t += dt; if (!H.drag && H.moved > D.TAP_PX) { H.drag = true; if (b.hang) { b.hang.hung = false; b.hang.av += 1.5; b.hang = null; b.hangCool = 1.2; G.hung = false; } }
       if (H.drag && fingerOn(b.z, v3)) { const k = 1 - Math.exp(-D.PUSH * dt), nx = b.x + (v3.x + H.ox - b.x) * k, ny = b.y + (v3.y + H.oy - b.y) * k; b.vx += ((nx - b.x) / dt - b.vx) * 0.5; b.vy += ((ny - b.y) / dt - b.vy) * 0.5; b.x = nx; b.y = ny; b.hand = 0; }
       else { b.vx *= 0.8; b.vy *= 0.8; }
     }
@@ -374,7 +397,7 @@ export async function create(C) {
     } else if (BT.state === 'fly' && BT.on) { const t = BT.on; topOf(t, v3); BT.to.set(v3.x + T.BOTTLE.over[0], v3.y + T.BOTTLE.over[1], t.z + T.BOTTLE.over[2]); }
     else if (BT.state === 'back' && (BT.back -= dt) <= 0) { BT.to.copy(bottleRest); if (BT.pos.distanceTo(bottleRest) < 0.03) BT.state = 'rest'; }
     const kb = 1 - Math.exp(-(BT.state === 'held' ? T.BOTTLE.follow : 9) * dt), dx = (BT.to.x - BT.pos.x) * kb; BT.pos.lerp(BT.to, kb); BT.puff = Math.max(0, BT.puff - dt);
-    BT.tilt += ((BT.state === 'held' || BT.state === 'fly' ? 0.5 + BT.puff * 0.8 : 0) - dx * 4 - BT.tilt) * Math.min(1, 12 * dt);
+    BT.tilt += ((BT.state === 'demo' ? 0.4 : BT.state === 'held' || BT.state === 'fly' ? 0.5 + BT.puff * 0.8 : 0) - dx * 4 - BT.tilt) * Math.min(1, 12 * dt);
     BT.obj.position.copy(BT.pos); BT.obj.rotation.set(0, 0, BT.tilt); if (BT.state === 'rest') BT.obj.rotation.z = Math.sin(F.clock * 2.2) * 0.04;
     if (BT.puff > 0 && Math.random() < dt * 40) fx.spark(v3.set(BT.pos.x - 0.25, BT.pos.y + 0.7, BT.pos.z), '#ffffff', 1, 0.08, 0.5);
   }
@@ -403,6 +426,10 @@ export async function create(C) {
       // 고고가 천장 가까이 오르면 등에 매달린다
       if (me && !b.hang && !b.grab && b.hangCool <= 0 && heavy < b.lifts && s.y + T.LAMP.REACH * s.size >= ceil - T.LAMP.DROP - 0.12) { b.hang = lamps.reduce((p, q) => Math.abs(q.x - b.x) < Math.abs(p.x - b.x) ? q : p); G.hung = false; }
       if (b.grab) { /* 손이 쥐고 있다 — stepHand 가 옮긴다 */ }
+      else if (b.pre && heavy < b.lifts) {      // 첫 손길: 차려 놓은 방울은 허공에 둥실 머물다가, 고고가 해 보인 뒤 아이 앞으로 천천히 흘러온다
+        const q = b.pre, h = PRE.hand, tx = h ? T.PRE.hand[0] : q.x, ty = Math.min((h ? T.PRE.hand[1] : T.PRE.y) + yMin - half(it[0].t), ceil - b.R - 0.2) + Math.sin(F.clock * 1.6) * T.PRE.bob, tz = h ? T.PRE.hand[2] : q.z, kk = h ? T.PRE.k * 0.35 : T.PRE.k;
+        b.vx += ((tx - b.x) * kk - b.vx * T.PRE.c) * dt; b.vy += ((ty - b.y) * kk - b.vy * T.PRE.c) * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.z += (tz - b.z) * Math.min(1, (h ? 0.9 : 3) * dt);
+      }
       else if (b.hang) {
         const L = b.hang, r = lampAt(L, T.LAMP.DROP, v3), tx = r.x, ty = r.y - T.LAMP.REACH * s.size + GOGO.h * s.size / 2, pull = T.LAMP.PULL;
         b.vx = clamp(b.vx + ((tx - b.x) * pull - b.vx * 5.5) * dt, -2.2, 2.2); b.vy = clamp(b.vy + ((ty - b.y) * pull - b.vy * 5.5) * dt, -2.2, 2.2); b.x += b.vx * dt; b.y += b.vy * dt;
@@ -442,9 +469,9 @@ export async function create(C) {
   }
   /** 대상의 바닥이 실험대에서 0.25 뜬 순간: "Up!" */
   function upNow(b, t) {
-    upSaid.add(t); t.lift = 'bubble'; if (voice.word(W_UP.text + '!', () => topOf(t, vWord), { by: t.name, cls: W_UP.cls, pitch: pitchOf(t) })) A.lastUp = F.clock; fx.spark(topOf(t, v3), '#fff3b0', 10, 0.25 * t.size, 1.3); sfx.spark(true);
+    upSaid.add(t); t.lift = 'bubble'; if (voice.word(W_UP.text + '!', () => topOf(t, vWord), { by: t.name, cls: W_UP.cls, pitch: pitchOf(t), gap: gapFor('up', t) })) A.lastUp = F.clock; fx.spark(topOf(t, v3), '#fff3b0', 10, 0.25 * t.size, 1.3); sfx.spark(true);
     if (b.ride && t.name === 'chair') seen.add('chairRide');
-    if (t !== GOGO && free()) run(tok => reachFor(tok, t));
+    if (t !== GOGO && free() && PRE.t !== t) run(tok => reachFor(tok, t));      // 고고가 해 보이려고 띄운 것은 쫓아가지 않는다
     const n = targets.filter(q => q.lift === 'bubble').length; if (n >= D.ALL_UP && !A.allUp) { A.allUp = true; A.allT = Math.max(0.9, T.ALL_GAP - (F.clock - A.lastUp)); }      // 방금 난 "Up!" 과 겹치지 않게 조금 있다가
   }
   function step(dt) {
@@ -462,6 +489,10 @@ export async function create(C) {
       if (t.y === 0 && t.vy === 0) { falls.delete(t); drift.delete(t); if (f.h > 0.4) { fx.spark(v3.set(t.x, 0.05, t.z), '#f7ebd5', 5, 0.25, 0.6); if (free() && !C.ask.active) run(tok => pat(tok, t, t.ball && f.h > 1.2)); } }
     }
     stepGogo(dt);
+    // 첫 손길: 고고가 분 방울이 물건으로 날아가 씌운다 · 해 보이던 일이 끊겼으면 방울병을 돌려보낸다
+    if (PRE.shot) { const q = PRE.shot; q.k += dt / T.SHOT; const c = centerOf(q.t, v3), e = clamp(q.k, 0, 1); shotMesh.visible = true; shotMesh.position.lerpVectors(q.from, c, e); shotMesh.position.y += Math.sin(e * Math.PI) * 0.25; shotMesh.scale.setScalar(0.1 + 0.16 * e);
+      if (q.k >= 1) { PRE.shot = null; shotMesh.visible = false; PRE.t = q.t; if (!wrap(q.t, false)) PRE.t = null; } } else shotMesh.visible = false;
+    if (PRE.showing && PRE.tok && B.tok !== PRE.tok) { PRE.showing = false; PRE.shot = null; if (BT.state === 'demo') { BT.state = 'back'; BT.back = 0.1; } }
     if (A.allUp && targets.filter(q => q.lift === 'bubble').length < D.ALL_UP) A.allUp = false; if (A.allT > 0 && (A.allT -= dt) <= 0) allUpNow();
     for (const b of A.wasHeavy) if (!bubbles.includes(b)) A.wasHeavy.delete(b);
     // 실험대 위: 고고는 물건을 비켜 가고, 포개져 내려앉은 물건은 옆으로 밀려난다
@@ -483,20 +514,20 @@ export async function create(C) {
   function bg(dt) {
     F.clock += dt; const to = F.here ? 1 : 0; if (F.vis !== to) F.vis += clamp(to - F.vis, -T.FURN * dt, T.FURN * dt); const e = F.vis * F.vis * (3 - 2 * F.vis), on = F.vis > 0.02;
     if (F.here && stage.worldOn(ceilPlane, innerWidth / 2, 0, v3)) F.ceil += (clamp(v3.y - T.CEIL_PAD, T.CEIL_MIN, D.CEIL) - F.ceil) * Math.min(1, T.CEIL_K * dt);      // 보이는 천장: 화면 맨 위 바로 아래(화면 비율마다 다르다)
-    beam.visible = shelf.visible = win.visible = BT.obj.visible = on; if (!on && !F.here) { stepDrops(dt); return; }
+    beam.visible = shelf.visible = win.visible = BT.obj.visible = on; if (!on && !F.here) { stepDrops(dt); stepDeco(dt); return; }
     beam.position.set(0, F.ceil + (1 - e) * T.FURN_UP, T.LAMP.z);
     for (const L of lamps) { L.av += (-T.LAMP.K * L.ang - T.LAMP.C * (L.hung ? 2.2 : 1) * L.av) * dt; L.ang = clamp(L.ang + L.av * dt, -0.9, 0.9); L.g.rotation.z = L.ang; L.bulb.material.emissiveIntensity = 0.85 + 0.12 * Math.sin(F.clock * 3 + L.x); }
     shelf.position.set(T.SHELF.x, Math.min(T.SHELF.y, F.ceil - T.SHELF.under), -1.75 - (1 - e) * T.FURN_BACK);
     win.position.set(wx, wy, T.WINDOW.z - (1 - e) * T.FURN_BACK * 0.6);
     const d = (1 - e) * T.FURN_DROP; if (!F.here || BT.state === 'rest') { BT.pos.set(bottleRest.x, -d, bottleRest.z); BT.to.copy(BT.pos); BT.obj.position.copy(BT.pos); }
     if (!F.here) { stepWindow(dt); BT.obj.rotation.set(0, 0, 0); }
-    stepDrops(dt);
+    stepDrops(dt); stepDeco(dt);
   }
   function stepAll(dt) { stepWindow(dt); step(dt); }
 
   /** 자리를 떠난다: 방울은 조용히 터져 내려오고("Down!" 은 말하지 않는다 — 아이가 한 일이 아니다), 떠 있던 고고는 내려온 뒤에 걷는다. */
   function leave() {
-    F.here = false; P.mode = null; H.b = null; H.w = null; BT.state = 'rest'; BT.on = null; WN.want = 0; WN.wind = 0; G.ride = null; G.watch = null; A.allT = -1; A.allUp = false;
+    endPre(); F.here = false; P.mode = null; H.b = null; H.w = null; BT.state = 'rest'; BT.on = null; WN.want = 0; WN.wind = 0; G.ride = null; G.watch = null; A.allT = -1; A.allUp = false;
     for (const b of [...bubbles]) pop(b, { quiet: true });
     if (TR.on) { TR.on = false; cup.state = 'up'; cup.floor = 0; cup.vy = 2; cup.y += 0.01; } TR.aim = false; TR.k = 0;
     falls.clear(); drift.clear(); upSaid.clear(); for (const [, m] of blobs) m.visible = false; stars.visible = false; G.dizzy = 0; G.splat = 0; G.dizzyNext = false; G.hung = false;
@@ -506,11 +537,51 @@ export async function create(C) {
     for (const t of targets) t.lift = 'bench';
   }
 
+  // ───────────────────────── 첫 손길(설계 0장 · 자료 first) ─────────────────────────
+  const ORDER = ['apple', 'ball', 'cup', 'chair'], place = { chair: [-2.55, -0.45], apple: [-1.2, -0.35], cup: [1.15, -0.35], ball: [2.45, -0.15], gogo: T.HOME };
+  /** F1 이미 벌어진 일: 사과가 방울에 담겨 허공에 떠 있다(사과를 못 쓰면 다음 것). 아이가 바꿔 놓은 크기 · 색 · 온도는 건드리지 않는다. 낱말은 내지 않는다(아이가 한 일이 아니다). */
+  function setup() {
+    PRE.hand = false; PRE.done = false; PRE.t = null; PRE.lastBy = {}; if (PRE.b || bubbles.some(b => b.items.length)) return;
+    const t = ORDER.map(k => things[k]).find(canWrap); if (!t) return; const c = centerOf(t, v3), b = newBubble(c.x, c.y, t.z, big(t) * D.BUBBLE_R); if (!b) return;
+    b.items.push({ t, ox: 0, oy: 0, tox: 0, toy: 0 }); of.set(t, b); t.state = 'bubble'; t.vx = 0; b.mode = 'float'; b.k = 0.25; b.pre = { x: place[t.name][0], z: place[t.name][1] }; upSaid.add(t); t.lift = 'bubble'; PRE.b = b; snd.inflate();
+  }
+  /** 아이가 화면을 건드렸다(또는 자동 확인 명령이 시작됐다): 차려 놓은 장면과 해 보이기는 그 자리에서 아이의 것이 된다 — 머물던 방울은 제 힘으로 떠오르고, 고고는 하던 시늉을 그만둔다. */
+  function endPre() {
+    if (PRE.b) { PRE.b.pre = null; PRE.b = null; } PRE.hand = false; PRE.shot = null; shotMesh.visible = false;
+    if (PRE.showing) { PRE.showing = false; PRE.gen++; brain.stop(); if (s.act && s.act.name === 'blow') s.act = null; gogo.lookAt(camera.position); }
+    if (BT.state === 'demo') { BT.state = 'back'; BT.back = 0.1; }
+  }
+  const ringAt = () => { const b = PRE.b && bubbles.includes(PRE.b) ? PRE.b : bubbles.filter(q => q.mode === 'float' && q.items.length && !holds(q, GOGO) && !(PRE.t && holds(q, PRE.t) && PRE.showing)).sort((p, q) => p.y - q.y)[0]; return b ? { b } : { t: ORDER.map(k => things[k]).find(q => canWrap(q)) }; };
+  const first = {
+    /** F2 해 보이기: 고고가 방울병을 불어 실험대의 물건 하나를 띄운다 → "Up!". n 이 커지면 다른 것으로, 띄우기와 터뜨리기("Down!")를 번갈아. 걷지 않는다(들어가서 3초 안에 낱말이 나오게). */
+    show(n) {
+      PRE.done = false; const gen = ++PRE.gen, ringB = ringAt().b, up = bubbles.filter(b => b.mode === 'float' && b.items.length && !holds(b, GOGO) && b !== ringB), bench = ['ball', 'cup', 'chair', 'apple'].map(k => things[k]).filter(canWrap);
+      const popIt = (n % 2 === 1 || !bench.length) && up.length ? up[0] : null, t = popIt ? null : bench[(n >> 1) % (bench.length || 1)]; if (!popIt && !t) { PRE.done = true; return; }
+      PRE.showing = true; PRE.tok = null;
+      run(async tok => {
+        PRE.tok = tok; s.target = null;
+        if (popIt) {      // 뛰어올라 톡 터뜨린다
+          gogo.lookAt(v3.set(popIt.x, popIt.y, popIt.z)); gogo.act(has('reachJump') ? 'reachJump' : 'jump', { mood: 'wow' }); cry('want'); await wait(tok, T.SHOW_POP);
+          if (gen === PRE.gen && bubbles.includes(popIt)) pop(popIt); PRE.done = true; gogo.setMood('joy', 1); await wait(tok, 0.5);
+        } else {          // 방울병이 고고 앞으로 날아오고, 고고가 불면 방울이 물건으로 날아가 씌운다
+          gogo.lookAt(centerOf(t, v3)); if (has('blow')) gogo.act('blow'); gogo.setMood('blowing', 1); BT.state = 'demo'; BT.to.set(s.pos.x + (t.x >= s.pos.x ? 0.4 : -0.4) * s.size, 0.5 * s.size, s.pos.z + 0.3); BT.puff = 0.6; snd.inflate();
+          await wait(tok, T.SHOW_BLOW); PRE.shot = { t, k: 0, from: BT.pos.clone().setY(BT.pos.y + 0.7) }; await until(tok, () => !PRE.shot, 1.2);
+          await until(tok, () => upSaid.has(t) || !of.has(t), 2.5); PRE.done = true; BT.state = 'back'; BT.back = 0.15; gogo.setMood('joy', 1.2); cry('joy'); gogo.lookAt(camera.position); await wait(tok, 0.4);
+        }
+        PRE.showing = false; PRE.hand = true;      // F3 내밀기: 차려 놓은 방울이 아이 앞으로 흘러온다
+      });
+    },
+    ready: () => PRE.done,
+    /** F3 빛 고리: 떠 있는 사과 방울(터졌으면 가장 낮게 뜬 방울, 그것도 없으면 실험대의 물건). 고리가 방울을 따라다닌다. */
+    ring() { const q = ringAt(); return q.b ? vRing.set(q.b.x, q.b.y, q.b.z) : q.t ? centerOf(q.t, vRing) : null; },
+    r() { const q = ringAt(); return q.b ? q.b.R + 0.1 : q.t ? big(q.t) + 0.14 : 0.4; },
+  };
+
   // ───────────────────────── 자동 확인(진짜 입력과 같은 함수를 부른다) ─────────────────────────
-  const press = (x, y) => { P.down = true; P.x = x; P.y = y; C.ask.touch(); }, lift = () => { P.down = false; onUp(); P.mode = null; };
+  const press = (x, y) => { endPre(); P.down = true; P.x = x; P.y = y; C.ask.touch(); }, lift = () => { P.down = false; onUp(); P.mode = null; };
   /** 방울 a 를 손으로 끌어 b 쪽으로 가져간다(b 가 방울 안에 없으면 그 위로). speed = 손이 가는 빠르기 · settle = 닿으면 잠깐 멈췄다 놓는다 */
   async function dragTo(ta, tb, speed, tick, settle) {
-    let ba = of.get(ta); if (!ba || !tb) return; for (let i = 0; i < 150 && ba.mode === 'wrap'; i++) await tick(); if (!bubbles.includes(ba)) return;
+    endPre(); let ba = of.get(ta); if (!ba || !tb) return; for (let i = 0; i < 150 && ba.mode === 'wrap'; i++) await tick(); if (!bubbles.includes(ba)) return;
     const c = stage.screenOf(v3.set(ba.x, ba.y, ba.z)); press(c.x, c.y); H.x0 = c.x; H.y0 = c.y; grab(ba, c.x, c.y); H.ox = H.oy = 0; H.moved = 99; let hx = ba.x, hy = ba.y; const was = of.get(tb);
     for (let i = 0; i < 480; i++) {
       ba = of.get(ta); const bb = of.get(tb); if (!ba || ba === bb || (was && !bb)) break;      // 합쳐졌거나 터졌다
@@ -522,7 +593,7 @@ export async function create(C) {
   }
   const auto = {
     wrap: async (a, b, tick) => {
-      const t = by(a); if (!t || of.has(t)) return; C.ask.touch();
+      endPre(); const t = by(a); if (!t || of.has(t)) return; C.ask.touch();      // 차려 놓은 장면에서 이미 떠 있으면 그대로 둔다
       if (b === 'near') { C.tapBench(t.x + 0.72, t.z + 0.4); for (let i = 0; i < 600 && (brain.busy || s.moving); i++) await tick(); }      // 고고를 그 곁에 세운 뒤에
       const c = stage.screenOf(centerOf(t, v3)); press(c.x, c.y); H.x0 = c.x; H.y0 = c.y; H.moved = 0; pressThing(t); for (let i = 0; i < 5; i++) await tick(); lift();
       for (let i = 0; i < 200 && of.has(t) && of.get(t).mode === 'wrap'; i++) await tick();
@@ -532,18 +603,19 @@ export async function create(C) {
       for (let i = 1; i <= 40; i++) { P.x = x0 + (x1 - x0) * i / 40; P.y = y0 + (y1 - y0) * i / 40; onMove({ clientX: P.x, clientY: P.y }); await tick(); }
       for (let i = 0; i < 30; i++) await tick(); lift(); for (let i = 0; i < 30; i++) await tick();
     },
-    pop: a => { const b = of.get(by(a)); if (b && b.mode === 'float') { C.ask.touch(); tapPop(b); } },
+    pop: a => { endPre(); const b = of.get(by(a)); if (b && b.mode === 'float') { C.ask.touch(); tapPop(b); } },
     fling: (a, b, tick) => dragTo(by(a), by(b), T.AUTO_FLING, tick, false),
     push: (a, b, tick) => dragTo(by(a), by(b), T.AUTO_PUSH, tick, true),
-    window: () => { C.ask.touch(); toggleWindow(); },
+    window: () => { endPre(); C.ask.touch(); toggleWindow(); },
     lamp: a => { const L = lamps[+a || 0]; L.av += 2.8; snd.creak(); },
     blow: () => { B.idle = D.IDLE_BLOW + 1; },
   };
 
   return {
-    id: 'float', title: ME.title, T: { ...D, ...T }, asks: ME.asks, place: { chair: [-2.55, -0.45], apple: [-1.2, -0.35], cup: [1.15, -0.35], ball: [2.45, -0.15], gogo: T.HOME },
+    id: 'float', title: ME.title, T: { ...D, ...T }, asks: ME.asks, place,
     step: stepAll, bg, onDown, onMove, onUp, leave,
-    enter() { F.here = true; B.idle = 0; G.lastFall = -99; },
+    first,
+    enter() { F.here = true; B.idle = 0; G.lastFall = -99; if (!C.nofirst) setup(); },
     /** 조르면 안 되는 때: 방울에 떠 있는 중(등에 매달려 있을 때는 조를 수 있다 — "Gogo, down!") · 떨어지는 중 · 어지러운 중 · 컵에 갇힌 중 · 방울병이 씌우는 중. */
     busy: () => (!free() && !(of.has(GOGO) && of.get(GOGO).hang && G.hung)) || !!H.w || !!H.b,
     /** 몸으로 흉내: Up = 위를 올려다보며 두 팔을 뻗어 폴짝 · Down = 몸을 숙여 바닥을 내려다본다. */

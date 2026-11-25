@@ -1,5 +1,7 @@
 /* 마법 연구소 · 자리 ④ 얼음과 불 (Hot / Cold) — 연구소 설계 v1 · 9장(L1-3-4 · 묶음 3-3), 주인공은 몬스터 고고.
  * 아침. 실험대 바닥이 넓게 내려다보인다(미끄럼이 이 자리의 무대). 왼쪽 걸이에 눈구름, 오른쪽 걸이에 햇살 등과 작은 난로 — 왼쪽 = Cold · 오른쪽 = Hot(빛도 푸르고 주황이다).
+ * 첫 손길(설계 v1.1 · 0장): 실험대가 반반이다 — 왼쪽 절반은 벌써 빙판, 오른쪽 절반은 햇살 아래 따뜻한 바닥. 물건을 누르면 반대편으로 쭉 미끄러져 가고, 닿은 쪽의 온도가 된다("Cold!" / "Hot!").
+ *   고고가 먼저 해 보이고(first.show), 누를 것에 빛 고리가 뛴다(engine/first.js). 가만히 놓여 있던 것은 미지근한 채로 둔다 — 낱말은 보낸 것이 그쪽에 닿았을 때 난다. 아래의 손 셋은 둘째 층이다.
  * 손이 하는 일 셋:
  *   들고 머물기 — 눈구름 · 햇살 등을 무엇 위에 두면 그것이 서서히 차가워지고 뜨거워진다(큰 것은 천천히, 작은 것은 금방). 문턱을 넘는 순간 "Cold!" / "Hot!".
  *   쏟기 — 물 대접을 길게 누르거나 옆으로 기울이면 실험대에 웅덩이("Water."). 웅덩이를 얼리면 빙판("Ice."), 더 쬐면 김이 되어 사라진다.
@@ -20,7 +22,9 @@ import { LAB } from '../../../data/lab.js?v=1';
 export const T = {
   ...LAB.stations.frost.T,                   // 자료의 수치 그대로(PLACE · HOVER · PAD · RATE · COLD_AT · HOT_AT · REARM · FREEZE_* · BOWL · PUDDLE · *_SLIDE · SLIP_V · BALL · POPCORN · SNOW · STEAM_GONE · IDLE_PLAY)
   // ── 아래는 자료에 없어 여기 둔 것(끝 보고에 적었다)
-  GOGO_HOME: [-0.7, 0.62],                              // 고고가 서는 자리 — 자료의 PLACE.gogo [0.1, 0.6] 은 대접 바로 앞이라 대접이 고고에게 가려 눌리지 않는다. 여기서만 옆으로 비켜 세웠다(끝 보고에 적음 · 자료를 고치면 이 줄을 지운다)
+  HALF: { X: 0.12, EDGE: 3.62, Z: 1.24 }, FLOW: 2.0, FLOW_TO: 0.85, FLOW_GOGO: 0.8,   // 반반(자료 halves — x < 0 차가운 쪽 · x > 0 뜨거운 쪽): 경계에서 이만큼 안쪽부터 · 바닥 겉의 끝 · 보낸 것의 온도가 그쪽으로 흘러가는 빠르기(÷ 크기)와 닿는 값 · 고고는 여기까지만(꽁 얼지 않는다)
+  SEND_V: 4.6, RINK_GRIP: 1.2, RINK_BOOST: 1.5, OTHER_GAP: 0.6,   // 누르면 반대편으로 미끄러져 가는 빠르기 · 처음부터 깔린 빙판이 물건을 붙잡는 힘(웅덩이 빙판은 0) · 그 위에서 고고의 걸음이 밀리는 정도 · 방금 들은 낱말이라도 다른 물건이 내면 이만큼만 지나도 말한다(첫 누르기가 조용하지 않게)
+  GOGO_HOME: [-0.78, 0.2],                              // 고고가 서는 자리 — 자료의 PLACE.gogo [0.1, 0.6] 은 대접 바로 앞이라 대접이 고고에게 가려 눌리지 않는다. 여기서만 옆으로(사과 곁 — 해 보이기가 바로 시작되게) 비켜 세웠다(끝 보고에 적음 · 자료를 고치면 이 줄을 지운다)
   HANG_Z: 0, HOOK: [3.55, -1.1], STOVE: [3.2, -0.86],   // 도구가 걸려 있는 깊이(PLACE.cloud · lamp 는 [x, 높이]로 읽었다) · 걸이 기둥 · 난로 자리
   HOLD_Y: 1.75, FOLLOW: 16, FLY: 6, TOOL_BACK: 0.35,         // 든 도구가 떠 있는 높이 · 손을 따라오는 빠르기 · 혼자 날아갈 때 빠르기 · 놓은 뒤 걸이로 돌아가기까지(초)
   GRAB_PX: 78, TAP_SEC: 0.3, TAP_PX: 14, DWELL: 0.12,   // 도구를 집었다고 보는 거리 · 이보다 짧고 덜 움직였으면 「누르기」 · 이만큼 머물러야 닿기 시작한다(지나가기만 할 때는 아무 일 없게)
@@ -51,7 +55,7 @@ export async function create(C) {
   gl.scene.traverse(o => { if (o.isMesh) part[o.name] = o; }); for (const o of Object.values(part)) { o.castShadow = true; o.receiveShadow = true; o.removeFromParent(); }
   const ownSkin = !C.tempSkin, skin = createTempSkin(C), puffs = skin.puffs;      // 온도 겉: 껍데기가 이미 만들었으면 그것을 쓰고, 아니면 여기서 만들어 step 에서 임시로 돌린다
   const v3 = new THREE.Vector3(), v3b = new THREE.Vector3(), vWord = new THREE.Vector3(), TH = Object.values(things), chair = things.chair, cup = things.cup, ball = things.ball;
-  const L = { clock: 0, here: false, vis: 0, popSaid: false, bCold: false, bHot: false, sitTok: null, dipTok: null, catchTok: null, snowTok: null, idleN: 0 };
+  const L = { clock: 0, here: false, vis: 0, lastBy: {}, showTok: null, popSaid: false, bCold: false, bHot: false, sitTok: null, dipTok: null, catchTok: null, snowTok: null, idleN: 0 };
   const G = { mode: 'free', t: 0, under: null, fled: null, freezeT: 0, hotT: 0, learned: false, skating: false, vx: 0, vz: 0, thud: false, dur: 1.4, px: 0, pz: 0, tick: 0 };   // 고고의 사정
 
   // ── 소리(임시 · 합성): 쩍 얼음 · 치익 김 · 사락사락 눈 · 미끄덩 · 팡 옥수수 · 딱 언 공 · 뚝뚝 녹는 물
@@ -67,7 +71,7 @@ export async function create(C) {
   // ───────────────────────── 가구(실험대에서 솟고 걸이가 올라온다) ─────────────────────────
   const furn = [], rise = (obj, x, z, drop) => { obj.position.set(x, -drop, z); obj.visible = false; scene.add(obj); furn.push({ obj, drop }); return obj; };
   rise(part.hookL, -T.HOOK[0], T.HOOK[1], 2.7); rise(part.hookR, T.HOOK[0], T.HOOK[1], 2.7);
-  const stove = rise(new THREE.Group().add(part.stove, part.stoveGlow), T.STOVE[0], T.STOVE[1], 1.2); part.stoveGlow.material = new THREE.MeshBasicMaterial({ color: '#ffb347', toneMapped: false }); part.stoveGlow.castShadow = false;
+  const stove = rise(new THREE.Group().add(part.stove, part.stoveGlow), T.STOVE[0], T.STOVE[1], 1.2); part.stoveGlow.material = new THREE.MeshBasicMaterial({ color: '#ffb347', toneMapped: false }); part.stoveGlow.castShadow = false; part.stove.material = part.stove.material.clone(); part.stove.material.color.set('#6f6a80');      // 주황 빛에 씻겨 항아리처럼 보이지 않게 쇠빛을 눌러 둔다
   rise(part.hatch, T.PLACE.bowl[0], T.PLACE.bowl[1], 0.03); part.hatch.castShadow = false;
   // 푸른 눈빛(왼쪽)과 난로 빛(오른쪽) — 낱말의 뜻이 화면의 자리와 색으로도 읽힌다
   const lightL = new THREE.PointLight('#6fb6ff', 0, 9, 1.5), lightR = new THREE.PointLight('#ff9438', 0, 9, 1.5); lightL.position.set(-2.9, 2.1, 1.7); lightR.position.set(2.9, 1.9, 1.7); scene.add(lightL, lightR);
@@ -89,6 +93,12 @@ export async function create(C) {
     for (let i = 0; i < 22; i++) { x.lineWidth = 1 + Math.random() * 2.2; const a = Math.random() * 7, px = Math.random() * 256, py = Math.random() * 256, l = 14 + Math.random() * 40; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke(); }
     const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; return map;
   })();
+  // ── 반반 바닥(첫 손길): 왼쪽 절반은 처음부터 빙판, 오른쪽 절반은 햇살에 데워진 나무 — 경계는 들쭉날쭉한 얼음 끝으로 한눈에 보인다
+  const halfShape = sgn => { const sh = new THREE.Shape(), E = T.HALF.EDGE, Z = T.HALF.Z, n = 22; sh.moveTo(sgn * E, -Z); sh.lineTo(sgn * E, Z); for (let i = 0; i <= n; i++) { const z = Z - 2 * Z * i / n; sh.lineTo(sgn * (0.07 + 0.06 * Math.sin(z * 5.3) + 0.04 * Math.sin(z * 11 + 1.3)), z); } return new THREE.ShapeGeometry(sh).rotateX(Math.PI / 2); };
+  const rinkMap = new THREE.CanvasTexture(iceMap.image); rinkMap.colorSpace = THREE.SRGBColorSpace; rinkMap.wrapS = rinkMap.wrapT = THREE.RepeatWrapping; rinkMap.repeat.set(0.42, 0.42);
+  const rink = new THREE.Mesh(halfShape(-1), new THREE.MeshStandardMaterial({ map: rinkMap, transparent: true, opacity: 0, roughness: 0.2, emissive: '#8fd0ff', emissiveIntensity: 0.1, depthWrite: false, side: THREE.DoubleSide }));
+  const warm = new THREE.Mesh(halfShape(1), new THREE.MeshBasicMaterial({ color: '#ff9a3c', transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+  rink.position.y = 0.004; warm.position.y = 0.004; rink.receiveShadow = true; rink.visible = warm.visible = false; scene.add(rink, warm);
   const blob = seed => { const g = new THREE.CircleGeometry(1, 44), p = g.attributes.position; for (let i = 1; i < p.count; i++) { const a = Math.atan2(p.getY(i), p.getX(i)), k = 1 + 0.07 * Math.sin(a * 3 + seed) + 0.05 * Math.sin(a * 5 + seed * 2.3) + 0.03 * Math.sin(a * 8 + seed * 4.1); p.setXY(i, p.getX(i) * k, p.getY(i) * k); } return g.rotateX(-Math.PI / 2); };
   const puddles = Array.from({ length: T.PUDDLE.max }, (_, i) => {
     const geo = blob(i * 1.7 + 0.4), water = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: COL.water, transparent: true, opacity: 0.6, roughness: 0.05, envMapIntensity: 1.8, depthWrite: false })), ice = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: iceMap, transparent: true, opacity: 0, roughness: 0.22, emissive: '#8fd0ff', emissiveIntensity: 0.08, depthWrite: false }));
@@ -123,7 +133,7 @@ export async function create(C) {
   CLOUD.other = LAMP; LAMP.other = CLOUD;
 
   // ───────────────────────── 대상 ─────────────────────────
-  for (const t of [...TH, GOGO]) Object.assign(t, { fsx: 0, fsz: 0, fspin: 0, fspinV: 0, fIce: false, fShoved: false, fOver: 0, fCold: false, fHot: false, fVy: 0 });
+  for (const t of [...TH, GOGO]) Object.assign(t, { fsx: 0, fsz: 0, fspin: 0, fspinV: 0, fIce: false, fShoved: false, fOver: 0, fCold: false, fHot: false, fVy: 0, fSend: null, fSent: false });
   const D = { t: null, ph: '', k: 0, x0: 0, z0: 0 };                                     // 대접에 담그는 중인 작은 물건
   const usable = t => (t.state === 'home' || t.state === 'up' || t.state === 'down') && D.t !== t;
   const headTop = out => out.set(s.pos.x, s.y + 1.1 * s.size, s.pos.z);
@@ -131,7 +141,8 @@ export async function create(C) {
   const topV = (t, out) => out.set(t.x, topY(t) + (t.kind ? 0.25 : 0), t.z);
   const valid = t => !!t && (t.kind === 'puddle' ? t.on && !t.gone : t.kind === 'snow' ? snow.state !== 'none' : t.kind === 'lump' ? lump.on : t.kind ? true : t === GOGO || usable(t));
   const hoverOf = (t, out) => t.kind === 'puddle' ? out.set(t.x - 0.55, 1.25, t.z + 0.35) : out.set(t.x, clamp(topY(t) + T.HOVER, 1.3, 3.0), t.z);
-  const onIce = (x, z) => puddles.some(p => p.on && !p.gone && p.iceK > 0.6 && Math.hypot(p.x - x, p.z - z) < p.r * p.k * 0.95);
+  const onPuddleIce = (x, z) => puddles.some(p => p.on && !p.gone && p.iceK > 0.6 && Math.hypot(p.x - x, p.z - z) < p.r * p.k * 0.95), onRink = (x, z) => L.vis > 0.6 && x < -0.03 && x > -T.HALF.EDGE;
+  const onIce = (x, z) => onRink(x, z) || onPuddleIce(x, z);
   const inPuddle = (x, z) => puddles.find(p => p.on && !p.gone && p.k > 0.5 && Math.hypot(p.x - x, p.z - z) < p.r * p.k * 0.9);
   const applied = t => tools.some(w => w.on === t), gogoFree = () => G.mode === 'free' && !G.under && !B.hop;
   /** 그 자리(x, z) 아래에 있는 것: 가장 가까운 것 하나(고고 · 물건 · 대접 · 접시 · 얼음덩이 · 눈) → 없으면 웅덩이 → 없으면 빈 자리. */
@@ -146,8 +157,9 @@ export async function create(C) {
   // ───────────────────────── 문턱을 넘는 순간 ─────────────────────────
   function crossing(t, top) {
     const mine = t === GOGO, o = { by: t.name, pitch: mine ? clamp(1.25 - (s.size - 1) * 0.9, 0.3, 2) : undefined };
-    if (!t.fCold && t.temp <= T.COLD_AT) { t.fCold = true; voice.word(W_COLD.text + '!', top, { ...o, cls: W_COLD.cls }); crack(); frostBurst(top(), 14, 0.3); onCross(t, -1); } else if (t.fCold && t.temp > T.COLD_AT + T.REARM) t.fCold = false;
-    if (!t.fHot && t.temp >= T.HOT_AT) { t.fHot = true; voice.word(W_HOT.text + '!', top, { ...o, cls: W_HOT.cls }); sfx.spark(false); steamS(0.06); fx.spark(top(), '#ffb060', 14, 0.3, 1.5); onCross(t, 1); } else if (t.fHot && t.temp < T.HOT_AT - T.REARM) t.fHot = false;
+    const gapFor = w => { const g = L.lastBy[w] && L.lastBy[w] !== t.name ? T.OTHER_GAP : undefined; L.lastBy[w] = t.name; return g; };      // 고고가 해 보인 직후 아이가 다른 것으로 같은 낱말을 내면 곧바로 말한다
+    if (!t.fCold && t.temp <= T.COLD_AT) { t.fCold = true; voice.word(W_COLD.text + '!', top, { ...o, cls: W_COLD.cls, gap: gapFor('cold') }); crack(); frostBurst(top(), 14, 0.3); if (first.t === t) first.done = true; onCross(t, -1); } else if (t.fCold && t.temp > T.COLD_AT + T.REARM) t.fCold = false;
+    if (!t.fHot && t.temp >= T.HOT_AT) { t.fHot = true; voice.word(W_HOT.text + '!', top, { ...o, cls: W_HOT.cls, gap: gapFor('hot') }); if (first.t === t) first.done = true; sfx.spark(false); steamS(0.06); fx.spark(top(), '#ffb060', 14, 0.3, 1.5); onCross(t, 1); } else if (t.fHot && t.temp < T.HOT_AT - T.REARM) t.fHot = false;
   }
   function onCross(t, dir) {
     if (t === GOGO) { say(dir < 0 ? 'brr' : 'hot'); return; }
@@ -419,11 +431,11 @@ export async function create(C) {
   }
   const armed = () => tools.find(w => w.armed);
   function onDown(e) {
-    const x = e.clientX, y = e.clientY; H.t0 = L.clock; H.x0 = x; H.y0 = y; H.drag = false; H.spilled = false; H.tool = H.thing = null; B.idle = 0;
+    takeover(); const x = e.clientX, y = e.clientY; H.t0 = L.clock; H.x0 = x; H.y0 = y; H.drag = false; H.spilled = false; H.tool = H.thing = null; B.idle = 0;
     const w = toolAt(x, y); if (w) { H.tool = w; H.was = w.state; w.state = 'held'; w.aim = null; P.mode = 'tool'; sfx.grab(); w.kv += 4; return; }      // 도구를 집는다
     const t = pick(x, y), a = armed(); if (!t) return;
     if (a) { park(a, t); a.armT = T.ARM; if (!t.kind) name(t); return; }                                                                                  // 쉬운 길: 고른 도구가 그 위에 가서 머문다
-    if (t === GOGO) { if (G.mode === 'statue') { name(GOGO); blk.jv += 8; G.t -= 0.4; sfx.clink(); } else C.touch(GOGO); return; }
+    if (t === GOGO) { if (G.mode === 'statue') { name(GOGO); blk.jv += 8; G.t -= 0.4; sfx.clink(); } else { name(GOGO); sfx.tick(); C.ask.act(); goSide(); } return; }
     if (!t.kind) { name(t); sfx.tick(); t.tvx += rand(-1, 1) * 3; t.tvz += 3; H.thing = t; P.mode = 'push'; return; }
     if (t === lump) { waterName(lump, true); H.thing = lump; P.mode = 'push'; return; }
     if (t === bowl) { waterName(bowl, bowl.isIce); bowl.wv += 5; P.mode = 'bowl'; return; }
@@ -443,11 +455,27 @@ export async function create(C) {
     else if (P.mode === 'bowl' && tap && bowl.isIce) takeOut();
     H.tool = H.thing = null;
   }
-  /** 물건을 톡 누르면: 공은 튀어 올랐다 떨어지고(언 공은 딱 · 데운 공은 높이), 의자에는 고고가 앉으러 온다. */
-  function tapThing(t) {
-    if (t === ball) toss(ball); else if (t === chair) { if (gogoFree() && !(L.sitRun && B.tok === L.sitRun)) run(sitTask); } else if (t !== lump && t.y === 0 && usable(t)) { t.vy = 1.6; t.y = 0.001; }
-  }
+  /** 물건을 톡 누르면 지금 있는 쪽의 반대편으로 쭉 미끄러져 간다(첫 손길 — 누르기만으로 Hot · Cold 가 다 나온다). 의자가 달아오르거나 얼면 고고가 스스로 앉으러 온다. */
+  function tapThing(t) { if (t !== lump && send(t)) C.ask.act(); }
   function toss(t) { if (!usable(t) || t.y > 0.05) return; C.ask.act(); t.vy = T.TOSS; t.y = 0.001; t.fTossed = true; sfx.pop(); if (gogoFree() && !B.tok) gogo.lookAt(v3.set(t.x, 1, t.z)); }
+  /** 그쪽 절반의 빈 자리(가장 가까운 것). */
+  function freeSpot(to, t, same) {
+    const wx = to * clamp(Math.abs(t.x) + (same ? 0.75 : 0), 1.15, 2.5); let best = null, bd = 1e9;
+    for (const ax of [1.15, 1.85, 2.5]) for (const z of [-0.42, 0.32]) { const x = to * ax; if (Math.hypot(x - t.x, z - t.z) < 0.5) continue; let ok = Math.hypot(x - s.pos.x, z - s.pos.z) > 0.6 && Math.hypot(x - corn.x, z - corn.z) > 0.7 && Math.hypot(x - T.STOVE[0], z - T.STOVE[1]) > 0.75 && !(snow.state !== 'none' && Math.hypot(x - snow.x, z - snow.z) < 0.8) && !(lump.on && Math.hypot(x - lump.x, z - lump.z) < 0.8);
+      for (const q of TH) if (q !== t && usable(q) && Math.hypot(x - q.x, z - q.z) < q.r * q.size + t.r * t.size + 0.12) ok = false; const d = Math.hypot(x - wx, z - t.z) + (ok ? 0 : 9); if (d < bd) { bd = d; best = [x, z]; } }
+    return best;
+  }
+  /** 첫 손길: 물건을 반대편(to = -1 왼쪽 · 1 오른쪽 · 0 반대편)으로 쭉 미끄러뜨린다. 닿은 쪽의 온도가 된다 — 왼쪽이면 얼고 "Cold!", 오른쪽이면 데워져 "Hot!". */
+  function send(t, to = 0) {
+    if (!t || !usable(t) || t.y > 0.3) return false; const same = to && Math.sign(t.x) === to, side = to || (t.x < 0 ? 1 : -1), spot = freeSpot(side, t, same); if (!spot) return false;
+    t.fSend = { x: spot[0], z: spot[1], t: 0 }; t.fSent = true; t.fShoved = true; t.fIce = t.x < 0 || side < 0; B.idle = 0; sfx.whoosh(); t.tvz += 4;
+    if (t === ball) { t.vy = T.TOSS * 0.8; t.y = 0.001; t.fTossed = true; }                                    // 공은 통 튀며 건너간다(언 공은 딱 · 데운 공은 높이)
+    return true;
+  }
+  /** 고고도 반대편으로 지쳐 간다 — 왼쪽에서는 떨고 오른쪽에서는 부채질(꽁 얼기까지는 가지 않는다). */
+  function goSide() { if (!gogoFree()) return; const to = s.pos.x < 0 ? 1 : -1; GOGO.fSent = true; GOGO.fSide = to; say('joy'); run(async tok => { await landed(tok); await walk(tok, ...clear(to * 1.55, 0.62)); await face(tok, 0); }); }
+  /** 손이 닿았다: 해 보이던 것 · 차려 놓은 장면은 그 자리에서 아이의 것으로 넘어간다. */
+  function takeover() { if (L.showTok && B.tok === L.showTok) { brain.stop(); gogo.lookAt(camera.position); } L.showTok = null; }
   /** 그 쪽으로 민다(빠르기는 손이 정한다 — 자동 확인은 SHOVE_V). */
   function shove(t, dx, dz, v = T.SHOVE_V) { const n = Math.hypot(dx, dz) || 1; t.fsx = dx / n * v; t.fsz = dz / n * v; t.fShoved = true; t.fIce = false; C.ask.act(); sfx.whoosh(); B.idle = 0; }
 
@@ -456,16 +484,21 @@ export async function create(C) {
   function slide(t, dt, pushing) {
     const rr = t.kind ? t.r : t.r * t.size * 0.85, air = t.y > 0.03;
     if (pushing && stage.worldOn(C.benchPlane, P.x, P.y, v3)) { let wx = (v3.x - t.x) * T.PUSH, wz = (v3.z - t.z) * T.PUSH; const n = Math.hypot(wx, wz); if (n > T.PUSH_MAX) { wx *= T.PUSH_MAX / n; wz *= T.PUSH_MAX / n; } const k = Math.min(1, 12 * dt); t.fsx += (wx - t.fsx) * k; t.fsz += (wz - t.fsz) * k; }
-    let sp = Math.hypot(t.fsx, t.fsz); if (sp < 0.02) { t.fsx = t.fsz = 0; if (!pushing) { t.fIce = t.fShoved = false; } return; }
+    if (t.fSend) {                                                                           // 반대편의 빈 자리로 쭉(끝에서 스르르 선다)
+      const F = t.fSend, dx = F.x - t.x, dz = F.z - t.z, d = Math.hypot(dx, dz) || 0.001, v = Math.min(T.SEND_V, 0.9 + d * 4.2), k = Math.min(1, 10 * dt); F.t += dt;
+      if (t.fOver <= 0 || air) { t.fsx += (dx / d * v - t.fsx) * k; t.fsz += (dz / d * v - t.fsz) * k; }
+      if (d < 0.09 || F.t > 3.2) { t.fSend = null; t.fsx *= 0.3; t.fsz *= 0.3; t.fspinV += (Math.random() < 0.5 ? -1 : 1) * 3; }
+    }
+    let sp = Math.hypot(t.fsx, t.fsz); if (sp < 0.02 && !t.fSend) { t.fsx = t.fsz = 0; if (!pushing) { t.fIce = t.fShoved = false; } return; }
     const ice = onIce(t.x, t.z) || t.kind === 'lump'; if (ice && sp > 0.3 && !air) t.fIce = true;
-    if (!pushing && !air) { const f = (ice ? T.ICE_SLIDE : T.BENCH_SLIDE) ** dt, g = ice ? 0 : Math.min(sp, T.GRIP * (t.temp <= T.COLD_AT ? T.COLD_GRIP : 1) * dt), k = f * (sp - g) / sp; t.fsx *= k; t.fsz *= k; }
+    if (!pushing && !air && !t.fSend && sp > 0) { const hard = t.kind === 'lump' || onPuddleIce(t.x, t.z), f = (ice ? T.ICE_SLIDE : T.BENCH_SLIDE) ** dt, g = Math.min(sp, (hard ? 0 : ice ? T.RINK_GRIP : T.GRIP * (t.temp <= T.COLD_AT ? T.COLD_GRIP : 1)) * dt), k = f * (sp - g) / sp; t.fsx *= k; t.fsz *= k; }
     t.x += t.fsx * dt; t.z += t.fsz * dt; if (t.ball) t.roll -= t.fsx * dt / Math.max(t.r * t.size, 0.05);
     if (Math.abs(t.x) > T.EDGE.X - rr) { t.x = Math.sign(t.x) * (T.EDGE.X - rr); if (Math.abs(t.fsx) > 1) sfx.tick(); t.fsx *= -T.WALL; } if (t.z < T.EDGE.Z0 + rr * 0.5) { t.z = T.EDGE.Z0 + rr * 0.5; t.fsz *= -T.WALL; } else if (t.z > T.EDGE.Z1 - rr * 0.5) { t.z = T.EDGE.Z1 - rr * 0.5; t.fsz *= -T.WALL; }
     // 대접: 작은 것은 퐁당 빠지고, 빠르게 온 것은 폴짝 넘고, 느린 것은 톡 튕긴다
     t.fOver -= dt; const bx = t.x - bowl.x, bz = t.z - bowl.z, bd = Math.hypot(bx, bz) || 0.001, need = rr + bowl.r * 0.92;
     if (bd < need && t.fOver <= 0 && t.y < 0.25 && L.vis > 0.9) {
       const nx = bx / bd, nz = bz / bd, vn = t.fsx * nx + t.fsz * nz;
-      if (!t.kind && t.to < DUNK_SMALL && sp > 0.4 && dunk(t)) return;
+      if (!t.kind && !t.fSend && t.to < DUNK_SMALL && sp > 0.4 && dunk(t)) return;
       if (vn < 0 && sp > T.BOWL_HOP_V) { const v = clamp(sp, T.BOWL_HOP[0], T.BOWL_HOP[1]); t.fsx *= v / sp; t.fsz *= v / sp; if (t.kind) t.fVy = T.BOWL_HOP[2]; else { t.vy = T.BOWL_HOP[2]; t.y = 0.002; } t.fOver = 0.75; sfx.clink(); bowl.wv += 5; }
       else { t.x = bowl.x + nx * need; t.z = bowl.z + nz * need; if (vn < 0) { t.fsx -= 1.4 * vn * nx; t.fsz -= 1.4 * vn * nz; if (vn < -0.6) { sfx.clink(); bowl.wv += 4; } } }
     }
@@ -477,8 +510,10 @@ export async function create(C) {
     const list = TH.filter(usable); if (lump.on && lump.hopT < 0) list.push(lump);
     for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
       const a = list[i], b = list[j], ra = a.kind ? a.r : a.r * a.size * 0.85, rb = b.kind ? b.r : b.r * b.size * 0.85, dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz) || 0.001; if (d >= ra + rb || Math.abs(a.y - b.y) > 0.4) continue;
+      if (a.fSend || b.fSend) { const m = a.fSend ? a : b, o = m === a ? b : a; if (m.fOver <= 0 && m.y < 0.05 && !m.kind) { m.vy = T.BOWL_HOP[2]; m.y = 0.002; m.fOver = 0.7; sfx.pop(); if (!o.kind) o.tvx += 3; } continue; }      // 건너가는 것은 길을 막은 것을 폴짝 넘는다(남을 밀어내지 않는다)
       const nx = dx / d, nz = dz / d, vn = (a.fsx - b.fsx) * nx + (a.fsz - b.fsz) * nz, push = (ra + rb - d) / 2; a.x -= nx * push; a.z -= nz * push; b.x += nx * push; b.z += nz * push;
-      if (vn <= 0) continue; const hard = vn > T.HIT_V, give = hard ? T.HIT_GIVE : 0.5, keep = hard ? T.HIT_KEEP : 0.5;
+      if (vn <= 0) continue;
+      const hard = vn > T.HIT_V, give = hard ? T.HIT_GIVE : 0.5, keep = hard ? T.HIT_KEEP : 0.5;
       a.fsx -= nx * vn * (1 - keep) + 0; a.fsz -= nz * vn * (1 - keep); b.fsx += nx * vn * give; b.fsz += nz * vn * give;
       if (hard) { const sgn = (nx * a.fsz - nz * a.fsx) >= 0 ? 1 : -1; if (!a.kind) { a.fspinV += T.SPIN * sgn; a.tvx += 4; } if (!b.kind) { b.fspinV -= T.SPIN * sgn; b.tvz += 4; } if (a === cup || b === cup) sfx.clink(); else sfx.thud(0.5); stage.shake(T.SHAKE * 0.3);
         if ((a.fIce || b.fIce) && (a.fShoved || b.fShoved)) { seen.add('curling'); if (gogoFree() && !B.tok) { gogo.lookAt(v3.set(b.x, 0.4, b.z)); gogo.act('surprise', { mood: 'wow' }); say('wow'); } } b.fIce = b.fIce || a.fIce; b.fShoved = true; }
@@ -498,6 +533,7 @@ export async function create(C) {
     if (seated) { s.pos.x = chair.x; s.pos.z = chair.z + 0.03; s.y = T.SEAT * chair.size + chair.y; s.target = null; if (!usable(chair)) L.sitTok = null; }
     else if (dipped) { s.pos.x = bowl.x; s.pos.z = bowl.z; s.y = 0.06; s.target = null; }
     else { L.sitTok = L.dipTok = null; if (!B.hop && B.where === 'bench' && s.y > 0) s.y = Math.max(0, s.y - 5 * dt); }
+    if (GOGO.fSent && !G.under && Math.abs(s.pos.x) > 0.9 && (s.pos.x < 0) === (GOGO.fSide < 0)) { const sd = s.pos.x < 0 ? -1 : 1, was = GOGO.temp; GOGO.temp = sd < 0 ? Math.max(Math.min(was, -T.FLOW_GOGO), was - T.FLOW * 0.7 * dt) : Math.min(Math.max(was, T.FLOW_GOGO), was + T.FLOW * 0.7 * dt); if (GOGO.temp === was) GOGO.fSent = false; }
     if (G.under) { s.busy = true; s.target = null; gogo.lookAt(G.under.pos); }
     else { const w = tools.find(q => q.state === 'held'); if (w && !brain.busy) gogo.lookAt(w.pos); }                                 // 든 도구를 눈으로 따라간다
     if (L.warming && B.tok === L.warming) GOGO.temp = Math.min(0, GOGO.temp + 0.3 * dt); else L.warming = null;
@@ -509,12 +545,13 @@ export async function create(C) {
     if (want) { if (!s.act) gogo.act(want); if (!C.ask.active) gogo.setMood(cold ? 'cold' : 'hot', 0.3); } else if (!brain.busy && s.act && (s.act.name === 'shiver' || s.act.name === 'fan')) s.act = null;
     // 빙판: 발이 밀려 빨라지고, 빠르면 미끄러진다. 한 번 넘어진 뒤에는 양팔을 벌리고 지친다
     if (B.where === 'bench' && !B.hop && s.y === 0) {
-      if (onIce(s.pos.x, s.pos.z) && s.v > 0.05) {
-        const eff = s.v * T.ICE_BOOST; s.pos.x = clamp(s.pos.x + Math.sin(s.heading) * s.v * (T.ICE_BOOST - 1) * dt, -C.BENCH.X, C.BENCH.X); s.pos.z = clamp(s.pos.z + Math.cos(s.heading) * s.v * (T.ICE_BOOST - 1) * dt, C.BENCH.Z0, C.BENCH.Z1);
-        if (!G.learned) { if (eff > T.SLIP_V) { slipStart(eff); return; } } else { if (!s.act) { gogo.act('skate'); seen.add('skate'); } G.skating = true; if (Math.random() < dt * 14) fx.spark(v3.set(s.pos.x, 0.04, s.pos.z), COL.frost, 1, 0.1, 0.3); }
+      const fresh = onPuddleIce(s.pos.x, s.pos.z);                                            // 처음부터 깔린 빙판은 늘 지친다. 막 언 웅덩이에서는 처음 한 번 미끄러진다
+      if ((fresh || onRink(s.pos.x, s.pos.z)) && s.v > 0.05) {
+        const bo = fresh ? T.ICE_BOOST : T.RINK_BOOST, eff = s.v * bo; s.pos.x = clamp(s.pos.x + Math.sin(s.heading) * s.v * (bo - 1) * dt, -C.BENCH.X, C.BENCH.X); s.pos.z = clamp(s.pos.z + Math.cos(s.heading) * s.v * (bo - 1) * dt, C.BENCH.Z0, C.BENCH.Z1);
+        if (fresh && !G.learned) { if (eff > T.SLIP_V) { slipStart(eff); return; } } else { if (!s.act) { gogo.act('skate'); seen.add('skate'); } G.skating = true; if (Math.random() < dt * 14) fx.spark(v3.set(s.pos.x, 0.04, s.pos.z), COL.frost, 1, 0.1, 0.3); }
       } else if (G.skating) { G.skating = false; if (s.act && s.act.name === 'skate') s.act = null; }
       // 부딪힘: 물건 · 대접 · 난로 · 접시 · 눈을 비켜 간다. 빙판 위 물건은 툭 밀려 나간다
-      const out = (ox, oz, need, t) => { const dx = s.pos.x - ox, dz = s.pos.z - oz, d = Math.hypot(dx, dz) || 0.001; if (d >= need) return; if (t && (onIce(t.x, t.z) || t.ball) && s.v > 0.1) { t.fsx -= dx / d * 14 * dt; t.fsz -= dz / d * 14 * dt; } s.pos.x += dx / d * (need - d); s.pos.z = clamp(s.pos.z + dz / d * (need - d), C.BENCH.Z0, C.BENCH.Z1); };
+      const out = (ox, oz, need, t) => { const dx = s.pos.x - ox, dz = s.pos.z - oz, d = Math.hypot(dx, dz) || 0.001; if (d >= need) return; if (t && (onIce(t.x, t.z) || t.ball) && s.v > 0.1) { const kk = onPuddleIce(t.x, t.z) ? 14 : 6; t.fsx -= dx / d * kk * dt; t.fsz -= dz / d * kk * dt; } s.pos.x += dx / d * (need - d); s.pos.z = clamp(s.pos.z + dz / d * (need - d), C.BENCH.Z0, C.BENCH.Z1); };
       if (!seated && !dipped) { for (const t of TH) if (usable(t) && t.y < 0.3) out(t.x, t.z, 0.3 * s.size + t.r * t.size * 0.85, t); if (L.vis > 0.9) out(bowl.x, bowl.z, 0.28 * s.size + bowl.r); for (const o of solids) if (o.on()) out(o.x, o.z, 0.28 * s.size + o.r); if (lump.on) out(lump.x, lump.z, 0.3 * s.size + lump.r * 0.9, lump); }
     }
   }
@@ -535,6 +572,7 @@ export async function create(C) {
           if (k !== T.BALL.rest && gogoFree() && !B.tok) { gogo.lookAt(centerOf(t, v3)); gogo.setMood('wow', 1); say(k === T.BALL.cold ? 'hm' : 'wow'); } }
       }
       t.fspinV += (-(t.fspinV) * 2.2) * dt; t.fspin += t.fspinV * dt; if (Math.abs(t.fspinV) < 0.3) { const near = Math.round(t.fspin / (Math.PI * 2)) * Math.PI * 2; t.fspin += (near - t.fspin) * Math.min(1, 5 * dt); } t.obj.rotation.y = t.fspin;
+      if (t.fSent && !t.lit && Math.abs(t.x) > T.HALF.X && (!t.fSend || (t.x < 0) === (t.fSend.x < 0))) { const sd = t.x < 0 ? -1 : 1, was = t.temp; t.temp = sd < 0 ? Math.max(Math.min(was, -T.FLOW_TO), was - T.FLOW / Math.max(t.size, 0.3) * dt) : Math.min(Math.max(was, T.FLOW_TO), was + T.FLOW / Math.max(t.size, 0.3) * dt); if (t.temp === was && !t.fSend) t.fSent = false; }   // 보낸 것은 닿은 쪽의 온도가 된다(가만히 놓여 있던 것은 미지근한 채로 둔다)
       crossing(t, () => topOf(t, vWord));
     }
     if (lump.on && lump.hopT < 0 && !moving) { slide(lump, dt, P.mode === 'push' && P.down && H.thing === lump && H.drag); if (lump.fVy || lump.y > 0) { lump.fVy -= THING.GRAVITY * dt; lump.y += lump.fVy * dt; if (lump.y <= 0) { lump.y = 0; lump.fVy = 0; } } }
@@ -550,13 +588,20 @@ export async function create(C) {
     for (const f of furn) { f.obj.position.y = -(1 - e) * f.drop; f.obj.visible = show; }
     lightL.intensity = T.LIGHT[0] * e; lightR.intensity = T.LIGHT[1] * e * (1 + 0.1 * Math.sin(c * 13) + 0.06 * Math.sin(c * 7.3)); part.stoveGlow.material.color.setHSL(0.07 + 0.02 * Math.sin(c * 9), 1, 0.55 + 0.1 * Math.sin(c * 13));
     if (show && L.here && Math.random() < dt * 2) puffs.emit(v3.set(T.STOVE[0], 1.05, T.STOVE[1]), '#dcd6e8', 1, 0.03, { v: [0, 0.5, 0], vr: 0.08, size: 0.14, grow: 0.25, a: 0.4, g: -0.1, life: [0.8, 1.3] });
+    // 반반 바닥: 빙판과 따뜻한 나무 — 눈구름 밑에는 눈이 내리고 햇살 쪽에는 아지랑이
+    rink.visible = warm.visible = show; rink.material.opacity = 0.93 * e; warm.material.opacity = (0.27 + 0.03 * Math.sin(c * 2.3)) * e;
+    if (L.here && L.vis >= 1) {
+      if (CLOUD.state === 'rest' && Math.random() < dt * 9) puffs.emit(v3.set(CLOUD.pos.x + rand(-0.3, 0.3), CLOUD.pos.y - 0.2, CLOUD.pos.z + rand(-0.15, 0.15)), COL.snow, 1, 0.05, { v: [rand(0, 0.5), -1.3, rand(-0.2, 0.3)], vr: 0.12, size: 0.07, a: 0.95, life: [0.9, 1.25] });
+      if (Math.random() < dt * 2.5) fx.spark(v3.set(rand(-3.3, -0.3), 0.03, rand(-1, 1.05)), COL.frost, 1, 0.02, 0.25);
+      if (Math.random() < dt * 3) puffs.emit(v3.set(rand(0.5, 3.3), 0.05, rand(-0.9, 1.05)), '#ffdcae', 1, 0.05, { v: [0, 0.45, 0], vr: 0.06, size: 0.16, grow: 0.22, a: 0.3, g: -0.1, life: [0.9, 1.4] });
+    }
     // 도구
     for (const w of tools) {
       if (w.state === 'rest' && L.vis < 1) { w.pos.lerpVectors(w.from, w.rest, e); w.to.copy(w.rest); }
       const bob = w.state === 'rest' ? Math.sin(c * 2 + w.dir) * 0.025 : 0, hopA = w.armed ? Math.abs(Math.sin(c * 5)) * 0.1 : 0; w.obj.visible = show; w.obj.position.set(w.pos.x, w.pos.y + bob + hopA + Math.abs(w.kick) * 0.2, w.pos.z); w.obj.rotation.z = w.tilt + w.kick * 0.25;
       const act = w.on && w.dwell >= T.DWELL ? 1 : 0, pu = w.puff * (w.armed ? 1.12 : 1) * (0.3 + 0.7 * e);
       if (w.dir < 0) w.obj.scale.set(pu * (1 + 0.04 * Math.sin(c * 3)), pu * (1 - 0.04 * Math.sin(c * 3) - act * 0.08 * Math.abs(Math.sin(c * 14))), pu);
-      else { w.obj.scale.setScalar(pu); part.sun.scale.setScalar(1 + 0.05 * Math.sin(c * 6) + act * 0.12); beam.material.opacity += ((act ? 0.13 : w.state !== 'rest' ? 0.06 : 0) - beam.material.opacity) * Math.min(1, 8 * dt); beam.scale.y = Math.max(0.4, w.pos.y - 0.25); }
+      else { w.obj.scale.setScalar(pu); part.sun.scale.setScalar(1 + 0.05 * Math.sin(c * 6) + act * 0.12); beam.material.opacity += ((act ? (w.on === GOGO ? 0.04 : 0.13) : w.state !== 'rest' ? 0.06 : 0.05 * e) - beam.material.opacity) * Math.min(1, 8 * dt); beam.scale.y = Math.max(0.4, w.pos.y - 0.25); }
     }
     // 대접
     const b = bowl; b.wv += (-90 * b.wob - 7 * b.wv) * dt; b.wob += b.wv * dt; if (!(P.mode === 'bowl' && P.down && !H.spilled)) b.lean = Math.max(0, b.lean - dt * 1.6);
@@ -591,24 +636,47 @@ export async function create(C) {
   // 웅덩이를 밟으면 찰박
   gogo.on('step', () => { if (!L.here) return; const p = inPuddle(s.pos.x, s.pos.z); if (p && !p.isIce) { drops(v3.set(s.pos.x, 0.03, s.pos.z), 3, 0.9); hiss(0.05, { g: 0.05, f: 1500 }); } });
 
+  // ───────────────────────── 첫 손길(engine/first.js 가 부른다) ─────────────────────────
+  const vRing = new THREE.Vector3(), first = {
+    t: null, last: null, done: false, ready: () => first.done,
+    /** n 번째 해 보이기: 고고가 물건 하나를 밀어 보낸다. 처음은 곁의 사과를 왼쪽(빙판)으로 → "Cold!", 그 뒤로는 번갈아 — 왼쪽 것을 오른쪽으로("Hot!"), 오른쪽 것을 왼쪽으로("Cold!"). */
+    show(n) {
+      first.done = false; first.t = null; if (!gogoFree() || L.sitTok || L.dipTok || !L.here) { first.done = true; return; }
+      const ringT = first.pick(), pool = [things.apple, chair, cup, ball].filter(q => usable(q) && q.y < 0.05 && !q.fSend); let t = null, to = 0;
+      if (n === 0 && pool.includes(things.apple) && things.apple.x < 0 && things.apple.temp > T.COLD_AT) { t = things.apple; to = -1; }
+      else { const rest = pool.filter(q => q !== ringT && q !== first.last); t = rest.find(q => (q.x < 0) === (n % 2 === 1)) || rest[0] || pool[0]; }
+      if (!t) { first.done = true; return; } first.last = t;
+      run(async tok => {
+        L.showTok = tok; first.t = t; await landed(tok);
+        if (Math.hypot(s.pos.x - t.x, s.pos.z - t.z) > t.r * t.size + 0.8) await approach(tok, t, 0.08); else { s.faceTo = Math.atan2(t.x - s.pos.x, t.z - s.pos.z); await wait(tok, 0.22); }
+        gogo.lookAt(centerOf(t, v3)); gogo.pose('poke', 1); await wait(tok, 0.16); if (!send(t, to)) { first.done = true; gogo.pose('poke', 0); return; } say('hm'); seen.add('firstShow');
+        await until(tok, () => first.done, 3.5); gogo.pose('poke', 0); gogo.setMood('joy', 0.8); await wait(tok, 0.5);
+        const r = first.pick(); if (r) { gogo.lookAt(centerOf(r, v3)); s.faceTo = Math.atan2(r.x - s.pos.x, r.z - s.pos.z); gogo.pose('reach', 1); gogo.setMood('smile', 1.6); say('want'); await wait(tok, 1.3); gogo.pose('reach', 0); }   // 내밀기: 다음 것을(그리고 그것이 갈 쪽을) 가리킨다
+        await face(tok, 0);
+      });
+    },
+    pick: () => [ball, cup, chair, things.apple].find(q => usable(q) && q !== first.t && !q.fSend) || null,
+    ring() { const t = first.pick(); return t ? centerOf(t, vRing) : null; },
+    r() { const t = first.pick(); return t ? Math.max(t.r, t.h * 0.5) * t.size + 0.14 : 0.4; },
+  };
   const by = n => n === 'gogo' ? GOGO : things[n];
   const resolve = a => a === 'bowl' ? bowl : a === 'corn' ? corn : a === 'puddle' ? puddles.filter(p => p.on && !p.gone).sort((p, q) => q.born - p.born)[0] : a === 'spot' ? Object.assign(spot, { x: T.SPOT[0], z: T.SPOT[1] }) : a === 'snow' ? snow : a === 'ice' ? lump : by(a);
   /** 자동 확인: 도구를 그 대상 위에 sec 초 머물게 한다(쉬운 길과 같은 함수). */
-  async function hold(w, a, sec, tick) { const t = resolve(a); if (!valid(t)) return; C.ask.touch(); park(w, t, 99); for (let i = 0; i < 150 && w.on !== t; i++) await tick(); for (let i = 0; i < sec * 60; i++) { if (w.state === 'park') w.parkT = 99; await tick(); } unpark(w); }
+  async function hold(w, a, sec, tick) { takeover(); const t = resolve(a); if (!valid(t)) return; C.ask.touch(); park(w, t, 99); for (let i = 0; i < 150 && w.on !== t; i++) await tick(); for (let i = 0; i < sec * 60; i++) { if (w.state === 'park') w.parkT = 99; await tick(); } unpark(w); }
   function miniBowl() { const g = new THREE.Group(), m = part.bowl.clone(), w = new THREE.Mesh(bowlWater.geometry, new THREE.MeshStandardMaterial({ color: COL.water, roughness: 0.1 })); m.castShadow = m.receiveShadow = false; w.position.y = 0.2; g.add(m, w); g.rotation.x = 0.5; return g; }
 
   return {
-    id: 'frost', title: DATA.title, T, L, G, asks: DATA.asks, place: { ...T.PLACE, gogo: T.GOGO_HOME }, tools, bowl, corn, puddles, snow, lump,
+    id: 'frost', title: DATA.title, T, L, G, first, asks: DATA.asks, place: { ...T.PLACE, gogo: T.GOGO_HOME }, tools, bowl, corn, puddles, snow, lump,
     step, bg, onDown, onMove, onUp,
     /** 들어온다: 가구가 나온다. 지닌 온도로 문턱 깃발을 맞춘다(들어오자마자 "Cold!" 를 외치지 않게). */
-    enter() { L.here = true; L.left = true; B.idle = 0; for (const t of [...TH, GOGO]) { t.fCold = t.temp <= T.COLD_AT; t.fHot = t.temp >= T.HOT_AT; t.fsx = t.fsz = 0; } },
+    enter() { L.here = true; L.left = true; B.idle = 0; L.lastBy = {}; first.t = first.last = null; first.done = false; for (const t of [...TH, GOGO]) { t.fCold = t.temp <= T.COLD_AT; t.fHot = t.temp >= T.HOT_AT; t.fsx = t.fsz = 0; t.fSend = null; t.fSent = false; } },
     /** 떠난다: 도구는 걸이로, 웅덩이 · 빙판 · 눈 · 팝콘 · 얼음덩이는 걷는다. 온도는 물건에 남는다. 언 고고는 깨고 나온 뒤에 걷는다. */
     leave() {
-      L.here = false; L.left = true; P.mode = null; H.tool = H.thing = null; for (const w of tools) { const was = w.on; w.on = null; if (was) stopApply(w, was); w.state = 'rest'; w.aim = null; w.armed = false; w.pos.copy(w.rest); w.to.copy(w.rest); }
+      L.here = false; L.left = true; L.showTok = null; P.mode = null; H.tool = H.thing = null; for (const w of tools) { const was = w.on; w.on = null; if (was) stopApply(w, was); w.state = 'rest'; w.aim = null; w.armed = false; w.pos.copy(w.rest); w.to.copy(w.rest); }
       if (G.mode === 'statue') breakOut(true); G.mode = 'free'; G.under = G.fled = null; G.skating = false; gogo.mixer.timeScale = 1; brain.stop(); loopOff(); L.sitTok = L.dipTok = L.catchTok = L.snowTok = L.warming = null;
       if (!B.hop && B.where === 'bench' && s.y > 0) hop(s.pos.x, clamp(s.pos.z + 0.7, C.BENCH.Z0, C.BENCH.Z1), 0, 'bench', 0.35);
       for (const p of puddles) if (p.on) p.gone = true; for (const p of pieces) if (p.st !== 'off') p.st = 'away'; snow.state = 'none'; lump.on = false; corn.state = 'full'; corn.temp = 0; corn.keep = corn.n = 0;
-      if (D.t) { D.t.vy = 0; D.t = null; } for (const t of TH) { t.fsx = t.fsz = 0; t.fspinV = 0; t.lit = false; } bowl.lean = 0; bowl.fill = 1; bowl.refill = 0;
+      if (D.t) { D.t.vy = 0; D.t = null; } for (const t of [...TH, GOGO]) { t.fsx = t.fsz = 0; t.fspinV = 0; t.lit = false; t.fSend = null; t.fSent = false; } bowl.lean = 0; bowl.fill = 1; bowl.refill = 0;
     },
     /** 조르면 안 되는 때: 얼어 있는 중 · 미끄러지는 중 · 뛰는 중 · 앉거나 대접에 있는 중 · 도구가 고고 위에 있는 중. */
     busy: () => G.mode !== 'free' || !!B.hop || !!G.under || !!L.sitTok || !!L.dipTok || tools.some(w => w.state === 'held'),
@@ -620,11 +688,12 @@ export async function create(C) {
     wiggle(n) { const t = things[n]; if (n === 'bowl') bowl.wv += 9; else if (t) { t.tvx += rand(-1, 1) * 3; t.tvz += (Math.random() < 0.5 ? -1 : 1) * 6; if (t.y === 0) { t.vy = 1.6; t.y = 0.001; } } else if (n === 'gogo' && !brain.busy) gogo.setMood('wow', 0.8); },
     summary: () => ({ frost: { mode: G.mode, learned: G.learned, gtemp: +GOGO.temp.toFixed(2), bowl: bowl.temp.toFixed(2) + (bowl.isIce ? ' ice' : '') + (bowl.tint ? ' ' + bowl.tint : '') + ' f' + bowl.fill.toFixed(1), puddles: puddles.filter(p => p.on).map(p => p.x.toFixed(1) + ',' + p.z.toFixed(1) + ' t' + p.temp.toFixed(2) + (p.isIce ? ' ice' : '') + (p.gone ? ' gone' : '')), corn: corn.state + ' ' + corn.temp.toFixed(2), snow: snow.state + ' ' + snow.k.toFixed(2), lump: lump.on, tools: tools.map(w => w.kind + ':' + w.state + (w.armed ? '*' : '') + (w.on ? '>' + w.on.name : '')), pieces: pieces.filter(p => p.st !== 'off').length } }),
     auto: {
-      spill: a => { C.ask.touch(); spill(a || 'front'); },
+      spill: a => { takeover(); C.ask.touch(); spill(a || 'front'); },
       cold: (a, b, tick) => hold(CLOUD, a, +b || 1, tick), hot: (a, b, tick) => hold(LAMP, a, +b || 1, tick),
-      walk: (a, b) => { C.ask.touch(); if (a === 'gogo') { const p = resolve(b || 'puddle'); if (p && G.mode === 'free') run(tok => crossRink(tok, p)); } else C.tapBench(+a, +b); },
-      shove: (a, b) => { const t = by(a), o = by(b) || resolve(b); if (t && o && usable(t)) shove(t, o.x - t.x, o.z - t.z); },
-      drop: a => toss(by(a)), sit: () => { C.ask.touch(); if (G.mode === 'free' && !(L.sitRun && B.tok === L.sitRun)) run(sitTask); }, dunk: a => { C.ask.touch(); dunk(by(a)); },
+      walk: (a, b) => { takeover(); C.ask.touch(); if (a === 'gogo') { const p = resolve(b || 'puddle'); if (p && G.mode === 'free') run(tok => crossRink(tok, p)); } else C.tapBench(+a, +b); },
+      shove: (a, b) => { takeover(); const t = by(a), o = by(b) || resolve(b); if (t && o && usable(t)) shove(t, o.x - t.x, o.z - t.z); },
+      drop: a => { takeover(); toss(by(a)); }, sit: () => { takeover(); C.ask.touch(); if (G.mode === 'free' && !(L.sitRun && B.tok === L.sitRun)) run(sitTask); }, dunk: a => { takeover(); C.ask.touch(); dunk(by(a)); },
+      send: (a, b) => { takeover(); C.ask.touch(); if (a === 'gogo') goSide(); else if (send(by(a), b === 'left' ? -1 : b === 'right' ? 1 : 0)) C.ask.act(); },
       arm: a => arm(a === 'lamp' ? LAMP : CLOUD, true), tap: (a, b) => { const c = a === 'cloud' || a === 'lamp' ? stage.screenOf((a === 'lamp' ? LAMP : CLOUD).pos) : stage.screenOf(topV(resolve(a), v3).setY(resolve(a).kind ? 0.1 : topY(resolve(a)) * 0.5)); P.x = c.x; P.y = c.y; P.down = true; C.ask.touch(); onDown({ clientX: c.x, clientY: c.y }); if (b !== 'hold') { P.down = false; onUp(); P.mode = null; } },
       move: async (a, b, tick) => { const t = resolve(a), c = stage.screenOf(v3.set(t.x, P.mode === 'tool' ? T.HOLD_Y : 0, t.z)), x0 = P.x, y0 = P.y, n = Math.max(1, Math.round((+b || 0.3) * 60)); for (let i = 1; i <= n; i++) { P.x = x0 + (c.x - x0) * i / n; P.y = y0 + (c.y - y0) * i / n; onMove({ clientX: P.x, clientY: P.y }); await tick(); } },
       up: () => { P.down = false; onUp(); P.mode = null; }, out: () => takeOut(),

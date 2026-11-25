@@ -380,6 +380,18 @@ CLIPS += [
     ('shiver', shiver, 0.4, True), ('slip', slip, 1.4, False), ('skate', skate, 1.2, True), ('fan', fan, 0.6, True), ('warm', warm, 1.5, True), ('catchMouth', catchMouth, 0.7, False), ('rollSnow', rollSnow, 1.6, True), ('sneeze', sneeze, 0.9, False),
 ]
 
+# ── 자리 ③ 이 큰 수조로 바뀌며 더한 동작 하나(뒤에 덧붙이기만 한다: 앞의 서른셋은 그대로)
+def dive(t, T=1.2):                      # 퐁당: 웅크렸다가 두 팔을 머리 위로 모아 뛰어올라 → 몸 가운데를 축으로 앞으로 돌아 머리부터 내려간다(0.85~0.98초는 거의 거꾸로) → 한 바퀴를 마저 돌아 선다
+    P = base(); th = keys(t, [(0, 0), (0.16, -7), (0.34, 18), (0.62, 118), (0.85, 168), (0.98, 174), (1.08, 360), (T, 360)]); c = 0.38
+    z = keys(t, [(0, 0), (0.14, -0.06), (0.22, 0), (0.55, 0.32), (0.90, 0.12), (1.08, 0), (T, 0)])
+    q = keys(t, [(0, 0), (0.14, 0.15), (0.28, -0.15), (0.62, -0.10), (0.98, -0.12), (1.08, 0), (T, 0)]); k = keys(t, [(0, 0), (0.14, -0.10), (0.34, 1), (0.98, 1), (1.08, 0), (T, 0)])
+    P.add('hips', (th, 0, 0), (0, z + c * (1 - cos(rad(th))), -c * sin(rad(th)))).squash(q).add('head', (-12 * k, 0, 0))
+    P.add('arm_L', (6 * k, 0, 152 * k)).add('arm_R', (6 * k, 0, -152 * k)).add('fore_L', (12 * k, 0, 8 * k)).add('fore_R', (12 * k, 0, -8 * k)).add('hand_L', (0, 0, 6 * k)).add('hand_R', (0, 0, -6 * k))
+    for sx, n in ((1, 'L'), (-1, 'R')): P.add('leg_' + n, (6 * k, 0, -sx * 3 * k)).add('foot_' + n, (34 * k, 0, 0))
+    return P
+
+CLIPS += [('dive', dive, 1.2, False)]
+
 if __name__ == '__main__':
     rig, _ = G.build(); bpy.context.scene.render.fps = FPS; info = bake(rig)
     bpy.context.scene.frame_start = 0; bpy.context.scene.frame_end = 120
