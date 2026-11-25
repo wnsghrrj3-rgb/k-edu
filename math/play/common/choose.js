@@ -14,20 +14,25 @@ const CSS = `
 #choose.tiles{gap:10px}#choose.tiles button{width:76px;height:76px;font-size:2.6rem;border-radius:20px;border-width:5px}#choose.tiles button.sym{background:#dff1ff;border-color:#2b6a9c;color:#12406a}
 #choose button.gone{visibility:hidden;pointer-events:none;animation:none}
 @media (max-width:520px){#choose.tiles{gap:6px}#choose.tiles button{width:52px;height:52px;font-size:1.9rem;border-radius:14px;border-width:4px}}
+#choose.row{gap:10px}#choose.row button{width:90px;height:auto;min-height:116px;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:6px;font-size:3rem}#choose.row button .num{line-height:1}
+#choose.row button.away{transform:translateY(10px) scale(.9);opacity:.28;animation:none}#choose.row button.dot .dots u{width:13px;height:13px}
+@media (max-width:520px){#choose.row{gap:7px}#choose.row button{width:62px;min-height:96px;padding:8px 2px 6px;font-size:2.5rem;border-radius:18px;border-width:4px}#choose.row button.dot .dots u{width:9px;height:9px;border-width:1.5px}#choose.row button.dot .dots,#choose.row button.dot .dots i{gap:2px}}
 #tray b.hole.ask{animation:holeask 1s infinite}@keyframes holeask{50%{background:rgba(255,211,77,.55);transform:scale(1.08)}}`;
 export const GAP = 14;   /* 띠와 수 셋 사이(px) */
 let cssIn = false; function css(){ if (cssIn || typeof document === 'undefined') return; cssIn = true;   /* node(하네스)에서 점 무늬만 그릴 때는 건너뜀 */ const s = document.createElement('style'); s.id = 'choose-css'; s.textContent = CSS; document.head.appendChild(s); }
 const box = () => { css(); let e = document.getElementById('choose'); if (!e) { e = document.createElement('div'); e.id = 'choose'; document.body.appendChild(e); } return e; };
 /** 점 무늬(정본 5-10절 — 다섯씩 한 줄 · 6~9 는 윗줄 다섯 + 아랫줄 · T02 의 열 칸 틀과 같은 눈). 줄마다 다섯 칸(빈 칸은 테두리만) · lit 개가 켜짐. */
-export function dotsHtml(n, lit = n){ css(); const rows = Math.max(1, Math.ceil(n / 5)); let h = '<span class="dots">'; for (let r = 0; r < rows; r++) { h += '<i>'; for (let k = 0; k < 5; k++) { const j = r * 5 + k; h += `<u class="${j < lit ? 'on' : ''}"></u>`; } h += '</i>'; } return h + '</span>'; }
+export function dotsHtml(n, lit = n, minRows = 1){ css(); const rows = Math.max(1, minRows, Math.ceil(n / 5));   /* minRows = 한 줄의 단추들이 같은 높이로(T09 단추 줄) */ let h = '<span class="dots">'; for (let r = 0; r < rows; r++) { h += '<i>'; for (let k = 0; k < 5; k++) { const j = r * 5 + k; h += `<u class="${j < lit ? 'on' : ''}"></u>`; } h += '</i>'; } return h + '</span>'; }
 /** 띠의 「?」 칸 깜박임. */
 export function ask(on){ const e = document.querySelector('#tray b.hole'); if (e) e.classList.toggle('ask', !!on); }
 /** 수 셋을 띄운다. onPick(n, 단추) — 아닌 수면 부르는 쪽이 retreat(단추)를 부른다.
  *  opt.dots = 점 카드(위에 점 무늬 · 아래에 숫자 — 숫자를 배우기 전의 낱칸 · 정본 5-10절). 없으면 숫자만(가르기 틀).
  *  opt.tiles = 딱지 통(T08 타고 내리기 틀 · B07 — 띠 바로 아래 한 줄 · 수 딱지 넷 + 기호 딱지 둘까지 · 기호 딱지(수가 아닌 것)는 빛깔이 다르다). 같은 수의 딱지가 둘일 수 있다.
- *    딱지는 누르면 띠의 깜박이는 칸으로 간다 — 부르는 쪽이 take(단추)로 통에서 빼고(자리는 남는다) give(단추)로 돌려놓는다. */
-export function show(list, onPick, opt = {}){ const c = box(); c.innerHTML = ''; c.className = opt.tiles ? 'on tiles' : 'on';
-  for (const n of list) { const b = document.createElement('button'); b.type = 'button'; if (opt.dots) { b.className = 'dot'; b.innerHTML = dotsHtml(n) + `<span class="num">${n}</span>`; } else b.textContent = n; if (opt.tiles && typeof n !== 'number') b.className = 'sym'; b.dataset.n = n; b.addEventListener('click', () => onPick(n, b)); c.appendChild(b); } place(); ask(true); }
+ *    딱지는 누르면 띠의 깜박이는 칸으로 간다 — 부르는 쪽이 take(단추)로 통에서 빼고(자리는 남는다) give(단추)로 돌려놓는다.
+ *  opt.row = 단추 줄(T09 번쩍 틀 — 자리가 고정된 수 단추 한 줄 · 왼쪽부터 작은 수 · 섞지 않는다 · 위에 점 무늬 · 아래에 숫자 · 단추 높이가 같다). 0 은 빈 점 판 + 0.
+ *    빨리 누르는 손이 자리를 기억하도록 부르는 쪽이 늘 같은 차례로 준다. 아닌 수는 제자리에서 흐려진다(retreat — 줄이 흐트러지지 않게). */
+export function show(list, onPick, opt = {}){ const c = box(); c.innerHTML = ''; c.className = opt.tiles ? 'on tiles' : opt.row ? 'on row' : 'on'; const rows = opt.row ? Math.max(1, ...list.map(n => Math.ceil(n / 5))) : 1;
+  for (const n of list) { const b = document.createElement('button'); b.type = 'button'; if (opt.row) { b.className = 'dot'; b.innerHTML = dotsHtml(n, n, rows) + `<span class="num">${n}</span>`; } else if (opt.dots) { b.className = 'dot'; b.innerHTML = dotsHtml(n) + `<span class="num">${n}</span>`; } else b.textContent = n; if (opt.tiles && typeof n !== 'number') b.className = 'sym'; b.dataset.n = n; b.addEventListener('click', () => onPick(n, b)); c.appendChild(b); } place(); ask(true); }
 /** 딱지 통: 딱지를 통에서 뺀다(자리는 남는다) · 돌려놓는다. */
 export function take(btn){ btn.classList.add('gone'); }
 export function give(btn){ btn.classList.remove('gone'); }

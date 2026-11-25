@@ -18,7 +18,7 @@ const ART = {
   // 낚시 섬
   'fish.blue': '🐟', 'fish.tropical': '🐠', 'fish.puffer': '🐡', 'fish.shrimp': '🦐', 'fish.octopus': '🐙', 'fisher.cat': '🐱',
   // 배경
-  'deco.sun': '☀️', 'ride.paw': '🐾', 'deco.cloud': '☁️', 'deco.palm': '🌴', 'deco.sailboat': '⛵', 'deco.isle': '🏝️',
+  'deco.sun': '☀️', 'ride.paw': '🐾', 'flash.fuse': '🧨', 'flash.burst': '🎆', 'flash.spark': '🎇', 'deco.cloud': '☁️', 'deco.palm': '🌴', 'deco.sailboat': '⛵', 'deco.isle': '🏝️',
   // 광장 게시판
   'board.shop': '🍎', 'board.fish': '🐟', 'board.course': '🎁', 'board.stamp': '💮', 'board.pin': '📌' };
 const GROUPS = { guest: Object.keys(ART).filter(k => k.startsWith('guest.') && !k.startsWith('guest.mark.')), fish: Object.keys(ART).filter(k => k.startsWith('fish.')) };
