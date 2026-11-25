@@ -15,7 +15,7 @@ const v3 = new THREE.Vector3();
 /** 물건 하나. mesh = 모형(바닥 가운데가 원점 · 공은 가운데가 원점), o = { name, x, z, r(반지름), h(키), ball, glow(닿았을 때 빛나는 색) } */
 export function createThing(scene, mesh, o) {
   const obj = new THREE.Group(); mesh.material = mesh.material.clone(); mesh.material.emissive = new THREE.Color(o.glow || '#ffe9a8'); mesh.material.emissiveIntensity = 0; obj.add(mesh); scene.add(obj);
-  return { name: o.name, obj, mesh, x: o.x, z: o.z, home: { x: o.x, z: o.z }, r: o.r, h: o.h, ball: !!o.ball, size: 1, to: 1, v: 0, y: 0, vy: 0, floor: 0, tx: 0, tz: 0, tvx: 0, tvz: 0, vx: 0, roll: 0, lean: 0, state: o.state || 'home', t: 0, lit: false, live: null, pose: null, onBounce: null };
+  return { name: o.name, obj, mesh, x: o.x, z: o.z, home: { x: o.x, z: o.z }, r: o.r, h: o.h, ball: !!o.ball, size: 1, to: 1, v: 0, y: 0, vy: 0, floor: 0, tx: 0, tz: 0, tvx: 0, tvz: 0, vx: 0, roll: 0, lean: 0, state: o.state || 'home', t: 0, lit: false, live: null, pose: null, onBounce: null, lift: 'bench', color: 'own', temp: 0 };   // lift · color · temp = 연구소의 상태(자리를 옮겨도 지닌다)
 }
 /** 매 장면: 크기 · 까딱임 · 떨어짐 → 자리와 모양에 입힌다. */
 export function stepThing(t, dt) {
@@ -41,5 +41,5 @@ export function pickAt(stage, targets, x, y) {
 }
 /** 캐릭터를 「대상」 꼴로 감싼다(크기를 물건처럼 읽고 쓴다). */
 export function actorTarget(actor, name, r = 0.36, h = 1.05) {
-  const s = actor.state; return { name, r, h, big: false, small: false, actor, get size() { return s.size; }, get to() { return s.sizeTo; }, set to(v) { actor.setSize(v); }, get x() { return s.pos.x; }, get z() { return s.pos.z; }, get y() { return s.y; } };
+  const s = actor.state; return { name, r, h, big: false, small: false, actor, lift: 'bench', color: 'own', temp: 0, get size() { return s.size; }, get to() { return s.sizeTo; }, set to(v) { actor.setSize(v); }, get x() { return s.pos.x; }, get z() { return s.pos.z; }, get y() { return s.y; } };
 }

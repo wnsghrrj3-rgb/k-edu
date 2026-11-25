@@ -117,10 +117,36 @@ def peek(t, T=3.4):                      # 컵에서 내다보기: 쏙 숨었다
     for n in ('L', 'R'): P.add('leg_' + n, (-9 * d, 0, 0), (0, dn, 0))    # 몸이 내려간 만큼 다리는 몸속으로 들어간다(발은 바닥에)
     return P
 
+# ── 부탁 · 기쁨(연구소 설계 v1 — 어느 자리에서나 쓴다. 뒤에 덧붙이기만 한다: 앞의 아홉은 그대로)
+def ask(t, T=1.2):                       # 조르기: 두 손을 가슴 앞에 모으고 아이 쪽을 올려다보며 까치발로 들썩인다
+    P = base(); b = sin(2 * pi * t / T); c = sin(4 * pi * t / T)
+    P.add('hips', (7 + 1.5 * b, 0, 0), (0, 0.012 + 0.012 * b, 0)).squash(-0.03 - 0.025 * b).add('head', (-15 - 2 * b, 0, 3 * c))
+    P.arms(-4, 58 + 4 * b, 74).add('arm_L', (0, -30, 0)).add('arm_R', (0, 30, 0)).add('hand_L', (-18, 0, 0)).add('hand_R', (-18, 0, 0))
+    for n in ('L', 'R'): P.add('foot_' + n, (10 + 8 * b, 0, 0))
+    return P
+
+def cheer(t, T=1.2):                     # 기뻐 뛰기: 두 팔을 번쩍 들고 두 번 폴짝
+    P = base(); h = T / 2; u = (t % h) / h if t < T else 1.0; H = 0.24
+    if u < 0.22: z = keys(u, [(0, 0), (0.13, -0.05), (0.22, 0)]); air = 0
+    elif u < 0.78: v = (u - 0.22) / 0.56; z = H * 4 * v * (1 - v); air = sin(pi * v)
+    else: z = keys(u, [(0.78, 0), (0.86, -0.045), (1, 0)]); air = 0
+    q = keys(u, [(0, 0), (0.13, 0.14), (0.26, -0.14), (0.5, -0.04), (0.74, -0.08), (0.86, 0.14), (1, 0)])
+    k = keys(t, [(0, 0), (0.16, 1), (T - 0.22, 1), (T, 0)]); wv = sin(2 * pi * 3 * t / T)
+    P.add('hips', (-5 * k, 0, 4 * wv * k), (0, z, 0)).squash(q).add('head', (-12 * k, 0, -5 * wv * k))
+    P.add('arm_L', (0, 0, (150 + 12 * wv) * k)).add('arm_R', (0, 0, -(150 - 12 * wv) * k)).add('fore_L', (-10 * k, 0, 0)).add('fore_R', (-10 * k, 0, 0))
+    for sx, n in ((1, 'L'), (-1, 'R')): P.add('leg_' + n, (10 * air, 0, sx * 22 * air), (0, 0.03 * air, 0)).add('foot_' + n, (22 * air, 0, 0))
+    return P
+
+def shrug(t, T=0.9):                     # 으쓱: 두 팔을 옆으로 살짝 벌려 올리고 고개를 갸웃
+    P = base(); k = keys(t, [(0, 0), (0.22, 1.08), (0.32, 1), (0.6, 1), (0.8, -0.04), (T, 0)])
+    P.add('hips', (0, 0, 2 * k), (0, 0.012 * k, 0)).squash(-0.05 * k).add('head', (-4 * k, 6 * k, 15 * k))
+    P.add('arm_L', (0, 0, 46 * k)).add('arm_R', (0, 0, -46 * k)).add('fore_L', (-30 * k, 0, 34 * k)).add('fore_R', (-30 * k, 0, -34 * k)).add('hand_L', (0, 0, 30 * k)).add('hand_R', (0, 0, -30 * k))
+    return P
+
 CLIPS = [  # 이름, 함수, 길이, 되풀이
     ('idle', idle, 2.4, True), ('look', look, 3.6, False), ('surprise', surprise, 0.9, False), ('jump', jump, 0.84, False),
     ('fall', fall, 2.5, False), ('peek', peek, 3.4, True),
-] + [(n, (lambda t, g=g: gait(t, **g)), g['T'], True) for n, g in GAITS.items()]
+] + [(n, (lambda t, g=g: gait(t, **g)), g['T'], True) for n, g in GAITS.items()] + [('ask', ask, 1.2, True), ('cheer', cheer, 1.2, False), ('shrug', shrug, 0.9, False)]
 
 # ───────────────────────── 굽기 ─────────────────────────
 def qchar(x, y, z):

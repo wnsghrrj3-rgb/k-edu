@@ -17,5 +17,7 @@ export function createLearn({ zone, cell }) {
       PE.record({ zone, cell, game: o.game || '' }, [{ targetId: id, skill, outcome, inputMode: o.input || 'touch', speechStatus: 'not_used', attempts: 1, unit: 'word' }]);
     } catch (_) {}
   }
-  return { note, log };
+  /** 그 낱말을 이 화면에서 겪은 횟수(+ 기기에 남은 지난 기록). 부탁은 두 번 넘게 겪은 낱말로만 한다. */
+  function count(word) { const id = String(word).toLowerCase(); let n = log.filter(k => k.startsWith(id + '|')).length; try { const PE = window.PlayEvidence; if (PE && !AUTO) n += PE.all().filter(e => e.targetId === id && e.cell === cell).length; } catch (_) {} return n; }
+  return { note, log, count };
 }

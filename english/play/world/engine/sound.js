@@ -2,23 +2,25 @@
  * 영어 낱말 소리는 voice.js 가 맡는다. 음소거는 여기 하나로 모은다. */
 import { Q, AUTO, clamp } from './stage.js';
 
-let muted = Q.has('mute') || AUTO, AC = null; const listeners = [];
-export const isMuted = () => muted;
-export function setMuted(m) { muted = m; listeners.forEach(f => f(m)); }
-export const onMute = f => listeners.push(f);
+// 음소거 · 소리 장치는 창에 하나만 둔다 — 이 파일이 주소 꼬리(?v=)가 다른 채로 두 번 읽혀도(구역은 ?v= 를 붙이고 voice.js 는 안 붙인다) 같은 것을 본다.
+const G = window.__worldSound || (window.__worldSound = { muted: Q.has('mute') || AUTO, AC: null, listeners: [], bed: null });
+export const isMuted = () => G.muted;
+export function setMuted(m) { G.muted = m; G.listeners.forEach(f => f(m)); }
+export const onMute = f => G.listeners.push(f);
 /** 첫 손길에 부른다(브라우저는 손길 뒤에만 소리를 낸다). */
-export const unlock = () => muted ? null : (AC = AC || new (window.AudioContext || window.webkitAudioContext)());
-/** 소리 하나: f → f2 로 미끄러지는 음, t 초. */
-export function tone(f, f2, t, { type = 'sine', g = 0.16, at = 0 } = {}) {
+export const unlock = () => G.muted ? null : (G.AC = G.AC || new (window.AudioContext || window.webkitAudioContext)());
+const bedBus = a => G.bed || (G.bed = a.createGain(), G.bed.connect(a.destination), G.bed);   // 배경 소리가 지나가는 길(영어가 나올 때 여기만 줄인다)
+/** 소리 하나: f → f2 로 미끄러지는 음, t 초. bus = 배경 소리 길로 보낸다. */
+export function tone(f, f2, t, { type = 'sine', g = 0.16, at = 0, bus = false } = {}) {
   const a = unlock(); if (!a) return; const o = a.createOscillator(), v = a.createGain(), n = a.currentTime + at;
   o.type = type; o.frequency.setValueAtTime(Math.max(20, f), n); o.frequency.exponentialRampToValueAtTime(Math.max(20, f2), n + t);
-  v.gain.setValueAtTime(0.0001, n); v.gain.exponentialRampToValueAtTime(g, n + 0.014); v.gain.exponentialRampToValueAtTime(0.0001, n + t); o.connect(v).connect(a.destination); o.start(n); o.stop(n + t + 0.03);
+  v.gain.setValueAtTime(0.0001, n); v.gain.exponentialRampToValueAtTime(g, n + 0.014); v.gain.exponentialRampToValueAtTime(0.0001, n + t); o.connect(v).connect(bus ? bedBus(a) : a.destination); o.start(n); o.stop(n + t + 0.03);
 }
 /** 잡음 한 줌(씹는 소리 · 쏟아지는 소리). */
-export function hiss(t, { g = 0.1, at = 0, f = 1800, q = 1 } = {}) {
+export function hiss(t, { g = 0.1, at = 0, f = 1800, q = 1, bus = false } = {}) {
   const a = unlock(); if (!a) return; const n = a.currentTime + at, len = Math.ceil(a.sampleRate * t), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
   for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const s = a.createBufferSource(), bp = a.createBiquadFilter(), v = a.createGain();
-  s.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q; v.gain.value = g; s.connect(bp).connect(v).connect(a.destination); s.start(n);
+  s.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q; v.gain.value = g; s.connect(bp).connect(v).connect(bus ? bedBus(a) : a.destination); s.start(n);
 }
 export const sfx = {
   thud: s => tone(95 / Math.sqrt(s), 38, 0.2, { g: 0.5 * clamp(s / 1.8, 0.15, 1) }), tick: () => tone(1500, 1100, 0.03, { g: 0.04 }), ping: s => tone(760 / s ** 0.8, 800 / s ** 0.8, 0.09, { g: 0.05 }),
@@ -43,4 +45,22 @@ export function chirp(kind, k = 1) {
   else if (kind === 'hot') for (let i = 0; i < 5; i++) tone((700 + i * 60) * k, (900 + i * 60) * k, 0.06, { ...o, at: i * 0.07 });
   else if (kind === 'brr') for (let i = 0; i < 6; i++) tone(520 * k, 480 * k, 0.04, { ...o, at: i * 0.06 });
   else if (kind === 'want') tone(520 * k, 700 * k, 0.2, o);
+  else if (kind === 'giggle') for (let i = 0; i < 4; i++) tone((760 - (i % 2) * 120) * k, (860 - (i % 2) * 120) * k, 0.07, { ...o, g: 0.1, at: i * 0.085 });      // 킥킥
+  else if (kind === 'please') { tone(480 * k, 640 * k, 0.16, o); tone(640 * k, 600 * k, 0.22, { ...o, at: 0.17 }); }                                    // 조르는 소리
+}
+
+// ── 배경 소리(임시 · 합성) — 구역의 바탕(느린 종 다섯 음) 위에 자리마다 한 겹. 영어가 나올 때는 줄였다가 돌아온다.
+export const BED = { DUCK: 0.4, DUCK_IN: 0.25, DUCK_OUT: 0.6, FADE: 1.0, BELL: [261.6, 329.6, 392, 440, 523.3], BELL_EVERY: 2.6, BELL_G: 0.028 };
+/** layers = { 이름: (dt, 세기 0~1, 그 겹의 기억) => 소리 내기 }. set(이름) 으로 겹을 바꾸면 FADE 초에 걸쳐 넘어간다. tick(dt, 말하는 중인가) 을 매 장면 부른다.
+ *  때는 놀이의 시계(dt)로 잰다 — 자동 확인에서도 같은 값이 나온다(level · weights 로 숫자만 확인한다. 소리가 어울리는지는 사람이 듣는다). */
+export function createBed(layers = {}) {
+  const w = {}, mem = {}; let now = null, level = 1, bellT = 1.2, bellI = 0, bells = 0;
+  for (const k in layers) { w[k] = 0; mem[k] = { t: 0 }; }
+  function tick(dt, talking) {
+    level = talking ? Math.max(BED.DUCK, level - dt * (1 - BED.DUCK) / BED.DUCK_IN) : Math.min(1, level + dt * (1 - BED.DUCK) / BED.DUCK_OUT);
+    if (G.bed) G.bed.gain.value = level;
+    if ((bellT -= dt) <= 0) { const f = BED.BELL[bellI]; tone(f, f, 2.4, { g: BED.BELL_G, bus: true }); tone(f * 2, f * 2, 1.3, { g: BED.BELL_G * 0.4, bus: true }); bellI = (bellI + 1 + (Math.random() < 0.4 ? 1 : 0)) % BED.BELL.length; bellT = BED.BELL_EVERY; bells++; }
+    for (const k in layers) { w[k] = clamp(w[k] + clamp((k === now ? 1 : 0) - w[k], -dt / BED.FADE, dt / BED.FADE), 0, 1); if (w[k] > 0.02) layers[k](dt, w[k], mem[k]); }
+  }
+  return { set: id => { now = id; }, tick, weights: w, get level() { return level; }, get now() { return now; }, get bells() { return bells; } };
 }

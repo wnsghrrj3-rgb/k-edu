@@ -7,8 +7,8 @@ export async function runAuto(stage, o) {
   const tick = async () => { o.step(1 / 60); stage.tick(1 / 60); for (let i = 0; i < 8; i++) await null; };      // 장면 사이에 끊긴 일(await)들이 이어지게 쉰다
   for (let i = 0; i < (o.settle ?? 30); i++) await tick();
   for (const cmd of (Q.get('auto') || '').split(',')) {
-    const [k, a, b] = cmd.split(':'); if (!k) continue;
-    if (k === 'step') for (let i = 0; i < +a * 60; i++) await tick(); else if (o.commands[k]) await o.commands[k](a, b, tick); else console.error('모르는 명령: ' + k);
+    const [k, a, b, ...more] = cmd.split(':'); if (!k) continue;
+    if (k === 'step') for (let i = 0; i < +a * 60; i++) await tick(); else if (o.commands[k]) await o.commands[k](a, b, tick, ...more);      // 셋째 값부터는 tick 뒤에 넘긴다(set:물건:상태:값) else console.error('모르는 명령: ' + k);
   }
   stage.st.ready = true; stage.render(); document.title = 'READY ' + JSON.stringify(o.summary());
 }

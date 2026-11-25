@@ -16,7 +16,7 @@ export const RECORDED = {};
 
 /** el = 낱말을 띄울 요소(#word). screenOf = 세계의 점 → 화면 자리. onSaid(낱말, 대상 이름) = 말할 때마다 알림(기록용). */
 export function createVoice({ el, screenOf, onSaid }) {
-  const saidAt = {}, said = [], talk = { busy: false, next: null, since: 0 }; let clock = 0, showT = 0, showAt = null, last = null;
+  const saidAt = {}, said = [], talk = { busy: false, next: null, since: 0 }; let clock = 0, showT = 0, showAt = null, last = null, talkT = 0;
   function speak(text, pitch = VOICE.PITCH, rate = VOICE.RATE) {
     if (isMuted()) return;
     if (talk.busy && performance.now() - talk.since < VOICE.STUCK) { talk.next = [text, pitch, rate]; return; }
@@ -33,14 +33,21 @@ export function createVoice({ el, screenOf, onSaid }) {
     const name = o.name ?? !text.endsWith('!'), gap = o.gap ?? (name ? VOICE.NAME_GAP : VOICE.GAP); if (clock - (saidAt[text] ?? -99) < gap) return false;
     saidAt[text] = clock; said.push(text + (o.by ? '@' + o.by : '')); last = [text.replace('!', ''), o.pitch, o.rate];
     el.textContent = text; el.className = 'on ' + (o.cls || (name ? 'name' : 'shout')); showAt = where; showT = o.show ?? (name ? VOICE.NAME_SHOW : VOICE.SHOW);
-    speak(text.replace('!', ''), o.pitch, o.rate); if (onSaid) onSaid(text.replace('!', ''), o.by || '', name); return true;
+    talkT = Math.max(talkT, 0.35 + 0.075 * text.length);
+    speak(text.replace('!', ''), o.pitch, o.rate); if (onSaid && !o.quiet) onSaid(text.replace('!', ''), o.by || '', name); return true;
+  }
+  /** 문장 한 줄(부탁 — "Apple, up!"). 되풀이 막기를 거치지 않고, 줄의 맨 앞에 선다(말하는 중이면 바로 다음). o = { rate:느리게 다시 말할 때 0.75, pitch, by, cls, show }. 기록(onSaid)은 부르지 않는다 — 아이가 한 일이 아니다. */
+  function phrase(text, where, o = {}) {
+    said.push(text + '@' + (o.by || 'ask') + (o.rate ? '~' + o.rate : '')); last = [text.replace(/!/g, ''), o.pitch, o.rate];
+    el.textContent = text; el.className = 'on ' + (o.cls || 'ask'); showAt = where; showT = o.show ?? 2.0; talkT = Math.max(talkT, (0.45 + 0.085 * text.length) * (o.rate ? VOICE.RATE / o.rate : 1));
+    speak(text.replace(/!/g, ''), o.pitch, o.rate); return true;
   }
   /** 마지막 말을 다시 듣는다. */
   const again = () => { if (last) speak(...last); };
   /** 매 장면: 낱말이 대상을 따라다니다 사라진다. */
   function tick(dt) {
-    clock += dt; if (showT <= 0) return; showT -= dt;
+    clock += dt; if (talkT > 0) talkT -= dt; if (showT <= 0) return; showT -= dt;
     const p = screenOf(typeof showAt === 'function' ? showAt() : showAt); el.style.left = clamp(p.x, 90, innerWidth - 90) + 'px'; el.style.top = Math.max(70, p.y - 46) + 'px'; if (showT <= 0) el.className = '';
   }
-  return { word, speak, again, tick, said };
+  return { word, phrase, speak, again, tick, said, get talking() { return talkT > 0 || (talk.busy && performance.now() - talk.since < VOICE.STUCK); } };
 }

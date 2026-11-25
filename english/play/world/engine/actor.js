@@ -21,6 +21,11 @@ export const FACE = {
   sour:    { eye: 0.92, lidU: 70,  lidD: 62, pupil: 0.90, swirl: 0, mouth: { wavy: 1 } },               // 시다: 눈을 질끈
   hot:     { eye: 1.20, lidU: -30, lidD: -8, pupil: 0.70, swirl: 0, mouth: { oh: 1 } },                 // 맵다: 눈이 휘둥그레
   pout:    { eye: 1.00, lidU: 18,  lidD: 10, pupil: 1.00, swirl: 0, mouth: { worry: 0.8 } },            // 삐짐
+  ask:     { eye: 1.14, lidU: -20, lidD: 0,  pupil: 1.08, swirl: 0, mouth: { open: 0.35, smile: 0.3 } }, // 조르기: 눈이 커지고 눈동자가 크며 입을 살짝 벌린다(연구소 설계 v1)
+  talk:    { eye: 1.10, lidU: -14, lidD: 0,  pupil: 1.06, swirl: 0, mouth: { open: 0.8 } },             // 조르며 말하는 중(ask 와 번갈아 입이 움직인다)
+  cold:    { eye: 0.96, lidU: 34,  lidD: 30, pupil: 0.94, swirl: 0, mouth: { wavy: 1 } },               // 춥다: 눈을 조금 감고 입이 잔물결
+  blowing: { eye: 1.02, lidU: 10,  lidD: 20, pupil: 1.00, swirl: 0, mouth: { oh: 0.7 } },               // 분다: 입이 오므라든다
+  stuffy:  { eye: 0.92, lidU: 78,  lidD: 60, pupil: 0.90, swirl: 0, mouth: { worry: 0.5 } },            // 눈을 질끈 감고 입을 꾹
 };
 export const BLINK = { lidU: 102, lidD: 44 };   // 눈을 감은 값(위 눈꺼풀이 내려오고 아래가 마중 나와, 짙은 눈금이 ◡ 로 남는다)
 export const GAZE = { YAW: 24, PITCH: 17, IN: 3, IN_SMALL: 14 };   // 눈길이 끝까지 갔을 때 눈동자가 도는 각(도) · 두 눈동자를 안쪽으로 모으는 각 · 눈동자가 작아질수록 더 모으는 각(사시처럼 보이지 않게)
@@ -46,7 +51,7 @@ export const MOVE = {
 const MOUTHS = ['smile', 'open', 'oh', 'wavy', 'worry'];
 const BODY = /^(hips|belly|head|arm_|fore_|hand_|leg_|foot_)/;   // 클립이 다루는 뼈(나머지는 코드가 맡는다)
 const D = Math.PI / 180, AXES = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
-const VER = 3;
+const VER = 4;
 
 // ───────────────────────── 모형 + 얼굴 ─────────────────────────
 export async function loadGogo(url = new URL(`../assets/gogo.glb?v=${VER}`, import.meta.url).href) {
