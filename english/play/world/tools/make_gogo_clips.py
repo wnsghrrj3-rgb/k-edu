@@ -176,6 +176,210 @@ def bake(rig):
         pb = rig.pose.bones[b]; pb.rotation_quaternion = (1, 0, 0, 0); pb.location = (0, 0, 0); pb.scale = (1, 1, 1)
     return info
 
+# ── 연구소 자리 ② ③ ④ 의 동작 스물하나(연구소 설계 v1 부록 C — 뒤에 덧붙이기만 한다: 앞의 열둘은 그대로)
+# 고고는 팔이 짧다(어깨에서 손바닥 가운데까지 0.30). 손이 가야 할 자리를 몸 기준 자리(x 왼쪽 · y 위 · z 앞, 쉬는 자세의 치수)로 주면
+# 어깨 · 팔꿈치 돌림을 풀어 준다(reach). 닿지 않는 자리는 닿는 데까지만 뻗는다.
+_b = lambda v: Vector((v[0], -v[2], v[1]))                                # 고고 기준 자리 → 블렌더 좌표
+_SH, _PA = Vector(G.ARM[0]), Vector(G.HAND[0]); _EL = (_SH + Vector(G.ARM[2])) / 2
+BASE_ARM = {'arm_': (0, 0, -24), 'fore_': (-12, 0, -8)}                   # base() 의 왼팔 값
+
+def _eul(q):
+    """qchar 의 거꾸로: 돌림 → 고고 기준 축의 도 (x, y, z)."""
+    e = q.to_euler('YXZ'); return (math.degrees(e.x), math.degrees(e.z), -math.degrees(e.y))
+
+def _ik(tgt, pole):
+    """왼팔: 손바닥 가운데가 tgt 에 가도록 (윗팔 돌림, 아랫팔 돌림). pole = 팔꿈치가 향할 쪽."""
+    a, b = _EL - _SH, _PA - _EL; la, lb = a.length, b.length; d = _b(tgt) - _SH
+    L = min(max(d.length, abs(la - lb) + 0.02), (la + lb) * 0.985); dn = d.normalized()
+    x = (la * la - lb * lb + L * L) / (2 * L); h = math.sqrt(max(0.0, la * la - x * x))
+    p = _b(pole); p = p - dn * p.dot(dn); p.normalize(); E = dn * x + p * h
+    qa = a.rotation_difference(E); qw = (qa @ b).rotation_difference(dn * L - E)
+    return qa, qa.inverted() @ qw @ qa
+
+def reach(P, n, tgt, k=1.0, pole=(0.55, -0.8, -0.25)):
+    """n('L'|'R') 손을 몸 기준 자리 tgt 로(k = 0 편히 내림 ~ 1 다 감). base() 위에 한 번만 얹는다."""
+    s = 1 if n == 'L' else -1; qs = _ik((tgt[0] * s, tgt[1], tgt[2]), pole)
+    for (bone, b0), q in zip(BASE_ARM.items(), qs):
+        e = _eul(qchar(*b0).slerp(q, min(1.0, max(0.0, k))))
+        P.add(bone + n, (e[0] - b0[0], s * (e[1] - b0[1]), s * (e[2] - b0[2])))
+    return P
+
+def lean(P, x, roll=0.0):
+    """몸을 앞(+) · 뒤(-)로 숙이고 옆으로 기울여도 발은 바닥에 둔다."""
+    P.add('hips', (x, 0, roll))
+    for sx, n in ((1, 'L'), (-1, 'R')): P.add('leg_' + n, (-x, 0, -roll), (0, -sx * 0.16 * sin(rad(roll)), 0))
+    return P
+
+def sink(P, d):
+    """몸을 d 만큼 낮춘다(다리는 몸속으로 들어가고 발은 바닥에)."""
+    P.add('hips', l=(0, -d, 0))
+    for n in ('L', 'R'): P.add('leg_' + n, l=(0, d, 0))
+    return P
+
+# 자리 ② 둥둥
+def flail(t, T=0.8):                     # 허우적: 몸이 뒤로 젖혀진 채 팔다리를 번갈아 휘젓는다
+    P = base(); a = 2 * pi * t / T; s, c = sin(a), cos(a)
+    P.add('hips', (-15 + 3 * sin(2 * a), 0, 5 * s), (0, 0.01 * sin(2 * a), 0)).squash(0.03 * sin(2 * a + 1)).add('head', (-9 + 3 * c, 0, -4 * s)).add('belly', (0, 7 * c, 0))
+    for sx, n, k, k2 in ((1, 'L', s, c), (-1, 'R', -s, -c)):
+        P.add('arm_' + n, (34 * k2, 0, sx * (100 + 30 * k))).add('fore_' + n, (-18 - 10 * k, 0, 0))
+        P.add('leg_' + n, (-12 - 26 * k, 0, sx * 10), (0, 0.012 * (1 + k), 0)).add('foot_' + n, (16 + 14 * k, 0, 0))
+    return P
+
+def swim(t, T=1.0):                      # 개구리헤엄: 두 손을 얼굴 앞에 모으고 다리를 오므렸다가 → 팔은 옆으로 크게 젓고 다리는 쭉 찬다 → 미끄러지듯 돌아옴
+    P = base(); u = (t / T) % 1.0
+    g = keys(u, [(0, 0), (0.30, 1), (0.42, 1), (0.60, 0), (1, 0)]); sw = keys(u, [(0, 0), (0.42, 0), (0.60, 1), (0.82, 0.3), (1, 0)]); kk = keys(u, [(0, 0), (0.42, 0), (0.56, 1), (0.80, 0.25), (1, 0)])
+    P.add('hips', (14 - 8 * kk + 6 * g, 0, 0), (0, 0.03 * kk - 0.02 * g, 0)).squash(0.09 * g - 0.11 * kk).add('head', (-16 + 6 * g, 0, 0))
+    A, B, C = (0.40, 0.38, -0.05), (0.16, 0.68, 0.30), (0.56, 0.56, 0.02)             # 손 자리: 미끄러질 때 · 모았을 때 · 옆으로 저을 때
+    for sx, n in ((1, 'L'), (-1, 'R')):
+        h = [A[i] + g * (B[i] - A[i]) + sw * (C[i] - A[i]) for i in range(3)]; reach(P, n, (sx * h[0], h[1], h[2]), pole=(0.6, -0.1, -0.8))
+        P.add('leg_' + n, (-40 * g + 18 * kk, 0, sx * (34 * g + 14 * kk)), (0, 0.06 * g, 0)).add('foot_' + n, (20 * g + 34 * kk, 0, 0))
+    return P
+
+def hang(t, T=1.6):                      # 매달림: 두 손을 위로 뻗고 몸이 손 아래로 늘어져 앞뒤로 흔들린다(손이 축 — 뜬 높이는 코드가)
+    P = base(); a = 2 * pi * t / T; th = 13 * sin(a); lag = 20 * sin(a - 0.9); R = 0.70
+    P.add('hips', (th, 0, 0), (0, R * (1 - cos(rad(th))), -R * sin(rad(th)))).squash(-0.09 + 0.015 * cos(2 * a)).add('head', (-10 - 0.4 * lag, 0, 0))
+    P.add('arm_L', (0, 0, 140)).add('arm_R', (0, 0, -140)).add('fore_L', (12, 0, 8)).add('fore_R', (12, 0, -8)).add('hand_L', (0, 0, 6)).add('hand_R', (0, 0, -6))
+    for sx, n in ((1, 'L'), (-1, 'R')): P.add('leg_' + n, (0.9 * lag, 0, sx * 3)).add('foot_' + n, (24 + 0.5 * lag, 0, 0))
+    return P
+
+def splat(t, T=1.6):                     # 쿵: 세로 0.55배로 납작 → 잠깐 퍼져 있다가 → 출렁출렁 일어섬
+    P = base(); q = keys(t, [(0, 0), (0.07, 0.45), (0.16, 0.40), (0.34, 0.43), (0.52, -0.13), (0.70, 0.09), (0.88, -0.05), (1.06, 0.025), (1.24, 0), (T, 0)])
+    f = min(1.0, max(0.0, q / 0.45)); P.add('belly', s=(0.62 * q, -q, 0.62 * q)); sink(P, 0.085 * f)
+    P.add('head', (-10 * f, 0, 0)).arms(52 * f, -8 * f, -8 * f)
+    for sx, n in ((1, 'L'), (-1, 'R')): P.add('leg_' + n, (0, 0, sx * 20 * f)).add('hand_' + n, (0, 0, sx * 20 * f))
+    return P
+
+def reachJump(t, T=1.0):                 # 한 손(오른손)을 위로 쭉 뻗으며 뛰어오른다
+    P = base(); a0, a1, H = 0.22, 0.66, 0.30
+    if t < a0: z = keys(t, [(0, 0), (0.14, -0.06), (a0, 0)])
+    elif t < a1: u = (t - a0) / (a1 - a0); z = H * 4 * u * (1 - u)
+    else: z = keys(t, [(a1, 0), (a1 + 0.07, -0.05), (a1 + 0.18, 0), (T, 0)])
+    q = keys(t, [(0, 0), (0.14, 0.16), (0.27, -0.17), (0.44, -0.12), (0.60, -0.06), (0.72, 0.15), (0.84, -0.03), (0.9, 0), (T, 0)])
+    k = keys(t, [(0, 0), (0.12, -0.08), (0.30, 1), (0.52, 1), (0.72, 0.25), (0.86, 0), (T, 0)]); air = keys(t, [(0, 0), (a0, 0), (0.44, 1), (a1, 0), (T, 0)])
+    P.add('hips', (keys(t, [(0, 0), (0.14, 7), (0.3, -5), (0.66, 0), (T, 0)]), 0, -13 * k), (0, z, 0)).squash(q).add('head', (-16 * k, 0, 8 * k))
+    P.add('arm_R', (8 * k, 0, -128 * k)).add('fore_R', (12 * k, 0, -8 * k)).add('hand_R', (0, 0, -6 * k)).add('arm_L', (20 * k, 0, -10 * k))
+    for sx, n in ((1, 'L'), (-1, 'R')): P.add('leg_' + n, (10 * air, 0, sx * 8 * air), (0, 0.02 * air, 0)).add('foot_' + n, (26 * air, 0, 0))
+    return P
+
+def blow(t, T=1.4):                      # 방울 고리(오른손)를 입에 대고 — 숨을 들이쉬어 부풀었다가 → 앞으로 숙이며 길게 분다
+    P = base(); k = keys(t, [(0, 0), (0.24, 1), (1.06, 1), (1.26, 0), (T, 0)])
+    inh = keys(t, [(0, 0), (0.20, 0), (0.46, 1), (0.60, 0.15), (0.8, 0), (T, 0)]); out = keys(t, [(0, 0), (0.48, 0), (0.62, 1), (1.0, 0.8), (1.2, 0), (T, 0)])
+    lean(P, -7 * inh + 9 * out); P.add('belly', s=(0.05 * inh - 0.035 * out, 0.03 * inh - 0.01 * out, 0.07 * inh - 0.045 * out)).add('head', (-6 * inh + 5 * out, -8 * k, 0))
+    reach(P, 'R', (-0.13, 0.62 + 0.02 * inh, 0.34), k)
+    return P.add('arm_L', (10 * k, 0, 8 * inh))
+
+def pat(t, T=1.0):                       # 오른손으로 앞의 것을 두 번 쓰다듬는다
+    P = base(); k = keys(t, [(0, 0), (0.2, 1), (0.74, 1), (0.9, 0), (T, 0)]); b = keys(t, [(0, 0), (0.2, 0), (0.32, 1), (0.44, 0), (0.56, 1), (0.68, 0), (T, 0)])
+    lean(P, 14 * k + 3 * b); P.add('head', (10 * k, -12 * k, 0)).add('belly', (0, 18 * k, 0))
+    reach(P, 'R', (-0.24, 0.46 - 0.07 * b, 0.36), k)
+    return P.add('arm_L', (8 * k, 0, 0))
+
+# 자리 ③ 무지개 물약
+def stir(t, T=1.2):                      # 두 손으로 국자를 잡고 크게 원을 그린다(팔이 짧아 몸이 통째로 국자를 따라 돈다)
+    P = base(); a = 2 * pi * t / T; s, c = sin(a), cos(a); cx, cz = 0.05 * s, 0.035 * c
+    lean(P, 10 + 5 * c, -7 * s); P.add('hips', l=(0.03 * s, 0, 0)).add('belly', (0, 18 * s, 0)).add('head', (7, -11 * s, 0)).squash(0.025 * c)
+    for n in ('L', 'R'): P.add('leg_' + n, l=(-0.03 * s, 0, 0))
+    reach(P, 'L', (cx + 0.17, 0.50, 0.33 + cz)); reach(P, 'R', (cx - 0.17, 0.47, 0.33 + cz))
+    return P
+
+def sip(t, T=1.1):                       # 국자(오른손)를 입에 대고 고개를 젖혀 후루룩
+    P = base(); k = keys(t, [(0, 0), (0.26, 1), (0.80, 1), (0.97, 0), (T, 0)]); tip = keys(t, [(0, 0), (0.26, 0), (0.44, 1), (0.72, 1), (0.86, 0), (T, 0)])
+    lean(P, -5 * tip); P.add('head', (-13 * tip, -10 * k, 0)).squash(-0.03 * tip)
+    reach(P, 'R', (-0.12, 0.62 + 0.04 * tip, 0.35 - 0.02 * tip), k)
+    return P.add('arm_L', (8 * k, 0, 0))
+
+def hiccup(t, T=0.5):                    # 딸꾹: 온몸이 한 번 톡 튄다
+    P = base(); z = keys(t, [(0, 0), (0.04, -0.01), (0.14, 0.075), (0.26, 0), (0.31, -0.012), (0.38, 0), (T, 0)])
+    q = keys(t, [(0, 0), (0.04, 0.06), (0.12, -0.15), (0.24, -0.02), (0.30, 0.09), (0.38, 0), (T, 0)]); k = keys(t, [(0, 0), (0.10, 1), (0.2, 0.7), (0.36, 0), (T, 0)])
+    P.add('hips', (-4 * k, 0, 0), (0, z, 0)).squash(q).add('head', (-10 * k, 0, 0)).arms(26 * k, 0, 10 * k)
+    for n in ('L', 'R'): P.add('foot_' + n, (14 * k, 0, 0))
+    return P
+
+def shake(t, T=1.0):                     # 젖은 강아지처럼: 살짝 웅크렸다가 몸을 좌우로 빠르게 턴다(머리가 뒤늦게 따라온다)
+    P = base(); e = keys(t, [(0, 0), (0.10, 0), (0.22, 1), (0.66, 1), (0.86, 0), (T, 0)]); pre = keys(t, [(0, 0), (0.10, 1), (0.24, 0), (T, 0)])
+    w = 2 * pi * 5.5 * t; y = 32 * e * sin(w)
+    sink(P, 0.02 * pre + 0.01 * e); P.add('hips', (4 * e, 0, 0)).add('belly', (0, y, -0.12 * y)).squash(0.06 * pre - 0.03 * e)
+    P.add('head', (3 * e, -0.5 * y + 16 * e * sin(w - 1.2), 8 * e * sin(w - 0.6))).arms(44 * e + 8 * e * cos(2 * w), 0, -6 * e)
+    return P
+
+def hopFeet(t, T=0.6):                   # 동동: 발을 번갈아 들며 제자리에서 구른다
+    P = base(); u = (t / T) % 1.0; w = sin(2 * pi * u); c = cos(2 * pi * u)
+    lL = sin(2 * pi * u) ** 1.2 if u < 0.5 else 0.0; lR = sin(2 * pi * (u - 0.5)) ** 1.2 if u >= 0.5 else 0.0; rl = 5 * (lL - lR)
+    P.add('hips', (3, 0, rl), (-0.012 * (lL - lR), 0.03 * abs(w), 0)).squash((c * c) ** 3 * 0.07).add('head', (-3, 0, -0.5 * rl)).arms(40, 6, 34)
+    P.add('arm_L', (8 * w, 0, 0)).add('arm_R', (-8 * w, 0, 0))
+    for sx, n, l in ((1, 'L', lL), (-1, 'R', lR)): P.add('leg_' + n, (-38 * l, 0, -rl), (0, 0.10 * l - sx * 0.16 * sin(rad(rl)), 0)).add('foot_' + n, (18 * l, 0, 0))
+    return P
+
+def noseHold(t, T=1.0):                  # 코를 쥠: 팔이 짧아서 고개를 숙여 오른쪽으로 돌려 손(오른손) 쪽으로 가져간다
+    P = base(); k = keys(t, [(0, 0), (0.22, 1), (0.74, 1), (0.9, 0), (T, 0)]); wig = sin(2 * pi * 2.5 * t) * keys(t, [(0, 0), (0.3, 0), (0.4, 1), (0.66, 1), (0.76, 0), (T, 0)])
+    lean(P, -4 * k); P.add('belly', (0, 8 * k, 0)).add('head', (9 * k, -36 * k + 4 * wig, 5 * k)).squash(0.03 * k)
+    reach(P, 'R', (-0.236, 0.63, 0.337), k)
+    return P.add('arm_L', (12 * k, 0, 10 * k))
+
+# 자리 ④ 얼음과 불
+def shiver(t, T=0.4):                    # 오들오들: 어깨를 움츠려 두 손을 가슴께에 붙이고 잘게 떤다
+    P = base(); a = 2 * pi * t / T; j = sin(3 * a); j2 = sin(2 * a + 0.7)
+    lean(P, 6); sink(P, 0.012); P.add('belly', (0, 2.2 * j, 1.2 * j2)).squash(0.035 + 0.012 * j2).add('head', (7 + 1.5 * j2, -2.6 * j, 1.5 * j))
+    reach(P, 'L', (0.17 + 0.004 * j, 0.52, 0.28)); reach(P, 'R', (-0.17 + 0.004 * j, 0.50, 0.28))
+    for sx, n in ((1, 'L'), (-1, 'R')): P.add('leg_' + n, (0, 0, -sx * 4 + 1.2 * j))
+    return P
+
+def slip(t, T=1.4):                      # 미끄덩: 발이 앞으로 빠지며 엉덩방아 → 앉은 채 잠깐(눈 끔벅은 코드가) → 앞으로 굴러 일어남
+    P = base(); th = keys(t, [(0, 0), (0.10, -8), (0.30, -34), (0.42, -20), (0.56, -24), (0.86, -22), (1.02, 10), (1.16, 6), (1.28, 0), (T, 0)])
+    lg = keys(t, [(0, 0), (0.10, -30), (0.30, -88), (0.86, -84), (1.02, -20), (1.14, 0), (T, 0)]); f = min(1.0, -lg / 80)
+    dn = keys(t, [(0, 0), (0.10, 0.01), (0.30, 0.125), (0.36, 0.14), (0.44, 0.118), (0.86, 0.12), (1.02, 0.015), (1.14, 0), (T, 0)])
+    back = keys(t, [(0, 0), (0.30, -0.07), (0.86, -0.07), (1.06, 0), (T, 0)])
+    q = keys(t, [(0, 0), (0.28, -0.04), (0.36, 0.17), (0.50, -0.06), (0.64, 0.03), (0.78, 0), (1.0, 0), (1.10, 0.07), (1.22, -0.02), (1.3, 0), (T, 0)])
+    P.add('hips', (th, 0, 0), (0, -dn, back)).squash(q).add('head', (keys(t, [(0, 0), (0.12, 10), (0.30, -12), (0.44, 8), (0.6, 0), (T, 0)]), 0, 0))
+    for sx, n in ((1, 'L'), (-1, 'R')): P.add('leg_' + n, (lg - th, 0, sx * 9 * f)).add('foot_' + n, (18 * f, 0, 0))
+    au = keys(t, [(0, 0), (0.10, 70), (0.28, 125), (0.42, 60), (0.86, 44), (1.02, 30), (1.2, 0), (T, 0)]); wind = keys(t, [(0, 0), (0.08, 40), (0.28, 30), (0.4, 0), (T, 0)]) * sin(2 * pi * 4.5 * t)
+    return P.add('arm_L', (wind, 0, au)).add('arm_R', (-wind, 0, -au))
+
+def skate(t, T=1.2):                     # 지치기: 양팔을 벌리고, 한 발로 서서 다른 발로 뒤 · 옆으로 민다(번갈아)
+    P = base(); u = (t / T) % 1.0; w = sin(2 * pi * u); c = cos(2 * pi * u); pR = max(0.0, w) ** 1.4; pL = max(0.0, -w) ** 1.4; rl = -7 * w
+    P.add('hips', (12 - 3 * abs(w), 0, rl), (0.05 * w, -0.015 + 0.012 * abs(w), 0)).add('belly', (3, -9 * w, -rl * 0.4)).add('head', (-9, 6 * w, -rl * 0.5)).squash(0.02 * c * c)
+    P.add('arm_L', (14 * w, 0, 62 + 8 * w)).add('arm_R', (14 * w, 0, -62 + 8 * w)).add('fore_L', (4, 0, 10)).add('fore_R', (4, 0, -10))
+    for sx, n, p in ((1, 'L', pL), (-1, 'R', pR)):
+        P.add('leg_' + n, (-12 + 3 * abs(w) + 30 * p, 0, -rl + sx * 22 * p), (-0.05 * w, 0.015 - 0.012 * abs(w) + 0.035 * p - sx * 0.16 * sin(rad(rl)), 0)).add('foot_' + n, (22 * p, 0, 0))
+    return P
+
+def fan(t, T=0.6):                       # 부채질: 오른손을 얼굴 옆에 들고 팔랑팔랑(한 바퀴에 두 번)
+    P = base(); a = 2 * pi * t / T; f = sin(2 * a)
+    P.add('hips', (-3, 0, 2)).add('head', (-7 + 1.2 * f, -10, 4)).squash(-0.01 * cos(a))
+    reach(P, 'R', (-0.28 + 0.04 * f, 0.66 + 0.012 * f, 0.29))
+    return P.add('hand_R', (45 * f, 0, 0)).add('arm_L', (4, 0, 3 * sin(a)))
+
+def warm(t, T=1.5):                      # 쬐기: 두 손을 앞으로 내밀고 살짝 웅크려 손을 번갈아 까딱인다
+    P = base(); a = 2 * pi * t / T; b = sin(a); r = sin(2 * a)
+    lean(P, 7 + 1.5 * b); sink(P, 0.012 + 0.006 * b); P.add('head', (4 - 2 * b, 0, 2 * r)).squash(0.02 + 0.012 * b)
+    reach(P, 'L', (0.25, 0.56 + 0.012 * r, 0.31)); reach(P, 'R', (-0.25, 0.56 - 0.012 * r, 0.31))
+    return P.add('hand_L', (-38, 0, 0)).add('hand_R', (-38, 0, 0))
+
+def catchMouth(t, T=0.7):                # 받아먹기: 고개를 젖히고 까치발로(입은 코드가 벌린다)
+    P = base(); k = keys(t, [(0, 0), (0.16, 1.06), (0.24, 1), (0.42, 1), (0.56, -0.04), (0.62, 0), (T, 0)])
+    lean(P, -9 * k); P.add('hips', l=(0, 0.012 * k, 0)).squash(-0.07 * k).add('head', (-27 * k, 0, 0)).arms(22 * k, -24 * k, 6 * k)
+    for n in ('L', 'R'): P.add('foot_' + n, (8 * k, 0, 0))
+    return P
+
+def rollSnow(t, T=1.6):                  # 눈 굴리기: 몸을 숙여 두 손으로 번갈아 밀며 제자리걸음(한 바퀴에 네 걸음)
+    P = base(); a = 2 * pi * t / T; st = 2 * a; w = sin(st); lL = max(0.0, w) ** 1.3; lR = max(0.0, -w) ** 1.3
+    lean(P, 30 + 3 * sin(2 * st), -2.5 * w); sink(P, 0.03); P.add('head', (-24, 0, 0)).add('belly', (4, 5 * w, 0)).squash(0.03 + 0.015 * cos(2 * st))
+    reach(P, 'L', (0.22, 0.42 + 0.035 * sin(st), 0.31 + 0.02 * cos(st))); reach(P, 'R', (-0.22, 0.42 - 0.035 * sin(st), 0.31 - 0.02 * cos(st)))
+    for n, l in (('L', lL), ('R', lR)): P.add('leg_' + n, (-22 * l, 0, 0), (0, 0.05 * l, 0)).add('foot_' + n, (16 * l, 0, 0))
+    return P
+
+def sneeze(t, T=0.9):                    # 에취: 숨을 들이쉬며 고개를 젖혔다가 → 앞으로 확 숙이며 톡 튄다
+    P = base(); inh = keys(t, [(0, 0), (0.34, 1), (0.42, 1), (0.48, 0), (T, 0)]); out = keys(t, [(0, 0), (0.42, 0), (0.50, 1), (0.58, 0.8), (0.76, 0), (T, 0)])
+    z = keys(t, [(0, 0), (0.44, 0), (0.51, 0.035), (0.58, 0), (T, 0)])
+    lean(P, -9 * inh + 20 * out); P.add('hips', l=(0, z, 0)).squash(-0.08 * inh + 0.10 * out).add('head', (-20 * inh + 22 * out, 0, 0))
+    return P.arms(28 * inh + 30 * out, 22 * inh - 34 * out, 34 * inh)
+
+CLIPS += [
+    ('flail', flail, 0.8, True), ('swim', swim, 1.0, True), ('hang', hang, 1.6, True), ('splat', splat, 1.6, False), ('reachJump', reachJump, 1.0, False), ('blow', blow, 1.4, False), ('pat', pat, 1.0, False),
+    ('stir', stir, 1.2, True), ('sip', sip, 1.1, False), ('hiccup', hiccup, 0.5, False), ('shake', shake, 1.0, False), ('hopFeet', hopFeet, 0.6, True), ('noseHold', noseHold, 1.0, False),
+    ('shiver', shiver, 0.4, True), ('slip', slip, 1.4, False), ('skate', skate, 1.2, True), ('fan', fan, 0.6, True), ('warm', warm, 1.5, True), ('catchMouth', catchMouth, 0.7, False), ('rollSnow', rollSnow, 1.6, True), ('sneeze', sneeze, 0.9, False),
+]
+
 if __name__ == '__main__':
     rig, _ = G.build(); bpy.context.scene.render.fps = FPS; info = bake(rig)
     bpy.context.scene.frame_start = 0; bpy.context.scene.frame_end = 120

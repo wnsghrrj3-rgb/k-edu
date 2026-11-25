@@ -2,15 +2,36 @@
 <html lang="ko"><head><meta charset="utf-8"><title>몬스터 넷 보기</title>
 <script type="importmap">{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }</script>
 <link rel="stylesheet" href="../world.css?v=1"></head><body><canvas id="c"></canvas>
-<!-- 확인용: 몬스터 넷을 나란히 세워 본다. ?face=wow|joy|… · ?ry=도 -->
+<!-- 확인용: 몬스터 넷을 나란히 세워 본다. ?face=wow|joy|… · ?ry=도  /  ?strip=동작&n=칸수 → 고고의 그 동작을 시간 차례로 한 장에(띠 그림) -->
 <script type="module">
 import * as THREE from 'three';
 import { createStage, Q } from '../engine/stage.js?v=1';
 import { createActor } from '../engine/actor.js?v=1';
 const stage = createStage({ canvas: document.getElementById('c'), sky: ['#fff1e0', '#ffe2c6', '#f3c9a3'], cam: { AIM: [0, 0.62, 0], TILT: 9, FOV: 26, HALF_W: 2.9, MIN_DIST: 6 } });
 const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#efdcbb', roughness: 1 })); floor.receiveShadow = true; stage.scene.add(floor);
+if (Q.has('strip')) {
+  // 띠 그림: ?strip=동작&n=칸수(기본 7) — 윗줄은 앞 비스듬히, 아랫줄은 옆에서. 한 번짜리는 끝난 뒤 서 있기로 넘어가는 0.4초까지 담는다(&span=초 · &mood=표정 · &size=크기)
+  const name = Q.get('strip'), n = +(Q.get('n') || 7), g = await createActor(stage.scene, { model: 'gogo' }), S = g.state, info = g.info[name];
+  g.place(0, 0, 0); S.busy = true; if (Q.get('size')) g.setSize(+Q.get('size')); for (let i = 0; i < 120; i++) g.update(1 / 60);
+  if (!info) { document.title = 'READY strip NO-CLIP ' + name; throw new Error('no clip ' + name); }
+  const span = +(Q.get('span') || (info.loop ? info.dur : info.dur + 0.4)), Wd = 2100, w = Wd / n, h = w * 1.08, sheet = document.createElement('canvas'); sheet.width = Wd; sheet.height = h * 2;
+  sheet.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:auto;z-index:8'; document.body.append(sheet); const sx = sheet.getContext('2d'), cam = stage.camera, R = stage.renderer;
+  R.setPixelRatio(1); R.setSize(w, h, false); cam.aspect = w / h; cam.fov = 24; cam.updateProjectionMatrix();
+  g.act(name, { mood: Q.get('mood') }); let t = 0;
+  if (info.loop) for (let i = 0; i < Math.round(info.dur * 120); i++) g.update(1 / 120);                // 되풀이 동작은 한 바퀴 돌려 다 섞인 뒤부터 담는다(처음 칸 = 마지막 칸이어야 한다)
+  for (let i = 0; i < n; i++) {
+    const tTo = span * i / (n - 1); while (t < tTo - 1e-6) { g.update(1 / 120); t += 1 / 120; if (info.loop && S.act == null) g.act(name); }
+    for (const [row, px, py, pz] of [[0, 2.3, 1.5, 4.6], [1, 5.3, 0.9, 0.0]]) {
+      cam.position.set(px, py, pz); cam.lookAt(0, 0.62, 0); cam.updateMatrixWorld(); R.render(stage.scene, cam);
+      sx.drawImage(R.domElement, i * w, row * h, w, h);
+    }
+    sx.fillStyle = '#5a4326'; sx.font = '800 22px sans-serif'; sx.fillText(name + ' ' + tTo.toFixed(2) + 's' + (!info.loop && tTo > info.dur ? ' (idle)' : ''), i * w + 8, 26);
+  }
+  document.getElementById('c').style.visibility = 'hidden'; window.__g = g; document.title = 'READY strip ' + name;
+} else {
 const names = ['momo', 'bobo', 'gogo', 'toto'], cast = [];
 for (const [i, n] of names.entries()) { const a = await createActor(stage.scene, { model: n }); a.place((i - 1.5) * 1.35, 0, (+Q.get('ry') || 0) * Math.PI / 180); a.lookAt(stage.camera.position); if (Q.get('face')) a.setMood(Q.get('face'), 99); cast.push(a); }
 for (let i = 0; i < 90; i++) for (const a of cast) a.update(1 / 60);
 stage.st.ready = true; stage.render(); document.title = 'READY cast'; window.__cast = cast;
+}
 </script></body></html>
