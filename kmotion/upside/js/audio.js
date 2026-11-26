@@ -11,6 +11,7 @@ const SONGS = {
   town:   { bpm: 112, root: 62, prog: [[0, 4, 7, 12], [7, 11, 14, 19], [9, 12, 16, 21], [5, 9, 12, 17]] },
   lab:    { bpm: 96,  root: 58, prog: [[0, 4, 8, 11], [2, 5, 9, 12], [0, 4, 7, 11], [5, 8, 12, 15]] },
   castle: { bpm: 88,  root: 53, prog: [[0, 3, 7, 12], [5, 8, 12, 17], [3, 7, 10, 15], [7, 11, 14, 19]] },
+  run:    { bpm: 132, root: 57, drums: true, prog: [[0, 3, 7, 12], [8, 12, 15, 20], [5, 8, 12, 17], [7, 11, 14, 19]] },
   ending: { bpm: 104, root: 60, prog: [[0, 4, 7, 12], [5, 9, 12, 17], [7, 11, 14, 19], [0, 4, 7, 16]] },
 };
 const hz = m => 440 * Math.pow(2, (m - 69) / 12);
@@ -31,6 +32,7 @@ export class UpsideAudio extends AudioManager {
       const bar = (this.step >> 3) % S.prog.length, k = this.step & 7, ch = S.prog[bar];
       if (k === 0) { ch.forEach((n, i) => this.note(hz(S.root - 12 + n), beat * 8.5, { type: 'triangle', g: .028, attack: .25, rev: .6 })); this.note(hz(S.root - 24 + ch[0]), beat * 7, { type: 'sine', g: .09, attack: .02, rev: .1 }); }
       if (k === 4) this.note(hz(S.root - 24 + ch[0] + 7), beat * 3, { type: 'sine', g: .05, rev: .1 });
+      if (S.drums) { if (k % 2 === 0) this.tone(110, .18, { type: 'sine', g: .22, slide: 40 }); if (k % 4 === 2) this.noise(.12, { g: .07, hp: 1500, lp: 6000 }); if (k % 2 === 1) this.noise(.04, { g: .035, hp: 7000, lp: 14000 }); }
       // 반짝이는 첼레스타 아르페지오(위로 오르기 = 거꾸로)
       const arp = [0, 1, 2, 3, 2, 3, 1, 2]; const n = ch[arp[k]] + 12 + ((this.step >> 5) % 2 ? 12 : 0);
       if (k % 2 === 0 || Math.random() < .5) this.note(hz(S.root + n), beat * 2.2, { type: 'sine', g: .045, rev: .7 });
@@ -49,6 +51,10 @@ export class UpsideAudio extends AudioManager {
   bonk(){ this.noise(.15, { g: .2, hp: 100, lp: 900 }); this.tone(300, .25, { type: 'triangle', g: .12, slide: 150 }); this.tone(1200, .4, { type: 'sine', g: .03, slide: 1500, delay: .1 }); }
   whoosh(){ this.noise(.5, { g: .08, hp: 500, lp: 3000, q: 3 }); }
   tick(){ this.tone(1500, .03, { type: 'square', g: .03 }); }
+  smash(){ this.noise(.7, { g: .25, hp: 800, lp: 12000 }); for (let i = 0; i < 6; i++) this.tone(1800 + Math.random() * 2400, .25, { type: 'triangle', g: .05, delay: i * .03 }); this.tone(90, .3, { type: 'sine', g: .25, slide: 40 }); }
+  squeak(){ this.tone(900, .12, { type: 'sine', g: .1, slide: 1600 }); this.tone(1400, .15, { type: 'sine', g: .06, delay: .08 }); }
+  coin(n = 0){ this.tone(1320 * Math.pow(1.03, n % 12), .12, { type: 'square', g: .035 }); this.tone(1980 * Math.pow(1.03, n % 12), .18, { type: 'sine', g: .05, delay: .05 }); }
+  alarm(){ this.tone(660, .12, { type: 'square', g: .05 }); this.tone(880, .12, { type: 'square', g: .05, delay: .14 }); }
   piece(){ [784, 988, 1175, 1568, 1976].forEach((f, i) => this.tone(f, .6, { type: 'sine', g: .08, delay: i * .08 })); this.noise(1.2, { g: .04, hp: 5000, lp: 12000, delay: .2 }); }
 }
 

@@ -3,172 +3,115 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>K-MOTION 거꾸로 나라 · UPSIDE DOWN WORLD</title>
+<title>K-MOTION 거꾸로 나라 달리기 · UPSIDE DOWN RUN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./upside.css?v=1">
+<link rel="stylesheet" href="./upside.css?v=3">
+<link rel="stylesheet" href="./run.css?v=1">
 <script type="importmap">
-{ "imports": {
-    "three": "/labs/vendor/three185/three.module.min.js",
-    "three/addons/": "/labs/vendor/three185/addons/"
-} }
+{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }
 </script>
 </head>
 <body>
 <div id="app">
   <canvas id="gl"></canvas>
   <video id="v" autoplay playsinline muted></video>
+  <div class="storm" id="storm"></div>
 
-  <!-- 시작 화면 -->
+  <!-- 시작 -->
   <section class="screen" id="scr-title">
     <div class="logo">
       <span class="k">K-MOTION</span>
-      <h1><span class="flip">거</span><span>꾸</span><span class="flip">로</span> <span>나</span><span class="flip">라</span></h1>
-      <small>UPSIDE DOWN WORLD</small>
+      <h1><span class="flip">거</span><span>꾸</span><span class="flip">로</span> <span>달</span><span class="flip">리</span><span>기</span></h1>
+      <small>UPSIDE DOWN RUN</small>
     </div>
-    <nav class="menu">
-      <button class="mbtn main" data-go="adventure"><i>🗺️</i>거꾸로 나라 탐험 시작</button>
-      <button class="mbtn" data-go="free"><i>🪄</i>자유 체험</button>
-      <button class="mbtn" data-go="select"><i>🎯</i>미션 선택</button>
-      <button class="mbtn" data-go="group"><i>🏆</i>모둠 대항전</button>
-      <button class="mbtn" data-go="settings"><i>⚙️</i>카메라 및 인식 설정</button>
-    </nav>
+    <div class="howto">
+      <div class="hw"><b>🧎 웅크리면</b><i>➜</i><span>💪 커져요</span></div>
+      <div class="hw"><b>🙆 팔 벌리면</b><i>➜</i><span>🐭 작아져요</span></div>
+      <div class="hw"><b>👉 내가 오른쪽</b><i>➜</i><span>👈 캐릭터는 왼쪽</span></div>
+    </div>
+    <button class="big go" id="btnGo">달리기 시작! ▶</button>
+    <p class="best" id="bestT"></p>
     <div class="titlebar">
-      <div class="seg" id="inputSeg"><button data-v="camera">📷 카메라</button><button data-v="keyboard">⌨️ 키보드 테스트</button></div>
+      <div class="seg" id="inputSeg"><button data-v="camera">📷 카메라</button><button data-v="keyboard">⌨️ 키보드</button></div>
       <span class="chip" id="camChip">카메라 준비 중…</span>
+      <button class="ghostbtn" id="btnSet">⚙️ 설정</button>
       <button class="ghostbtn" id="btnFull1">⛶ 전체 화면</button>
       <a class="ghostbtn" href="../">← 케이모션</a>
     </div>
     <div class="sense title" id="titleSense"><div class="camwrap" id="titleCam"><div class="camst" id="titleSt">내 몸</div></div></div>
-    <p class="titletip" id="titleTip">카메라 앞에 서 보세요. 캐릭터가 여러분을 따라 해요!</p>
-  </section>
-
-  <!-- 이야기 -->
-  <section class="screen hidden" id="scr-story">
-    <div class="story-card"><div class="story-art" id="storyArt">🏰</div><p id="storyText"></p>
-      <div class="story-dots" id="storyDots"></div>
-      <div class="btns"><button class="big" id="btnStoryNext">다음 ▶</button><button class="ghostbtn" id="btnStorySkip">건너뛰기</button></div></div>
-  </section>
-
-  <!-- 지도 -->
-  <section class="screen hidden" id="scr-map">
-    <header class="maphead"><button class="ghostbtn" id="btnMapBack">← 처음 화면</button><h2 id="mapTitle">거꾸로 나라 지도</h2><div class="pieces lg" id="mapPieces"></div></header>
-    <div class="map" id="map"><svg class="mappath" viewBox="0 0 1000 560" preserveAspectRatio="none"><path d="M100 403 C 180 403, 210 157, 290 157 S 410 403, 490 403 S 610 157, 690 157 S 800 403, 880 403" /></svg></div>
-    <p class="maptip" id="mapTip">지역을 눌러 탐험을 시작해요</p>
   </section>
 
   <!-- 자세 보정 -->
   <section class="screen hidden" id="scr-calib">
-    <h2 id="calibTitle">탐험대원, 카메라 앞에 서요!</h2>
+    <h2 class="ctitle">카메라 앞에 서요!</h2>
     <div class="calib-wrap">
       <div class="calib-cam" id="calibCam"><div class="guide"></div></div>
       <div class="calib-side">
-        <div class="ring"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="ringFg" cx="60" cy="60" r="52"/></svg><b id="calibNum">✋</b></div>
-        <p id="calibMsg">가운데에 서서 차렷!<br>머리부터 손까지 보이게</p>
+        <div class="ring"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="ringFg" cx="60" cy="60" r="52"/></svg><b>✋</b></div>
+        <p id="calibMsg">가운데에 서서 차렷!</p>
         <button class="big ghost" id="btnCalibSkip">바로 시작</button>
-        <button class="ghostbtn" id="btnCalibBack">← 돌아가기</button>
       </div>
     </div>
   </section>
 
-  <!-- 게임 HUD -->
+  <!-- 달리기 HUD -->
   <section class="hud hidden" id="hud">
-    <div class="hud-top">
-      <div class="mbadge" id="mBadge"><b id="mNo">1</b><span id="mName">거꾸로 거울의 방</span></div>
-      <div class="taskcol"><div class="task" id="task"><span class="ic" id="taskIc">🎯</span><span id="taskTx"></span><svg class="hold" id="holdSvg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" class="bg"/><circle cx="20" cy="20" r="16" class="fg" id="holdFg"/></svg></div><div class="rules" id="rules"></div></div>
-      <div class="hud-right"><div class="pieces" id="hudPieces"></div><div class="prog" id="prog"></div></div>
+    <div class="rtop">
+      <div class="scorebox"><b id="score">0</b><span id="dist">0m</span></div>
+      <div class="danger"><span class="ico">🌀</span><div class="dbar"><i id="dangerFill"></i></div><span class="ico">🏃</span></div>
+      <div class="rright"><span class="lv" id="lv">Lv 1</span><span class="combo" id="combo"></span></div>
     </div>
-    <div class="timer hidden" id="timer"><small>자유 시간</small><b id="timerN">20</b></div>
-    <div class="trip hidden" id="trip"><div class="bar"><i id="tripFill"></i><span id="tripKid">🧭</span></div><span>🕰️</span></div>
-    <div class="hintbox hidden" id="hint"><div id="hintPic"></div><p id="hintTx"></p></div>
-    <div class="cmdbox hidden" id="cmd"><div class="wiz">🧙</div><div id="cmdPic"></div><p id="cmdTx"></p></div>
+    <div class="prompt hidden" id="prompt"></div>
+    <div class="sz mid" id="sizeNow">🧒 보통</div>
+    <div class="count hidden" id="count">3</div>
     <div class="toast" id="toast"></div>
     <div class="sense" id="sense">
       <div class="camwrap" id="camWrap"><div class="camst" id="camSt"></div></div>
-      <div class="acts" id="acts"><i data-a="armL">🙋 내 왼팔</i><i data-a="armR">🙋 내 오른팔</i><i data-a="spread">🙆 펼치기</i><i data-a="crouch">🧎 웅크리기</i><i data-a="moving">🚶 걷기</i><i data-a="still">✋ 가만히</i><i data-a="tilt">🙂 고개</i><i class="pos" data-a="pos"><b>◀</b><span>●</span><b>▶</b></i></div>
+      <div class="acts" id="acts"><i data-a="crouch">🧎 웅크림 → 커짐</i><i data-a="spread">🙆 벌림 → 작아짐</i><i class="pos" data-a="pos"><b>◀</b><span>●</span><b>▶</b></i></div>
     </div>
-    <div class="keys hidden" id="keyHelp"><b>⌨️ 키보드 테스트</b> ←→ 이동 · Q 왼팔 · E 오른팔 · ↓/S 웅크리기 · ↑/W 크게 펼치기 · Z/C 고개 · Space 제자리 걷기</div>
-    <button class="pausebtn" id="btnPause" title="일시 정지">⏸</button>
-    <div class="groupnow hidden" id="groupNow"></div>
-    <div class="away hidden" id="away"><div><b>🙋 카메라 앞으로 돌아와요!</b><p>탐험대원이 보이면 다시 시작해요</p></div></div>
+    <div class="keys hidden" id="keyHelp"><b>⌨️</b> ←→ 이동 · ↓/S 웅크리기(커짐) · ↑/W 팔 벌리기(작아짐)</div>
+    <button class="pausebtn" id="btnPause">⏸</button>
+    <div class="away hidden" id="away"><div><b>🙋 카메라 앞으로 돌아와요!</b><p>보이면 다시 달려요</p></div></div>
   </section>
 
-  <!-- 결과·생각 나누기 -->
-  <section class="screen hidden" id="scr-result">
+  <!-- 끝 -->
+  <section class="screen hidden" id="scr-over">
     <div class="result-card">
-      <div class="gemfly" id="resGem">💎</div>
-      <h2 id="resTitle">미션 성공!</h2>
-      <p class="ressub" id="resSub">마법 조각을 얻었어요</p>
-      <div class="pieces lg" id="resPieces"></div>
-      <div class="think"><span>💬 생각 나누기</span><p id="thinkQ"></p><button class="ghostbtn" id="btnThinkNext">다른 질문 ▶</button></div>
-      <p class="grouppts hidden" id="groupPts"></p>
-      <div class="btns" id="resBtns"></div>
-    </div>
-  </section>
-
-  <!-- 자유 체험 -->
-  <section class="screen hidden" id="scr-free">
-    <div class="free-cam"><canvas id="freeCam" width="640" height="480"></canvas><div class="free-kb hidden" id="freeKb">⌨️ 키보드 테스트 모드<br><small>←→ 이동 · Q/E 팔 · ↓ 웅크리기 · ↑ 펼치기 · Z/C 고개 · Space 걷기</small></div><span class="free-label" id="freeLabel">카메라 화면</span></div>
-    <aside class="free-panel">
-      <h3>🎥 카메라 화면 마법 <small>영상 자체를 뒤집어요</small></h3>
-      <div class="fx" data-group="video">
-        <button data-fx="vlr">↔️ 좌우 반전</button><button data-fx="vud">↕️ 상하 반전</button><button data-fx="vrot">🔄 180도 회전</button>
-      </div>
-      <h3>🧒 캐릭터 마법 <small>몸 움직임을 바꿔요</small></h3>
-      <div class="fx" data-group="hero">
-        <button data-fx="opp">🙃 반대 동작 캐릭터</button><button data-fx="size">🔍 거꾸로 크기 변화</button><button data-fx="move">🛑 움직이면 멈추는 캐릭터</button><button data-fx="grav">🎈 중력 반전</button><button data-fx="rand">🎲 무작위 거꾸로 마법</button>
-      </div>
-      <p class="free-now" id="freeNow">효과를 눌러 보세요</p>
-      <div class="btns"><button class="ghostbtn" id="btnFreeOff">모두 끄기</button><button class="ghostbtn" id="btnFreeBack">← 처음 화면</button></div>
-    </aside>
-  </section>
-
-  <!-- 모둠 대항전 -->
-  <section class="screen hidden" id="scr-group">
-    <header class="maphead"><button class="ghostbtn" id="btnGroupBack">← 처음 화면</button><h2>🏆 모둠 대항전</h2><div class="gtools"><button class="ghostbtn" id="btnGMinus">－</button><span id="gCount">7모둠</span><button class="ghostbtn" id="btnGPlus">＋</button><button class="ghostbtn" id="btnFull2">⛶</button></div></header>
-    <div class="gwrap">
-      <div class="gnow" id="gNow"></div>
-      <table class="gtable"><thead><tr><th>순서</th><th>모둠 이름</th><th>🪞</th><th>🌳</th><th>🏃</th><th>🧪</th><th>🏰</th><th>참여</th><th>점수</th><th></th></tr></thead><tbody id="gBody"></tbody></table>
-      <div class="gplay"><span>미션 고르고 시작 ▶</span><div class="seg" id="gMission"></div><button class="big" id="btnGStart">이번 학생 시작!</button></div>
-      <div class="gctl"><button class="ghostbtn" id="btnNextStudent">🔁 다음 학생</button><button class="ghostbtn" id="btnNextGroup">⏭ 다음 모둠</button><button class="ghostbtn danger" id="btnGReset">전체 점수 초기화</button></div>
-      <p class="gnote">점수는 빠르기가 아니라 <b>미션 성공(성공 1번 +1, 미션 완주 +5)</b>과 <b>참여(+2)</b>로 쌓여요. 모둠마다 4명이 돌아가며 해요.</p>
+      <h2>🌀 회오리에 잡혔어요!</h2>
+      <div class="ovscore"><b id="ovScore">0</b><span>점</span></div>
+      <p class="ressub" id="ovBest"></p>
+      <div class="ovstats" id="ovStats"></div>
+      <div class="think"><span>💬 생각 나누기</span><p id="ovQ"></p></div>
+      <div class="btns"><button class="big" id="btnAgain">다시 달리기 ▶</button><button class="big ghost" id="btnNext">🔁 다음 친구</button><button class="big ghost" id="btnHome">처음 화면</button></div>
     </div>
   </section>
 
   <!-- 설정 -->
-  <section class="screen hidden" id="scr-settings">
+  <section class="screen hidden" id="scr-set">
     <div class="set-card">
-      <h2>⚙️ 카메라 및 인식 설정</h2>
+      <h2>⚙️ 설정</h2>
       <div class="set-grid">
         <label>난이도</label><div class="seg" id="sDiff"><button data-v="easy">쉬움</button><button data-v="normal">보통</button><button data-v="hard">어려움</button></div>
-        <label>모션 인식 민감도</label><div class="row"><input type="range" id="sSens" min="0.6" max="1.5" step="0.05"><b id="sSensV"></b></div>
-        <label>입력 방식</label><div class="seg" id="sInput"><button data-v="camera">📷 카메라</button><button data-v="keyboard">⌨️ 키보드 테스트</button></div>
-        <label>카메라 화면</label><div class="seg" id="sMirror"><button data-v="true">🪞 거울처럼(기본)</button><button data-v="false">↔️ 좌우 그대로</button></div>
-        <label>카메라 고르기·범위</label><div class="row"><button class="ghostbtn" id="btnCamRange">📷 카메라 고르기 / 범위 맞추기</button></div>
-        <label>학생별 자세 보정</label><div class="row"><button class="ghostbtn" id="btnRecalib">🧍 지금 자세 다시 맞추기</button><span class="dim" id="calibState"></span></div>
-        <label>거울의 방 자유 시간</label><div class="row"><input type="range" id="sFree" min="10" max="40" step="5"><b id="sFreeV"></b></div>
-        <label>미션별 플레이 시간</label><div class="seg" id="sLimit"><button data-v="0">제한 없음</button><button data-v="120">2분</button><button data-v="180">3분</button><button data-v="300">5분</button></div>
+        <label>인식 민감도</label><div class="row"><input type="range" id="sSens" min="0.6" max="1.5" step="0.05"><b id="sSensV"></b></div>
+        <label>입력</label><div class="seg" id="sInput"><button data-v="camera">📷 카메라</button><button data-v="keyboard">⌨️ 키보드</button></div>
+        <label>카메라 화면</label><div class="seg" id="sMirror"><button data-v="true">🪞 거울처럼</button><button data-v="false">↔️ 그대로</button></div>
+        <label>카메라</label><div class="row"><button class="ghostbtn" id="btnCamRange">📷 카메라 고르기 / 범위</button></div>
+        <label>자세 보정</label><div class="row"><button class="ghostbtn" id="btnRecalib">🧍 다시 맞추기</button></div>
         <label>음성 안내</label><div class="seg" id="sVoice"><button data-v="true">켜기</button><button data-v="false">끄기</button></div>
         <label>배경음악</label><div class="seg" id="sBgm"><button data-v="true">켜기</button><button data-v="false">끄기</button></div>
-        <label>카메라 작은 화면</label><div class="seg" id="sPreview"><button data-v="true">보이기</button><button data-v="false">숨기기</button></div>
-        <label>모둠 수</label><div class="row"><input type="range" id="sGroups" min="2" max="10" step="1"><b id="sGroupsV"></b></div>
         <label>그래픽</label><div class="seg" id="sQuality"><button data-v="high">고화질</button><button data-v="low">가볍게(크롬북)</button></div>
       </div>
-      <p class="dim">영상은 이 기기 안에서만 처리돼요. 학생 영상·얼굴은 저장하거나 밖으로 보내지 않아요.</p>
-      <div class="btns"><button class="ghostbtn" id="btnFull3">⛶ 전체 화면</button><button class="ghostbtn" id="btnProgReset">탐험 기록 지우기</button><button class="big" id="btnSetClose">확인</button></div>
+      <p class="dim">영상은 이 기기 안에서만 처리해요. 저장·전송하지 않아요. · 예전 다섯 미션 판: <a href="./classic.html" style="color:#9fe9ff">classic</a></p>
+      <div class="btns"><button class="ghostbtn" id="btnFull2">⛶ 전체 화면</button><button class="big" id="btnSetClose">확인</button></div>
     </div>
   </section>
 
-  <!-- 일시 정지 -->
-  <div class="overlay hidden" id="pause"><div class="pcard"><h3>⏸ 잠깐 멈춤</h3>
-    <button class="big" id="btnResume">계속하기</button><button class="big ghost" id="btnRestart">처음부터 다시</button><button class="big ghost" id="btnQuitMap">지도로</button><button class="big ghost" id="btnQuitHome">처음 화면</button></div></div>
-
-  <div class="overlay hidden" id="ruleCard"><div class="rcard"><h3 id="rcTitle">이 지역의 거꾸로 규칙</h3><div class="rrows" id="rcRows"></div><button class="big" id="btnRcOk">알겠어요! 시작 ▶</button></div></div>
-  <div class="ending hidden" id="ending"><h2>거꾸로 나라의 마법이 풀렸어요!</h2></div>
-  <div class="flash" id="flash"></div>
-  <div class="loading" id="loading"><div class="lgem">💎</div><div class="bar"><i id="loadBar"></i></div><span id="loadTxt">거꾸로 나라로 가는 중…</span></div>
+  <div class="overlay hidden" id="pause"><div class="pcard"><h3>⏸ 잠깐 멈춤</h3><button class="big" id="btnResume">계속 달리기</button><button class="big ghost" id="btnQuit">처음 화면</button></div></div>
+  <div class="hitflash" id="hitflash"></div>
+  <div class="loading" id="loading"><div class="lgem">🌀</div><span>거꾸로 나라로 가는 중…</span></div>
 </div>
 <script src="../kmotion.js"></script>
-<script type="module" src="./js/main.js?v=1"></script>
+<script type="module" src="./js/game.js?v=1"></script>
 </body>
 </html>
