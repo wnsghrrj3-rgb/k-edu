@@ -29,20 +29,21 @@ class Latch {
 }
 
 export class MotionInput {
-  constructor({ video, canvas, settings }){
+  constructor({ video, canvas, settings, keymap }){
+    this.K = Object.assign({ left: 'arrowleft', right: 'arrowright', armL: 'q', armR: 'e', spread: ['arrowup', 'w'], crouch: ['arrowdown', 's'], tiltL: 'z', tiltR: 'c', walk: ' ', head: 'h', clap: 'f', center: 'x' }, keymap || {});
     this.video = video; this.canvas = canvas; this.S = settings; this.km = null; this.mode = 'none';
     this.keys = {}; this.listeners = {};
     this.base = null; this.baseBuf = []; this.calibrating = false;
     this.pose = null; this.lastSeen = 0; this.prevPts = null; this.prevT = 0;
     this.f = this.zero();
-    this.latch = { armL: new Latch(), armR: new Latch(), spread: new Latch(150, 250), crouch: new Latch(150, 250), tiltL: new Latch(160, 220), tiltR: new Latch(160, 220), moving: new Latch(180, 420) };
+    this.latch = { armL: new Latch(), armR: new Latch(), spread: new Latch(150, 250), crouch: new Latch(150, 250), tiltL: new Latch(160, 220), tiltR: new Latch(160, 220), moving: new Latch(180, 420), head: new Latch(150, 250), clap: new Latch(60, 300) };
     this.kbX = 0;
     this._kd = e => { if (this.mode !== 'keyboard') return; const k = e.key.toLowerCase(); if ([' ', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(k)) e.preventDefault(); this.keys[k] = true; };
     this._ku = e => { this.keys[e.key.toLowerCase()] = false; };
     addEventListener('keydown', this._kd); addEventListener('keyup', this._ku);
   }
   zero(){ return { present: false, x: 0, armL: 0, armR: 0, spread: 0, crouch: 0, tilt: 0, energy: 0, moving: false,
-    armLUp: false, armRUp: false, spreadOn: false, crouchOn: false, tiltDir: 0,
+    armLUp: false, armRUp: false, spreadOn: false, crouchOn: false, tiltDir: 0, head: 0, clap: 0, headOn: false, clapOn: false,
     vec: { L: { u: { x: 0, y: 1 }, f: { x: 0, y: 1 } }, R: { u: { x: 0, y: 1 }, f: { x: 0, y: 1 } } }, quality: 0 }; }
   on(type, fn){ (this.listeners[type] = this.listeners[type] || []).push(fn); return this; }
   emit(type, d){ (this.listeners[type] || []).forEach(f => f(d)); }
@@ -127,6 +128,11 @@ export class MotionInput {
       if (p[14].v > .3) lv(f.vec.R, 'u', vec(p[12], p[14])); if (p[16].v > .3) lv(f.vec.R, 'f', vec(p[14], p[16]));
       f.energy += ((this.rawEnergy || 0) - f.energy) * Math.min(1, dt * 6);
       f.quality = Math.min(p[11].v, p[12].v, p[15].v, p[16].v);
+      // 손 머리 위에: 두 손목이 머리 높이 근처 + 머리 가까이 / 박수: 두 손목이 가슴 앞에서 붙음
+      const nose = p[0], wd2 = dist(p[15], p[16]) / sw, wy = (p[15].y + p[16].y) / 2;
+      const nearHead = wy > nose.y - .7 * sw && wy < nose.y + .3 * sw && Math.abs((p[15].x + p[16].x) / 2 - nose.x) < .9 * sw && wd2 < 1.9;
+      f.head = ease('head', nearHead && p[15].v > .3 && p[16].v > .3 ? 1.2 : 0);
+      f.clap = ease('clap', wd2 < .5 && wy > sh.y - .2 * sw && p[15].v > .3 && p[16].v > .3 ? 1.2 : 0);
     }
     // 상태(히스테리시스) — 켜짐 1.0 / 꺼짐 0.6
     const L = this.latch;
@@ -138,6 +144,7 @@ export class MotionInput {
     L.moving.step(f.energy, D.moveOn * s, D.moveOff * s, dtMs);
     f.armLUp = L.armL.on; f.armRUp = L.armR.on; f.spreadOn = L.spread.on; f.crouchOn = L.crouch.on && !L.spread.on;
     f.tiltDir = L.tiltR.on ? 1 : L.tiltL.on ? -1 : 0; f.moving = L.moving.on;
+    L.head.step(f.head, 1, .6, dtMs); L.clap.step(f.clap, 1, .6, dtMs); f.headOn = L.head.on; f.clapOn = L.clap.on;
     return f;
   }
   // 크기 상태: big(웅크림) / small(펼침) / mid(평범)
@@ -146,17 +153,21 @@ export class MotionInput {
   sideState(){ const th = this.diff.lateral * this.sens; return this.f.x > th ? 1 : this.f.x < -th ? -1 : 0; }
 
   keyboardFeatures(dt){
-    const k = this.keys, f = this.f, e = (key, v, sp) => { f[key] += (v - f[key]) * Math.min(1, dt * (sp || 10)); };
+    const k = this.keys, K = this.K, f = this.f, e = (key, v, sp) => { f[key] += (v - f[key]) * Math.min(1, dt * (sp || 10)); };
+    const on = n => (Array.isArray(n) ? n : [n]).some(x => k[x]);
     f.present = true;
-    if (k.arrowleft) this.kbX -= dt * 2.2; if (k.arrowright) this.kbX += dt * 2.2; if (k.x) this.kbX *= Math.max(0, 1 - dt * 6);
+    if (on(K.left)) this.kbX -= dt * 2.2; if (on(K.right)) this.kbX += dt * 2.2; if (on(K.center)) this.kbX *= Math.max(0, 1 - dt * 6);
     this.kbX = clamp(this.kbX, -1.6, 1.6); e('x', this.kbX);
-    const lu = !!k.q, ru = !!k.e, sp = !!(k.arrowup || k.w), cr = !!(k.arrowdown || k.s);
-    e('armL', lu ? 1.1 : 0); e('armR', ru ? 1.1 : 0); e('spread', sp ? 1.15 : 0); e('crouch', cr ? 1.15 : 0, 7); e('tilt', k.z ? -1.15 : k.c ? 1.15 : 0);
-    e('energy', k[' '] ? 2.2 : 0.1, 6);
+    const lu = on(K.armL), ru = on(K.armR), sp = on(K.spread), cr = on(K.crouch), hd = on(K.head), cl = on(K.clap);
+    e('armL', lu ? 1.1 : 0); e('armR', ru ? 1.1 : 0); e('spread', sp ? 1.15 : 0); e('crouch', cr ? 1.15 : 0, 7); e('tilt', on(K.tiltL) ? -1.15 : on(K.tiltR) ? 1.15 : 0);
+    e('head', hd ? 1.2 : 0, 14); e('clap', cl ? 1.2 : 0, 20);
+    e('energy', on(K.walk) ? 2.2 : 0.1, 6);
     const V = (ang) => ({ x: Math.sin(ang), y: Math.cos(ang) });
-    const la = sp ? -Math.PI / 2 : lu ? -2.7 : -.12, ra = sp ? Math.PI / 2 : ru ? 2.7 : .12; // 화면 기준 각도(0 = 아래)
-    const sw = k[' '] ? Math.sin(performance.now() / 160) * .5 : 0;
-    f.vec.L.u = V(la + sw); f.vec.L.f = V(la + sw + (lu ? 0 : -.25)); f.vec.R.u = V(ra - sw); f.vec.R.f = V(ra - sw + (ru ? 0 : .25));
+    let la = sp ? -Math.PI / 2 : lu ? -2.7 : -.12, ra = sp ? Math.PI / 2 : ru ? 2.7 : .12; // 화면 기준 각도(0 = 아래)
+    let lf = la + (lu ? 0 : -.25), rf = ra + (ru ? 0 : .25);
+    if (hd) { la = -2.3; ra = 2.3; lf = 2.0; rf = -2.0; } else if (cl) { la = -.35; ra = .35; lf = 1.9; rf = -1.9; }
+    const sw = on(K.walk) ? Math.sin(performance.now() / 160) * .5 : 0;
+    f.vec.L.u = V(la + sw); f.vec.L.f = V(lf + sw); f.vec.R.u = V(ra - sw); f.vec.R.f = V(rf - sw);
     f.quality = 1;
   }
 }
