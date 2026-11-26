@@ -50,14 +50,15 @@ const ROAD_LEN = 12, ROAD_N = 13;
 let roads = [], scenery = [], decoT = 0;
 function buildRunway(){
   world.clearTheme(); world.themeName = 'runway';
-  world.setSky(0x3b2f9a, 0xff9ccf, 0xffd9a8, .45, 0xf6b8d8); world.scene.fog.near = 45; world.scene.fog.far = 135; world.hemi.intensity = 1.05; world.sun.intensity = 2.4; world.sunOff.set(6, 16, 10);
+  world.setSky(0x120c3a, 0x4a2a7a, 0x1e1440, .8, 0x2e1d55); world.scene.fog.near = 40; world.scene.fog.far = 130; world.hemi.intensity = .7; world.sun.intensity = 1.7;
+  world.renderer.toneMappingExposure = .8; if (world.bloom) { world.bloom.strength = .35; world.bloom.threshold = .9; } world.sunOff.set(6, 16, 10);
   const T = world.theme; roads = []; scenery = [];
-  const roadM = std(0xffffff, { map: TEX.tile, roughness: .5 }); TEX.tile.repeat.set(2, 3);
+  const roadM = std(0x6a6890, { map: TEX.tile, roughness: .6 }); TEX.tile.repeat.set(2, 3);
   const edgeM = std(0xffd35a, { emissive: 0xffa520, emissiveIntensity: .6, metalness: .4 });
   for (let i = 0; i < ROAD_N; i++) { const g = new THREE.Group();
     const top = new THREE.Mesh(new THREE.BoxGeometry(LANE * 3 + 1.2, .5, ROAD_LEN), roadM); top.position.y = -.25; top.receiveShadow = true; g.add(top);
     for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.BoxGeometry(.25, .3, ROAD_LEN), edgeM); e.position.set(sx * (LANE * 1.5 + .55), .05, 0); g.add(e); }
-    for (const lx of [-.5, .5]) { const l = new THREE.Mesh(new THREE.BoxGeometry(.07, .02, ROAD_LEN * .8), std(0xffffff, { emissive: 0xffffff, emissiveIntensity: .4, transparent: true, opacity: .5 })); l.position.set(lx * LANE, .01, 0); g.add(l); }
+    for (const lx of [-.5, .5]) { const l = new THREE.Mesh(new THREE.BoxGeometry(.07, .02, ROAD_LEN * .8), std(0xbfe8ff, { emissive: 0x7fd0ff, emissiveIntensity: .6, transparent: true, opacity: .6 })); l.position.set(lx * LANE, .01, 0); g.add(l); }
     const under = new THREE.Mesh(new THREE.ConeGeometry(4.6, 6, 7, 2), std(0x9a7563, { flatShading: true, roughness: .9 })); under.rotation.x = Math.PI; under.position.y = -3.5; under.scale.z = 1.4; g.add(under);
     if (i % 2 === 0) for (const sx of [-1, 1]) { const c = new THREE.Mesh(new THREE.OctahedronGeometry(.32, 0), std(sx > 0 ? 0x9fe9ff : 0xe2b0ff, { emissive: sx > 0 ? 0x40c8ff : 0xb050ff, emissiveIntensity: 1.2 })); c.position.set(sx * (LANE * 1.5 + .55), .7, 0); c.scale.y = 1.8; g.add(c); }
     g.position.z = 10 - i * ROAD_LEN; T.add(g); roads.push(g); }
