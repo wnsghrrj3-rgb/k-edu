@@ -28,9 +28,9 @@ const save = () => store.set('kmupside.run', S);
 
 // 난이도: 처음 속도·최고 속도·장애물 간격(초)·부딪힘 1번에 회오리가 다가오는 양
 const LEVEL = {
-  easy:   { v0: 7, vMax: 14, gap0: 3.8, gapMin: 2.3, hit: .28, heal: .02, lvT: 24, start: 1, warn: 3.8, combo: 0, eyeOpen: [1.6, 2.2], eyeShut: [2.4, 3.4] },
-  normal: { v0: 8.5, vMax: 18, gap0: 3.1, gapMin: 1.7, hit: .33, heal: .014, lvT: 18, start: 2, warn: 3.2, combo: .25, eyeOpen: [1.3, 2.0], eyeShut: [1.8, 2.8] },
-  hard:   { v0: 10.5, vMax: 23, gap0: 2.5, gapMin: 1.3, hit: .4, heal: .01, lvT: 15, start: 7, warn: 2.6, combo: .5, eyeOpen: [1.1, 1.8], eyeShut: [1.3, 2.2] } };
+  easy:   { T: 70, v0: 7, vMax: 14, gap0: 3.8, gapMin: 2.3, hit: .28, heal: .02, lvT: 24, start: 1, warn: 3.8, combo: 0, eyeOpen: [1.6, 2.2], eyeShut: [2.4, 3.4] },
+  normal: { T: 75, v0: 8.5, vMax: 18, gap0: 3.1, gapMin: 1.7, hit: .33, heal: .014, lvT: 18, start: 2, warn: 3.2, combo: .25, eyeOpen: [1.3, 2.0], eyeShut: [1.8, 2.8] },
+  hard:   { T: 80, v0: 10.5, vMax: 23, gap0: 2.5, gapMin: 1.3, hit: .4, heal: .01, lvT: 15, start: 7, warn: 2.6, combo: .5, eyeOpen: [1.1, 1.8], eyeShut: [1.3, 2.2] } };
 // 장애물이 하나씩 열리는 차례(쉬움은 레벨마다 하나, 보통은 둘로 시작, 어려움은 처음부터 모두)
 const UNLOCK = ['hole', 'crystal', 'rock', 'bar', 'eye', 'grab', 'beam'];
 const LANE = 2.3, SIZE = { small: .45, mid: 1, big: 2.1 };
@@ -136,6 +136,8 @@ function makeEyeGate(){ const g = new THREE.Group(); const W = LANE * 3 + 2;
   const light = new THREE.PointLight(0xff3050, 0, 18, 2); light.position.set(0, 5, 2); g.add(light);
   const beam = new THREE.Mesh(new THREE.ConeGeometry(4.6, 6.4, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xff3050, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); beam.position.set(0, 3.3, 3.2); beam.rotation.x = -.5; g.add(beam);
   g.userData = { lidT, lidB, light, beam, iris }; return g; }
+function makeBigStar(){ const g = new THREE.Group(); const m = new THREE.Mesh(starGeo(.5, .22, .14), std(0xffd35a, { emissive: 0xffb020, emissiveIntensity: .8, metalness: .6, roughness: .25 })); g.add(m);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.dot, color: 0xffd35a, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); glow.scale.set(1.8, 1.8, 1); g.add(glow); return g; }
 function makeCoin(){ const m = new THREE.Mesh(starGeo(.34, .15, .1), std(0xffd35a, { emissive: 0xffb020, emissiveIntensity: .6, metalness: .6, roughness: .25 })); return m; }
 function makeGem(){ const g = new THREE.Group(); const m = new THREE.Mesh(new THREE.OctahedronGeometry(.42, 0), std(0xff5fd2, { emissive: 0xff40c0, emissiveIntensity: 1.2, roughness: .1 })); m.scale.y = 1.5; g.add(m);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.dot, color: 0xff7fe0, transparent: true, opacity: .8, blending: THREE.AdditiveBlending, depthWrite: false })); glow.scale.set(2.2, 2.2, 1); g.add(glow); return g; }
@@ -151,7 +153,7 @@ function updateShards(dt){ for (const s of shards) if (s.live) { s.t += dt; s.v.
 // ───────── 게임 상태
 let state = 'loading', hero = null, G = null;
 function newGame(){ const L = LEVEL[S.diff] || LEVEL.easy;
-  return { L, t: 0, speed: L.v0, dist: 0, score: 0, coins: 0, combo: 0, best: 0, danger: 0, hits: 0, smash: 0, level: 1, lane: 0, hx: 0, size: 'mid', inv: 0, slow: 0, next: 2.5, obs: [], items: [], over: false, seen: {}, sliding: false, reach: 0, stopped: false, prompt: null, lastLevelT: 0, intro: {} }; }
+  return { L, t: 0, speed: L.v0, dist: 0, score: 0, coins: 0, combo: 0, best: 0, danger: 0, hits: 0, smash: 0, level: 1, lane: 0, hx: 0, size: 'mid', inv: 0, slow: 0, next: 2.5, obs: [], items: [], over: false, seen: {}, trail: { lane: 0, left: 5, acc: 0 }, streak: 0, bestStreak: 0, sliding: false, reach: 0, stopped: false, prompt: null, lastLevelT: 0, intro: {} }; }
 function showScreen(id){ for (const s of ['scr-title', 'scr-calib', 'hud', 'scr-over', 'scr-set']) $(s).classList.toggle('hidden', s !== id); state = id.replace('scr-', ''); }
 
 // 시작 화면: 캐릭터가 거꾸로 따라 하기(제자리 달리기)
@@ -213,18 +215,30 @@ function updateRun(dt){
   const lane = laneFrom(c); if (lane !== g.lane) { g.lane = lane; audio.whoosh(); }
   g.hx = damp(g.hx, g.lane * LANE, 11, dt); H.root.position.x = g.hx; H.root.rotation.z = (g.lane * LANE - g.hx) * -.06;
   // 카운트다운
-  if (countT > 0) { const n = Math.ceil(countT); countT -= dt; const m = Math.ceil(countT); $('count').textContent = countT > 0 ? m : '출발!'; $('count').classList.remove('hidden'); if (m !== n) { if (countT > 0) { audio.tick(); say(String(m)); } else { audio.fanfare(); say('출발!'); setTimeout(() => $('count').classList.add('hidden'), 700); } }
+  if (countT > 0) { const n = Math.ceil(countT); countT -= dt; const m = Math.ceil(countT); $('count').textContent = countT > 0 ? m : '출발!'; $('count').classList.remove('hidden'); if (m !== n) { if (countT > 0) { audio.tick(); say(String(m)); } else { audio.fanfare(); say('출발! 별을 따라 움직여요. 몸은 반대로!'); toast('⭐ 별을 따라가요 — 몸은 반대로!', 'lv'); setTimeout(() => $('count').classList.add('hidden'), 700); } }
     H.set('idle'); H.update(dt); camFollow(dt); return; }
   // 속도·레벨
-  g.t += dt; const lvNow = Math.min(8, 1 + Math.floor(g.t / g.L.lvT)); if (lvNow > g.level) { g.level = lvNow; toast(`레벨 ${g.level}! 더 빨라져요`, 'lv'); audio.alarm(); say('레벨 ' + g.level + '! 더 빨라져요!'); const nu = unlocked(), nk = nu[nu.length - 1]; if (!g.seen[nk]) { g.seen[nk] = 1; const NEW = { crystal: '💪 수정 벽 등장! 커져서 부숴요', rock: '🪨 바위 등장! 옆으로 피해요', bar: '🙌 낮은 막대 등장! 두 손 번쩍 → 미끄럼', eye: '👁️ 거인의 눈 등장! 눈 뜨면 제자리 걷기로 멈춰요', grab: '💎 옆 보석! 반대쪽 팔을 들어 잡아요', beam: '⚠️ 높은 막대 등장! 커지면 쿵' }; if (NEW[nk]) setTimeout(() => { toast(NEW[nk], 'lv'); say(NEW[nk]); }, 1700); } }
-  const target = Math.min(g.L.vMax, g.L.v0 + g.t * .09); g.slow = Math.max(0, g.slow - dt);
+  g.t += dt; const lvT = g.L.T / Math.max(4, UNLOCK.length - g.L.start + 1); const lvNow = Math.min(8, 1 + Math.floor(g.t / lvT)); if (lvNow > g.level) { g.level = lvNow; toast(`레벨 ${g.level}! 더 빨라져요`, 'lv'); audio.alarm(); say('레벨 ' + g.level + '! 더 빨라져요!'); const nu = unlocked(), nk = nu[nu.length - 1]; if (!g.seen[nk]) { g.seen[nk] = 1; const NEW = { crystal: '💪 수정 벽 등장! 커져서 부숴요', rock: '🪨 바위 등장! 옆으로 피해요', bar: '🙌 낮은 막대 등장! 두 손 번쩍 → 미끄럼', eye: '👁️ 거인의 눈 등장! 눈 뜨면 제자리 걷기로 멈춰요', grab: '💎 옆 보석! 반대쪽 팔을 들어 잡아요', beam: '⚠️ 높은 막대 등장! 커지면 쿵' }; if (NEW[nk]) setTimeout(() => { toast(NEW[nk], 'lv'); say(NEW[nk]); }, 1700); } }
+  const target = g.L.v0 + (g.L.vMax - g.L.v0) * clamp(g.t / g.L.T, 0, 1); g.slow = Math.max(0, g.slow - dt);
   const eyeO = g.obs.find(o => o.kind === 'eye' && !o.done && o.m.position.z > -26);
   g.stopped = !!eyeO && f.moving; if (g.stopped !== g.wasStopped) { g.wasStopped = g.stopped; if (g.stopped) audio.land(); }
   g.speed = damp(g.speed, g.stopped ? 0 : target * (g.slow > 0 ? .45 : 1), g.stopped ? 10 : g.slow > 0 ? 8 : 1.5, dt);
   const dz = g.speed * dt; g.dist += dz; g.score += dz * .5 * (1 + Math.min(g.combo, 20) * .05);
   scrollWorld(dz, dt, world.t); streaks.material.opacity = clamp((g.speed - 10) / 14, 0, .55);
   // 생성
-  g.next -= dt; if (g.next <= 0) { spawn(); const gap = Math.max(g.L.gapMin, g.L.gap0 - (g.level - 1) * .32); g.next = gap * rnd(.9, 1.15); }
+  const left = g.L.T - g.t; $('goalFill').style.width = clamp(g.t / g.L.T, 0, 1) * 100 + '%'; $('goalT').textContent = left > 0 ? `🏁 ${Math.ceil(left)}초` : '🏁 도착!';
+  if (left <= 0 && !g.finishing) { g.finishing = true; finishRun(); return; }
+  if (left < 10 && !g.said10) { g.said10 = true; say('10초 남았어요! 힘내요!'); toast('🏁 10초 남았어요!', 'lv'); }
+  g.next -= dt; if (g.next <= 0 && left > 4) { spawn(); const gap = Math.max(g.L.gapMin, g.L.gap0 - (g.level - 1) * .32); g.next = gap * rnd(.9, 1.15); }
+  // 별 길: 줄을 바꿔 가며 계속 이어짐 → 좌우로 움직이며(거꾸로!) 잡기
+  g.trail.acc += dz; const STEP = 2.6;
+  while (g.trail.acc >= STEP) { g.trail.acc -= STEP; const z = -95 + g.trail.acc;
+    if (--g.trail.left <= 0) { const opts = [-1, 0, 1].filter(l => l !== g.trail.lane); g.trail.lane = pick(opts); g.trail.left = S.diff === 'easy' ? 6 + (Math.random() * 3 | 0) : S.diff === 'normal' ? 4 + (Math.random() * 3 | 0) : 2 + (Math.random() * 3 | 0); g.trail.gap = 1; }
+    if (g.trail.gap) { g.trail.gap--; continue; } // 줄 바꿀 때 한 칸 비워 움직일 틈
+    const blocked = g.obs.some(o => o.kind === 'rock' && o.lane === g.trail.lane && Math.abs(o.m.position.z - z) < 3.5);
+    if (blocked) continue;
+    if (g.L.T - g.t < 2) continue;
+    const st = makeBigStar(); st.position.set(g.trail.lane * LANE, 1.0, z); world.dyn.add(st); g.items.push({ kind: 'star', m: st, lane: g.trail.lane }); }
   // 장애물 판정(캐릭터 z=0 을 지나는 순간 한 번)
   g.inv -= dt; let soon = null;
   for (const o of g.obs) { const z0 = o.m.position.z; o.m.position.z += dz; const z1 = o.m.position.z;
@@ -236,10 +250,13 @@ function updateRun(dt){
   g.obs = g.obs.filter(o => { if (o.m.position.z > 14) { world.dyn.remove(o.m); return false; } return true; });
   // 별·보석
   const top = SIZE[g.size] * 1.8;
-  for (const it of g.items) { it.m.position.z += dz; it.m.rotation.y += dt * 4;
+  for (const it of g.items) { it.m.position.z += dz; it.m.rotation.y += dt * 4; if (it.kind === 'star') it.m.position.y = 1.0 + Math.sin(world.t * 4 + it.m.position.z * .3) * .15;
     if (!it.got && Math.abs(it.m.position.z) < .9 && Math.abs(it.m.position.x - g.hx) < 1.1) { const reach = it.kind === 'gem' ? top > 2.8 : true;
-      if (reach) { it.got = true; world.dyn.remove(it.m); if (it.kind === 'coin') { g.coins++; g.score += 10; audio.coin(g.coins); world.burst(it.m.position, 0xffd35a, 8, 2.5); }
+      if (reach) { it.got = true; world.dyn.remove(it.m); if (it.kind === 'star') { g.coins++; g.streak++; g.bestStreak = Math.max(g.bestStreak, g.streak); g.score += 10 + Math.min(g.streak, 30); audio.coin(g.streak); world.burst(it.m.position, 0xffd35a, 14, 3);
+          if (g.streak % 10 === 0) { toast(`⭐ 별 ${g.streak}개 연속!`, 'good'); audio.starGet(3); g.danger = Math.max(0, g.danger - .08); g.score += 50; if (g.streak === 10 || g.streak % 30 === 0) say('별 ' + g.streak + '개 연속!'); } }
+        else if (it.kind === 'coin') { g.coins++; g.score += 10; audio.coin(g.coins); world.burst(it.m.position, 0xffd35a, 8, 2.5); }
         else { g.score += 60; g.danger = Math.max(0, g.danger - .12); audio.starGet(4); world.burst(it.m.position, 0xff7fe0, 50, 5); world.ring(it.m.position, 0xff9fc8, 1.4); toast('💎 +60', 'good'); } } } }
+  for (const it of g.items) if (it.kind === 'star' && !it.got && !it.missed && it.m.position.z > 1.2) { it.missed = true; if (g.streak >= 5) toast('앗, 별을 놓쳤어요!', 'lv'); g.streak = 0; }
   g.items = g.items.filter(it => { if (it.got) return false; if (it.m.position.z > 14) { world.dyn.remove(it.m); return false; } return true; });
   updateShards(dt);
   // 다가오는 장애물 알림(쉬움·보통은 내가 할 동작 그림까지)
@@ -273,11 +290,16 @@ function crash(o){ const g = G; if (g.inv > 0) return; g.inv = 1.1; g.hits++; g.
   toast(why, 'bad'); if (o.kind === 'crystal' || o.kind === 'hole') { if (o.kind === 'crystal') shatter(-.3, 0xff9aa8); world.dyn.remove(o.m); }
   if (g.danger >= 1) { gameOver(); return; }
   if (g.danger > .6) { audio.alarm(); say('회오리가 바짝 따라와요!'); } }
+function finishRun(){ const g = G; g.over = true; g.win = true; vignette(0); audio.fanfare(); audio.piece(); say('도착! 거꾸로 달리기 완주!'); hero.face('front'); hero.set('cheer'); hero.setMood('cheer', 3);
+  for (let i = 0; i < 6; i++) setTimeout(() => world.burst(V3(rnd(-5, 5), rnd(3, 7), rnd(-14, -6)), pick([0xff9fc8, 0xffd166, 0x9fe9ff, 0x8fe88f]), 70, 6, -1.5), i * 220);
+  const done = () => { const t = performance.now(); const tick = () => { if (state !== 'hud') return; hero.update(1 / 60); if (performance.now() - t < 2200) requestAnimationFrame(tick); }; tick(); };
+  done(); g.score += 200 + Math.round((1 - g.danger) * 300); setTimeout(() => showOver(true), 2300); }
 function gameOver(){ const g = G; if (g.over) return; g.over = true; vignette(1); audio.stopMusic(); audio.boing(); world.kick(.8); say('회오리에 잡혔어요! 다시 도전해 볼까요?');
-  const score = Math.round(g.score), isBest = score > (S.best || 0); if (isBest) { S.best = score; save(); }
-  setTimeout(() => { showScreen('scr-over'); $('ovScore').textContent = score; $('ovBest').textContent = isBest ? '🎉 새 최고 기록!' : `최고 기록 ${S.best}점`;
-    $('ovStats').innerHTML = `<span>🏃 ${Math.round(g.dist)}m</span><span>⭐ 별 ${g.coins}</span><span>💥 부순 벽 ${g.smash}</span><span>🔥 최고 콤보 ${g.best}</span><span>🌀 레벨 ${g.level}</span>`;
-    $('ovQ').textContent = pick(['평소와 반대로 움직이니 어떤 느낌이 들었나요?', '커지려면 웅크려야 했어요. 왜 헷갈렸을까요?', '여러분이 새로운 거꾸로 마법을 만든다면 무엇을 만들고 싶나요?', '우리 학교가 거꾸로 나라가 된다면 어떤 일이 생길까요?']); }, 900); }
+  setTimeout(() => showOver(false), 900); }
+function showOver(win){ const g = G; const score = Math.round(g.score), isBest = score > (S.best || 0); if (isBest) { S.best = score; save(); }
+  { showScreen('scr-over'); $('ovTitle').textContent = win ? '🏁 완주!' : '🌀 회오리에 잡혔어요!'; $('ovScore').textContent = score; $('ovBest').textContent = isBest ? '🎉 새 최고 기록!' : `최고 기록 ${S.best}점`;
+    $('ovStats').innerHTML = `<span>🏃 ${Math.round(g.dist)}m</span><span>⭐ 별 ${g.coins}</span><span>✨ 별 연속 ${g.bestStreak}</span><span>💥 부순 벽 ${g.smash}</span><span>🔥 최고 콤보 ${g.best}</span><span>🌀 레벨 ${g.level}</span>`;
+    $('ovQ').textContent = pick(['평소와 반대로 움직이니 어떤 느낌이 들었나요?', '커지려면 웅크려야 했어요. 왜 헷갈렸을까요?', '여러분이 새로운 거꾸로 마법을 만든다면 무엇을 만들고 싶나요?', '우리 학교가 거꾸로 나라가 된다면 어떤 일이 생길까요?']); } }
 
 // ───────── 화면 조각
 let promptKey = '';
@@ -304,7 +326,7 @@ let toastTO = 0;
 function toast(t, kind){ const el = $('toast'); el.textContent = t; el.className = 'toast show ' + (kind || ''); clearTimeout(toastTO); toastTO = setTimeout(() => el.className = 'toast', 1300); }
 function flash(){ const f = $('hitflash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
 function vignette(d){ const v = $('storm'); v.style.opacity = clamp(d * 1.1, 0, 1); v.classList.toggle('pulse', d > .6); }
-function hud(){ const g = G; $('score').textContent = Math.round(g.score); $('dist').textContent = Math.round(g.dist) + 'm'; $('combo').textContent = g.combo >= 2 ? `🔥 ${g.combo}` : ''; $('lv').textContent = 'Lv ' + g.level;
+function hud(){ const g = G; $('score').textContent = Math.round(g.score); $('dist').textContent = Math.round(g.dist) + 'm'; $('combo').textContent = g.combo >= 2 ? `🔥 ${g.combo}` : ''; $('stars').textContent = `⭐ ${g.coins}` + (g.streak >= 3 ? `  ×${g.streak}` : ''); $('lv').textContent = 'Lv ' + g.level;
   $('dangerFill').style.width = (100 - g.danger * 100) + '%'; $('dangerFill').className = g.danger > .6 ? 'hot' : '';
   const sz = { small: '🐭 작아요', mid: '🧒 보통', big: '💪 커요' }[g.size]; if ($('sizeNow').textContent !== sz) { $('sizeNow').textContent = sz; $('sizeNow').className = 'sz ' + g.size; }
   sense(); }
