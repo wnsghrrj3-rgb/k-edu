@@ -11,6 +11,7 @@ import { art } from '../common/art.js?v=11';
 import { audio, tone, wallet } from '../common/kit.js?v=8';
 import { cell as cellOf, tag, CELLS } from '../common/cells.js?v=1';
 import * as V from '../flash/review.js?v=6';
+import { gradeNo } from './next.js?v=1';
 
 const ICON = { flag: 'flag', star: 'flag.star', fuse: 'flash.fuse', burst: 'flash.burst' };
 const $ = id => document.getElementById(id);
@@ -20,7 +21,7 @@ export const href = id => `/math/play/${cellOf(id).frame}/?cell=${id}`;
 export const todayHref = () => '/math/play/flash/?today=1';
 
 function draw(){ const g = $('gate'), m = M.all(), ids = BUILT, open = M.openSet(m, ids); for (const id of open) if (!(m[id] || {}).seen) M.put(id, { ...M.get(id), seen: 1 });   /* 한 번 열린 채 보인 깃발은 닫지 않는다 */
-  const can2 = id => open.includes(id) || M.passed(m[id]), back = id => { for (let k = ids.indexOf(id) - 1; k >= 0; k--) if (can2(ids[k])) return ids[k]; return null; };
+  const can2 = id => open.includes(id) || M.passed(m[id]), back = id => { for (let k = ids.indexOf(id) - 1; k >= 0; k--) if (can2(ids[k]) && gradeNo(ids[k]) === gradeNo(id)) return ids[k]; return null; };   /* 같은 학년 안에서만(2학년 J01 이 막혀도 1학년 깃발을 흔들지 않음 · 없으면 흔들지 않음 · T11) */
   const nudge = new Set(open.filter(id => M.stuck(m[id]) >= 2).map(back).filter(Boolean));   /* 막힌 낱칸의 앞 깃발(열렸거나 딴 것 가운데 가장 가까운 것)이 살짝 흔들림(권할 뿐) */
   const can = ids.filter(id => M.passed(m[id])).map(id => `<p>${cellOf(id).can}${M.kept(m[id]) ? ' ' + art(ICON.star) : ''}</p>`).join('');
   const all = CELLS.map(c => c.id), lo = Math.min(...ids.map(id => all.indexOf(id))), hi = Math.max(...ids.map(id => all.indexOf(id))), unitsAll = [...new Set(all.slice(lo, hi + 1).map(id => cellOf(id).unit))], has = u => ids.some(id => cellOf(id).unit === u);

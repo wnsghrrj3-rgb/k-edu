@@ -17,6 +17,7 @@ import * as E from '../common/ends.js?v=2';
 import * as M from '../common/map.js?v=13';
 import * as TL from '../common/tell.js?v=2';
 import * as R from './rules.js?v=3';
+import { nextHere, href as goHref } from '../go/next.js?v=1';
 import { ASSETS, MODEL, SCENERY, SCENERY_NAMES, WOOD, GOLD, GHOST, ICON } from './art.js?v=1';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
@@ -358,8 +359,9 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.s
     if (!M.passed(before) && M.passed(rec)) { grew(art(ICON.flag) + ' 깃발을 땄어요!'); await sleep(2400); }
     if (S.oid !== my) return; await sleep(400); }
   S.hist[id] = q; await finale(); if (S.oid !== my) return;
-  const choice = await E.home({ items: S.icons.slice() }); if (S.oid !== my) return;
-  if (choice === 'again') outing(id); else location.href = GO; }
+  const nx = M.passed(M.get(id)) ? nextHere(id) : null; S.log.push({ homeNext: nx });   /* 「다음으로」 = 깃발을 땄고 같은 학년의 다음 낱칸이 있을 때만(go/next.js · T11 — C01 → C02 · C04 → D06) */
+  const choice = await E.home({ items: S.icons.slice(), next: nx ? '다음으로' : '' }); if (S.oid !== my) return;
+  if (choice === 'again') outing(id); else if (choice === 'next' && nx) location.href = goHref(nx); else location.href = GO; }
 /** 나들이 끝: 오늘 묶은 판을 실은 배가 떠난다. */
 async function finale(){ const my = S.oid; S.p = null; S.W = null; S.phase = 'idle'; A.trayClear(); C.hide(); S.choosingOn = false; stampsOff(); readHide(); for (const b of [...S.bags.values()]) if (!(b.bd && b.bd.at === 'pile')) S.bags.delete(b.id); for (const bd of S.boards) if (bd.at !== 'pile') bd.g.visible = false;
   stage.play(S.henry, 'Wave', true); sailSet(1); S.log.push({ finale: S.pile.length }); snd(523, .2, 'triangle', .06); snd(659, .2, 'triangle', .06, .2); snd(784, .3, 'triangle', .06, .4);

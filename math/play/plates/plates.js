@@ -23,8 +23,8 @@ import { ASSETS, MODEL, SCENERY, SCENERY_NAMES, WOOD, GHOST, GLOW, ICON } from '
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
 const T = { DECK: .45, TOP_H: .42, PH: .05, PILE_N: 5, PILE_DY: .15, CAP: 64, SMOOTH: 11, PLACE_MS: 300, BACK_MS: 280, OUT_MS: 650, HANG_MS: 150, HOP_MS: 380, GLINT_MS: 1300, READ_MS: 1700, MISS_HOLD: 1600, NEAR_MS: 1300,
-  TELL_GRACE: 4, BELL_WOB: 1.3, SLIDE_DIST: .62, BIG: 1.12, NOTES_H: { wide: 104, tall: 90, low: 70 },
-  FISH: { 1: .3, 2: .25, 5: .17 }, OFF: { 2: [[0, -.13], [0, .13]], 5: [[-.15, -.12], [.15, -.12], [0, 0], [-.15, .12], [.15, .12]], 1: [[0, 0]] }, TUB_FISH: { wide: .25, tall: .2 },
+  TELL_GRACE: 4, HINT_PER: 1, CARRY_MS: 650, BELL_WOB: 1.3, SLIDE_DIST: .62, BIG: 1.12, NOTES_H: { wide: 104, tall: 90, low: 70 },
+  FISH: { 1: .3, 2: .25, 5: .17 }, OFF: { 2: [[-.12, 0], [.12, 0]], 5: [[-.15, -.12], [.15, -.12], [0, 0], [-.15, .12], [.15, .12]], 1: [[0, 0]] }, TUB_FISH: { wide: .25, tall: .2 },
   WIDE: { fov: 34, el: 1.06, sp: .76, pd: .64, area: [.55, 0], table: [-3.75, 3.6, -.85, .95], pile: [-2.05, 0, 1], bell: [3.05, 0, 1], tub: [-3.15, 0, 1], tubWD: [.95, 1.25], cook: [-1.85, -1.45], stand: [1.9, -2.9], dog: [3.2, -1.15], dogOut: [6.4, -1.15], counter: null,
     fit: [[-3.75, 0, -.9], [3.6, 0, -.9], [3.6, 0, 1.0], [-3.75, 0, 1.0], [-3.75, .6, -1.0]] },
   TALL: { fov: 44, el: 1.15, sp: .77, pd: .68, area: [0, -.05], table: [-2.03, 2.03, -.84, .8], pile: [-1.3, 1.5, 1], bell: [1.38, 1.5, 1], tub: [.02, 1.5, 1], tubWD: [1.12, .78], cook: [-1.6, -1.45], stand: [.4, -2.5], dog: [1.55, -1.3], dogOut: [3.8, -1.3], counter: [-2.03, 2.03, 1.06, 1.96],
@@ -105,7 +105,7 @@ function coinsDraw(pop){ const c = $('coins'); if (!c) return; const v = `${art(
 /** 함지를 그 화면 꼴 크기로 다시 짓는다. */
 function tubBuild(){ const [w, d] = L().tubWD; [...S.tub.children].forEach(o => { if (o !== S.lidG) S.tub.remove(o); }); [...S.lidG.children].forEach(o => S.lidG.remove(o));
   planks(S.tub, -w / 2, w / 2, -d / 2, d / 2, .02, mats.tub, .6); for (const [len, x, z, al] of [[w + .1, 0, -d / 2, 'x'], [w + .1, 0, d / 2, 'x'], [d, -w / 2, 0, 'z'], [d, w / 2, 0, 'z']]) wallPlank(S.tub, len, x, z, al, .13, 0, mats.tub);
-  planks(S.lidG, -w / 2 - .04, w / 2 + .04, -d / 2 - .04, d / 2 + .04, 0, mats.lid, .8); S.lidG.position.y = .17; S.lidG.visible = false; S.tubWD = [w, d]; S.tubPts = null; }
+  planks(S.lidG, -w / 2 - .04, w / 2 + .04, -d / 2 - .04, d / 2 + .04, 0, mats.lid, .8); S.lidG.position.y = .17; S.lidG.visible = !!S.lid; S.tubWD = [w, d]; S.tubPts = null; }   /* 화면을 돌려 다시 지어도 뚜껑 문제면 뚜껑 그대로 */
 
 // ── 자리(가로 · 세로) · 카메라
 const at3 = (xz, y = TOP()) => V3(xz[0], y, xz[1]);
@@ -143,19 +143,22 @@ export const npHtml = (k, big = false) => `<span class="np${big ? ' big' : ''}">
 function noteHtml(o){ if (o.more) return npHtml(o.g || 2); const p = o.p; return p.N != null ? `<b class="num">${p.N}</b>${npHtml(2)}` : `${npHtml(p.g, true)}<span class="cnt2">${p.n}${UNIT.plate}</span>`; }
 function notesDraw(){ const keep = new Set(S.ords.map(o => o.el).filter(Boolean)); [...ORD.children].forEach(e => { if (!keep.has(e)) e.remove(); });   /* 이미 걸린 쪽지는 그대로(새로 걸린 것만 들어오는 몸짓 — 줄 전체가 다시 깜박이지 않게) */
   S.ords.forEach((o, i) => { let d = o.el; if (!d) { d = document.createElement('div'); d.innerHTML = noteHtml(o); d._o = o; o.el = d; d.classList.add('in'); d.style.animationDelay = (o.delay || 0) + 's'; o.delay = 0; d.addEventListener('animationend', ev => { if (ev.animationName === 'ordin') d.classList.remove('in'); }); }
-    const cls = 'ord' + (d.classList.contains('in') ? ' in' : '') + (i === 0 && !o.more ? ' cur' : '') + (o.gold ? ' gold' : '') + (o.more ? ' more' : ''); if (d.className !== cls && !d.classList.contains('wig')) d.className = cls; else if (d.classList.contains('wig')) { d.classList.toggle('cur', i === 0 && !o.more); }
+    const cls = 'ord' + (d.classList.contains('in') ? ' in' : '') + (o === S.curNote ? ' cur' : '') + (o.gold ? ' gold' : '') + (o.more ? ' more' : ''); if (d.className !== cls && !d.classList.contains('wig')) d.className = cls; else if (d.classList.contains('wig')) { d.classList.toggle('cur', o === S.curNote); }
     if (ORD.children[i] !== d) ORD.insertBefore(d, ORD.children[i] || null); }); ORD.classList.toggle('on', S.ords.length > 0); placeUI(); }
 /** 판이 시작되면 쪽지 셋이 한꺼번에 걸린다. */
 async function hangBoard(list, goldJ){ const my = S.oid; S.ords = list.map((p, j) => ({ p, gold: j === goldJ, delay: j * T.HANG_MS / 1000 })); notesDraw(); snd(520, .05, 'triangle', .04); snd(600, .05, 'triangle', .04, .15); snd(680, .05, 'triangle', .04, .3); await sleep(T.HANG_MS * list.length + 380); return S.oid === my; }
 /** 맨 앞 쪽지가 떼어진다(끝낸 문제) · 쌓인 쪽지(시계의 그림)는 걷힌다. */
-async function tearFront(){ const o = S.ords.find(x => !x.more); if (!o) return; o.el && o.el.classList.add('torn'); snd(700, .06, 'triangle', .05); await sleep(380); S.ords = S.ords.filter(x => x !== o && !x.more); notesDraw(); ORD.classList.remove('shake'); }
-/** 맨 앞 쪽지가 바람에 넘어가 줄 맨 뒤에 다시 걸린다(놓침 · 두 문제 뒤에 다시). */
-async function blowFront(){ const o = S.ords.find(x => !x.more); if (!o) return; o.el && o.el.classList.add('blow'); snd(260, .3, 'sine', .05, 0, 160); await sleep(450); S.ords = [...S.ords.filter(x => x !== o && !x.more), { ...o, gold: false, blown: true, el: null }]; notesDraw(); ORD.classList.remove('shake'); }
+async function tearFront(){ const o = S.curNote || S.ords.find(x => !x.more); S.curNote = null; if (!o) return; o.el && o.el.classList.add('torn'); snd(700, .06, 'triangle', .05); await sleep(380); S.ords = S.ords.filter(x => x !== o && !x.more); notesDraw(); ORD.classList.remove('shake'); }
+/** 지금 쪽지가 줄 맨 뒤에 다시 걸린다(깨끗하지 못했던 문제 — 두 문제 뒤에 다시). how = 'blow'(놓침 — 바람에 넘어감) | 'again'(물러난 카드 · 모자람 · 많음 · 길잡이 손). 다시 걸린 쪽지에는 지금 테가 없다. */
+async function rehangFront(how){ const o = S.curNote || S.ords.find(x => !x.more); S.curNote = null; if (!o) return; o.el && o.el.classList.add(how === 'blow' ? 'blow' : 'torn'); snd(how === 'blow' ? 260 : 420, .3, 'sine', .05, 0, 160); await sleep(450);
+  S.ords = [...S.ords.filter(x => x !== o && !x.more), { ...o, gold: false, again: true, el: null }]; notesDraw(); ORD.classList.remove('shake'); S.log.push({ rehang: how, notes: S.ords.length }); }
+/** 판 끝: 다시 걸린 채 남은 쪽지는 다음 판(마지막 판이면 다음 나들이)으로 넘어가는 몸짓 — 줄을 따라 오른쪽으로 미끄러져 나간다. */
+async function carryLeft(){ const left = S.ords.filter(x => !x.more); if (!left.length) return 0; left.forEach(o => o.el && o.el.classList.add('carry')); snd(380, .2, 'triangle', .04, 0, 520); S.log.push({ carryNotes: left.length }); await sleep(T.CARRY_MS); return left.length; }
 function signShow(on){ SIGN.classList.toggle('on', !!on); if (!on) return; SIGN.innerHTML = `<b>${S.p.N}</b>`; signPlace(); }   /* 수 팻말(나무 팻말 — 화면 위 그림 · 두 자리까지) */
 function signPlace(){ if (!SIGN || !SIGN.classList.contains('on')) return; const [w, d] = S.tubWD, q = stage.screenOf(S.tub.position.clone().add(V3(S.tall ? w / 2 + .05 : 0, .25, S.tall ? 0 : -d / 2))); SIGN.style.left = (S.tall ? q.x + 30 : q.x) + 'px'; SIGN.style.top = q.y + 'px'; }
 function labOn(i, text, pl, cls = ''){ const d = LABS[i]; if (!d) return; d.textContent = text; d.className = 'lab on ' + cls; d._pl = pl; labPlace(d); }
 function labsOff(){ LABS.forEach(d => { d.className = 'lab'; d._pl = null; }); }
-function labPlace(d){ const pl = d._pl; if (!pl || !pl.p) return; const q = stage.screenOf(pl.p.clone().add(V3(0, .22 + (pl.hop || 0), -pd() * .3))); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; }
+function labPlace(d){ const pl = d._pl; if (!pl || !pl.p) return; const low = S.pls.indexOf(pl) >= 5, q = stage.screenOf(pl.p.clone().add(low ? V3(0, .04 + (pl.hop || 0), pd() * .46) : V3(0, .22 + (pl.hop || 0), -pd() * .3))); d.classList.toggle('below', low); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; }   /* 둘째 줄 접시의 수는 접시 아래(첫 줄 물고기를 덮지 않게) */
 
 // ── 접시 · 물고기(자리는 상태에서 셈한다 — 접시 = 칸 · 물고기 = 접시 위 · 함지 속)
 function tubPts(N){ const [w, d] = S.tubWD, L0 = S.tall ? T.TUB_FISH.tall : T.TUB_FISH.wide, out = []; let dmin = L0 * .95;
@@ -186,7 +189,7 @@ function fishTarget(f){ if (f.where === 'plate' && f.pl) { const k = f.pl.k, off
   return { pos: S.bucket.position.clone().add(V3(0, .45, 0)), L: .12, ry: 0, hide: true }; }
 function fishTick(rdt){ if (!fishIM) return; let k = 0; for (const f of S.fish) { const tg = fishTarget(f); if (!f.p) f.p = tg.pos.clone(); else f.p.lerp(tg.pos, 1 - Math.exp(-rdt * (f.where === 'plate' ? 14 : 9)));
     if (f.where === 'bucket' && f.p.distanceTo(tg.pos) < .15) { f.where = 'gone'; continue; } if (f.where === 'gone' || tg.hide || k >= T.CAP) continue;
-    f.L = f.L == null ? tg.L : f.L + (tg.L - f.L) * (1 - Math.exp(-rdt * 10)); const ry = f.where === 'plate' ? (f.pl && f.pl.alone ? Math.sin(S.t * 3.2) * .55 : f.pl && f.pl.k === 5 ? .35 : 0) : tg.ry;   /* 혼자 남은 물고기는 옆 자리를 두리번 */ tmpE.set(0, ry, 0); tmpQ.setFromEuler(tmpE); tmpS.set(f.L, f.L, f.L);
+    f.L = f.L == null ? tg.L : f.L + (tg.L - f.L) * (1 - Math.exp(-rdt * 10)); const ry = f.where === 'plate' ? (f.pl && f.pl.alone ? Math.sin(S.t * 3.2) * .55 : f.pl && f.pl.k === 5 ? .35 : f.pl && f.pl.k === 2 ? Math.PI / 2 : 0) : tg.ry;   /* 둘은 좌우로 나란히(쪽지 · 카드 그림과 같게 — 몸은 세로로) */   /* 혼자 남은 물고기는 옆 자리를 두리번 */ tmpE.set(0, ry, 0); tmpQ.setFromEuler(tmpE); tmpS.set(f.L, f.L, f.L);
     tmpM.compose(V3(f.p.x, f.p.y + (f.where === 'plate' && f.pl ? f.pl.hop || 0 : 0), f.p.z), tmpQ, tmpS); fishIM.setMatrixAt(k++, tmpM); }
   S.fish = S.fish.filter(f => f.where !== 'gone'); fishIM.count = k; fishIM.instanceMatrix.needsUpdate = true; }
 function ghostsDraw(){ const n = S.p && S.p.n != null ? S.p.n : 0, guide = S.p && S.p.n != null && S.step === 1 && S.phase === 'place', blink = S.blinkT && S.t < S.blinkT, on = Math.floor((S.blinkT - S.t) * 5) % 2 === 0;
@@ -194,7 +197,7 @@ function ghostsDraw(){ const n = S.p && S.p.n != null ? S.p.n : 0, guide = S.p &
 
 // ── 한 문제
 async function runProblem(p, ctx){ const my = S.oid; S.p = p; S.ctx = ctx; S.w = R.world(p); S.res = { short: 0, over: 0, retreat: false, hinted: false, missed: false, nudges: 0, caught: 0, dog: 0, slid: 0, placed: 0 }; S.phase = 'set'; S.busy = true; S.active = false;
-  S.handTo = null; S.handFn = null; S.tellOn = false; S.ord = 0; S.think = 0; S.blinkT = 0; S.wobT = 0; S.bare = !!ctx.bare; S.lid = S.bare && p.N != null; S.w.lid = S.lid; S.added = 0; S.choosingOn = false; S.trayText = '';
+  S.handTo = null; S.handFn = null; S.tellOn = false; S.ord = 0; S.think = 0; S.blinkT = 0; S.wobT = 0; S.bare = !!ctx.bare; S.lid = S.bare && p.N != null; S.w.lid = S.lid; S.added = 0; S.choosingOn = false; S.trayText = ''; S.idleStage = 0; S.idleT = 0; S.bobT = 0; S.curNote = S.ords.find(x => !x.more && !x.again) || S.ords.find(x => !x.more) || null; if (S.curNote && S.curNote.p !== p) S.curNote.p = p; notesDraw();
   C.hide(); labsOff(); H.hide(); A.trayClear(); signShow(false); clearTable(); S.fish = [];
   const D = p.N != null; S.tub.visible = D; S.bucket.visible = !D; S.bell.visible = !D; S.lidG.visible = S.lid; S.lidG.position.y = .17; S.tubPts = null;
   if (D) { S.tubPts = tubPts(p.N); for (let k = 0; k < p.N; k++) S.fish.push({ where: 'tub', tp: k, p: null }); }
@@ -231,18 +234,18 @@ function inQuad(q, x, y){ let s = 0; for (let i = 0; i < 4; i++) { const a = q[i
 const canvas = $('c');
 canvas.addEventListener('pointerdown', e => { audio(); if (!S.ready || E.homeOpen()) return; const x = e.clientX, y = e.clientY, hit = hitAt(x, y); S.log.push({ tap: hit.kind, phase: S.phase, busy: S.busy }); H.ripple(x, y);
   if (S.tellOn && S.t - (S.tellT || 0) > 1.5) S.tellOn = false;
-  if (!S.active || S.busy) { S.log.push({ ignored: S.active ? 'busy' : 'idle' }); if (S.active && S.busy) { if (H.tell('plates.busy', '잘 봐!', { times: 1e9, ms: 1400 })) tellPlace(); } return; }   /* 바쁜 동안(쫙 깔리는 중 · 세어지는 중 · 쪽지가 넘어가는 중)에도 물결 */
-  S.lastAct = S.t; S.handTo = null; S.handFn = null;
+  if (!S.active || S.busy) { S.log.push({ ignored: S.active ? 'busy' : 'idle' }); if ((S.active && S.busy) || S.running) { if (H.tell('plates.busy', '잘 봐!', { times: 1e9, ms: 1400 })) tellPlace(); } return; }   /* 바쁜 동안(쫙 깔리는 중 · 세어지는 중 · 쪽지가 넘어가는 중 · 쪽지가 걸리는 중 · 문제 사이)에도 물결 + 「잘 봐!」 */
+  acted();
   if (hit.kind === 'dog') { dogAway(false); return; }
   if (hit.kind === 'plate' && hit.sliding) { slideEnd(true); return; }
   if (S.phase === 'place' && hit.kind === 'pile') { pressPile(); return; }
-  if (S.phase === 'place' && hit.kind === 'plate' && !S.lid) { takeBack(hit.i); return; }
+  if (S.phase === 'place' && hit.kind === 'plate' && !S.lid && !(S.p.N != null && S.res.retreat)) { takeBack(hit.i); return; }   /* D06: 아닌 카드 뒤에는 방금 보여 준 접시를 흩지 않는다(카드 들썩) */
   if (S.phase === 'place' && hit.kind === 'bell' && S.p.n != null) { ringBell(); return; }
   nudge(hit.kind); });
 /** 쪽지 누름: 맨 앞이면 헛누름(손이 다음 누를 곳) · 뒤에 걸린 것이면 그 쪽지가 까딱이고 손이 맨 앞 쪽지를 짚는다(「앞에서부터」). */
 function onNote(e){ e.stopPropagation(); audio(); if (!S.ready || E.homeOpen()) return; H.ripple(e.clientX, e.clientY); const d = e.target.closest('.ord'); S.log.push({ tapNote: d ? S.ords.indexOf(d._o) : -1, busy: S.busy });
-  if (!S.active || S.busy) { S.log.push({ ignored: S.active ? 'busy' : 'idle' }); if (S.active && S.busy) { if (H.tell('plates.busy', '잘 봐!', { times: 1e9, ms: 1400 })) tellPlace(); } return; }
-  S.lastAct = S.t; const front = S.ords.find(o => !o.more); if (!d || d._o === front) { nudge('note'); return; }
+  if (!S.active || S.busy) { S.log.push({ ignored: S.active ? 'busy' : 'idle' }); if ((S.active && S.busy) || S.running) { if (H.tell('plates.busy', '잘 봐!', { times: 1e9, ms: 1400 })) tellPlace(); } return; }
+  acted(); const front = S.curNote || S.ords.find(o => !o.more); if (!d || d._o === front) { nudge('note'); return; }
   d.classList.remove('wig'); void d.offsetWidth; d.classList.add('wig'); S.res.nudges++; const fe = front && front.el; if (fe) { H.at(fe); S.handTo = 'note'; S.handFn = () => { const r = fe.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom - 6 }; }; }
   const t = '맨 앞 쪽지부터 해 줘.'; S.log.push({ nudge: 'backNote', to: 'note', text: t }); if (H.tell('plates.nudge', t, { times: 1e9 })) tellPlace(); snd(520, .07, 'triangle', .05); }
 /** 접시 더미를 누름(이 틀의 손 하나). */
@@ -258,9 +261,9 @@ function pressPile(){ const w = S.w, p = S.p;
 function takeBack(i){ const w = S.w; R.remove(w, i); backPlate(i); snd(260, .07, 'triangle', .05); S.log.push({ back: i, plates: w.plates.length, tub: w.tub, count: R.count(w) });
   if (S.p.n != null && S.step === 1) { labsOff(); S.pls.forEach((r, j) => labOn(j, String((j + 1) * S.p.g), r)); trayDraw(false, S.pls.length ? S.pls.length * S.p.g : null); } }
 /** 헛누름(5-11): 물결 + 손이 다음 누를 곳(접시 더미 · J01 ① 은 다 찼으면 종) + 한 줄. 고르는 중이면 카드가 들썩(답은 짚지 않음). 깨끗함에는 세지 않는다. */
-function nudge(kind){ S.res.nudges++; snd(520, .07, 'triangle', .05); const to = nudgeTo(); S.handTo = to; if (to === 'cards') { bob(); H.hide(); S.handFn = null; } else { const f = to === 'bell' ? bellAt : pileAt; const q = f(); H.show(q.x, q.y); S.handFn = f; }
+function nudge(kind){ S.res.nudges++; snd(520, .07, 'triangle', .05); const to = nudgeTo(); S.handTo = to; if (to === 'cards') { bob(); S.bobT = S.t; H.hide(); S.handFn = null; } else { const f = to === 'bell' ? bellAt : pileAt; const q = f(); H.show(q.x, q.y); S.handFn = f; }
   const t = nudgeText(); S.log.push({ nudge: kind, to, text: t }); if (H.tell('plates.nudge', t, { times: 1e9 })) tellPlace(); }
-function nudgeTo(){ const p = S.p, w = S.w; if (S.phase === 'ask') return 'cards'; if (p.N != null) { if (S.lid || w.tub <= 0) return 'cards'; return 'pile'; }
+function nudgeTo(){ const p = S.p, w = S.w; if (S.phase === 'ask') return 'cards'; if (p.N != null) { if (S.lid || w.tub <= 0 || S.res.retreat) return 'cards'; return 'pile'; }
   if (S.step === 1 && w.plates.length >= p.n) return 'bell'; if (w.plates.length >= R.T.PLATE_MAX) return 'bell'; return 'pile'; }
 /** 헛누름 · 안내의 한 줄(꼴마다 — 그 꼴에서 실제로 일어나는 일만 · 정한 것 표). */
 function nudgeText(){ const p = S.p, w = S.w; if (S.phase === 'ask') return ASK_LINE;
@@ -277,10 +280,10 @@ function tellPlace(){ const tl = $('tell'); if (!tl) return; const top = S.topUI
 // ── D06: 고르기 · 쫙 · 닫힘
 async function onPick(v, btn){ audio(); const r = btn.getBoundingClientRect(); H.ripple(r.left + r.width / 2, r.top + r.height / 2);
   if (!S.active || S.busy || !S.choosingOn || S.t - S.cardT0 < R.T.CARD_GUARD) { S.log.push({ ignored: 'card' }); if (S.active && S.busy && H.tell('plates.busy', '잘 봐!', { times: 1e9, ms: 1400 })) tellPlace(); return; }   /* 새 카드 뒤 잠깐은 물결만(두 번 누름이 새 카드를 누르지 않게) */
-  S.lastAct = S.t; S.handTo = null; S.handFn = null; H.hide(); const how = R.judge(S.p, { type: 'card', v }, S.w); S.log.push({ pick: v, how });
+  acted(); H.hide(); const how = R.judge(S.p, { type: 'card', v }, S.w); S.log.push({ pick: v, how });
   if (S.p.N != null) { const my = S.oid; S.busy = true; slideEnd(true); await fanD06(); if (S.oid !== my) return;
     if (how === 'fit') { btn.classList.add('bob'); await closeD06(true); return; }
-    S.res.retreat = true; breakStreak('retreat'); C.retreat(btn); await nearLast(); if (S.oid !== my) return; S.busy = false; S.lastAct = S.t; return; }
+    S.res.retreat = true; breakStreak('retreat'); C.retreat(btn); await nearLast(); if (S.oid !== my) return; S.busy = false; acted(); return; }
   if (how === 'fit') { await fitJ01(btn); return; }
   const my = S.oid; S.res.retreat = true; breakStreak('retreat'); S.busy = true; C.retreat(btn); await skipHop(); if (S.oid !== my) return; S.busy = false; S.lastAct = S.t; S.handTo = null; S.handFn = null; }   /* 물러난 뒤 길잡이 손이 HINT_AFTER 뒤에 다시 올 수 있게 */
 /** 쫙 — 뚜껑이 열리고 남은 물고기가 둘씩 한꺼번에 접시에 깔린다(D06). */
@@ -299,7 +302,7 @@ async function closeD06(picked = false){ const my = S.oid, w = S.w, odd = w.N % 
 async function finishProblem(out){ const my = S.oid, cleanNow = R.clean(S.res); wallet.earn(R.T.COIN_PER, 'plates'); coinsDraw(true);
   if (S.ctx.gold) { if (cleanNow) { wallet.earn(R.T.GOLD_COINS, 'plates'); confetti(10); coinsDraw(true); S.log.push({ goldOpen: true }); S.goldCarry = false; } else S.goldCarry = true; }
   if (cleanNow && S.step === 2) { S.streak++; S.log.push({ streak: S.streak }); if (S.streak % R.T.STREAK === 0) { confetti(8); cook('Yes'); [660, 880, 990].forEach((f, i) => snd(f, .08, 'square', .03, i * .09)); S.log.push({ clap: S.streak }); } } else if (!cleanNow) breakStreak('problem');
-  S.icons.push(npHtml(S.p.N != null ? 2 : S.p.g)); await sleep(T.READ_MS); if (S.oid !== my) return; labsOff(); await Promise.all([serveOut(), tearFront()]); if (S.oid !== my) return; A.trayClear(); signShow(false); S.done && S.done(out); }
+  S.icons.push(npHtml(S.p.N != null ? 2 : S.p.g)); await sleep(T.READ_MS); if (S.oid !== my) return; labsOff(); await Promise.all([serveOut(), cleanNow ? tearFront() : rehangFront('again')]);   /* 깨끗하지 못했으면 그 쪽지가 줄 맨 뒤에 다시 걸린다 */ if (S.oid !== my) return; A.trayClear(); signShow(false); S.done && S.done(out); }
 
 // ── J01: 종 · 고르기 · 쫙
 function bellWob(){ const o = S.bellIn; if (stage.tweens.some(w => w.o === o.rotation)) return; stage.tween(o.rotation, { z: .28 }, 110).then(() => stage.tween(o.rotation, { z: -.22 }, 150)).then(() => stage.tween(o.rotation, { z: .1 }, 130)).then(() => stage.tween(o.rotation, { z: 0 }, 150)); }
@@ -334,7 +337,7 @@ async function missNow(){ if (S.busy || !S.active) return; const my = S.oid, p =
   else { while (w.plates.length > p.n) { const i = w.plates.length - 1; R.remove(w, i); backPlate(i); } while (w.plates.length < p.n) { R.place(w); addPlate(p.g); await sleep(R.T.FAN_MS); if (S.oid !== my) return; }
     if (S.bare) { S.bare = false; S.pls.forEach(rec => { for (let j = 0; j < rec.k; j++) S.fish.push({ where: 'plate', pl: rec, j, p: S.bucket.position.clone().add(V3(0, .5, 0)) }); }); }
     await sleep(T.PLACE_MS); if (S.oid !== my) return; S.pls.forEach((r, i) => labOn(i, String((i + 1) * p.g), r, i === p.n - 1 ? 'all' : '')); trayDraw(true); }
-  say(S.trayText); await blowFront(); if (S.oid !== my) return; await sleep(T.MISS_HOLD); if (S.oid !== my) return;   /* 답이 화면에 남는다 */
+  if (S.ctx.gold) S.goldCarry = true; say(S.trayText); await rehangFront('blow'); if (S.oid !== my) return; await sleep(T.MISS_HOLD);   /* 금테 쪽지를 놓치면 다음 판에 금테가 다시(나들이 안에서만) */ if (S.oid !== my) return;   /* 답이 화면에 남는다 */
   labsOff(); S.pls.forEach(r => glowSet(r.o, 0)); await serveOut(); if (S.oid !== my) return; A.trayClear(); signShow(false); S.done && S.done('missed'); }
 function dogPlace(){ const l = L(), d = S.dog, k = d.k, x = l.dogOut[0] + (l.dog[0] - l.dogOut[0]) * k; S.dogP.obj.position.set(x, T.DECK, l.dog[1]); S.dogP.obj.rotation.y = l.dogOut[0] > l.dog[0] ? -Math.PI / 2 : Math.PI / 2; }   /* 들어오는 쪽에서 탁자 쪽으로 고개 */
 const dogAct = re => S.dogActs.find(n => re.test(n));
@@ -356,15 +359,26 @@ stage.frame(() => { const now = performance.now(); let rdt = (now - (S.lastNow |
   if (thinking && S.slidePlan && !S.slide && S.phase === 'place' && S.think > S.slidePlan.at && slideStart()) { S.slidePlan = null; S.ctx.slideFired = true; }
   if (S.slide) { const u = (S.t - S.slide.t0) / R.T.SLIDE_S; S.slide.rec.slideK = Math.min(1, u * 1.1); if (u >= 1) slideEnd('anne'); }
   /* J01 ①: 자리가 다 차면 종이 흔들린다 */ if (thinking && S.p && S.p.n != null && S.step === 1 && S.w.plates.length === S.p.n && S.t - S.wobT > T.BELL_WOB) { S.wobT = S.t; bellWob(); }
-  /* 길잡이 손(가만히 있으면): D06 = 접시 더미만(카드는 들썩) · J01 ① = 더미 → 종 · J01 ② = 더미 → 종 → (많으면 끝 접시) · 고르는 중 = 맞는 카드. J01 ② 와 카드만 그 문제를 깨끗하지 않게 한다. */
-  if (thinking && !S.tellOn && !S.handTo) { const wait = R.T.HINT_AFTER * (M.stuck(M.get(S.cell)) >= 1 ? .5 : 1); if (S.t - S.lastAct > wait) idleHand(); }
+  /* 길잡이 손(가만히 있으면 · 정한 것 — 손은 답을 먼저 짚지 않는다): D06 = 접시 더미만(통이 비었거나 뚜껑 · 아닌 카드 뒤면 카드 들썩 — HINT_AFTER 마다) · J01 ① = 더미 → 다 차면 종 ·
+   * J01 ② = 모자라면 더미(깨끗함 그대로) · 딱 맞거나 많으면 먼저 접시가 수 없이 한 장씩 톡(세어 보라는 몸짓) → 한 번 더 기다린 뒤 종 · 끝 접시 / 고르는 중 = 먼저 톡 → 그 뒤 맞는 카드.
+   * 그다음 할 일을 넘어 답을 짚는 손(종 · 끝 접시 · 카드)만 그 문제를 깨끗하지 않게 한다. 기다림 = HINT_AFTER + 접시 수 × HINT_PER(세는 아이보다 먼저 짚지 않게). 손 그림이 사라지면 손 상태를 지운다. */
+  if (thinking && !S.tellOn) { if (S.handTo && S.handTo !== 'cards' && !H.shown()) { S.handTo = null; S.handFn = null; S.lastAct = Math.max(S.lastAct, S.t - .01); }
+    if (S.handTo === 'cards' && S.phase === 'ask') { S.handTo = null; }   /* 고르는 중의 헛누름 들썩은 한 번(그 뒤 길잡이 차례는 그대로) */
+    if (S.handTo === 'cards') { if (S.t - S.bobT > R.T.HINT_AFTER) { bob(); S.bobT = S.t; S.log.push({ hand: 'cards' }); } } else if (!S.handTo) idleHand(); }
   if (S.handFn && H.shown()) { const q = S.handFn(); if (q) H.show(q.x, q.y); }   /* 손은 짚은 것을 따라간다(화면을 돌릴 때) */
   if (S.dog) dogPlace(); platesTick(rdt); fishTick(rdt); ghostsDraw(); for (const d of LABS) if (d.classList.contains('on')) labPlace(d); if (S.choosingOn) C.place(); signPlace(); });
-function idleHand(){ const p = S.p, w = S.w; let to = null, fn = null, hint = false;
-  if (S.phase === 'ask') { fn = answerAt; to = 'card'; hint = true; }
-  else if (p.N != null) { if (S.lid || w.tub <= 0) { bob(); S.handTo = 'cards'; S.log.push({ hand: 'cards' }); return; } fn = pileAt; to = 'pile'; }
-  else { const k = w.plates.length; if (k < p.n) { fn = pileAt; to = 'pile'; } else if (k === p.n) { fn = bellAt; to = 'bell'; } else { const i = k - 1; fn = () => plateAt(i); to = 'plate'; } hint = S.step === 2; }
-  const q = fn && fn(); if (!q) return; H.show(q.x, q.y); S.handTo = to; S.handFn = fn; if (hint && !S.res.hinted) { S.res.hinted = true; breakStreak('hint'); } S.log.push({ hand: to, hinted: hint }); }
+function idleHand(){ const p = S.p, w = S.w, idle = S.t - S.lastAct, short = R.T.HINT_AFTER * (S.phase === 'place' && M.stuck(M.get(S.cell)) >= 1 ? .5 : 1), long = R.T.HINT_AFTER + (p.n || 0) * T.HINT_PER; let to = null, fn = null, hint = false;
+  if (p.N != null) { if (idle < short) return; if (S.lid || w.tub <= 0 || S.res.retreat) { bob(); S.bobT = S.t; S.handTo = 'cards'; S.log.push({ hand: 'cards' }); return; } fn = pileAt; to = 'pile'; }
+  else if (S.step === 1 && S.phase === 'place') { if (idle < short) return; const k = w.plates.length; if (k < p.n) { fn = pileAt; to = 'pile'; } else { fn = bellAt; to = 'bell'; } }
+  else { const k = w.plates.length;
+    if (S.phase === 'place' && k < p.n) { if (idle < short) return; fn = pileAt; to = 'pile'; }
+    else if (S.idleStage === 0) { if (idle < long) return; S.idleStage = 1; S.idleT = S.t; S.log.push({ hand: 'hop', idle: Math.round(idle * 10) / 10 }); hopSilent(); return; }
+    else { if (S.t - S.idleT < long) return; hint = true; if (S.phase === 'ask') { fn = answerAt; to = 'card'; } else if (k === p.n) { fn = bellAt; to = 'bell'; } else { const i = k - 1; fn = () => plateAt(i); to = 'plate'; } } }
+  const q = fn && fn(); if (!q) return; H.show(q.x, q.y); S.handTo = to; S.handFn = fn; if (hint && !S.res.hinted) { S.res.hinted = true; breakStreak('hint'); } S.log.push({ hand: to, hinted: hint, idle: Math.round((S.t - S.lastAct) * 10) / 10 }); }
+/** 접시가 수 없이 한 장씩 톡(가만히 있을 때의 첫 길잡이 — 답이 아니라 「세어 봐」). 바쁘지 않음(그사이에도 누를 수 있다). */
+async function hopSilent(){ const my = S.oid, list = S.pls.slice(); for (let i = 0; i < list.length; i++) { if (S.oid !== my || S.idleStage !== 1) return; const r = list[i]; snd(330, .06, 'triangle', .04); stage.tween(r, { hop: .14 }, 150, t => t * (2 - t)).then(() => stage.tween(r, { hop: 0 }, 190, t => t * t)); await sleep(340); } }
+/** 아이가 무언가를 누름 — 길잡이 차례를 처음으로. */
+function acted(){ S.lastAct = S.t; S.handTo = null; S.handFn = null; S.idleStage = 0; }
 /** 맞는 카드의 화면 자리(길잡이 손 · 하네스). */
 function answerAt(){ const a = R.answer(S.p), b = [...document.querySelectorAll('#choose.on button')].find(b => b.dataset.n === String(a)); if (!b) return null; const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom - 10 }; }
 
@@ -372,9 +386,13 @@ function answerAt(){ const a = R.answer(S.p), b = [...document.querySelectorAll(
 const FIRST = { D06: { 1: '접시 더미를 눌러 물고기를 둘씩 놓아 줘.', 2: '짝수일까, 홀수일까? 접시 더미를 눌러 놓아 봐도 돼.' }, J01: { 1: '접시 더미를 눌러 쪽지만큼 접시를 놓아 줘.', 2: '쪽지만큼 접시를 놓고 종을 눌러 줘. 모두 몇 마리일까?' } };
 const ASK_LINE = '모두 몇 마리일까? 수를 눌러 줘.', PICK_LINE = '다 놓았어. 짝수인지 홀수인지 눌러 줘.', LID_LINE = '통이 닫혀 있어. 수를 보고 짝수인지 홀수인지 눌러 줘.', BELL_LINE = '다 놓았으면 종을 눌러 줘.', FULL_LINE = '접시가 다 깔렸어. 종을 눌러 줘.', SHORT_LINE = '더 놓아 줘.';
 const TELLS = () => ({ times: M.passed(M.get(S.cell || '')) ? 2 : 1e9 });   /* 깃발을 따기 전에는 나들이 첫 문제마다(정본 5-11절) */
-async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.streak = 0; S.goldCarry = false; S.icons = []; const day = M.dayKey(); let prevStep = 0;
+/** 다음 나들이로 넘길 문제(셋째 판까지 다시 낼 자리가 없던 것) — 지갑 칸에 남긴다(돌아가기 · 다시 열기로도 사라지지 않게 · 동의 전에는 화면이 열려 있는 동안만). */
+const carryBox = () => { const o = wallet.island('plates'); o.carry = o.carry || {}; return o.carry; };
+function carryGet(id){ const c = carryBox()[id]; return Array.isArray(c) ? c.filter(x => x && x.cell === id) : []; }
+function carrySet(id, list){ carryBox()[id] = list.map(x => x.N != null ? { cell: id, N: x.N, retry: true } : { cell: id, g: x.g, n: x.n, retry: true }); S.carry[id] = carryBox()[id].slice(); wallet.save(); }
+async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.streak = 0; S.goldCarry = false; S.icons = []; S.running = true;   /* 금테 넘김은 나들이 안에서만(셋째 판의 금테는 다음 나들이로 넘기지 않음) */ const day = M.dayKey(); let prevStep = 0;
   stage.hemi.intensity = 1.25; let rec = M.get(id); S.back = M.stuckNow(rec) && !!rec.hand;
-  const hand0 = !rec.hand || S.back; let q = S.forceQ ? S.forceQ.map(x => ({ ...x })) : R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1, hand: [hand0, false, false], carry: S.carry[id] }); S.forceQ = null; S.carry[id] = []; S.q = q; E.lanterns(0); S.log.push({ outing: id, deal: q.map(R.key) });
+  const hand0 = !rec.hand || S.back; let q = S.forceQ ? S.forceQ.map(x => ({ ...x })) : R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1, hand: [hand0, false, false], carry: carryGet(id) }); S.log.push({ carryIn: carryGet(id).map(R.key).join() }); S.forceQ = null; carrySet(id, []); S.q = q; E.lanterns(0); S.log.push({ outing: id, deal: q.map(R.key) });
   for (let b = 0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = !rec.hand || S.back; if (hand && b > 0 && id === 'D06') { q = fixHand(q, b * R.T.PER_BOARD); S.q = q; }
     let ev = R.events(id, rec.evBoards, Math.random, { passed: M.passed(rec), calm: CALM, hand }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; } if (S.forceEvAll && !hand) ev = { ...ev, ...S.forceEvAll };   /* 하네스만(window.__plates) */
     const carried = S.goldCarry && !hand; if (carried) ev = { ...ev, slide: false, dog: false, bare: false, gold: true, carried: true };   /* 넘어온 금테 쪽지 판에는 다른 사건을 붙이지 않는다(판마다 하나 · 쌓이는 주문은 시계라 그대로) */
@@ -387,23 +405,23 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.s
       const ctx = { b, j, hand, ev, gold: j === goldJ, bare: j === bareJ, last, dogAt: dogLeft && j >= dogJ ? between(R.T.DOG_AT) : null, slideAt: slideLeft && j >= slideJ && p.n != null ? between(R.T.SLIDE_AT) : null,
         tell: tellOk ? { key: 'plates.' + id + '.' + (hand ? 1 : 2), text: FIRST[id][hand ? 1 : 2], opt: TELLS() } : null, askTell: tellOk && id === 'J01' && !hand ? { key: 'plates.J01.ask', opt: TELLS() } : null };
       const r = await runProblem(p, ctx); if (S.oid !== my || r.abort) return; if (ctx.dogFired) dogLeft = false; if (ctx.slideFired) slideLeft = false; results.push(r); E.marbles(j + 1);
-      if (!r.clean) { const rq = R.requeue(q, i); q = rq.q; if (rq.carry) S.carry[id].push(rq.carry); } S.q = q; }
+      if (!r.clean) { const rq = R.requeue(q, i); q = rq.q; if (rq.carry) carrySet(id, [...carryGet(id), rq.carry]); } S.q = q; }
     prevStep = hand ? 1 : 2;
     const before = rec; rec = M.record(rec, results, day, { counts: !hand, hand, ev: !hand && !ev.none && !ev.carried }); if (hand) S.back = false; else if (M.stuckNow(rec)) S.back = true; M.put(id, rec); S.log.push({ boardEnd: b, clean: M.clean(results), rec: { ...rec } });
-    ORD.classList.remove('on'); S.ords = []; notesDraw(); E.lanterns(b + 1); snd(660, .15, 'triangle', .1); snd(990, .2, 'triangle', .1, .12);
+    await carryLeft(); if (S.oid !== my) return; ORD.classList.remove('on'); S.ords = []; S.curNote = null; notesDraw(); E.lanterns(b + 1);   /* 다시 걸린 채 남은 쪽지는 넘어가는 몸짓 뒤에 다음 판(마지막 판이면 다음 나들이)으로 */ snd(660, .15, 'triangle', .1); snd(990, .2, 'triangle', .1, .12);
     if (!M.passed(before) && M.passed(rec)) { grew(art(ICON.flag) + ' 깃발을 땄어요!'); await sleep(2400); }
     if (S.oid !== my) return; await sleep(400); }
   S.hist[id] = q; await finale(); if (S.oid !== my) return;
-  const nx = M.passed(M.get(id)) ? nextHere(id) : null; S.log.push({ homeNext: nx });   /* 「다음으로」는 같은 학년 안에서만(go/next.js) — D06 → J01 은 권하지 않는다 */
+  const nx = M.passed(M.get(id)) ? (S.nextHere || nextHere)(id) : null;   /* S.nextHere = 하네스만(window.__plates) */ S.log.push({ homeNext: nx });   /* 「다음으로」는 같은 학년 안에서만(go/next.js) — D06 → J01 은 권하지 않는다 */
   const choice = await E.home({ items: S.icons.slice(), next: nx ? '다음으로' : '' }); if (S.oid !== my) return;
   if (choice === 'again') outing(id); else if (choice === 'next' && nx) location.href = href(nx); else location.href = GO; }
 /** 막혀서 걸음 ① 로 돌아온 판(D06): 그 판의 수를 2~10 으로(짝 · 홀은 그대로 · 앞뒤와 같지 않게). */
 function fixHand(q, st){ const out = q.slice(), [lo, hi] = R.CELLS.D06.hand; for (let k = st; k < st + R.T.PER_BOARD && k < out.length; k++) { const N = out[k].N; if (N >= lo && N <= hi) continue; const cand = []; for (let v = lo; v <= hi; v++) if (v % 2 === N % 2 && (!out[k - 1] || out[k - 1].N !== v) && (!out[k + 1] || out[k + 1].N !== v)) cand.push(v); out[k] = R.make('D06', cand[Math.floor(Math.random() * cand.length)]); } return out; }
 /** 나들이 끝: 밥집 등이 꺼지고 오늘 낸 접시가 한 줄로. */
-async function finale(){ const my = S.oid; S.p = null; S.phase = 'idle'; A.trayClear(); C.hide(); S.choosingOn = false; labsOff(); signShow(false); clearTable(); S.fish = []; ORD.classList.remove('on'); cook('Wave', 2000); S.log.push({ finale: S.icons.length });
+async function finale(){ const my = S.oid; S.running = false; S.p = null; S.phase = 'idle'; A.trayClear(); C.hide(); S.choosingOn = false; labsOff(); signShow(false); clearTable(); S.fish = []; ORD.classList.remove('on'); cook('Wave', 2000); S.log.push({ finale: S.icons.length });
   snd(523, .2, 'triangle', .06); snd(659, .2, 'triangle', .06, .2); snd(784, .3, 'triangle', .06, .4); await stage.tween(stage.hemi, { intensity: .7 }, 1200); if (S.oid !== my) return; }
 /** 하네스 · 교사용: 지금 나들이를 거둔다. */
-function abort(){ S.oid++; S.active = false; if (S.done) { const d = S.done; S.done = null; d('abort'); } stage.tweens.length = 0; C.hide(); S.choosingOn = false; A.trayClear(); labsOff(); signShow(false); S.busy = false; S.phase = 'idle'; H.hide(); clearTable(); S.fish = []; S.ords = []; if (ORD) notesDraw(); if (S.dogP) S.dogP.obj.visible = false; S.dog = null; S.slide = null; stage.hemi.intensity = 1.25; S.handTo = null; S.handFn = null; }
+function abort(){ S.oid++; S.active = false; S.running = false; if (S.done) { const d = S.done; S.done = null; d('abort'); } stage.tweens.length = 0; C.hide(); S.choosingOn = false; A.trayClear(); labsOff(); signShow(false); S.busy = false; S.phase = 'idle'; H.hide(); clearTable(); S.fish = []; S.ords = []; if (ORD) notesDraw(); if (S.dogP) S.dogP.obj.visible = false; S.dog = null; S.slide = null; stage.hemi.intensity = 1.25; S.handTo = null; S.handFn = null; }
 
 window.__plates = { S, R, M, E, T, stage, wallet, outing, abort, hitAt, pileAt, bellAt, plateAt, tubAt, dogAt, answerAt, nextHere,
   noteAt: k => { const o = S.ords[k], e = o && o.el; if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },

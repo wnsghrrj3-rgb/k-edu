@@ -70,11 +70,19 @@ function dealJ01(c, rnd, opt, carry){ const gs = c.boards.map(b => shuffle(b.sli
 function fallbackD06(c, opt){ const hand = opt.hand || []; const base = [2, 7, 4, 9, 6, 13, 16, 11, 18]; return base.map((N, k) => make('D06', hand[Math.floor(k / 3)] ? [2, 5, 4, 3, 6, 7, 8, 9, 10][k] : N)); }
 function fallbackJ01(){ return [[2, 3], [5, 2], [2, 5], [2, 4], [5, 3], [2, 6], [2, 7], [5, 4], [5, 5]].map(([g, n]) => make('J01', g, n)); }
 
-/** 깨끗하지 못했던 문제를 「문제 둘 뒤에」 다시(같은 N · 같은 g 와 n · 길이 그대로 — 끝의 문제 하나가 빠진다). 앞뒤가 같으면 한 칸씩 뒤로.
- *  자리가 없으면(일곱째~아홉째) { q 그대로, carry: 그 문제 } — 다음 나들이 앞쪽으로 넘긴다(deal opt.carry). */
-export function requeue(q, i){ const p = q[i], copy = () => ({ ...(p.N != null ? make(p.cell, p.N) : make(p.cell, p.g, p.n)), retry: true });
-  for (let at = i + T.RETRY_GAP + 1; at < q.length; at++) { const a = q.slice(); a.splice(at, 0, copy()); a.length = q.length; if (!same(a[at - 1], a[at]) && !same(a[at], a[at + 1])) return { q: a, carry: null }; }
+/** 깨끗하지 못했던 문제를 「문제 둘 뒤에」 다시(같은 N · 같은 g 와 n · 길이 그대로 — 끝의 문제 하나가 빠진다).
+ *  끼운 뒤에도 나들이 규칙(okTail — 같은 문제 연달아 없음 · D06 같은 답 셋 연달아 없음 · J01 한 판에 같은 n 두 번 없음 · 판마다 2씩 · 5씩이 함께)이 지켜지는 자리를 찾는다:
+ *  끼울 자리를 뒤로 옮겨 보고, 안 되면 아직 내지 않은 뒤 문제끼리 맞바꾼다. 그래도 없으면(일곱째~아홉째 등) { q 그대로, carry: 그 문제 } — 다음 나들이 앞쪽으로 넘긴다(deal opt.carry). */
+export function requeue(q, i){ const p = q[i], copy = () => ({ ...(p.N != null ? make(p.cell, p.N) : make(p.cell, p.g, p.n)), retry: true }), from = i + 1;
+  const cands = []; for (let at = i + T.RETRY_GAP + 1; at < q.length; at++) { const a = q.slice(); a.splice(at, 0, copy()); a.length = q.length; cands.push(a); }
+  for (const a of cands) if (okTail(p.cell, a, from)) return { q: a, carry: null };
+  for (const a of cands) for (let x = from; x < a.length; x++) for (let y = x + 1; y < a.length; y++) { if (a[x].retry || a[y].retry) continue; const b = a.slice(); [b[x], b[y]] = [b[y], b[x]]; if (okTail(p.cell, b, from)) return { q: b, carry: null }; }   /* 아직 내지 않은 문제끼리 맞바꿈(다시 내는 문제의 자리는 그대로) */
   return { q: q.slice(), carry: copy() }; }
+/** 아직 내지 않은 쪽(from 부터)이 나들이 규칙을 지키는가 — 이미 낸 문제는 바꿀 수 없으니 from 이 닿는 창 · 판만 본다. 다시 내는 문제(retry)는 N = 1 한 번 규칙에서 뺀다(같은 문제를 다시 내는 것). */
+export function okTail(id, a, from){ for (let k = Math.max(1, from); k < a.length; k++) if (same(a[k - 1], a[k])) return false;
+  if (id === 'D06') { for (let k = Math.max(2, from); k < a.length; k++) { const x = a[k].N % 2; if (x === a[k - 1].N % 2 && x === a[k - 2].N % 2) return false; } }
+  else for (let b = 0; b < T.BOARDS; b++) { if (b * T.PER_BOARD + T.PER_BOARD - 1 < from) continue; const bd = a.slice(b * T.PER_BOARD, b * T.PER_BOARD + T.PER_BOARD); if (new Set(bd.map(x => x.n)).size !== bd.length) return false; if (!bd.some(x => x.g === 2) || !bd.some(x => x.g === 5)) return false; }
+  return true; }
 
 /** 그 판의 사건. evBoards = 이 낱칸에서 앞서 사건이 붙은 판 수 · opt = { passed, calm, hand }.
  *  손으로 하는 판(걸음 ①)은 사건 없음. 처음 판들은 INTRO 차례로 하나씩(아직 못 나오는 것은 몫으로 뽑은 하나로) · 그 뒤는 판마다 하나(몫의 합으로 나눠 늘 하나).
