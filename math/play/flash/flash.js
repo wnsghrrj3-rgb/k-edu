@@ -12,19 +12,19 @@ import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=11';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=11';
-import * as C from '../common/choose.js?v=4';
+import * as M from '../common/map.js?v=12';
+import * as C from '../common/choose.js?v=5';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
 import * as R from './rules.js?v=2';
-import * as V from './review.js?v=3';
+import * as V from './review.js?v=4';
 import { ASSETS, MODEL, SCENERY, NIGHT, WOOD, TINTS, GOLD, ROCKET, FIRE, SPARK, SMOKE, ICON } from './art.js?v=2';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T · 복습은 ./review.js 의 MOVE
 const T = { DECK: .45, WALL: .42, OPEN: 1.72, OPEN_MS: 110, CLOSE_MS: 110, PULL_MS: 260,
   WIDE: { anne: [-2.3, .3], rocket: [2.2, .35], span: 3.7, el: 1.02, fov: 38 }, TALL: { anne: [-1.05, 1.62], rocket: [1.0, 1.55], span: 1.78, el: 1.08, fov: 46 },
   ROCKET_S: [.42, 1.2], ROCKET_BIG: 1.25, BURST_Y: [1.55, 2.05], FUSE_N: 18, FUSE_LEN: .75,
-  COUNT_MS: 430, TELL_LEAD: 1600, GROUP_BOB: .5, STAMP_MS: 90, FIT_HOLD: 1300, MISS_HOLD: 1200, ROLL_MS: 420, ROLL_GAP: 300, ROLL_HOLD: 900, TELL_GRACE: 5, HINT_PICK_X: 1,
+  COUNT_MS: 430, TELL_LEAD: 1600, TEN_R: .13, TEN_GAP: .05, TEN_X: -.46, TEN_PAL: .72, TEN_DIV: .42, GROUP_BOB: .5, STAMP_MS: 90, FIT_HOLD: 1300, MISS_HOLD: 1200, ROLL_MS: 420, ROLL_GAP: 300, ROLL_HOLD: 900, TELL_GRACE: 5, HINT_PICK_X: 1,
   PARTS: LITE ? 520 : 1500, BURST: [50, 80, 120, 170, 230], SPEED: [1.0, 1.3, 1.6, 1.9, 2.3], SKY_FULL: 5, BOTTOM_TALL: 74, BOTTOM_WIDE: 22 };
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
@@ -158,9 +158,14 @@ function fill(spec){ clearCrate(); let k = 0; S.items = [];
   S.seams.forEach(m => { m.visible = thirds; });
   if (thirds) [-1, 1].forEach((sx, i) => { const d = S.dividers[i]; d.visible = true; d.position.x = sx * R.T.CRATE.W / 6; }); else if (halves) { S.dividers[0].visible = true; S.dividers[0].position.x = 0; }
   spec.groups.forEach((g, gi) => { const pts = g.pts || R.fives(g.n, R.region(g.region), g.r); pts.forEach((p, j) => { const o = POOL[k++]; const mat = spec.tint ? (j % 2 ? mats.tA : mats.tB) : null; placeBarrel(o, p.x, p.z, g.r, mat); o.userData.gi = gi; o.userData.k = j; S.items.push(o); }); });
-  if (spec.ten) { S.pallet.visible = true; const sl = R.tenSlots(); sl.forEach((p, j) => { const g = GHOSTS[j]; const s = (2 * R.T.R) / BK.d; g.scale.set(s, s * .85, s); g.position.set(p.x, fy(), p.z); g.userData.slot = j; S.inCrate.push(g); });
-    for (let j = 0; j < (spec.ten.full ? 10 : spec.ten.a); j++) { const o = POOL[k++]; placeBarrel(o, sl[j].x, sl[j].z, R.T.R); o.userData.gi = j < spec.ten.a ? 0 : 1; o.userData.k = j; o.userData.slot = j; S.items.push(o); } }
+  S.pallet.scale.x = 1; S.pallet.position.x = 0;
+  if (spec.ten) { const tn = spec.ten, sm = tn.loose != null, r0 = sm ? T.TEN_R : R.T.R, sl = sm ? tenSmall(r0) : R.tenSlots(); S.pallet.visible = true; if (sm) { S.pallet.scale.x = T.TEN_PAL; S.pallet.position.x = T.TEN_X; S.dividers[0].visible = true; S.dividers[0].position.x = T.TEN_DIV; }   /* C04(T10): 열 칸을 왼쪽에 좁혀 놓고 오른쪽에 낱개 */
+    sl.forEach((p, j) => { const g = GHOSTS[j]; const s = (2 * r0) / BK.d; g.scale.set(s, s * .85, s); g.position.set(p.x, fy(), p.z); g.userData.slot = j; S.inCrate.push(g); });
+    for (let j = 0; j < 10; j++) { const on = tn.full ? true : tn.gap != null ? j !== tn.gap : j < tn.a; if (!on) continue; const o = POOL[k++]; placeBarrel(o, sl[j].x, sl[j].z, r0); o.userData.gi = tn.full || j < tn.a || tn.gap != null ? 0 : 1; o.userData.k = j; o.userData.slot = j; S.items.push(o); }
+    if (sm) R.fives(tn.loose, { x0: T.TEN_DIV + .07, x1: W2 - R.T.EDGE, z0: -D2 + R.T.EDGE, z1: D2 - R.T.EDGE }, r0, { vertical: true }).forEach((p, j) => { const o = POOL[k++]; placeBarrel(o, p.x, p.z, r0); o.userData.gi = 1; o.userData.k = j; S.items.push(o); }); }
   doorTick(); }
+/** 좁힌 열 칸(C04 복습 — 열 칸 + 낱개가 한 궤짝에): 왼쪽 위부터 · 윗줄 다섯 → 아랫줄 다섯. */
+function tenSmall(r){ const p = 2 * r + T.TEN_GAP, out = []; for (let k = 0; k < 10; k++) out.push({ x: T.TEN_X + (k % 5 - 2) * p, z: (Math.floor(k / 5) - .5) * p * 1.05 }); return out; }
 /** C03: 오른쪽 b 칸을 작은 덧문(판자)으로 가린다 · 걷는다. */
 function covers(b, on){ const sl = R.tenSlots(), st = S.plank, a = 10 - b; COVERS.forEach(c => { c.visible = false; c.userData.off = true; }); for (const o of S.items) if (o.userData.slot != null) o.userData.off = false; if (!on) { S.inCrate = S.inCrate.filter(o => !COVERS.includes(o)); doorTick(); return; }
   for (let j = a; j < 10; j++) { const c = COVERS[j - a], p = sl[j]; c.scale.set(.46 / st.pwid, 1, .46 / st.plen); c.position.set(p.x, fy() + BK.h * (2 * R.T.R / BK.d) * .85 + .04, p.z); c.userData.off = false; if (!S.inCrate.includes(c)) S.inCrate.push(c); }
@@ -171,7 +176,7 @@ const topOf = o => V3(o.position.x, o.position.y + BK.h * o.scale.y + .05, o.pos
 // ── 띠 · 고르기
 function trayDraw(closed = false){ A.trayClear(); const t = $('tray'), p = S.p; if (!p) return; const b = (v, c = '') => `<b class="${c}">${v}</b>`, w = s => `<i class="w">${s}</i>`;
   t.innerHTML = (closed && p.closedBand ? p.closedBand : p.band).map(x => V.partWord(x, closed) != null ? w(V.partWord(x, closed)) : x.hole != null ? (closed ? b(x.hole, 'done') : b('?', 'hole')) : x.n != null ? b(x.n) : x.dots != null ? `<b class="dotsb">${C.dotsHtml(x.dots)}</b>` : `<i class="op">${x.op}</i>`).join('');
-  t.className = 'on' + (p.band.length > 6 ? ' story' : '') + (p.band.length === 1 && p.band[0].n != null ? ' num1' : ''); C.ask(!closed && !!S.choosing); trayFit(); }
+  t.className = 'on' + (p.band.length > 6 && p.reveal !== 'tens' ? ' story' : '') + (p.band.length === 1 && p.band[0].n != null ? ' num1' : ''); C.ask(!closed && !!S.choosing); trayFit(); }   /* C04(T10) 복습 띠는 이야기 접기(story) 없이 한 줄 — 넘치면 글씨를 줄인다(「?」 만 아랫줄로 떨어지지 않게) */
 function trayFit(){ const t = $('tray'); if (t.classList.contains('story')) return; t.style.fontSize = ''; const room = innerWidth * .96; if (t.offsetWidth > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / t.offsetWidth) + 'px'; }
 /** 고를 것: row = 단추 줄(점 + 숫자 · 자리 고정) · num = 수 셋 · eq = 식 카드 셋 · group · side = 궤짝 안의 칸을 누른다(단추 없음). */
 function chooseShow(){ const p = S.p; S.choosing = p.form; if (p.form === 'group' || p.form === 'side') { C.hide(); return; }
@@ -257,14 +262,21 @@ const countsStreak = () => !(S.mode === 'cell' && S.step === 1);
 /** 맞은 뒤 확인: 덧문이 열리고 통 위에 수가 찍힌다(빨리 — 세어 보이는 것이 아니라 「봤지?」). */
 async function confirmShow(){ const p = S.p, my = S.oid; if (p.cover || (p.ten && p.ten.cover)) covers(0, false); for (const o of S.items) o.userData.off = false; await allOpen(); if (S.oid !== my) return;
   if (p.form === 'side' || p.form === 'group') { sums(true); return; } if (p.signs) { signsDraw(true); return; }
-  const list = (p.ten && !p.ten.full) || p.reveal === 'split' ? countList(true) : countList(); for (let k = 0; k < list.length; k++) { label(k, list[k], k + 1, k === list.length - 1); await sleep(T.STAMP_MS); if (S.oid !== my) return; } }
+  if (p.reveal === 'tens') { await tensCount(false); return; }
+  const list = p.reveal === 'next' ? countList() : (p.ten && !p.ten.full) || p.reveal === 'split' ? countList(true) : countList(); for (let k = 0; k < list.length; k++) { label(k, list[k], k + 1, k === list.length - 1); await sleep(T.STAMP_MS); if (S.oid !== my) return; } }
 /** 아니었을 때의 세계의 답: 덧문이 열린 채 통이 하나씩 톡톡 세어진다(모으기 = 이어 세기 · 가르기 = 가려진 쪽 · 열 칸 = 빈 칸). */
 async function reveal(){ const my = S.oid, p = S.p; CNT.forEach(d => d.classList.remove('on', 'all')); if (p.ten && p.ten.cover) covers(0, false); for (const o of S.items) o.userData.off = false; await allOpen(); if (S.oid !== my) return;
   if (p.signs) { SIGNS.forEach(d => { d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop'); }); await sleep(500); return; }
   if (p.form === 'side' || p.form === 'group') { for (let g = 0; g < p.groups.length; g++) { const list = S.items.filter(o => o.userData.gi === g); for (let k = 0; k < list.length; k++) { if (S.oid !== my) return; await hop(list[k], k + 1, k === list.length - 1); } sum(g, list.length); await sleep(240); } return; }
+  if (p.reveal === 'tens') { await tensCount(true); return; }
   const list = countList(true); S.log.push({ reveal: list.length }); for (let k = 0; k < list.length; k++) { if (S.oid !== my) return; await hop(list[k], k + 1, k === list.length - 1); } await sleep(250); }
+/** C04(T10): 열 칸이 통째로 「10」 하고 한 번 뛰고 · 낱개가 이어 세어진다(11 · 12 · …). hopIt = 아니었을 때(뛰며 하나씩) · 아니면 빨리 찍기만. */
+async function tensCount(hopIt){ const my = S.oid, ten = S.items.filter(o => o.userData.gi === 0), ls = S.items.filter(o => o.userData.gi === 1).sort((a, b) => a.userData.k - b.userData.k), mid = ten.find(o => o.userData.slot === 2) || ten[0];
+  label(0, mid, 10, false); S.log.push({ reveal: 10 + ls.length }); if (hopIt) { snd(392, .12, 'triangle', .07); const y0 = fy(); await Promise.all(ten.map(o => stage.tween(o.position, { y: y0 + .2 }, T.COUNT_MS * .45, t => t * (2 - t)))); await Promise.all(ten.map(o => stage.tween(o.position, { y: y0 }, T.COUNT_MS * .55, t => t * t))); } else await sleep(T.STAMP_MS * 2); if (S.oid !== my) return;
+  for (let k = 0; k < ls.length; k++) { if (S.oid !== my) return; if (hopIt) await hop(ls[k], 11 + k, k === ls.length - 1); else { label(k + 1, ls[k], 11 + k, k === ls.length - 1); await sleep(T.STAMP_MS); } } if (hopIt) await sleep(250); }
 /** 셀 차례: 열 칸 = 빈 칸(C02 — 답) · 가르기 = 가려진(오른) 쪽 · 그 밖은 모두(왼쪽 무리부터 이어서). */
-function countList(wrong){ const p = S.p; if (p.ten && !p.ten.full) { return wrong ? GHOSTS.filter(g => g.userData.slot >= p.ten.a && g.visible) : S.items.slice(); }
+function countList(wrong){ const p = S.p; if (p.reveal === 'next') return [...S.items.slice().sort((a, b) => a.userData.slot - b.userData.slot), ...GHOSTS.filter(g => g.userData.slot === p.ten.gap && g.visible)];   /* C01(T10): 아홉을 하나씩 세고 빈 칸이 열 */
+  if (p.ten && !p.ten.full) { return wrong ? GHOSTS.filter(g => g.userData.slot >= p.ten.a && g.visible) : S.items.slice(); }
   if (wrong && (p.reveal === 'split')) return S.items.filter(o => o.userData.gi === 1);
   return S.items.slice().sort((a, b) => (a.userData.gi - b.userData.gi) || (a.userData.k - b.userData.k)); }
 async function hop(o, n, last){ const i = CNT.findIndex(d => !d.classList.contains('on')); if (i >= 0) label(i, o, n, last); snd(392 * Math.pow(2, (n - 1) / 12 * 2), .1, 'triangle', .07); const y0 = o.position.y; await stage.tween(o.position, { y: y0 + .22 }, T.COUNT_MS * .45, t => t * (2 - t)); await stage.tween(o.position, { y: y0 }, T.COUNT_MS * .55, t => t * t); }

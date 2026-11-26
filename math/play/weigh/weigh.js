@@ -13,10 +13,10 @@ import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=9';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=11';
+import * as M from '../common/map.js?v=12';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
-import { eun } from '../common/say.js?v=4';
+import { eun } from '../common/say.js?v=5';
 import * as R from './rules.js?v=1';
 import { ASSETS, MODEL, WATCHERS, SCENERY, SCENERY_NAMES, GRASS, GLOW, ICON } from './art.js?v=1';
 

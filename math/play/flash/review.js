@@ -6,16 +6,17 @@
  *   하루 한 번 = 저장 `kedu_mathplay_flash` { day, done, best }(/kedu_scope.js 규칙 그대로 · 서버 호출 0).
  * 각 틀의 rules.js 는 고치지 않는다 — 그 pool(cellId) 만 가져다 쓴다(풀 이름이 다른 틀은 없다: 모두 pool). 문제를 「번쩍」 꼴로 옮기는 것은 아래 MOVE 한 곳.
  * 물건은 통 하나로 통일(수를 보는 눈은 하나 — 다섯씩 한 줄 · 열 칸) · 세어야 하는 낱칸은 가리지 않는다(머묾) · 띠는 그 낱칸의 교과서 말(식 기호는 B07 부터). */
-import { pool as countPool } from '../count/rules.js?v=1';     /* 각 틀이 싣는 버전과 같게(count 1 · serve 1 · match 2 · line 2 · weigh 1 · split 3 · ride 3) */
+import { pool as countPool } from '../count/rules.js?v=1';     /* 각 틀이 싣는 버전과 같게(count 1 · serve 1 · match 2 · line 2 · weigh 1 · split 3 · ride 4 · pack 1) */
 import { pool as servePool } from '../serve/rules.js?v=1';
 import { pool as matchPool } from '../match/rules.js?v=2';
 import { pool as linePool, CELLS as LINE } from '../line/rules.js?v=2';
 import { pool as weighPool } from '../weigh/rules.js?v=1';
 import { pool as splitPool } from '../split/rules.js?v=3';
-import { pool as ridePool } from '../ride/rules.js?v=3';
+import { pool as ridePool } from '../ride/rules.js?v=4';
+import { pool as packPool, cards as packCards } from '../pack/rules.js?v=1';
 import * as F from './rules.js?v=2';
-import { wa, eul, garu, moeu, word } from '../common/say.js?v=4';
-import { MOVED, RULE, passed, kept, days, dayKey } from '../common/map.js?v=11';
+import { wa, eul, garu, moeu, word } from '../common/say.js?v=5';
+import { MOVED, RULE, passed, kept, days, dayKey } from '../common/map.js?v=12';
 
 // ── 내가 정한 수치(설계 기본안 — 열어 둔 것 1 · 2 · 5 의 기본안)
 export const RT = { REVIEW_CELLS: 3, REVIEW_Q: 3, BONUS_Q: 3 };
@@ -72,6 +73,9 @@ export const MOVE = {
   B07: { frame: 'ride', look: 'flash', form: 'eq', show: 1.6, fuse: 10, items: id => uniq(ridePool(id), p => p.a + '+' + p.b).map(p => ({ a: p.a, b: p.b })) },
   B08: { frame: 'ride', look: 'blind', form: 'num', show: 0, fuse: 10, lim: [1, 5], items: id => uniq(ridePool(id), p => p.a + '+' + p.b).map(p => ({ a: p.a, b: p.b })) },
   B09: { frame: 'ride', look: 'blind', form: 'num', show: 0, fuse: 10, lim: [1, 9], items: id => uniq(ridePool(id), p => p.a + '+' + p.b).map(p => ({ a: p.a, b: p.b })) },
+  /* T10 포장 틀: C01 = 열 칸에 9 가 번쩍(빈 칸 하나는 아랫줄 어딘가 — 풀의 k 마다 자리가 다르다 · 서로 다른 문제 셋이 나오게) → 「9보다 1만큼 더 큰 수는 ?」 수 셋 / C04 = 가득 찬 열 칸 하나 + 낱개가 번쩍 → 「10개씩 묶음 1개와 낱개 r개는 ?」 수 셋(포장 틀의 카드 규칙 그대로) */
+  C01: { frame: 'pack', look: 'flash', form: 'num', show: 1.6, fuse: 8, lim: [1, 10], items: id => uniq(packPool(id), p => p.k === 0 ? 9 : p.k).map(p => ({ gap: p.k === 0 ? 9 : p.k })) },
+  C04: { frame: 'pack', look: 'flash', form: 'num', show: 1.8, fuse: 10, lim: [1, 19], items: id => packPool(id).map(p => ({ N: p.N })) },
 };
 export const ON = Object.keys(MOVE);
 /** 식 기호(+ =)를 띠에 쓰는 낱칸 = 덧셈식을 배운 낱칸부터(B07 · B08 · B09). */
@@ -113,6 +117,10 @@ export function make(cell, it, rnd = Math.random){ const mv = MOVE[cell], base =
       return { ...base, key: `${a}+${b}:${kind}`, a, b, kind, opts: near3(c, lim[0], lim[1], rnd, [a, b]), answer: c, band, groups: [grp(a, 'L'), grp(b, 'R')], roll: kind, reveal: 'join', nums: [a, b, c] }; }
     case 'B07': { const { a, b } = it, opts = eqCards(a, b, rnd), right = `${a} + ${b} = ${a + b}`;
       return { ...base, key: `${a}+${b}`, a, b, opts, answer: right, band: [W('알맞은 식은?')], closedBand: [N(a), O('+'), N(b), O('='), N(a + b)],   /* 닫히면(맞히거나 놓치면) 띠에 맞는 식이 남는다 */ groups: [grp(a, 'L'), grp(b, 'R')], reveal: 'join', nums: [a, b, a + b, ...opts.flatMap(s => s.match(/\d+/g).map(Number))] }; }
+    case 'C01': { const gap = it.gap;   /* 아홉이 든 열 칸(빈 칸 gap) · 답은 늘 10 — 9 · 8 이 같이 나온다(십몇은 없다) */
+      return { ...base, key: `9:${gap}`, opts: near3(10, lim[0], lim[1], rnd, [9]), answer: 10, band: [N(9), W('보다'), N(1), W('만큼 더 큰 수는'), H(10)], ten: { a: 9, full: false, cover: 0, gap }, reveal: 'next', nums: [9, 1, 10] }; }
+    case 'C04': { const n = it.N, r = n - 10;
+      return { ...base, key: `${n}`, N: n, r, opts: packCards({ N: n }, 2, rnd), answer: n, band: [N(10), W('개씩 묶음'), N(1), W('개와 낱개'), N(r), W('개는'), H(n)], ten: { a: 10, full: true, cover: 0, loose: r }, reveal: 'tens', nums: [10, 1, r, n] }; }
     case 'B08': case 'B09': { const { a, b } = it, c = a + b;
       return { ...base, key: `${a}+${b}`, a, b, opts: near3(c, lim[0], lim[1], rnd, [a, b]), answer: c, band: [N(a), O('+'), N(b), O('='), H(c)], groups: [grp(a, 'L'), grp(b, 'R')], reveal: 'join', nums: [a, b, c] }; }
   }

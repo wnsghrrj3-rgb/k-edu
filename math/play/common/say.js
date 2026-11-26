@@ -19,7 +19,9 @@ export const hasJong = s => { s = String(s); const c = s.charCodeAt(s.length - 1
 export const eulW = s => hasJong(s) ? '을' : '를';   /* 하나를 · 둘을 · 셋을 */
 /** 한자 수말(숫자 이름 — 「셋, 삼」 · T05). */
 export const SINO = ['영', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구', '십'];
-export const sino = n => SINO[n] != null ? SINO[n] : String(n);
+export const sino = n => SINO[n] != null ? SINO[n] : n > 10 && n < 20 ? '십' + SINO[n - 10] : String(n);   /* 십몇(T10 포장 틀 — 11~19 「십일 … 십구」) */
+/** 우리 수말 10~19(T10 포장 틀 — 「열 · 열하나 · … · 열아홉」 · 10 까지는 word 와 같다). */
+export const native = n => n >= 0 && n <= 10 ? KO[n] : n > 10 && n < 20 ? '열' + KO[n - 10] : String(n);
 /** 덧셈식 읽기 둘(T08 타고 내리기 틀 · B07 부터 — 교과서 말 그대로 · 토씨는 받침에 맞게): 「3 더하기 2는 5와 같습니다」 · 「3과 2의 합은 5입니다」. */
 export const plusRead = (a, b, c) => `${a} 더하기 ${b}${eun(b)} ${c}${wa(c)} 같습니다`;
 export const sumRead = (a, b, c) => `${a}${wa(a)} ${b}의 합은 ${c}입니다`;

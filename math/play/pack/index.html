@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>열 개 한 판 · 수학 놀이터</title>
+<script src="/kedu_scope.js"></script>
+<script type="importmap">{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+[hidden]{display:none!important}
+html{background:#bfe6f5}html,body{height:100%;overflow:hidden;font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;touch-action:none;overscroll-behavior:none}
+canvas#c{display:block;width:100%;height:100%;touch-action:none}
+.back{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));z-index:31;background:rgba(10,20,40,.5);color:#fff;border-radius:999px;padding:8px 16px;font-weight:900;font-size:1rem;text-decoration:none}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:40;background:#bfe6f5;color:#12314a;font-weight:900;font-size:1.3rem;transition:opacity .5s;pointer-events:none}
+#note{position:fixed;left:50%;bottom:calc(6px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:32;background:rgba(10,20,40,.5);color:#fff;border-radius:999px;padding:3px 14px;font-size:.78rem;font-weight:700;white-space:nowrap;max-width:96vw;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#coins{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));top:calc(54px + env(safe-area-inset-top,0px));z-index:5;display:flex;align-items:center;gap:6px;background:rgba(10,20,40,.45);color:#fff;border-radius:999px;padding:4px 12px;font-weight:900;font-size:.95rem;pointer-events:none}#coins img.art{height:1em}
+#coins.pop{animation:cpop .4s}@keyframes cpop{40%{transform:scale(1.3)}}
+@media (max-width:520px){#coins{top:auto;bottom:calc(32px + env(safe-area-inset-bottom,0px))}}
+/* 띠: 「9보다 1만큼 더 큰 수는 ?」 · 「10개씩 묶음 □개와 낱개 □개는 ?」(교과서 말 · 식 기호 없음) — 눌러도 뒤의 세계로 */
+#tray{pointer-events:none}#tray i.w{font-size:.62em;opacity:.95}#tray b.box{min-width:1.2em}#tray b.box.empty{background:transparent;border:.07em solid rgba(255,255,255,.75)}#tray b.box.tick{animation:boxtick .35s}@keyframes boxtick{40%{transform:scale(1.25)}}
+#readline{position:fixed;left:50%;transform:translateX(-50%);z-index:5;background:#fff4d6;color:#4a2a0c;border:4px solid #8a5a2b;border-radius:999px;padding:2px 18px;font-weight:900;font-size:clamp(1.2rem,4.2vw,1.8rem);line-height:1.3;white-space:nowrap;pointer-events:none;display:none}#readline.on{display:block;animation:rlpop .35s}@keyframes rlpop{0%{transform:translateX(-50%) scale(.4)}}
+/* 판 위의 수 팻말(걸음 ① — 수 + 점 열 칸) · 찍힌 수 · 하나씩 세어지는 수 */
+#cnt{position:fixed;z-index:3;transform:translate(-50%,-100%);display:none;align-items:center;gap:8px;background:#fff4d6;color:#4a2a0c;border:4px solid #8a5a2b;border-radius:16px;padding:3px 10px;font-weight:900;font-size:1.9rem;line-height:1.1;pointer-events:none;box-shadow:0 4px 0 rgba(60,30,5,.3)}#cnt.on{display:flex}#cnt b{min-width:1.3em;text-align:center}#cnt.tick b{animation:boxtick .3s}
+#cnt .dots u{width:12px;height:12px}
+.stamp{position:fixed;z-index:4;transform:translate(-50%,-50%);display:none;flex-direction:column;align-items:center;gap:4px;background:#ffd34d;color:#4a2a0c;border:5px solid #8a5a2b;border-radius:18px;padding:4px 14px;font-weight:900;font-size:2.6rem;line-height:1;pointer-events:none;box-shadow:0 6px 0 rgba(60,30,5,.35);transition:left .6s ease-in-out,top .6s ease-in-out}.stamp.on{display:flex;animation:stpop .4s}.stamp .dots u{width:12px;height:12px}@keyframes stpop{0%{transform:translate(-50%,-50%) scale(.3)}70%{transform:translate(-50%,-50%) scale(1.15)}}
+.cnt{position:fixed;z-index:3;transform:translate(-50%,-100%);min-width:1.45em;padding:1px 6px;border-radius:999px;background:#fff4d6;color:#4a2a0c;border:3px solid #8a5a2b;font-weight:900;font-size:1.3rem;line-height:1.25;text-align:center;pointer-events:none;display:none}.cnt.on{display:block;animation:cntpop .3s}.cnt.ten{background:#ffd34d;font-size:1.6rem}@keyframes cntpop{0%{transform:translate(-50%,-60%) scale(.3)}}
+@media (max-width:520px){.cnt{font-size:1.1rem;border-width:2px;padding:0 5px}.stamp{font-size:2rem;border-width:4px;padding:3px 10px}#cnt{font-size:1.5rem;border-width:3px;padding:2px 8px;gap:6px}#cnt .dots u,.stamp .dots u{width:9px;height:9px;border-width:1.5px}}
+/* 카드가 들썩(헛누름 — 답은 짚지 않음) */
+#choose button.bob{animation:chbob .45s}@keyframes chbob{40%{transform:translateY(-12px)}}
+@media (max-height:560px) and (min-aspect-ratio:1/1){html #tray{top:calc(6px + env(safe-area-inset-top,0px))!important;font-size:1.45rem!important}#marbles{left:auto!important;right:calc(132px + env(safe-area-inset-right,0px));transform:none!important}html #choose button.tens{width:150px;min-height:92px;padding:6px 8px 4px;gap:4px;font-size:1.9rem}html #choose button.tens .dots u{width:9px;height:9px;border-width:1.5px}html #choose button.tens .dots,html #choose button.tens .dots i{gap:2px}html #choose button{width:72px;height:72px;font-size:2.3rem}html #readline{font-size:1.1rem}}
+#home .row .fl{display:inline-flex;align-items:flex-end;gap:2px}#home .row .fl i{font-style:normal;font-size:.7em}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<a class="back" href="/math/play/go/">← 수학 길</a>
+<div id="loading">부두로 가는 중…</div>
+<script type="module" src="./pack.js?v=1"></script>
+</body>
+</html>

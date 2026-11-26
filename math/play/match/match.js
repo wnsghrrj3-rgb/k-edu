@@ -14,11 +14,11 @@ import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=9';
 import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=11';
+import * as M from '../common/map.js?v=12';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
 import * as DG from '../common/drag.js?v=4';
-import { word, sino, UNIT } from '../common/say.js?v=4';
+import { word, sino, UNIT } from '../common/say.js?v=5';
 import * as R from './rules.js?v=2';
 import { ASSETS, MODEL, ANIMALS, BIG, WATCHER, ANIMAL_H, FISH, FISH_ROWS, fishModel, SCENERY, GLOW, DOOR_TINT, BAR_TINT, ICON } from './art.js?v=2';
 
