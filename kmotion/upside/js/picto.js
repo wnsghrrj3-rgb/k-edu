@@ -2,7 +2,7 @@
 // 학생이 거울을 보듯 그린다: 그림의 왼쪽 = 학생의 왼쪽. 움직이는 부분은 노랗게.
 const HL = '#ffd166', BODY = '#7fe3ff', SK = '#ffd9bf', LINE = '#1d2a4a';
 export const PICTO_LABEL = { stand: '바르게 서기', armL: '내 왼팔 들기', armR: '내 오른팔 들기', spread: '크게 펼치기', crouch: '몸 웅크리기', moveL: '내 왼쪽으로 가기', moveR: '내 오른쪽으로 가기',
-  tiltL: '고개를 왼쪽으로', tiltR: '고개를 오른쪽으로', walk: '제자리 걷기', still: '가만히 멈추기', up: '몸 일으키기' };
+  tiltL: '고개를 왼쪽으로', bothUp: '두 손 번쩍', tiltR: '고개를 오른쪽으로', walk: '제자리 걷기', still: '가만히 멈추기', up: '몸 일으키기' };
 
 export function picto(kind, { size = 150, label = true } = {}){
   const arm = (x1, y1, x2, y2, hl) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${hl ? HL : BODY}" stroke-width="13" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="8" fill="${SK}"/>`;
@@ -15,6 +15,7 @@ export function picto(kind, { size = 150, label = true } = {}){
     case 'crouch': crouch = 34; aL = [58, 64, 72, 92]; aR = [102, 64, 88, 92]; lL = [0, 0, 0, 0]; lR = [0, 0, 0, 0]; hl = { aL: 1, aR: 1 };
       extra = `<path d="M70 132 L56 140 L66 152 M90 132 L104 140 L94 152" stroke="${HL}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`; break;
     case 'up': aL = [56, 64, 44, 30]; aR = [104, 64, 116, 30]; extra = arrowSvg(80, 22, 'up'); top = 30; break;
+    case 'bothUp': aL = [56, 64, 50, 18]; aR = [104, 64, 110, 18]; hl = { aL: 1, aR: 1 }; break;
     case 'moveL': cx = 92; extra = arrowSvg(30, 80, 'left'); break;
     case 'moveR': cx = 68; extra = arrowSvg(130, 80, 'right'); break;
     case 'tiltL': tilt = -22; break;

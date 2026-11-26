@@ -113,7 +113,9 @@ export class Hero {
     else if (st === 'reach') { P.lu = -2.9; P.ru = 2.9; P.lf = 0; P.rf = 0; P.hipY = .06; P.headRX = -.35; }
     else if (st === 'float') { const b = Math.sin(this.t * 3); P.lu = -1.2 + b * .2; P.ru = 1.2 - b * .2; P.lL = -.3; P.lR = .2; P.kL = .6; P.kR = .3; P.hipY = b * .04; }
     else if (st === 'bonk') { const u = Math.min(1, this.stateT / .5); P.hipRX = -.4 * (1 - u); P.lu = -1.2 * (1 - u) - .12; P.ru = 1.2 * (1 - u) + .12; P.headRX = .3 * (1 - u); if (this.stateT > .6) this.set('idle'); }
+    else if (st === 'slide') { P.hipY = -.36; P.hipRX = -.55; P.lL = 1.35; P.lR = 1.0; P.kL = .2; P.kR = .5; P.lu = -2.6; P.ru = 2.6; P.lf = -.2; P.rf = .2; P.headRX = .35; k = 16; }
     else if (st === 'sit') { P.lL = -1.4; P.lR = -1.4; P.kL = 1.4; P.kR = 1.4; P.hipY = -.25; }
+    if (this.reach === 'L') { P.lu = -2.85; P.lf = 0; P.lux = 0; } else if (this.reach === 'R') { P.ru = 2.85; P.rf = 0; P.rux = 0; }
     // 포즈 조종을 섞기(팔·고개). 옆모습일 땐 조종하지 않음
     const d = this.drive, wantDrive = d && (this.facing === 'back' || this.facing === 'front');
     this.driveW = damp(this.driveW, wantDrive ? 1 : 0, 8, dt);

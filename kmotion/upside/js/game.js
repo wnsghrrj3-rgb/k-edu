@@ -27,7 +27,12 @@ if (Q.has('kb') || Q.has('mouse') || Q.get('input') === 'keyboard') S.input = 'k
 const save = () => store.set('kmupside.run', S);
 
 // 난이도: 처음 속도·최고 속도·장애물 간격(초)·부딪힘 1번에 회오리가 다가오는 양
-const LEVEL = { easy: { v0: 7.5, vMax: 15, gap0: 3.6, gapMin: 2.1, hit: .3, heal: .018 }, normal: { v0: 9, vMax: 19, gap0: 3.0, gapMin: 1.6, hit: .34, heal: .014 }, hard: { v0: 11, vMax: 23, gap0: 2.5, gapMin: 1.25, hit: .4, heal: .01 } };
+const LEVEL = {
+  easy:   { v0: 7, vMax: 14, gap0: 3.8, gapMin: 2.3, hit: .28, heal: .02, lvT: 24, start: 1, warn: 3.8, combo: 0, eyeOpen: [1.6, 2.2], eyeShut: [2.4, 3.4] },
+  normal: { v0: 8.5, vMax: 18, gap0: 3.1, gapMin: 1.7, hit: .33, heal: .014, lvT: 18, start: 2, warn: 3.2, combo: .25, eyeOpen: [1.3, 2.0], eyeShut: [1.8, 2.8] },
+  hard:   { v0: 10.5, vMax: 23, gap0: 2.5, gapMin: 1.3, hit: .4, heal: .01, lvT: 15, start: 7, warn: 2.6, combo: .5, eyeOpen: [1.1, 1.8], eyeShut: [1.3, 2.2] } };
+// 장애물이 하나씩 열리는 차례(쉬움은 레벨마다 하나, 보통은 둘로 시작, 어려움은 처음부터 모두)
+const UNLOCK = ['hole', 'crystal', 'rock', 'bar', 'eye', 'grab', 'beam'];
 const LANE = 2.3, SIZE = { small: .45, mid: 1, big: 2.1 };
 
 // ───────── 바탕
@@ -90,6 +95,9 @@ const OBS_INFO = {
   crystal: { need: 'big',   label: '크게!',      em: '💪', act: 'crouch', tip: '커지려면 몸을 웅크려요!' },
   beam:    { need: 'notbig', label: '커지면 쿵!', em: '⚠️', act: 'stand', tip: '막대 밑은 크면 못 지나가요!' },
   rock:    { need: 'lane',  label: '피해요!',    em: '🪨', act: null, tip: '' },
+  bar:     { need: 'slide', label: '미끄럼!',    em: '🙌', act: 'bothUp', tip: '미끄러지려면 두 손을 번쩍 들어요!' },
+  eye:     { need: 'stop',  label: '눈 뜨면 멈춰!', em: '👁️', act: 'walk', tip: '멈추려면 제자리에서 걸어요! 가만히 있으면 달려요' },
+  grab:    { need: 'grab',  label: '보석 잡기!', em: '💎', act: null, tip: '' },
 };
 function signSprite(text, color){ const c = document.createElement('canvas'); c.width = 512; c.height = 200; const g = c.getContext('2d'); g.fillStyle = color; g.strokeStyle = '#fff'; g.lineWidth = 12; g.beginPath(); g.roundRect(10, 10, 492, 180, 60); g.fill(); g.stroke();
   g.fillStyle = '#fff'; g.font = 'bold 110px Jua, Pretendard, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 106); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
@@ -111,6 +119,23 @@ function makeBeam(){ const g = new THREE.Group(); const W = LANE * 3 + 1.6;
   const s = signSprite('⚠️ 커지면 쿵!', '#e8505b'); s.position.set(0, 4.1, 0); s.scale.multiplyScalar(.85); g.add(s); return g; }
 function makeRock(){ const g = new THREE.Group(); const r = new THREE.Mesh(new THREE.DodecahedronGeometry(.85, 0), std(0x8c7f9e, { flatShading: true, roughness: .9 })); r.position.y = .8; r.castShadow = true; g.add(r);
   const c = new THREE.Mesh(new THREE.OctahedronGeometry(.25, 0), std(0xe2b0ff, { emissive: 0xb050ff, emissiveIntensity: 1.2 })); c.position.set(.3, 1.55, .2); g.add(c); g.userData.spin = r; return g; }
+function makeLowBar(){ const g = new THREE.Group(); const W = LANE * 3 + 1.6;
+  for (const sx of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.16, .2, 1.3, 10), std(0xff7a45)); p.position.set(sx * W / 2, .65, 0); g.add(p); }
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(.28, .28, W, 16), std(0xff5f6d, { emissive: 0x801020, emissiveIntensity: .5 })); b.rotation.z = Math.PI / 2; b.position.y = 1.0; b.castShadow = true; g.add(b);
+  for (let i = -3; i <= 3; i++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(.12, .3, 6), std(0xfff1d0)); sp.position.set(i * 1.1, 1.3, 0); g.add(sp); }
+  const s = signSprite('🙌 미끄럼!', '#ff5f6d'); s.position.set(0, 2.6, 0); s.scale.multiplyScalar(.85); g.add(s); return g; }
+function makeEyeGate(){ const g = new THREE.Group(); const W = LANE * 3 + 2;
+  for (const sx of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.8, 6.4, .8), std(0x4a3a8a, { map: TEX.brick })); p.position.set(sx * W / 2, 3.2, 0); p.castShadow = true; g.add(p); }
+  const top = new THREE.Mesh(new THREE.BoxGeometry(W + .8, 1, .9), std(0x4a3a8a, { map: TEX.brick })); top.position.y = 6.6; g.add(top);
+  const eye = new THREE.Group(); eye.position.set(0, 6.6, .6); g.add(eye);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(1.25, 28, 20), std(0xfff8f0, { roughness: .3 })); eye.add(ball);
+  const iris = new THREE.Mesh(new THREE.SphereGeometry(.62, 20, 14), std(0xff2a4a, { emissive: 0xff1030, emissiveIntensity: 1.4 })); iris.position.z = .78; iris.scale.z = .5; eye.add(iris);
+  const pupil = new THREE.Mesh(new THREE.SphereGeometry(.3, 14, 10), std(0x111111)); pupil.position.z = 1.08; pupil.scale.z = .4; eye.add(pupil);
+  const lidT = new THREE.Mesh(new THREE.SphereGeometry(1.32, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), std(0x6a4fc0)); eye.add(lidT);
+  const lidB = new THREE.Mesh(new THREE.SphereGeometry(1.32, 28, 14, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), std(0x6a4fc0)); eye.add(lidB);
+  const light = new THREE.PointLight(0xff3050, 0, 18, 2); light.position.set(0, 5, 2); g.add(light);
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(4.6, 6.4, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xff3050, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); beam.position.set(0, 3.3, 3.2); beam.rotation.x = -.5; g.add(beam);
+  g.userData = { lidT, lidB, light, beam, iris }; return g; }
 function makeCoin(){ const m = new THREE.Mesh(starGeo(.34, .15, .1), std(0xffd35a, { emissive: 0xffb020, emissiveIntensity: .6, metalness: .6, roughness: .25 })); return m; }
 function makeGem(){ const g = new THREE.Group(); const m = new THREE.Mesh(new THREE.OctahedronGeometry(.42, 0), std(0xff5fd2, { emissive: 0xff40c0, emissiveIntensity: 1.2, roughness: .1 })); m.scale.y = 1.5; g.add(m);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.dot, color: 0xff7fe0, transparent: true, opacity: .8, blending: THREE.AdditiveBlending, depthWrite: false })); glow.scale.set(2.2, 2.2, 1); g.add(glow); return g; }
@@ -126,7 +151,7 @@ function updateShards(dt){ for (const s of shards) if (s.live) { s.t += dt; s.v.
 // ───────── 게임 상태
 let state = 'loading', hero = null, G = null;
 function newGame(){ const L = LEVEL[S.diff] || LEVEL.easy;
-  return { L, t: 0, speed: L.v0, dist: 0, score: 0, coins: 0, combo: 0, best: 0, danger: 0, hits: 0, smash: 0, level: 1, lane: 0, hx: 0, size: 'mid', inv: 0, slow: 0, next: 2.5, obs: [], items: [], over: false, prompt: null, lastLevelT: 0, intro: {} }; }
+  return { L, t: 0, speed: L.v0, dist: 0, score: 0, coins: 0, combo: 0, best: 0, danger: 0, hits: 0, smash: 0, level: 1, lane: 0, hx: 0, size: 'mid', inv: 0, slow: 0, next: 2.5, obs: [], items: [], over: false, seen: {}, sliding: false, reach: 0, stopped: false, prompt: null, lastLevelT: 0, intro: {} }; }
 function showScreen(id){ for (const s of ['scr-title', 'scr-calib', 'hud', 'scr-over', 'scr-set']) $(s).classList.toggle('hidden', s !== id); state = id.replace('scr-', ''); }
 
 // 시작 화면: 캐릭터가 거꾸로 따라 하기(제자리 달리기)
@@ -150,16 +175,24 @@ function startRun(){ showScreen('hud'); G = newGame(); buildRunway(); hero = new
   world.setCam(V3(0, 3.4, 7.8), V3(0, 1.6, -6), { snap: true, sway: .25, follow: 6 });
   $('keyHelp').classList.toggle('hidden', motion.mode !== 'keyboard'); $('camWrap').classList.toggle('hidden', motion.mode !== 'camera'); mountCam(motion.mode === 'camera' ? $('camWrap') : null);
   countT = 3.99; vignette(0); audio.play('run'); say('준비!'); hud(); }
-function spawn(){ const g = G, lv = g.level; const kinds = ['hole']; if (lv >= 2) kinds.push('crystal'); if (lv >= 3) kinds.push('rock', 'rock'); if (lv >= 4) kinds.push('beam');
-  let k = pick(kinds); if (g.obs.length && g.obs[g.obs.length - 1].kind === k && Math.random() < .5) k = pick(kinds);
-  if (!g.intro[k]) { g.intro[k] = true; k = k; }
-  const Z = -95; let m;
-  if (k === 'hole') m = makeHoleWall(); else if (k === 'crystal') m = makeCrystalWall(); else if (k === 'beam') m = makeBeam();
-  if (k === 'rock') { const free = (Math.random() * 3 | 0) - 1; const lanes = [-1, 0, 1].filter(l => l !== free); const use = lv >= 5 ? lanes : [pick(lanes)];
-    for (const l of use) { const r = makeRock(); r.position.set(l * LANE, 0, Z); world.dyn.add(r); g.obs.push({ kind: 'rock', m: r, lane: l, done: false }); }
-    addCoins(Z + 14, free); }
-  else { m.position.z = Z; world.dyn.add(m); g.obs.push({ kind: k, m, done: false }); addCoins(Z + 16, (Math.random() * 3 | 0) - 1); if (k === 'crystal' || (lv >= 2 && Math.random() < .4)) addGem(Z + 8, (Math.random() * 3 | 0) - 1); }
+function unlocked(){ const g = G; const n = Math.min(UNLOCK.length, g.L.start + g.level - 1); return UNLOCK.slice(0, n); }
+function spawn(z = -95){ const g = G; const kinds = unlocked(); let k = pick(kinds);
+  if (g.lastKind === k && Math.random() < .6) k = pick(kinds); g.lastKind = k;
+  if (k === 'eye' && g.obs.some(o => o.kind === 'eye' && !o.done)) k = 'hole';
+  if (k === 'rock') { const free = (Math.random() * 3 | 0) - 1; const lanes = [-1, 0, 1].filter(l => l !== free); const use = (S.diff === 'hard' || g.level >= 5) ? lanes : [pick(lanes)];
+    for (const l of use) { const r = makeRock(); r.position.set(l * LANE, 0, z); world.dyn.add(r); g.obs.push({ kind: 'rock', m: r, lane: l, done: false }); }
+    addCoins(z + 14, free); return; }
+  if (k === 'grab') { const side = Math.random() < .5 ? -1 : 1; const gm = makeGem(); gm.scale.setScalar(1.3); gm.position.set(side * (LANE * 1.5 + .4), 2.3, z); world.dyn.add(gm); g.obs.push({ kind: 'grab', m: gm, side, done: false }); return; }
+  let m = k === 'hole' ? makeHoleWall() : k === 'crystal' ? makeCrystalWall() : k === 'beam' ? makeBeam() : k === 'bar' ? makeLowBar() : makeEyeGate();
+  m.position.z = z; world.dyn.add(m); const o = { kind: k, m, done: false };
+  if (k === 'eye') { o.open = false; o.cycle = rnd(...g.L.eyeShut) * .6; }
+  g.obs.push(o); if (k !== 'eye') addCoins(z + 16, (Math.random() * 3 | 0) - 1); if (k === 'crystal' || Math.random() < .3) addGem(z + 8, (Math.random() * 3 | 0) - 1);
+  // 연달아 오는 묶음(보통·어려움): 두 번째 장애물을 바로 뒤에
+  if (k !== 'eye' && Math.random() < g.L.combo && g.level >= 2) { const k2 = pick(unlocked().filter(x => x !== k && x !== 'eye' && x !== 'grab')); if (k2) { g.lastKind = null; spawnKind(k2, z - g.speed * 1.15); } }
 }
+function spawnKind(k, z){ const g = G; if (k === 'rock' || k === 'grab') { spawnForced(k, z); return; }
+  const m = k === 'hole' ? makeHoleWall() : k === 'crystal' ? makeCrystalWall() : k === 'beam' ? makeBeam() : makeLowBar(); m.position.z = z; world.dyn.add(m); g.obs.push({ kind: k, m, done: false }); }
+function spawnForced(k, z){ const g = G; if (k === 'rock') { const free = (Math.random() * 3 | 0) - 1; const l = pick([-1, 0, 1].filter(x => x !== free)); const r = makeRock(); r.position.set(l * LANE, 0, z); world.dyn.add(r); g.obs.push({ kind: 'rock', m: r, lane: l, done: false }); } }
 function addCoins(z, lane){ for (let i = 0; i < 5; i++) { const c = makeCoin(); c.position.set(lane * LANE, .9, z + i * 1.6); world.dyn.add(c); G.items.push({ kind: 'coin', m: c, lane }); } }
 function addGem(z, lane){ const g = makeGem(); g.position.set(lane * LANE, 3.1, z); world.dyn.add(g); G.items.push({ kind: 'gem', m: g, lane }); }
 
@@ -170,7 +203,9 @@ function updateRun(dt){
   const g = G, f = motion.f, H = hero;
   // 카메라 밖이면 잠깐 멈춤
   if (motion.mode === 'camera' && !f.present) { awayT += dt; if (awayT > 1.2) { $('away').classList.remove('hidden'); H.update(dt * .2); return; } } else { awayT = 0; $('away').classList.add('hidden'); }
-  const c = transform(f, { ...ALL_OFF, lr: true, size: true });
+  const c = transform(f, { ...ALL_OFF, lr: true, size: true, arms: true });
+  g.sliding = f.armLUp && f.armRUp && !f.spreadOn; g.reach = !g.sliding ? (c.srUp && !c.slUp ? 1 : c.slUp && !c.srUp ? -1 : 0) : 0;
+  H.reach = g.reach === 1 ? 'L' : g.reach === -1 ? 'R' : null;
   // 크기(거꾸로): 웅크림 → 커짐, 펼침 → 작아짐
   const ns = c.size === 'big' ? 'big' : c.size === 'small' ? 'small' : 'mid';
   if (ns !== g.size) { if (SIZE[ns] > SIZE[g.size]) audio.grow(); else audio.shrink(); world.burst(V3(g.hx, 1, 0), ns === 'big' ? 0xff9a5a : 0x7fd0ff, 25, 3); g.size = ns; }
@@ -181,9 +216,11 @@ function updateRun(dt){
   if (countT > 0) { const n = Math.ceil(countT); countT -= dt; const m = Math.ceil(countT); $('count').textContent = countT > 0 ? m : '출발!'; $('count').classList.remove('hidden'); if (m !== n) { if (countT > 0) { audio.tick(); say(String(m)); } else { audio.fanfare(); say('출발!'); setTimeout(() => $('count').classList.add('hidden'), 700); } }
     H.set('idle'); H.update(dt); camFollow(dt); return; }
   // 속도·레벨
-  g.t += dt; const lvNow = Math.min(6, 1 + Math.floor(g.t / 22)); if (lvNow > g.level) { g.level = lvNow; toast(`레벨 ${g.level}! 더 빨라져요`, 'lv'); audio.alarm(); say('레벨 ' + g.level + '! 더 빨라져요!'); if (g.level === 2) setTimeout(() => toast('💪 수정 벽 등장! 크게 부숴요', 'lv'), 1600); if (g.level === 3) setTimeout(() => toast('🪨 바위 등장! 옆으로 피해요', 'lv'), 1600); if (g.level === 4) setTimeout(() => toast('⚠️ 높은 막대 등장! 커지면 쿵', 'lv'), 1600); }
+  g.t += dt; const lvNow = Math.min(8, 1 + Math.floor(g.t / g.L.lvT)); if (lvNow > g.level) { g.level = lvNow; toast(`레벨 ${g.level}! 더 빨라져요`, 'lv'); audio.alarm(); say('레벨 ' + g.level + '! 더 빨라져요!'); const nu = unlocked(), nk = nu[nu.length - 1]; if (!g.seen[nk]) { g.seen[nk] = 1; const NEW = { crystal: '💪 수정 벽 등장! 커져서 부숴요', rock: '🪨 바위 등장! 옆으로 피해요', bar: '🙌 낮은 막대 등장! 두 손 번쩍 → 미끄럼', eye: '👁️ 거인의 눈 등장! 눈 뜨면 제자리 걷기로 멈춰요', grab: '💎 옆 보석! 반대쪽 팔을 들어 잡아요', beam: '⚠️ 높은 막대 등장! 커지면 쿵' }; if (NEW[nk]) setTimeout(() => { toast(NEW[nk], 'lv'); say(NEW[nk]); }, 1700); } }
   const target = Math.min(g.L.vMax, g.L.v0 + g.t * .09); g.slow = Math.max(0, g.slow - dt);
-  g.speed = damp(g.speed, target * (g.slow > 0 ? .45 : 1), g.slow > 0 ? 8 : 1.5, dt);
+  const eyeO = g.obs.find(o => o.kind === 'eye' && !o.done && o.m.position.z > -26);
+  g.stopped = !!eyeO && f.moving; if (g.stopped !== g.wasStopped) { g.wasStopped = g.stopped; if (g.stopped) audio.land(); }
+  g.speed = damp(g.speed, g.stopped ? 0 : target * (g.slow > 0 ? .45 : 1), g.stopped ? 10 : g.slow > 0 ? 8 : 1.5, dt);
   const dz = g.speed * dt; g.dist += dz; g.score += dz * .5 * (1 + Math.min(g.combo, 20) * .05);
   scrollWorld(dz, dt, world.t); streaks.material.opacity = clamp((g.speed - 10) / 14, 0, .55);
   // 생성
@@ -192,7 +229,9 @@ function updateRun(dt){
   g.inv -= dt; let soon = null;
   for (const o of g.obs) { const z0 = o.m.position.z; o.m.position.z += dz; const z1 = o.m.position.z;
     if (o.m.userData.spin) o.m.userData.spin.rotation.x -= dz * .6;
-    if (!o.done && z1 < 0 && z1 > -g.speed * 3.4 && (!soon || z1 > soon.m.position.z) && o.kind !== 'rock') soon = o;
+    if (o.kind === 'eye' && !o.done) eyeTick(o, dt);
+    if (o.kind === 'grab') o.m.rotation.y += dt * 3;
+    if (!o.done && z1 < 0 && z1 > -Math.max(18, g.speed * g.L.warn) && (!soon || z1 > soon.m.position.z) && o.kind !== 'rock') soon = o;
     if (!o.done && z0 < -.2 && z1 >= -.2) { o.done = true; judge(o); } }
   g.obs = g.obs.filter(o => { if (o.m.position.z > 14) { world.dyn.remove(o.m); return false; } return true; });
   // 별·보석
@@ -208,7 +247,7 @@ function updateRun(dt){
   // 회오리(위험도)
   g.danger = Math.max(0, g.danger - g.L.heal * dt); vignette(g.danger);
   if (g.over) return;
-  H.set(g.speed > 13 ? 'run' : 'walk'); H.update(dt);
+  H.set(g.stopped ? 'idle' : g.sliding ? 'slide' : g.speed > 13 ? 'run' : 'walk'); H.update(dt);
   camFollow(dt); hud();
 }
 let awayT = 0;
@@ -220,6 +259,9 @@ function judge(o){ const g = G, sz = g.size; let ok = true, msg = '';
   if (o.kind === 'hole') { ok = sz === 'small'; if (ok) { msg = pick(['쏙!', '쏘옥!', '작게 통과!']); audio.squeak(); world.burst(V3(g.hx, .6, -.5), 0x7fd0ff, 40, 4); } }
   if (o.kind === 'crystal') { ok = sz === 'big'; if (ok) { msg = pick(['와장창!', '쾅! 부쉈다!', '거인 펀치!']); audio.smash(); shatter(-.3); world.kick(.5); world.dyn.remove(o.m); g.smash++; g.score += 40; } }
   if (o.kind === 'beam') { ok = sz !== 'big'; if (ok) { msg = pick(['휴~ 통과!', '아슬아슬!']); audio.whoosh(); } }
+  if (o.kind === 'bar') { ok = g.sliding && sz !== 'big'; if (ok) { msg = pick(['슈우욱~ 미끄럼!', '쏙 미끄럼!']); audio.whoosh(); world.burst(V3(g.hx, .3, -.4), 0xffd35a, 30, 3); } }
+  if (o.kind === 'eye') { o.m.userData.light.intensity = 0; o.m.userData.beam.material.opacity = 0; if (!o.caught) { msg = '들키지 않았어요!'; audio.success(); } else { return; } }
+  if (o.kind === 'grab') { const want = o.side; if (g.reach === want) { msg = pick(['거꾸로 손 잡기!', '보석 낚아채기!']); g.score += 80; g.danger = Math.max(0, g.danger - .1); audio.starGet(5); world.burst(o.m.position, 0xff7fe0, 60, 5); world.dyn.remove(o.m); } else { o.m.visible = true; toast(want > 0 ? '아깝다! 오른쪽 보석은 내 왼팔로' : '아깝다! 왼쪽 보석은 내 오른팔로', 'lv'); return; } }
   if (o.kind === 'rock') { if (o.lane !== g.lane) return; if (sz === 'big') { ok = true; msg = '바위 깨기!'; audio.smash(); world.burst(V3(o.lane * LANE, 1, 0), 0xb8a8d8, 60, 6, -8); world.kick(.3); world.dyn.remove(o.m); g.score += 25; } else ok = false; }
   if (ok) { g.combo++; g.score += 20 * (1 + Math.min(g.combo, 20) * .1); g.danger = Math.max(0, g.danger - .05); g.best = Math.max(g.best, g.combo);
     toast(msg + (g.combo >= 3 ? `  콤보 ${g.combo}` : ''), 'good'); if (g.combo % 5 === 0) { audio.success(); say('콤보 ' + g.combo + '!'); hero.setMood('cheer', 1); } }
@@ -227,7 +269,7 @@ function judge(o){ const g = G, sz = g.size; let ok = true, msg = '';
 }
 function crash(o){ const g = G; if (g.inv > 0) return; g.inv = 1.1; g.hits++; g.combo = 0; g.slow = .9; g.danger = Math.min(1, g.danger + g.L.hit);
   audio.bonk(); audio.boing(); world.kick(.55); hero.setMood('dizzy', 1.4); hero.spinOnce(); flash();
-  const why = o.kind === 'hole' ? '쿵! 작아져야 해요 (팔 벌리기)' : o.kind === 'crystal' ? '쿵! 커져야 부숴요 (웅크리기)' : o.kind === 'beam' ? '머리 쿵! 크면 못 지나가요' : '쿵! 바위를 피해요';
+  const why = o.kind === 'bar' ? '쿵! 두 손 번쩍 들고 미끄럼!' : o.kind === 'eye' ? '들켰다! 눈 뜨면 제자리 걷기!' : o.kind === 'hole' ? '쿵! 작아져야 해요 (팔 벌리기)' : o.kind === 'crystal' ? '쿵! 커져야 부숴요 (웅크리기)' : o.kind === 'beam' ? '머리 쿵! 크면 못 지나가요' : '쿵! 바위를 피해요';
   toast(why, 'bad'); if (o.kind === 'crystal' || o.kind === 'hole') { if (o.kind === 'crystal') shatter(-.3, 0xff9aa8); world.dyn.remove(o.m); }
   if (g.danger >= 1) { gameOver(); return; }
   if (g.danger > .6) { audio.alarm(); say('회오리가 바짝 따라와요!'); } }
@@ -239,13 +281,25 @@ function gameOver(){ const g = G; if (g.over) return; g.over = true; vignette(1)
 
 // ───────── 화면 조각
 let promptKey = '';
-function setPrompt(o){ const el = $('prompt'); const key = o ? o.kind + (o.m.id) : '';
+function promptDone(o){ const g = G; switch (o.kind) { case 'hole': return g.size === 'small'; case 'crystal': return g.size === 'big'; case 'beam': return g.size !== 'big'; case 'bar': return g.sliding && g.size !== 'big'; case 'eye': return o.open ? g.stopped : !f0().moving; case 'grab': return g.reach === o.side; } return false; }
+const f0 = () => motion.f;
+function setPrompt(o){ const el = $('prompt'); const key = o ? o.kind + (o.m.id) + (o.kind === 'eye' ? (o.open ? 'o' : 'c') : '') : '';
   if (!o) { if (promptKey) { el.classList.add('hidden'); promptKey = ''; } return; }
-  const info = OBS_INFO[o.kind], done = o.kind === 'hole' ? G.size === 'small' : o.kind === 'crystal' ? G.size === 'big' : G.size !== 'big';
-  el.classList.toggle('ok', done);
+  el.classList.toggle('ok', promptDone(o)); el.classList.toggle('alarm', o.kind === 'eye' && o.open);
   if (key !== promptKey) { promptKey = key; el.classList.remove('hidden');
-    el.innerHTML = `<div class="pbig">${info.em} ${info.label}</div>${S.diff !== 'hard' && info.act ? `<div class="pact">${picto(info.act, { size: 96, label: false })}<span>${info.tip}</span></div>` : ''}`;
-    if (S.diff === 'easy' && !G.said?.[o.kind]) { G.said = G.said || {}; G.said[o.kind] = (G.said[o.kind] || 0) + 1; if (G.said[o.kind] <= 3) say(info.tip); } else say(info.label.replace('!', '')); } }
+    let info = OBS_INFO[o.kind], label = info.label, em = info.em, act = info.act, tip = info.tip;
+    if (o.kind === 'eye') { if (o.open) { em = '👁️'; label = '눈 떴다! 멈춰!'; act = 'walk'; tip = '제자리에서 걸으면 멈춰요!'; } else { em = '😌'; label = '눈 감았다! 달려!'; act = 'still'; tip = '가만히 있으면 달려요!'; } }
+    if (o.kind === 'grab') { label = o.side > 0 ? '오른쪽 보석!' : '왼쪽 보석!'; act = o.side > 0 ? 'armL' : 'armR'; tip = o.side > 0 ? '내 왼팔을 들면 캐릭터는 오른손!' : '내 오른팔을 들면 캐릭터는 왼손!'; }
+    el.innerHTML = `<div class="pbig">${em} ${label}</div>${S.diff !== 'hard' && act ? `<div class="pact">${picto(act, { size: 96, label: false })}<span>${tip}</span></div>` : ''}`;
+    G.said = G.said || {}; const sk = o.kind + (o.kind === 'eye' ? (o.open ? 'o' : 'c') : ''); G.said[sk] = (G.said[sk] || 0) + 1;
+    if (S.diff === 'easy' && G.said[sk] <= 2 && tip) say(tip); else say(label.replace('!', '')); } }
+function eyeTick(o, dt){ const g = G, u = o.m.userData; o.cycle -= dt; const near = o.m.position.z > -26;
+  if (o.cycle <= 0) { o.open = !o.open; o.cycle = rnd(...(o.open ? g.L.eyeOpen : g.L.eyeShut)); if (near) { if (o.open) { audio.alarm(); world.kick(.15); } else audio.whoosh(); } }
+  const k = o.open ? 1 : 0; u.lidT.rotation.x = damp(u.lidT.rotation.x, o.open ? -1.1 : 0, 14, dt); u.lidB.rotation.x = damp(u.lidB.rotation.x, o.open ? 1.1 : 0, 14, dt);
+  u.light.intensity = damp(u.light.intensity, near && o.open ? 6 : 0, 10, dt); u.beam.material.opacity = damp(u.beam.material.opacity, near && o.open ? .22 : 0, 10, dt);
+  // 눈이 떴을 때 캐릭터가 달리고 있으면 들킴
+  if (near && o.open && !g.stopped && g.speed > 1.5 && !o.caughtNow) { o.graceT = (o.graceT || 0) + dt; if (o.graceT > (S.diff === 'easy' ? .7 : S.diff === 'normal' ? .5 : .35)) { o.caughtNow = true; o.caught = true; crash(o); g.slow = 0; } }
+  if (!o.open) { o.graceT = 0; o.caughtNow = false; } }
 let toastTO = 0;
 function toast(t, kind){ const el = $('toast'); el.textContent = t; el.className = 'toast show ' + (kind || ''); clearTimeout(toastTO); toastTO = setTimeout(() => el.className = 'toast', 1300); }
 function flash(){ const f = $('hitflash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
@@ -255,13 +309,14 @@ function hud(){ const g = G; $('score').textContent = Math.round(g.score); $('di
   const sz = { small: '🐭 작아요', mid: '🧒 보통', big: '💪 커요' }[g.size]; if ($('sizeNow').textContent !== sz) { $('sizeNow').textContent = sz; $('sizeNow').className = 'sz ' + g.size; }
   sense(); }
 function sense(){ const f = motion.f, st = $('camSt'); if (st) { if (motion.mode !== 'camera') st.textContent = ''; else if (f.present) { st.textContent = '✓ 몸을 찾았어요'; st.className = 'camst ok'; } else { st.textContent = '몸이 안 보여요'; st.className = 'camst no'; } }
-  const on = { crouch: f.crouchOn, spread: f.spreadOn }; document.querySelectorAll('#acts i[data-a]').forEach(i => { const k = i.dataset.a; if (k === 'pos') { const th = motion.diff.lateral * motion.sens, b = i.querySelectorAll('b'); b[0].classList.toggle('on', f.x < -th); b[1].classList.toggle('on', f.x > th); i.querySelector('span').style.transform = `translateX(${clamp(f.x, -2, 2) * 8}px)`; } else i.classList.toggle('on', !!on[k]); }); }
+  const on = { crouch: f.crouchOn, spread: f.spreadOn, both: f.armLUp && f.armRUp && !f.spreadOn, one: f.armLUp !== f.armRUp, moving: f.present && f.moving }; document.querySelectorAll('#acts i[data-a]').forEach(i => { const k = i.dataset.a; if (k === 'pos') { const th = motion.diff.lateral * motion.sens, b = i.querySelectorAll('b'); b[0].classList.toggle('on', f.x < -th); b[1].classList.toggle('on', f.x > th); i.querySelector('span').style.transform = `translateX(${clamp(f.x, -2, 2) * 8}px)`; } else i.classList.toggle('on', !!on[k]); }); }
 
 // ───────── 버튼·설정
 function seg(id, v){ document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === String(v))); }
 function bindSeg(id, key, conv, after){ document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { S[key] = conv(b.dataset.v); save(); seg(id, S[key]); after && after(); }); }
 document.addEventListener('click', e => { if (e.target.closest('button')) { audio.ensure(); audio.click(); } }, true);
 $('btnGo').onclick = () => { audio.ensure(); enterCalib(); };
+document.querySelectorAll('[data-diff]').forEach(b => b.onclick = () => { S.diff = b.dataset.diff; save(); audio.ensure(); enterCalib(); });
 $('btnAgain').onclick = () => startRun();
 $('btnHome').onclick = () => enterTitle();
 $('btnSet').onclick = () => { showScreen('scr-set'); refreshSet(); };
