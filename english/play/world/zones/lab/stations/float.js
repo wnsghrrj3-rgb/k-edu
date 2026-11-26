@@ -10,6 +10,9 @@
  * 첫 손길(설계 v1.1 · 0장 · 자료 stations.float.first): 들어가면 사과가 이미 방울에 담겨 떠 있고 작은 방울들이 떠다닌다 → 고고가 방울병을 불어 공을 띄운다("Up!")
  *   → 사과 방울이 아이 앞으로 흘러오고 빛 고리가 따라다닌다 → 방울을 누르면 퐁 "Down!", 실험대의 물건을 누르면 방울이 씌워져 "Up!"(누르기만으로 둘 다).
  *   「톡」과 「밀기」는 손이 움직인 거리로만 가른다(TAP_PX 안이면 얼마나 오래 눌렀든 톡 — 자료의 TAP_MS 는 쓰지 않는다. 천천히 누르는 1학년 때문).
+ * 장소(묶음 3-6 · 11-26 준호: 「장소를 바꿔도 될 것 같아」): 이 자리는 연구소 방이 아니라 「지붕 위」다 — 기와 지붕에 올라앉은 나무 평상 · 탁 트인 하늘과 뭉게구름 · 굴뚝 · 멀리 마을 지붕들(assets/place_float.glb).
+ *   놀이는 그대로다. 방에 기대던 것만 새 받침을 얻는다: 들보 → 퍼걸러 들보(기둥이 지붕까지 내려간다) · 높은 선반 → 굴뚝 앞면 · 둥근 창 → 지붕창의 박공벽(진짜로 뚫린 구멍 — 열면 하늘이 보이고 바람이 든다).
+ *   껍데기가 scenery 를 보이고 감춘다(연구소 방 · 벽 · 바닥은 그때 감춰진다). 구름이 흐르고 풍향계가 도는 것은 이 자리에 있을 때만.
  * 자동 확인 명령: wrap:이름[:near] · pop:이름 · fling:이름:이름(세게 끌어다 부딪침) · push:이름:이름(살살 끌어다 댐 — 방울이 아닌 것이면 그 위로) · window · bottle:이름(방울병을 끌어다 씌움) · lamp:번호 */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -49,6 +52,7 @@ export const T = {
   OTHER_GAP: 0.6,                            // 다른 물건으로 같은 낱말을 내면 이만큼만 지나도 말한다(고고가 해 보인 직후 아이의 첫 누르기가 조용하지 않게 — 같은 물건이면 2.5초 그대로)
   DECOR: { n: 6, r: [0.06, 0.13], up: [0.12, 0.3], back: 2.5 },   // 꾸밈 방울(물건을 싣지 않는다 · 방울 한도에 넣지 않는다): 수 · 반지름 · 떠오르는 빠르기 · 터뜨린 뒤 다시 나오기까지
   SHAKE: 0.05,
+  SKY: { drift: [0.16, 0.3], wrap: 22, spin: 7, sway: 0.3 },   // 구름이 흐르는 빠르기(오른쪽으로 — 바람과 같은 쪽) · 이만큼 가면 왼쪽 끝에서 다시 온다 · 바람 불 때 풍향계가 도는 빠르기 · 여느 때 흔들리는 각
 };
 const LITE = Q.has('lite');   // 느린 기기: 무지갯빛을 끈다(주소 꼬리 ?lite — 무대에 가벼운 판이 생기면 그것을 따른다)
 
@@ -97,9 +101,14 @@ export async function create(C) {
   const D = LAB.stations.float.T, ME = LAB.stations.float, W_UP = LAB.words.up, W_DOWN = LAB.words.down, W_POP = LAB.words.pop, HEX = LAB.stations.potion.colors.hex, TEMP = LAB.stations.frost.T;
   const B = brain.B, { run, wait, until, walk, face } = brain, { cup, ball } = things, by = n => n === 'gogo' ? GOGO : things[n];
   const v3 = new THREE.Vector3(), v3b = new THREE.Vector3(), vWord = new THREE.Vector3(), has = n => !!gogo.info[n], durOf = (n, d) => has(n) ? gogo.info[n].dur : d;
-  const glb = await new GLTFLoader().loadAsync(new URL('../../../assets/lab_float.glb?v=1', import.meta.url).href), M = {};
+  const [glb, pglb] = await Promise.all(['lab_float', 'place_float'].map(n => new GLTFLoader().loadAsync(new URL(`../../../assets/${n}.glb?v=1`, import.meta.url).href))), M = {}, PL = {};
   glb.scene.traverse(o => { if (o.isMesh) M[o.name] = o; });
   for (const k in M) { M[k].castShadow = k !== 'win_sky'; M[k].receiveShadow = true; }
+  // ── 장소 「지붕 위」: 평상 · 기와 지붕 · 지붕창 · 굴뚝 · 먼 마을 · 구름을 한 묶음으로(껍데기가 보이고 감춘다). 퍼걸러 들보만 따로 — 등이 달린 들보 묶음에 들어간다
+  pglb.scene.traverse(o => { if (o.isMesh) PL[o.name] = o; });
+  const scenery = new THREE.Group(), clouds = [], VN = { a: 0, v: 0 }, cloudMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });      // 구름은 빛을 받지 않는다(각진 그늘 없이 희게)
+  for (const k in PL) { const o = PL[k]; o.castShadow = k === 'p_beam'; o.receiveShadow = /^p_(deck|wall|near|beam)$/.test(k);      /* 기와 지붕은 그림자를 받지 않는다 — 평상 위 것들의 그림자가 평상을 뚫고 지붕에 비치지 않게 */ if (k === 'p_beam') continue; scenery.add(o); if (k.startsWith('cloud')) { o.material = cloudMat; clouds.push({ o, v: rand(...T.SKY.drift) }); } }
+  scenery.visible = false; scene.add(scenery);
 
   // ── 소리(전부 합성 · 임시 — 자료의 sounds: 방울 부풂 · 방울 퐁 · 말랑 부딪힘 · 바람 · 등 삐걱 · 쿵 납작)
   const snd = {
@@ -117,7 +126,7 @@ export async function create(C) {
 
   // ───────────────────────── 방이 꺼내 놓는 것 ─────────────────────────
   const F = { here: false, vis: 0, ceil: D.CEIL, clock: 0 };                 // ceil = 보이는 천장(들보 아랫면)
-  const beam = new THREE.Group(); beam.add(M.beam); scene.add(beam);
+  const beam = new THREE.Group(); beam.add(M.beam, PL.p_beam); PL.p_beam.visible = false; scene.add(beam);
   const lamps = T.LAMP.xs.map((x, i) => {
     const g = new THREE.Group(), bulb = i ? M.lamp_bulb.clone() : M.lamp_bulb; g.add(i ? M.lamp.clone() : M.lamp); bulb.material = M.lamp_bulb.material.clone(); bulb.material.emissive = new THREE.Color('#ffc978'); bulb.material.emissiveIntensity = 0.9; bulb.castShadow = false; g.add(bulb);
     g.position.set(x, 0, 0); beam.add(g); return { g, bulb, x, ang: 0, av: 0, hung: false };
@@ -512,7 +521,9 @@ export async function create(C) {
   }
   /** 이 자리에 없을 때도 도는 일: 들보와 등이 천장에서 내려오고 올라가고, 선반과 창짝이 벽에서 나오고 들어가고, 방울병이 실험대에서 솟고 내려간다(0.8초). */
   function bg(dt) {
-    F.clock += dt; const to = F.here ? 1 : 0; if (F.vis !== to) F.vis += clamp(to - F.vis, -T.FURN * dt, T.FURN * dt); const e = F.vis * F.vis * (3 - 2 * F.vis), on = F.vis > 0.02;
+    F.clock += dt; const to = F.here ? 1 : 0; if (F.vis !== to) F.vis += clamp(to - F.vis, -T.FURN * dt, T.FURN * dt);
+    // 지붕 위에서는 들보 · 선반 · 창짝이 제자리에 서 있다(장소째로 갈아 끼워지므로 — 나오고 들어가는 움직임은 연구소 방으로 돌아간 뒤에만 보인다). 들보는 퍼걸러의 것으로, 창 너머 하늘 그림은 감춘다(구멍으로 진짜 하늘이 보인다)
+    const roof = scenery.visible, e = roof ? 1 : F.vis * F.vis * (3 - 2 * F.vis), on = roof || F.vis > 0.02; M.beam.visible = !roof; PL.p_beam.visible = roof; M.win_sky.visible = !roof;
     if (F.here && stage.worldOn(ceilPlane, innerWidth / 2, 0, v3)) F.ceil += (clamp(v3.y - T.CEIL_PAD, T.CEIL_MIN, D.CEIL) - F.ceil) * Math.min(1, T.CEIL_K * dt);      // 보이는 천장: 화면 맨 위 바로 아래(화면 비율마다 다르다)
     beam.visible = shelf.visible = win.visible = BT.obj.visible = on; if (!on && !F.here) { stepDrops(dt); stepDeco(dt); return; }
     beam.position.set(0, F.ceil + (1 - e) * T.FURN_UP, T.LAMP.z);
@@ -523,7 +534,12 @@ export async function create(C) {
     if (!F.here) { stepWindow(dt); BT.obj.rotation.set(0, 0, 0); }
     stepDrops(dt); stepDeco(dt);
   }
-  function stepAll(dt) { stepWindow(dt); step(dt); }
+  /** 하늘의 작은 움직임(이 자리에 있을 때만): 구름이 바람 쪽으로 천천히 흐르고, 풍향계가 살랑거리다가 창을 열어 바람이 불면 빙글 돈다. */
+  function stepSky(dt, windOn) {
+    for (const c of clouds) { c.o.position.x += c.v * (windOn ? 3 : 1) * dt; if (c.o.position.x > T.SKY.wrap) c.o.position.x = -T.SKY.wrap; }
+    VN.v += ((windOn ? T.SKY.spin : 0) - VN.v) * Math.min(1, 2.5 * dt); VN.a += VN.v * dt; PL.vane.rotation.y = VN.a + Math.sin(F.clock * 0.6) * T.SKY.sway;
+  }
+  function stepAll(dt) { stepSky(dt, stepWindow(dt)); step(dt); }
 
   /** 자리를 떠난다: 방울은 조용히 터져 내려오고("Down!" 은 말하지 않는다 — 아이가 한 일이 아니다), 떠 있던 고고는 내려온 뒤에 걷는다. */
   function leave() {
@@ -614,6 +630,7 @@ export async function create(C) {
   return {
     id: 'float', title: ME.title, T: { ...D, ...T }, asks: ME.asks, place,
     step: stepAll, bg, onDown, onMove, onUp, leave,
+    scenery,
     first,
     enter() { F.here = true; B.idle = 0; G.lastFall = -99; if (!C.nofirst) setup(); },
     /** 조르면 안 되는 때: 방울에 떠 있는 중(등에 매달려 있을 때는 조를 수 있다 — "Gogo, down!") · 떨어지는 중 · 어지러운 중 · 컵에 갇힌 중 · 방울병이 씌우는 중. */

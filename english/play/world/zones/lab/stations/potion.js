@@ -6,6 +6,8 @@
  * 물들이기 = 퐁당: 물건을 누르면 스스로 수조에 뛰어들었다 그 색이 되어 나온다(맑은 물이면 씻긴다). 고고를 누르면 뛰어들어 헤엄친다. 열두 모금을 넘으면 넘친다("Splash!"). 꼭지를 열면 맑은 물로.
  * 첫 손길(설계 0장 · 자료 first): 들어가면 맑은 물 · 뒤 빛 · 공기 방울 · 살랑이는 병 → 고고가 파랑 한 모금을 해 보인다 → 노랑 병에 빛 고리. 누르기만으로 핵심 낱말이 다 나온다.
  * 낱말 · 부탁 · 색 규칙 · 수치는 자료(data/lab.js stations.potion)에서만 읽는다. 자료에 없는 수치만 아래 T 에 있다. 소리는 전부 합성(임시). 색 상태는 `t.color` 한 줄 — 겉은 engine/skin_color.js 가 입힌다(껍데기가 돌린다).
+ * 장소(묶음 3-6 · 11-26 준호 「다 비슷하다 → 장소를 바꿔도 될 것 같아」): 이 자리는 연구소 방이 아니라 「지하 물약 방」에 있다 — 돌벽 · 큰 아치 벽감 · 나무 통 · 등불 · 구리 배관(tools/make_place_potion.py → assets/place_potion.glb).
+ *   껍데기가 이 자리에 올 때 방 · 벽 · 바닥을 감추고 scenery 를 보인다. 놀이는 그대로다. 물빛은 수조 뒤 벽감과 돌벽을 물들이고(wallGlow · stoneGlow), 등불 셋은 이 자리에 있을 때만 일렁인다.
  * 자동 확인 명령: sip:색[:left|right] · pour:색:모금 · stir:바퀴 · dunk:대상 · drain · paint:대상:색 / 확인용: snap(수조 가운데 픽셀과 띠 그림 한 칸) · strip(띠 그림을 화면에 띄운다) */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -25,7 +27,9 @@ export const T = {
   STIR_SETTLE: 1.1, GOGO_STIR: 1.15,         // 부은 뒤 이만큼 지나야 고고가 젓기 시작한다 · 고고가 젓는 빠르기(바퀴/초)
   SWIM: 2.4, FLOAT_MORE: 0.9,                // 고고가 헤엄치는 시간 · 작은 것이 더 떠다니는 시간
   OTHER_GAP: 0.6,                            // 고고가 해 보인 직후 다른 것으로 같은 낱말을 내면 이만큼만 지나도 말한다(첫 누르기가 조용하지 않게)
-  GLOW: { power: 5, wall: 0.6, bench: 0.42, SAT: 1.6 },
+  GLOW: { power: 5, wall: 0.6, bench: 0.42, SAT: 1.6, stone: 0.3 },   // stone = 벽감 밖 돌벽에 번지는 물빛(벽감 안쪽 wall 보다 옅게)
+  NICHE_Z: -2.25, BOW_Z: -1.36,              // 벽감의 안쪽 벽(모형과 맞춘다) · 무지개가 서는 자리(아치 돌보다 앞)
+  LAMP: { color: '#ffd27a', halo: '#ffb45e', r: 1.5, a: 0.5, flick: 0.16 },   // 등불: 유리 색 · 둘레 빛의 색 · 크기 · 짙기 · 일렁이는 폭
   RAINBOW_STAY: 7, HICCUPS: 3, SHAKE: 0.05,
 };
 const SECOND = { 'red+yellow': 'orange', 'blue+yellow': 'green', 'blue+red': 'purple' }, POS = { red: 0, yellow: 2, blue: 4 }, BAND = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
@@ -39,7 +43,7 @@ export async function create(C) {
   const B = brain.B, { run, wait, until, walk, face } = brain, INKS = T.RAIL.order, HEX = Object.fromEntries(Object.entries(D.colors.hex).map(([k, v]) => [k, new THREE.Color(v)]));
   const CLEAR = new THREE.Color('#cdeef8'), WHITE = new THREE.Color('#ffffff'), v3 = new THREE.Vector3(), v3b = new THREE.Vector3(), v3c = new THREE.Vector3(), vWord = new THREE.Vector3(), vRing = new THREE.Vector3(), cTmp = new THREE.Color();
   const by = n => n === 'gogo' ? GOGO : things[n], len = n => gogo.info[n] ? gogo.info[n].dur : (LAB.clips[n] || [1])[0], has = n => !!gogo.info[n];
-  const pack = await new GLTFLoader().loadAsync(new URL('../../../assets/lab_potion.glb?v=2', import.meta.url).href), M = {};
+  const [pack, placePack] = await Promise.all(['lab_potion.glb?v=2', 'place_potion.glb?v=1'].map(f => new GLTFLoader().loadAsync(new URL('../../../assets/' + f, import.meta.url).href))), M = {};
   pack.scene.traverse(o => { if (o.isMesh) { M[o.name] = o; o.castShadow = true; o.receiveShadow = true; } });
   const TK = { x: T.TANK.at[0], z: T.TANK.at[1], w: T.TANK.w, h: T.TANK.h, d: T.TANK.d }, FRONT = TK.z + TK.d / 2, IH = TK.h - T.BASE, HW = TK.w / 2 - 0.07, DR = new THREE.Vector3(T.PLACE.drain[0], 0.9, T.TANK.at[1] + 0.3);      // 꼭지: 수조 오른쪽 벽에서 옆으로 나온다(자료의 x — 앞에 선 컵 위로 보이게 높이 단다)
   const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -TK.z);
@@ -89,12 +93,20 @@ export async function create(C) {
   const pourS = mkStream(), drainS = mkStream(), fillS = mkStream();
   const puddle = new THREE.Mesh(new THREE.CircleGeometry(1, 30).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ roughness: 0.1, transparent: true, opacity: 0, depthWrite: false })); puddle.position.set(TK.x, 0.012, FRONT + 0.5); puddle.visible = false; scene.add(puddle);
   const burpM = new THREE.Mesh(blobGeo, new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthWrite: false })); burpM.visible = false; burpM.renderOrder = 1; scene.add(burpM);
-  const bow = new THREE.Group(); BAND.forEach((n, i) => bow.add(new THREE.Mesh(new THREE.TorusGeometry(1.95 - i * 0.1, 0.055, 8, 48, Math.PI), new THREE.MeshBasicMaterial({ color: D.colors.hex[n], transparent: true, opacity: 0.92 })))); bow.position.set(-0.35, 1.9, -1.66); bow.visible = false; scene.add(bow);
+  const bow = new THREE.Group(); BAND.forEach((n, i) => bow.add(new THREE.Mesh(new THREE.TorusGeometry(1.95 - i * 0.1, 0.055, 8, 48, Math.PI), new THREE.MeshBasicMaterial({ color: D.colors.hex[n], transparent: true, opacity: 0.92 })))); bow.position.set(-0.35, 1.9, T.BOW_Z); bow.visible = false; scene.add(bow);
   // 방을 물들이는 빛: 점 빛 하나 + 벽과 실험대에 번지는 덧빛(물 색을 따라간다)
   const glow = new THREE.PointLight('#ffffff', 0, 14, 1.6); glow.position.set(TK.x, 1.1, FRONT + 0.9); scene.add(glow);
   const gtex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
   const glowMat = () => new THREE.MeshBasicMaterial({ map: gtex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
-  const wallGlow = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), glowMat()); wallGlow.position.set(TK.x, 1.3, -1.745); wallGlow.renderOrder = 1; scene.add(wallGlow);
+  const wallGlow = new THREE.Mesh(new THREE.PlaneGeometry(9, 6.5), glowMat()); wallGlow.position.set(TK.x, 1.5, T.NICHE_Z + 0.07); wallGlow.renderOrder = 1; scene.add(wallGlow);                                 // 수조 뒤 벽감의 안쪽 벽(아치 돌이 앞에서 가린다)
+  const stoneGlow = new THREE.Mesh(new THREE.PlaneGeometry(14, 9), glowMat()); stoneGlow.position.set(TK.x, 1.6, -1.4); stoneGlow.renderOrder = 1; scene.add(stoneGlow);                                            // 벽감 밖 돌벽과 아치 돌
+  // 장소 「지하 물약 방」 한 벌(껍데기가 보이고 감춘다). 등불의 유리는 스스로 빛나고, 둘레에 따뜻한 빛이 번진다 — 이 자리에 있을 때만 일렁인다
+  const scenery = new THREE.Group(), lamps = []; scenery.visible = false; scene.add(scenery);
+  for (const o of [...placePack.scene.children]) { if (!o.isMesh) continue; scenery.add(o); o.castShadow = false; o.receiveShadow = o.name === 'place';
+    if (o.name === 'place_metal') { o.material.metalness = 0.55; o.material.roughness = 0.34; }
+    if (o.name.startsWith('lamp_')) { o.material = new THREE.MeshBasicMaterial({ color: T.LAMP.color, toneMapped: false }); const c = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()), halo = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), glowMat()); halo.material.color.set(T.LAMP.halo); halo.position.copy(c).setZ(c.z + 0.2); halo.renderOrder = 1; scenery.add(halo); lamps.push({ glass: o, halo, ph: rand(0, 6), k: 1, to: 1, t: 0 }); } }
+  const LAMP_C = new THREE.Color(T.LAMP.color);
+  function stepLamps(dt) { for (const q of lamps) { if ((q.t -= dt) <= 0) { q.t = rand(0.06, 0.22); q.to = 1 - Math.random() ** 2 * T.LAMP.flick; } q.k += (q.to - q.k) * Math.min(1, 14 * dt); const k = q.k * (1 + 0.03 * Math.sin(K.clock * 9 + q.ph)); q.glass.material.color.copy(LAMP_C).multiplyScalar(0.82 + 0.18 * k); q.halo.material.opacity = T.LAMP.a * k; q.halo.scale.setScalar(T.LAMP.r * (0.9 + 0.1 * k)); q.halo.quaternion.copy(camera.quaternion); } }
   const benchGlow = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 2.6).rotateX(-Math.PI / 2), glowMat()); benchGlow.position.set(TK.x, 0.008, FRONT + 0.55); benchGlow.renderOrder = 1; scene.add(benchGlow);
   const bell = (k = 1) => { for (const [f, g, at] of [[1568, 0.13, 0], [2093, 0.1, 0.09], [3136, 0.05, 0.02]]) tone(f * k, f * k * 0.995, 0.9, { g, at }); };      // 다 섞임 종
   const plop = () => { sfx.splat(); tone(420, 150, 0.16, { g: 0.2 }); }, hic = () => { const k = C.voiceK(); tone(520 * k, 980 * k, 0.07, { type: 'triangle', g: 0.14 }); tone(900 * k, 640 * k, 0.05, { type: 'triangle', g: 0.08, at: 0.08 }); };   // 퐁당 · 딸꾹
@@ -167,7 +179,7 @@ export async function create(C) {
     // 방을 물들이는 빛
     const key = K.shade < 0.05 ? '' : nameNow(); if (key !== K.glowKey) { if (key && K.here && K.vis > 0.9) { seen.add('roomGlow'); K.pulse = Math.max(K.pulse, 0.5); if (!B.tok && !K.dive) gogo.setMood('wow', 0.7); } K.glowKey = key; }      // 색이 한 걸음 옮겨 갈 때마다 고고의 눈이 커진다
     K.pulse = Math.max(0, K.pulse - dt * 1.4); K.glowK += ((0.4 + 0.6 * K.shade) * ease(K.vis) - K.glowK) * Math.min(1, 3 * dt); K.glowC.lerp(water.material.color, Math.min(1, 3 * dt)); const gk = K.glowK * (1 + 0.05 * Math.sin(K.clock * 5.3) + K.pulse * 0.7), mx = Math.max(K.glowC.r, K.glowC.g, K.glowC.b, 0.01);
-    cTmp.setRGB((K.glowC.r / mx) ** T.GLOW.SAT, (K.glowC.g / mx) ** T.GLOW.SAT, (K.glowC.b / mx) ** T.GLOW.SAT); glow.color.copy(cTmp); glow.intensity = T.GLOW.power * gk; wallGlow.material.color.copy(cTmp); wallGlow.material.opacity = T.GLOW.wall * gk; benchGlow.material.color.copy(cTmp); benchGlow.material.opacity = T.GLOW.bench * gk; wallGlow.visible = benchGlow.visible = gk > 0.01;
+    cTmp.setRGB((K.glowC.r / mx) ** T.GLOW.SAT, (K.glowC.g / mx) ** T.GLOW.SAT, (K.glowC.b / mx) ** T.GLOW.SAT); glow.color.copy(cTmp); glow.intensity = T.GLOW.power * gk; wallGlow.material.color.copy(cTmp); wallGlow.material.opacity = T.GLOW.wall * gk; benchGlow.material.color.copy(cTmp); benchGlow.material.opacity = T.GLOW.bench * gk; stoneGlow.material.color.copy(cTmp); stoneGlow.material.opacity = T.GLOW.stone * gk; wallGlow.visible = benchGlow.visible = stoneGlow.visible = gk > 0.01;
   }
 
   // ───────────────────────── 병 걸이와 병 넷 ─────────────────────────
@@ -329,7 +341,7 @@ export async function create(C) {
     if (K.enterT < 2 && (K.enterT += dt) >= 1.15 && !K.arrived) { K.arrived = true; if (B.tok && s.target && !C.nofirst) brain.stop(); }      // 들어와 제자리로 걸어가는 길이 길면 해 보이기가 늦는다 — 걷던 채로 일을 비워, 가는 길에 바로 해 보이게 한다
     const pouring = stepBottles(dt); stepPaddle(dt); stepDunks(dt);
     for (const t of Object.values(things)) { t.lit = false; stepThing(t, dt); }
-    stepTank(dt); if (K.stirT > 0) K.stirT -= dt;
+    stepTank(dt); if (K.stirT > 0) K.stirT -= dt; stepLamps(dt);
     // 고고의 눈길: 붓는 줄기와 퍼지는 구름을 따라간다
     if (!B.tok && !K.dive) { let look = true; if (pouring) gogo.lookAt(v3.set(pourS.a.x, levelY() - 0.2, FRONT)); else if (K.settle < T.PLUME.fall + T.PLUME.curl && K.pourT > 0) gogo.lookAt(v3.set(pourS.a.x + Math.sin(K.clock * 2) * 0.3, levelY() - 0.5, FRONT)); else if (K.rub) gogo.lookAt(PD.tip); else look = false; if (K.look && !look) gogo.lookAt(camera.position); K.look = look; } else K.look = false;
     if (K.shakeT > 0) { K.shakeT -= dt; if (Math.random() < dt * 34) { const a = rand(0, 6.28); drop(v3.set(s.pos.x + Math.cos(a) * 0.3 * gs, s.y + rand(0.3, 0.95) * gs, s.pos.z + Math.sin(a) * 0.3 * gs), Math.cos(a) * rand(1, 2.4), rand(0.6, 2), Math.sin(a) * rand(1, 2.4), K.shakeCol, 0, 0.04); } }
@@ -369,7 +381,7 @@ export async function create(C) {
   const sipCmd = async (a, b, tick) => { takeOver(); const q = bottles[a]; await waitT(tick, () => q.state === 'rest' && K.vis >= 1 && !K.drain, 400); if (b === 'left' || b === 'right') { C.ask.touch(); sipAuto(a, T.SIP, TK.x + (b === 'left' ? -1 : 1) * 1.0); } else await pressAt(v3.copy(q.pos).setY(q.pos.y - 0.36), tick); await waitT(tick, () => q.state !== 'sip' && q.state !== 'held', 300); };
   const stirCmd = async (a, tick) => { takeOver(); const n = Math.round((+a || 1) * 48), y0 = levelY() - 0.5; K.rub = { x: TK.x + 0.5, y: y0 }; for (let i = 1; i <= n; i++) { const g = i / 48 * 6.283; rubTo(TK.x + Math.cos(g) * 0.5, y0 + Math.sin(g) * 0.3); await tick(); } K.rub = null; };
   return {
-    title: D.title, T, K, bottles, asks: D.asks, place: T.PLACE, step, bg, onDown, onMove, onUp, nameOf, first,
+    title: D.title, T, K, bottles, asks: D.asks, place: T.PLACE, step, bg, onDown, onMove, onUp, nameOf, first, scenery,
     /** 들어가면 이미 일이 벌어지고 있다: 맑은 물 · 뒤 빛 · 공기 방울 · 살랑이는 병(늘 그렇다 — 따로 차릴 것이 없다). */
     enter() { K.here = true; K.swayT = 0.2; K.enterT = 0; K.arrived = false; },
     leave,

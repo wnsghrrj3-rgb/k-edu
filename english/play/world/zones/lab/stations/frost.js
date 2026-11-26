@@ -1,5 +1,7 @@
 /* 마법 연구소 · 자리 ④ 얼음과 불 (Hot / Cold) — 연구소 설계 v1 · 9장(L1-3-4 · 묶음 3-3), 주인공은 몬스터 고고.
  * 아침. 실험대 바닥이 넓게 내려다보인다(미끄럼이 이 자리의 무대). 왼쪽 걸이에 눈구름, 오른쪽 걸이에 햇살 등과 작은 난로 — 왼쪽 = Cold · 오른쪽 = Hot(빛도 푸르고 주황이다).
+ * 장소(묶음 3-6 · 11-26 준호 「장소를 바꿔도 될 것 같아」): 연구소 방이 아니라 뒷마당이다 — 왼쪽 반은 겨울(눈밭 · 눈 덮인 나무 · 차가운 하늘 · 내리는 눈), 오른쪽 반은 여름(풀밭 · 해바라기 · 노란 햇살 · 해).
+ *   놀이판은 마당의 긴 나무 탁자(윗면 · 크기는 실험대 그대로)다. 배경이 낱말의 뜻을 먼저 말한다. 장소 한 벌(scenery)은 껍데기가 이 자리에 올 때 보이고 떠날 때 감춘다 — 놀이는 하나도 바뀌지 않았다.
  * 첫 손길(설계 v1.1 · 0장): 실험대가 반반이다 — 왼쪽 절반은 벌써 빙판, 오른쪽 절반은 햇살 아래 따뜻한 바닥. 물건을 누르면 반대편으로 쭉 미끄러져 가고, 닿은 쪽의 온도가 된다("Cold!" / "Hot!").
  *   고고가 먼저 해 보이고(first.show), 누를 것에 빛 고리가 뛴다(engine/first.js). 가만히 놓여 있던 것은 미지근한 채로 둔다 — 낱말은 보낸 것이 그쪽에 닿았을 때 난다. 아래의 손 셋은 둘째 층이다.
  * 손이 하는 일 셋:
@@ -16,7 +18,7 @@ import { clamp, rand } from '../../../engine/stage.js?v=2';
 import { sfx, tone, hiss } from '../../../engine/sound.js?v=2';
 import { stepThing, centerOf, topOf, pickAt, THING } from '../../../engine/things.js?v=2';
 import { createTempSkin } from '../../../engine/skin_temp.js?v=1';
-import { LAB } from '../../../data/lab.js?v=1';
+import { LAB } from '../../../data/lab.js?v=3';
 
 // ───────────────────────── 수치(준호가 만져 보고 바꾼다) ─────────────────────────
 export const T = {
@@ -45,13 +47,14 @@ export const T = {
   SHAKE: 0.05,
 };
 const COL = { snow: '#ffffff', frost: '#cfeaff', ember: '#ffb347', drop: '#8fd0f5', water: '#4aa8e6', waterHot: '#9adbe6', ice: '#dff3ff', pop: '#fff6e2' };
+// 장소의 하늘과 빛(자료의 look 보다 먼저다 — 끝 보고에 적었다): 하늘 판이 화면을 다 덮으므로 sky 는 틈이 났을 때의 바탕일 뿐이다. 햇빛 · 둘레 빛은 자료 그대로(물건과 고고가 전과 같게 보인다). wall 은 감춰져 뜻이 없다
 const LOOPS = new Set(['shiver', 'fan', 'skate', 'warm', 'rollSnow']);
 
 /** C = 껍데기가 넘기는 것(lab.js 의 C). 모형을 받고 자리를 돌려준다(처음 갈 때 한 번). */
 export async function create(C) {
   const { stage, scene, camera, gogo, brain, things, GOGO, targets, fx, voice, seen, P, name, say } = C, s = gogo.state, B = brain.B, { run, wait, until, walk, face, hop } = brain;
   const DATA = LAB.stations.frost, word = k => LAB.words[k].text, W_COLD = LAB.words.cold, W_HOT = LAB.words.hot, BIG_AT = parseFloat(LAB.thingState.size.words.big.replace(/[^\d.]/g, '')), DUNK_SMALL = LAB.stations.potion.T.DUNK_SMALL, HEX = LAB.stations.potion.colors.hex;
-  const gl = await new GLTFLoader().loadAsync(new URL('../../../assets/lab_frost.glb?v=1', import.meta.url).href), part = {};
+  const [gl, glPlace] = await Promise.all([new GLTFLoader().loadAsync(new URL('../../../assets/lab_frost.glb?v=1', import.meta.url).href), new GLTFLoader().loadAsync(new URL('../../../assets/place_frost.glb?v=1', import.meta.url).href)]), part = {};
   gl.scene.traverse(o => { if (o.isMesh) part[o.name] = o; }); for (const o of Object.values(part)) { o.castShadow = true; o.receiveShadow = true; o.removeFromParent(); }
   const ownSkin = !C.tempSkin, skin = createTempSkin(C), puffs = skin.puffs;      // 온도 겉: 껍데기가 이미 만들었으면 그것을 쓰고, 아니면 여기서 만들어 step 에서 임시로 돌린다
   const v3 = new THREE.Vector3(), v3b = new THREE.Vector3(), vWord = new THREE.Vector3(), TH = Object.values(things), chair = things.chair, cup = things.cup, ball = things.ball;
@@ -75,6 +78,33 @@ export async function create(C) {
   rise(part.hatch, T.PLACE.bowl[0], T.PLACE.bowl[1], 0.03); part.hatch.castShadow = false;
   // 푸른 눈빛(왼쪽)과 난로 빛(오른쪽) — 낱말의 뜻이 화면의 자리와 색으로도 읽힌다
   const lightL = new THREE.PointLight('#6fb6ff', 0, 9, 1.5), lightR = new THREE.PointLight('#ff9438', 0, 9, 1.5); lightL.position.set(-2.9, 2.1, 1.7); lightR.position.set(2.9, 1.9, 1.7); scene.add(lightL, lightR);
+
+  // ───────────────────────── 장소: 뒷마당(왼쪽 반은 겨울 · 오른쪽 반은 여름) ─────────────────────────
+  // 한 벌(scenery)을 묶어 감춰 둔다 — 껍데기가 이 자리에 올 때 연구소 방 · 벽 · 바닥을 감추고 이것을 보인다. 뒤판 · 구름 · 햇살은 빛을 받지 않는다(칠한 색 그대로 — 놀이판보다 한 단 흐리게 칠해 두었다).
+  const scenery = new THREE.Group(), place = {}; scenery.name = 'place_frost'; scenery.visible = false; scene.add(scenery);
+  { const flat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: THREE.DoubleSide }), lit = {};
+    glPlace.scene.traverse(o => { if (!o.isMesh) return; place[o.name] = o; const far = /^(back|sunrays|clouds)/.test(o.name);
+      if (far) o.material = flat; else { o.material = lit[o.material.uuid] || (lit[o.material.uuid] = Object.assign(o.material.clone(), { side: THREE.DoubleSide })); }
+      o.castShadow = o.name === 'table'; o.receiveShadow = o.name === 'table' || o.name === 'yard'; });
+    scenery.add(glPlace.scene); }
+  // 내리는 눈(왼쪽 반): 알갱이를 쓰지 않는다(한도 400 은 놀이의 것) — 흰 점을 찍은 그림 한 장을 두 겹의 막에 입혀 아래로 흘린다. 가운데로 올수록 옅어지다가 여름 쪽에서 사라진다
+  const snowfall = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.fillStyle = '#fff';
+    for (let i = 0; i < 15; i++) { const px = (i * 97 + 31) % 256, py = (i * 61 + 17 + (i % 3) * 40) % 256, r = 2.6 + (i * 7 % 5) * 0.7; for (const [ox, oy] of [[0, 0], [256, 0], [-256, 0], [0, 256], [0, -256]]) { x.globalAlpha = 0.75 + (i % 3) * 0.1; x.beginPath(); x.arc(px + ox, py + oy, r, 0, 7); x.fill(); } }
+    const veil = (z, x0, x1, rep, a, sp) => {
+      const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.wrapS = map.wrapT = THREE.RepeatWrapping; const y0 = -2.5, y1 = 9.5; map.repeat.set((x1 - x0) / rep, (y1 - y0) / rep);
+      const g = new THREE.PlaneGeometry(x1 - x0, y1 - y0, 10, 1), p = g.attributes.position, col = new Float32Array(p.count * 4); g.translate((x0 + x1) / 2, (y0 + y1) / 2, z);
+      for (let i = 0; i < p.count; i++) { const k = clamp((x1 - p.getX(i)) / 2.6, 0, 1); col.set([1, 1, 1, k * k * (3 - 2 * k)], i * 4); } g.setAttribute('color', new THREE.BufferAttribute(col, 4));
+      const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map, vertexColors: true, transparent: true, opacity: a, depthWrite: false, toneMapped: false })); m.renderOrder = -1; scenery.add(m); return { map, sp };
+    };
+    return [veil(-1.9, -14, 0.9, 2.3, 0.95, 0.42), veil(-5.4, -16, 0.6, 3.4, 0.8, 0.3)];
+  })();
+  /** 장소의 작은 움직임(이 자리에 있을 때만 돈다): 눈이 내린다 · 구름이 흐른다 · 햇살이 돈다 · 해바라기가 살랑인다. */
+  function stepPlace(dt) {
+    const c = L.clock; for (const v of snowfall) { v.map.offset.y += v.sp * dt; v.map.offset.x = Math.sin(c * 0.4 + v.sp * 9) * 0.05; }
+    place.cloudsC.position.x = Math.sin(c * 0.09) * 0.7; place.cloudsW.position.x = Math.sin(c * 0.07 + 2) * 0.7; place.sunrays.rotation.z = c * 0.12; place.sunrays.scale.setScalar(1 + 0.04 * Math.sin(c * 1.7));
+    ['flowerA', 'flowerB', 'flowerC'].forEach((n, i) => { place[n].rotation.z = Math.sin(c * 1.1 + i * 1.9) * 0.045; });
+  }
 
   // ── 물 대접: 물(쏟으면 비고 다시 찬다) · 언 얼음덩이(꺼낼 수 있다) · 물든 물
   const iceMat = () => new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.12, metalness: 0, emissive: '#8fd0ff', emissiveIntensity: 0.18, envMapIntensity: 1.6 });
@@ -556,7 +586,7 @@ export async function create(C) {
     }
   }
   function step(dt) {
-    L.clock += dt;
+    L.clock += dt; stepPlace(dt);
     for (const w of tools) stepTool(w, dt);
     if (P.mode === 'bowl' && P.down && !H.spilled) { bowl.lean = Math.min(0.6, (L.clock - H.t0) / T.BOWL.tilt * 0.6); bowl.dx = 0; bowl.dz = 1; if (L.clock - H.t0 >= T.BOWL.tilt) { H.spilled = true; spill('front'); } }      // 길게 누르면 기울다가 쏟아진다
     stepDunk(dt);
@@ -666,7 +696,7 @@ export async function create(C) {
   function miniBowl() { const g = new THREE.Group(), m = part.bowl.clone(), w = new THREE.Mesh(bowlWater.geometry, new THREE.MeshStandardMaterial({ color: COL.water, roughness: 0.1 })); m.castShadow = m.receiveShadow = false; w.position.y = 0.2; g.add(m, w); g.rotation.x = 0.5; return g; }
 
   return {
-    id: 'frost', title: DATA.title, T, L, G, first, asks: DATA.asks, place: { ...T.PLACE, gogo: T.GOGO_HOME }, tools, bowl, corn, puddles, snow, lump,
+    id: 'frost', title: DATA.title, T, L, G, first, asks: DATA.asks, scenery, place: { ...T.PLACE, gogo: T.GOGO_HOME }, tools, bowl, corn, puddles, snow, lump,
     step, bg, onDown, onMove, onUp,
     /** 들어온다: 가구가 나온다. 지닌 온도로 문턱 깃발을 맞춘다(들어오자마자 "Cold!" 를 외치지 않게). */
     enter() { L.here = true; L.left = true; B.idle = 0; L.lastBy = {}; first.t = first.last = null; first.done = false; for (const t of [...TH, GOGO]) { t.fCold = t.temp <= T.COLD_AT; t.fHot = t.temp >= T.HOT_AT; t.fsx = t.fsz = 0; t.fSend = null; t.fSent = false; } },

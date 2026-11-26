@@ -10,6 +10,7 @@ export const MOVE = { LOOK_AT: 0.10, LOOK: 1.0, CAM_AT: 0.15, CAM_K: 5, FURN_AT:
 const ease = t => t * t * (3 - 2 * t);
 
 /** o = { stage, wall(벽 — 색이 바뀐다), stations:{ id: 자리 }, looks:{ id:{ wall, sky:[3], sun, hemi } }, cams:{ id:{ AIM, TILT, HALF_W } }, first,
+ *        (자리 객체에 look 이 있으면 그것이 looks 보다 먼저다 — 제 장소를 지닌 자리)
  *        things:[물건…](x · z · home · vy · y 를 지닌 것), walk(x, z)(캐릭터를 걷게 한다), tray(단추를 넣을 요소), pictures:{ id: svg 글 }, sfx, onGo(id, 지난 id) } */
 export function createStations(o) {
   const { stage, stations } = o, ids = Object.keys(stations), col = () => ({ wall: new THREE.Color(), sky: [new THREE.Color(), new THREE.Color(), new THREE.Color()], sun: new THREE.Color(), hemi: 1 });
@@ -22,7 +23,7 @@ export function createStations(o) {
     const st = stations[id]; if (!st || id === S.now || S.loading) return false;
     if (st.load && !st.loaded) { S.loading = id; mark(); Promise.resolve(st.load()).catch(e => console.error(e)).then(() => { st.loaded = true; S.loading = null; go(id); }); return true; }
     const was = S.now; if (stations[was].leave) stations[was].leave(id);
-    setLook(from, { wall: cur.wall, sky: cur.sky, sun: cur.sun, hemi: cur.hemi }); setLook(to, o.looks[id]);
+    setLook(from, { wall: cur.wall, sky: cur.sky, sun: cur.sun, hemi: cur.hemi }); setLook(to, st.look || o.looks[id]);
     S.now = id; S.M = { t: 0, was, cam: false, furn: false, hops: null }; S.moves++; mark(); if (o.sfx) o.sfx.whoosh(); if (o.onGo) o.onGo(id, was);
     return true;
   }
@@ -31,7 +32,7 @@ export function createStations(o) {
     const M = S.M; if (!M) return; M.t += dt; const st = stations[S.now];
     const k = ease(clamp((M.t - MOVE.LOOK_AT) / MOVE.LOOK, 0, 1)); cur.wall.lerpColors(from.wall, to.wall, k); cur.sun.lerpColors(from.sun, to.sun, k); cur.sky.forEach((c, i) => c.lerpColors(from.sky[i], to.sky[i], k)); cur.hemi = from.hemi + (to.hemi - from.hemi) * k; apply();
     if (!M.cam && M.t >= MOVE.CAM_AT) { M.cam = true; stage.view(o.cams[S.now], MOVE.CAM_K); }
-    if (!M.furn && M.t >= MOVE.FURN_AT) { M.furn = true; if (st.enter) st.enter(M.was); }
+    if (!M.furn && M.t >= MOVE.FURN_AT) { M.furn = true; if (o.onFurn) o.onFurn(S.now, M.was); if (st.enter) st.enter(M.was); }   /* onFurn = 장소(배경)를 갈아 끼우는 때 */
     if (!M.hops && M.t >= MOVE.HOP_AT) {                                           // 물건들이 새 자리로 짧게 뛴다(조금씩 어긋나게). 캐릭터는 걸어간다
       const P = st.place || {}; M.hops = []; let i = 0;
       for (const t of o.things) { const p = P[t.name]; if (!p) continue; t.home.x = p[0]; t.home.z = p[1]; if (Math.hypot(t.x - p[0], t.z - p[1]) < 0.06) continue; M.hops.push({ t, x0: t.x, z0: t.z, x: p[0], z: p[1], at: M.t + MOVE.HOP_GAP * i++, on: false }); }

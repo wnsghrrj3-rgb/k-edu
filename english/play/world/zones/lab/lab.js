@@ -18,11 +18,11 @@ import { createLearn } from '../../engine/learn.js?v=2';
 import { runAuto } from '../../engine/auto.js?v=2';
 import { createActor } from '../../engine/actor.js?v=2';
 import { createAsk } from '../../engine/ask.js?v=4';
-import { createStations } from '../../engine/station.js?v=2';
+import { createStations } from '../../engine/station.js?v=3';
 import { createFirst } from '../../engine/first.js?v=1';
 import { createColorSkin } from '../../engine/skin_color.js?v=1';
 import { createTempSkin } from '../../engine/skin_temp.js?v=1';
-import { LAB } from '../../data/lab.js?v=2';
+import { LAB } from '../../data/lab.js?v=3';
 import { createSize, T as SIZE_T } from './stations/size.js?v=2';
 
 // ───────────────────────── 수치(방과 껍데기의 것 — 놀이의 수치는 자리 파일에) ─────────────────────────
@@ -67,7 +67,7 @@ const name = t => voice.word(word(t.name), () => topOf(t, vWord), { name: true, 
 const benchPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), P = { down: false, x: 0, y: 0, mode: null };
 
 // ───────────────────────── 자리 ─────────────────────────
-const C = { stage, scene, camera, part, gogo, brain, things, GOGO, targets, fx, voice, seen, P, BENCH: T.BENCH, LAB, name, say, benchPlane, toBench: async () => {}, tapBench, ask: null, first: null, nofirst: Q.has('nofirst'), wall, learn, by, R0, voiceK, touch: t => touch(t), moving: () => stations.moving, now: () => here };
+const C = { stage, scene, camera, part, gogo, brain, things, GOGO, targets, fx, voice, seen, P, BENCH: T.BENCH, LAB, name, say, benchPlane, toBench: async () => {}, tapBench, ask: null, first: null, nofirst: Q.has('nofirst'), wall, ground, learn, by, R0, voiceK, touch: t => touch(t), moving: () => stations.moving, now: () => here };
 /** 빈 실험대를 누르면 고고가 그리로 걸어간다(어느 자리에서나). */
 function tapBench(x, z) {
   x = clamp(x, -T.BENCH.X, T.BENCH.X); z = clamp(z, T.BENCH.Z0, T.BENCH.Z1); B.idle = 0;
@@ -81,7 +81,7 @@ function emptyStation(id) {
   const d = ST[id], place = d.T && d.T.PLACE ? Object.fromEntries(Object.entries(d.T.PLACE).filter(([k]) => by(k))) : { ...size.place };
   return { id, title: d.title, asks: [], place, busy: () => true, mime() {}, summary: () => ({}), auto: {},
     /** 처음 갈 때 그 자리의 파일(stations/<id>.js — create(C) 가 모형까지 받아 자리를 돌려준다)을 받아 이 빈 자리에 끼운다. 파일이 없으면 빈 자리로 남는다. */
-    async load() { try { const m = await import(`./stations/${id}.js?v=1`), st = await m.create(C); Object.assign(all[id], st, { id }); adapt(all[id]); } catch (e) { console.error('자리를 받지 못함: ' + id, e); brain.errors.push('load ' + id + ': ' + (e && e.message || e)); } },
+    async load() { try { const m = await import(`./stations/${id}.js?v=2`), st = await m.create(C); Object.assign(all[id], st, { id }); adapt(all[id]); } catch (e) { console.error('자리를 받지 못함: ' + id, e); brain.errors.push('load ' + id + ': ' + (e && e.message || e)); } },
     step(dt) {
       for (const t of Object.values(things)) { t.lit = false; stepThing(t, dt); }
       size.perch();
@@ -93,6 +93,11 @@ function emptyStation(id) {
     onDown(e) { const t = pickAt(stage, targets, e.clientX, e.clientY); if (t) touch(t); else if (stage.worldOn(benchPlane, e.clientX, e.clientY, v3)) tapBench(v3.x, v3.z); }, onMove() {}, onUp() {},
   };
 }
+/** 장소(설계 0장 끝 · 11-26 준호: 「장소를 바꿔도 될 것 같아」): 자리가 제 배경(scenery — 탁자 · 뒤 풍경 · 바닥까지 든 묶음)을 지니면 연구소 방 · 벽 · 바닥을 감추고 그것을 보인다.
+ *  자리 ①은 연구소 방 그대로다. 갈아 끼우는 순간(자리 옮기기 0.2초)은 흰 김(#veil)이 덮는다 — 손은 막지 않는다. */
+const veil = document.getElementById('veil'), VEIL = { UP: 0.16, HOLD: 0.28, END: 0.7 }; let placeNow = T.START, veilT = -1;   // 김의 때는 놀이의 때로 잰다(장면이 느린 기기에서도 갈아 끼우는 0.2초를 덮게)
+function stepVeil(dt) { if (veilT < 0) return; veilT += dt; const k = veilT < VEIL.UP ? veilT / VEIL.UP : veilT < VEIL.HOLD ? 1 : Math.max(0, 1 - (veilT - VEIL.HOLD) / (VEIL.END - VEIL.HOLD)); veil.style.opacity = (k * 0.96).toFixed(3); if (veilT >= VEIL.END) veilT = -1; }
+function setPlace(id) { placeNow = id; const own = !!all[id].scenery; for (const k in all) if (all[k].scenery) all[k].scenery.visible = k === id; for (const m of [part.room, wall, ground]) m.visible = !own; }
 const colorSkin = createColorSkin(C), tempSkin = createTempSkin(C);                                                  // 물든 색을 겉에 입힌다(어느 자리에서나 보인다)
 const size = createSize(C), all = { size };
 for (const id of ['float', 'potion', 'frost']) all[id] = emptyStation(id);
@@ -100,7 +105,8 @@ const stations = createStations({
   stage, wall, stations: all, first: T.START, things: Object.values(things), tray: document.getElementById('tray'), pictures: PICT, sfx,
   looks: Object.fromEntries(Object.keys(all).map(id => [id, ST[id].look])), cams: Object.fromEntries(Object.keys(all).map(id => [id, ST[id].cam])),
   walk: (x, z) => { run(async tok => { await C.toBench(tok); await brain.walk(tok, x, z); await brain.face(tok, 0); gogo.lookAt(camera.position); }); },
-  onGo: id => { here = id; bed.set(id); ask.touch(); first.enter(); },
+  onGo: id => { here = id; bed.set(id); ask.touch(); first.enter(); if (all[id].scenery !== all[placeNow].scenery) veilT = 0; },
+  onFurn: id => setPlace(id),
 });
 
 // ───────────────────────── 부탁 · 배경 소리 ─────────────────────────
@@ -145,14 +151,14 @@ function step(dt) {
   for (const id in all) if (all[id].bg) all[id].bg(dt);
   for (const t of targets) if (t.temp) t.temp -= Math.sign(t.temp) * Math.min(Math.abs(t.temp), T.TEMP_BACK * dt);      // 온도는 아주 느리게 미지근한 쪽으로
   colorSkin.tick(dt); tempSkin.tick(dt);
-  stations.tick(dt); first.tick(dt, stations.cur); ask.tick(dt, stations.cur); bed.tick(dt, voice.talking);
+  stations.tick(dt); stepVeil(dt); first.tick(dt, stations.cur); ask.tick(dt, stations.cur); bed.tick(dt, voice.talking);
   gogo.update(dt); voice.tick(dt); fx.tick(dt);
 }
 
 // ───────────────────────── 돌리기 ─────────────────────────
 const summary = () => ({ gogo: { size: +s.size.toFixed(2), x: +s.pos.x.toFixed(2), z: +s.pos.z.toFixed(2), y: +s.y.toFixed(2), where: B.where, mood: s.mood, act: s.act ? s.act.name : '', gait: gogo.gait() },
   things: Object.fromEntries(Object.values(things).map(t => [t.name, t.size.toFixed(2) + ' ' + t.state + ' x' + t.x.toFixed(1) + ' y' + t.y.toFixed(1)])), said: voice.said, seen: [...seen], ...size.summary(), learned: learn.log.length, errors: brain.errors, here: here === 'size' ? undefined : stations.cur.summary(),
-  station: stations.now + (stations.moving ? '~' : ''), moves: stations.moves, look: stations.look(), state: Object.fromEntries(targets.map(t => [t.name, t.lift + ' ' + t.color + ' ' + (+t.temp).toFixed(2)])), ask: ask.summary(), first: first.summary(), recs: learn.log.filter(k => /independent|assisted/.test(k)), bed: { now: bed.now, level: +bed.level.toFixed(2), bells: bed.bells } });
+  station: stations.now + (stations.moving ? '~' : ''), place: all[placeNow].scenery ? placeNow : 'lab', moves: stations.moves, look: stations.look(), state: Object.fromEntries(targets.map(t => [t.name, t.lift + ' ' + t.color + ' ' + (+t.temp).toFixed(2)])), ask: ask.summary(), first: first.summary(), recs: learn.log.filter(k => /independent|assisted/.test(k)), bed: { now: bed.now, level: +bed.level.toFixed(2), bells: bed.bells } });
 window.__lab = { T, LAB, gogo, things, B, step, summary, stations, all, size, ask, bed, GOGO, camera, stage, tapBench, W: size.W, lockOn: size.lockOn, setTo: size.setTo, release: size.release, at: size.at };
 const pressAt = async (x, y, tick, hold = 3) => { P.down = true; P.x = x; P.y = y; ask.touch(); first.touch(); stations.cur.onDown({ clientX: x, clientY: y }); for (let i = 0; i < hold; i++) await tick(); P.down = false; stations.cur.onUp(); P.mode = null; };
 const shared = {
