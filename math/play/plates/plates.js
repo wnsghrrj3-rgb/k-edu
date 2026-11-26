@@ -45,6 +45,7 @@ const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const L = () => S.tall ? T.TALL : T.WIDE;
 const TOP = () => T.DECK + T.TOP_H;
 const snd = (...a) => { if (TL.on()) tone(...a); };   /* 효과음도 소리 단추(tell.js) 하나로 같이 끈다 */
+const between = ([a, b]) => a + Math.random() * (b - a);
 const say = text => { S.said.push(text); TL.say(text); };
 const cook = (name, ms = 1500) => { if (!S.cook) return; stage.play(S.cook, name, true); clearTimeout(S.cookT); S.cookT = setTimeout(() => stage.play(S.cook, 'Idle'), ms); };
 
@@ -383,7 +384,7 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.s
     const results = []; let dogLeft = dogJ >= 0, slideLeft = slideJ >= 0;
     for (let j = 0; j < R.T.PER_BOARD; j++) { const i = b * R.T.PER_BOARD + j; if (S.forceP && S.forceP.length) { const f = S.forceP.shift(); q[i] = f.N != null ? R.make(id, f.N) : R.make(id, f.g, f.n); S.ords[0] && !S.ords[0].more && (S.ords[0].p = q[i]); notesDraw(); } const p = q[i];
       const firstStep = b === 0 || (hand ? 1 : 2) !== prevStep, tellOk = j === 0 && firstStep, last = !hand && b === R.T.BOARDS - 1 && j === R.T.PER_BOARD - 1;
-      const ctx = { b, j, hand, ev, gold: j === goldJ, bare: j === bareJ, last, dogAt: dogLeft && j >= dogJ ? 1.2 + Math.random() * 2 : null, slideAt: slideLeft && j >= slideJ && p.n != null ? 2.5 + Math.random() * 2.5 : null,
+      const ctx = { b, j, hand, ev, gold: j === goldJ, bare: j === bareJ, last, dogAt: dogLeft && j >= dogJ ? between(R.T.DOG_AT) : null, slideAt: slideLeft && j >= slideJ && p.n != null ? between(R.T.SLIDE_AT) : null,
         tell: tellOk ? { key: 'plates.' + id + '.' + (hand ? 1 : 2), text: FIRST[id][hand ? 1 : 2], opt: TELLS() } : null, askTell: tellOk && id === 'J01' && !hand ? { key: 'plates.J01.ask', opt: TELLS() } : null };
       const r = await runProblem(p, ctx); if (S.oid !== my || r.abort) return; if (ctx.dogFired) dogLeft = false; if (ctx.slideFired) slideLeft = false; results.push(r); E.marbles(j + 1);
       if (!r.clean) { const rq = R.requeue(q, i); q = rq.q; if (rq.carry) S.carry[id].push(rq.carry); } S.q = q; }
