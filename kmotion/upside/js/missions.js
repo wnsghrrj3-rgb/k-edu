@@ -64,7 +64,7 @@ export class Mirror extends Base {
     const sc = c.size === 'big' ? 1.5 : c.size === 'small' ? .55 : 1 + c.grow * .15; if (Math.abs(sc - H.scaleT) > .2) (sc > H.scaleT ? this.A.grow() : this.A.shrink()); H.setScale(sc);
     if (this.phase !== 'end') { H.setDrive({ sl: c.sl, sr: c.sr, tilt: c.tilt }); H.set('idle'); }
     H.update(dt);
-    if (this.phase === 'free') { this.freeLeft -= dt; this.ui.timer(Math.ceil(this.freeLeft)); if (this.freeLeft <= 0) { this.phase = 'task'; this.ui.timer(null); this.say('이제 마법 거울이 문제를 내요!').then(() => {}); this.next(); } }
+    if (this.phase === 'free') { this.freeLeft -= dt; this.ui.timer(Math.ceil(this.freeLeft)); if (this.freeLeft <= 0) { this.phase = 'task'; this.ui.timer(null); this.app.ruleCard('mirror', '발견했나요? 거울의 방 규칙', () => this.next()); } }
     else if (this.phase === 'task') {
       const T = this.tasks[this.k]; this.taskT += dt;
       // 목표 자세 유령
@@ -107,7 +107,7 @@ export class Forest extends Base {
   update(dt, f){
     this.t += dt; const c = transform(f, this.rules), H = this.hero;
     this.hx = damp(this.hx, this.px(c.x) * 4.6, 6, dt); this.hy = damp(this.hy, clamp(c.lift, 0, 1) * 3.8, 5, dt);
-    H.root.position.set(this.hx, this.hy, 0); H.set(this.hy > .25 ? 'float' : 'idle'); H.update(dt);
+    H.root.position.set(this.hx, this.hy, 0); H.set(this.hy > .25 ? 'float' : 'idle'); if (f.present) H.setDrive({ sl: c.sl, sr: c.sr, tilt: c.tilt }); else H.setDrive(null); H.update(dt);
     if (this.hy > .25 && Math.random() < dt * 12) this.W.burst(V3(this.hx, this.hy + .1, -.1), 0xa8f0ff, 1, .6, -.5);
     const body = V3(this.hx, this.hy + 1.2, 0);
     // 별
@@ -300,7 +300,8 @@ export class Castle extends Base {
     if (C.kind === 'star') { this.hx = damp(this.hx, this.px(c.x) * 4.8, 6, dt); const s = this.target; s.userData.spin.rotation.y = Math.sin(this.t * 2) * .6; ok = Math.abs(s.position.x - this.hx) < (this.S.diff === 'easy' ? 1.1 : .85); if (ok) this.hold = this.D.hold; }
     if (C.kind === 'size') { const want = c.size === 'big' ? 1.6 : c.size === 'small' ? .5 : 1; if (Math.abs(want - H.scaleT) > .2) (want > H.scaleT ? this.A.grow() : this.A.shrink()); H.setScale(want); ok = c.size === C.need; }
     else if (this.phase === 'cmd' && C.kind !== 'size') H.setScale(1);
-    if (C.kind === 'arm') { H.setDrive({ sl: c.sl, sr: c.sr, tilt: 0 }); ok = C.side === 'sl' ? (c.slUp && !c.srUp) : (c.srUp && !c.slUp); }
+    if (f.present) H.setDrive({ sl: c.sl, sr: c.sr, tilt: c.tilt }); else H.setDrive(null);
+    if (C.kind === 'arm') { ok = C.side === 'sl' ? (c.slUp && !c.srUp) : (c.srUp && !c.slUp); }
     if (C.kind === 'go') { if (c.go && this.hz > -2.4) { this.hz -= dt * 1.3; H.set('walk'); } else H.set('idle'); ok = this.hz <= -2.4; if (ok) this.hold = this.D.hold; }
     if (C.kind === 'gem') { this.hy = damp(this.hy, clamp(c.lift, 0, 1) * 3.8, 5, dt); H.set(this.hy > .25 ? 'float' : 'idle'); this.target.userData.spin.rotation.y += dt * 2; ok = this.hy > 3.2; if (ok) this.hold = this.D.hold; }
     else this.hy = damp(this.hy, 0, 6, dt);

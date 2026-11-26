@@ -15,8 +15,8 @@ const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
 // 난이도별 기준(쉬움 = 작은 움직임도 충분히 인식)
 export const DIFF = {
-  easy:   { name: '쉬움',   crouch: .24, spread: 1.9, raise: .45, tilt: 9,  moveOn: .75, moveOff: .42, hold: .55, hint: 6,  lateral: .45 },
-  normal: { name: '보통',   crouch: .38, spread: 2.3, raise: .6,  tilt: 12, moveOn: 1.0, moveOff: .55, hold: .9,  hint: 9,  lateral: .65 },
+  easy:   { name: '쉬움',   crouch: .24, spread: 1.9, raise: .45, tilt: 9,  moveOn: .75, moveOff: .42, hold: .55, hint: 4,  lateral: .45 },
+  normal: { name: '보통',   crouch: .38, spread: 2.3, raise: .6,  tilt: 12, moveOn: 1.0, moveOff: .55, hold: .9,  hint: 6,  lateral: .65 },
   hard:   { name: '어려움', crouch: .52, spread: 2.7, raise: .75, tilt: 15, moveOn: 1.25, moveOff: .7, hold: 1.25, hint: 14, lateral: .85 },
 };
 
@@ -75,10 +75,10 @@ export class MotionInput {
 
   onFrame(fr){
     // 카메라 미리보기는 HUD 쪽에서 직접 그린다(영상 저장 없음)
-    if (this.onPreview) this.onPreview(fr, this.km);
+    if (this.onPreview) { try { this.onPreview(fr, this.km); } catch (e) { if (!this._pvErr) { this._pvErr = 1; console.warn('[upside] preview', e); } } }
     if (!fr.fresh) return;
     const p = fr.pose; const t = fr.t;
-    const ok = p && p[11].v > .5 && p[12].v > .5;
+    const ok = p && p[11].v > .35 && p[12].v > .35;
     if (!ok) { this.pose = null; return; }
     this.pose = p; this.lastSeen = t;
     const sh = mid(p[11], p[12]), sw = Math.max(20, dist(p[11], p[12]));
@@ -106,7 +106,7 @@ export class MotionInput {
     if (this.mode === 'keyboard') this.keyboardFeatures(dt);
     else if (this.mode === 'camera') {
       const now = performance.now(); const p = this.pose;
-      const was = f.present; f.present = !!p && now - this.lastSeen < 700;
+      const was = f.present; f.present = !!p && now - this.lastSeen < 1000;
       if (was && !f.present) this.emit('lost'); if (!was && f.present) this.emit('found');
       if (!f.present) { f.energy *= .9; return f; }
       const B = this.base, sw = Math.max(20, dist(p[11], p[12])), sh = mid(p[11], p[12]), bsw = B.sw;
