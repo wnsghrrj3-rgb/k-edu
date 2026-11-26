@@ -9,14 +9,14 @@
  * 누름에는 늘 답이 있다(5-11). 소리는 common/tell.js — 없으면 조용히 넘어간다. 그림은 기성 3D 재료만(./assets · 이름표 ./art.js) — 화면 위 표시(띠 · 카드 · 수 팻말 · 찍힌 수 · 구슬 · 등불)만 코드로. */
 import { createStage, THREE, CALM, LITE, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=2';
-import * as C from '../common/choose.js?v=5';
+import * as C from '../common/choose.js?v=6';
 import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=11';
-import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=12';
+import * as E from '../common/ends.js?v=2';
+import * as M from '../common/map.js?v=13';
 import * as TL from '../common/tell.js?v=2';
-import * as R from './rules.js?v=2';
+import * as R from './rules.js?v=3';
 import { ASSETS, MODEL, SCENERY, SCENERY_NAMES, WOOD, GOLD, GHOST, ICON } from './art.js?v=1';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T

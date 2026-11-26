@@ -6,17 +6,18 @@
  *   하루 한 번 = 저장 `kedu_mathplay_flash` { day, done, best }(/kedu_scope.js 규칙 그대로 · 서버 호출 0).
  * 각 틀의 rules.js 는 고치지 않는다 — 그 pool(cellId) 만 가져다 쓴다(풀 이름이 다른 틀은 없다: 모두 pool). 문제를 「번쩍」 꼴로 옮기는 것은 아래 MOVE 한 곳.
  * 물건은 통 하나로 통일(수를 보는 눈은 하나 — 다섯씩 한 줄 · 열 칸) · 세어야 하는 낱칸은 가리지 않는다(머묾) · 띠는 그 낱칸의 교과서 말(식 기호는 B07 부터). */
-import { pool as countPool } from '../count/rules.js?v=1';     /* 각 틀이 싣는 버전과 같게(count 1 · serve 1 · match 2 · line 2 · weigh 1 · split 3 · ride 4 · pack 2) */
+import { pool as countPool } from '../count/rules.js?v=1';     /* 각 틀이 싣는 버전과 같게(count 1 · serve 1 · match 2 · line 2 · weigh 1 · split 3 · ride 5 · pack 3 · plates 1) */
 import { pool as servePool } from '../serve/rules.js?v=1';
 import { pool as matchPool } from '../match/rules.js?v=2';
 import { pool as linePool, CELLS as LINE } from '../line/rules.js?v=2';
 import { pool as weighPool } from '../weigh/rules.js?v=1';
 import { pool as splitPool } from '../split/rules.js?v=3';
-import { pool as ridePool } from '../ride/rules.js?v=4';
-import { pool as packPool, cards as packCards } from '../pack/rules.js?v=2';
+import { pool as ridePool } from '../ride/rules.js?v=5';
+import { pool as packPool, cards as packCards } from '../pack/rules.js?v=3';
+import { pool as platesPool, cards as platesCards, parity, WORDS } from '../plates/rules.js?v=1';
 import * as F from './rules.js?v=2';
-import { wa, eul, garu, moeu, word } from '../common/say.js?v=5';
-import { MOVED, RULE, passed, kept, days, dayKey } from '../common/map.js?v=12';
+import { wa, eul, eun, garu, moeu, word } from '../common/say.js?v=6';
+import { MOVED, RULE, passed, kept, days, dayKey } from '../common/map.js?v=13';
 
 // ── 내가 정한 수치(설계 기본안 — 열어 둔 것 1 · 2 · 5 의 기본안)
 export const RT = { REVIEW_CELLS: 3, REVIEW_Q: 3, BONUS_Q: 3 };
@@ -42,6 +43,12 @@ const R_SMALL = .14;
 /** 길잡이 손이 답을 짚기까지(초 · 생각하는 동안): 세는 꼴(머묾 · 숫자 → 머묾)은 심지 끝까지 짚지 않는다(세는 시간을 빼앗지 않게 — 심지보다 1초 늦게) · 그 밖은 심지의 3/4(HINT_AFTER 보다 짧지 않게). */
 export const hintS = mv => ['stay', 'numStay'].includes(mv.look) ? mv.fuse + 1 : Math.max(F.T.HINT_AFTER, Math.round(mv.fuse * .75 * 10) / 10);
 const grp = (n, region, r = R_SMALL, how = 'fives') => ({ n, region, r, pts: how === 'scatter' ? null : F.fives(n, F.region(region), r) });
+/** 접시 칸(T11): 접시마다 한 무리 — 다섯씩 한 줄 · 두 줄까지(같은 접시 틀의 탁자와 같은 눈). 둘 = 나란히 · 하나 = 가운데 · 다섯 = 주사위 꼴. list = 접시마다 수. tintLast = 끝 접시를 다른 빛깔로(D06). */
+export const PLATE = { DX: .5, DZ: .82, R2: .08, R5: .055, PAIR: .13, DICE: .13 };   /* 통 사이가 F.T.GAP 넘게(R.fits) */
+export function plateGroups(list, tintLast = false){ const rows = Math.ceil(list.length / 5);
+  return list.map((k, i) => { const cx = (i % 5 - 2) * PLATE.DX, cz = (Math.floor(i / 5) - (rows - 1) / 2) * PLATE.DZ, r = k === 5 ? PLATE.R5 : PLATE.R2;
+    const off = k === 1 ? [[0, 0]] : k === 2 ? [[-PLATE.PAIR, 0], [PLATE.PAIR, 0]] : [[-PLATE.DICE, -PLATE.DICE], [PLATE.DICE, -PLATE.DICE], [0, 0], [-PLATE.DICE, PLATE.DICE], [PLATE.DICE, PLATE.DICE]];
+    return { n: k, region: 'all', r, pts: off.map(([dx, dz]) => ({ x: cx + dx, z: cz + dz })), tint: tintLast && i === list.length - 1, plate: i }; }); }
 
 /* ── 옮김 표(T09 설계서 「각 틀의 문제를 「번쩍」 꼴로 옮기는 표」 — 켬인 줄만 · 새 틀이 생기면 그 묶음에서 줄을 더한다)
  *   look: stay 머묾(덧문이 열린 채 심지만) · flash 번쩍 · flashLR 두 짝이 차례로 번쩍 · flashLeft 번쩍 → 왼짝만 다시 열려 머묾 · flashCover 열 칸 번쩍 → 오른쪽 몇 칸이 가려진 채 머묾 · numStay 숫자가 덧문에 번쩍 → 머묾 · blind 덧문 닫힌 채(식 먼저 → 답한 뒤 열려 확인)
@@ -76,8 +83,13 @@ export const MOVE = {
   /* T10 포장 틀: C01 = 열 칸에 9 가 번쩍(빈 칸 하나는 아랫줄 어딘가 — 풀의 k 마다 자리가 다르다 · 서로 다른 문제 셋이 나오게) → 「9보다 1만큼 더 큰 수는 ?」 수 셋 / C04 = 가득 찬 열 칸 하나 + 낱개가 번쩍 → 「10개씩 묶음 1개와 낱개 r개는 ?」 수 셋(포장 틀의 카드 규칙 그대로) */
   C01: { frame: 'pack', look: 'flash', form: 'num', show: 1.6, fuse: 8, lim: [1, 10], items: id => uniq(packPool(id), p => p.k === 0 ? 9 : p.k).map(p => ({ gap: p.k === 0 ? 9 : p.k })) },
   C04: { frame: 'pack', look: 'flash', form: 'num', show: 1.8, fuse: 10, lim: [1, 19], items: id => packPool(id).map(p => ({ N: p.N })) },
+  /* T11 같은 접시 틀: D06 = 통이 둘씩 접시(칸)에 놓인 채 번쩍 · 끝 접시는 빛깔이 다르다(둘인지 하나인지) → 「7은 ?」 낱말 카드 둘(짝수 · 홀수 · 자리 고정) /
+   *   J01 = 2씩 · 5씩 놓인 접시 n 장이 번쩍 → 「2씩 4묶음은 ?」 수 셋(같은 접시 틀의 카드 규칙 그대로 · 곱하기 기호 · 「배」 없음) */
+  D06: { frame: 'plates', look: 'flash', form: 'words', show: 1.8, fuse: 10, lim: [1, 20], items: id => platesPool(id).map(p => ({ N: p.N })) },
+  J01: { frame: 'plates', look: 'flash', form: 'num', show: 2.0, fuse: 12, lim: [2, 30], items: id => platesPool(id).map(p => ({ g: p.g, n: p.n })) },
 };
 export const ON = Object.keys(MOVE);
+/** 곱하기 기호 · 「배」는 어느 줄에도 없다(J02 · J03 부터 — 이번에는 화면 어디에도 없다 · T11). */
 /** 식 기호(+ =)를 띠에 쓰는 낱칸 = 덧셈식을 배운 낱칸부터(B07 · B08 · B09). */
 export const SYMBOL_CELLS = ['B07', 'B08', 'B09'];
 /** 세어야 하는 낱칸(가리지 않는다 — 머묾). */
@@ -121,12 +133,16 @@ export function make(cell, it, rnd = Math.random){ const mv = MOVE[cell], base =
       return { ...base, key: `9:${gap}`, opts: near3(10, lim[0], lim[1], rnd, [9]), answer: 10, band: [N(9), W('보다'), N(1), W('만큼 더 큰 수는'), H(10)], ten: { a: 9, full: false, cover: 0, gap }, reveal: 'next', nums: [9, 1, 10] }; }
     case 'C04': { const n = it.N, r = n - 10;
       return { ...base, key: `${n}`, N: n, r, opts: packCards({ N: n }, 2, rnd), answer: n, band: [N(10), W('개씩 묶음'), N(1), W('개와 낱개'), N(r), W('개는'), H(n)], ten: { a: 10, full: true, cover: 0, loose: r }, reveal: 'tens', nums: [10, 1, r, n] }; }
+    case 'D06': { const n = it.N, list = Array.from({ length: Math.ceil(n / 2) }, (_, k) => (k === Math.ceil(n / 2) - 1 && n % 2 ? 1 : 2));   /* 끝 접시 = 둘이면 짝수 · 하나면 홀수 */
+      return { ...base, key: `${n}`, N: n, opts: WORDS.slice(), answer: parity(n), band: [N(n), { w: eun(n), glue: true }, H(parity(n))], groups: plateGroups(list, true), reveal: 'pairs', nums: [n] }; }
+    case 'J01': { const { g, n } = it, a = g * n;
+      return { ...base, key: `${g}:${n}`, g, n, opts: platesCards({ g, n }, rnd), answer: a, band: [N(g), { w: '씩', glue: true }, N(n), { w: '묶음은', glue: true }, H(a)], groups: plateGroups(Array(n).fill(g)), reveal: 'skip', nums: [g, n, a] }; }
     case 'B08': case 'B09': { const { a, b } = it, c = a + b;
       return { ...base, key: `${a}+${b}`, a, b, opts: near3(c, lim[0], lim[1], rnd, [a, b]), answer: c, band: [N(a), O('+'), N(b), O('='), H(c)], groups: [grp(a, 'L'), grp(b, 'R')], reveal: 'join', nums: [a, b, c] }; }
   }
   return null; }
 /** 띠의 글(하네스 · 소리 없는 기기): 「?」 칸은 '?' · closed 면 답. */
-export const bandText = (p, closed = false) => (closed && p.closedBand ? p.closedBand : p.band).map(x => partWord(x, closed) != null ? partWord(x, closed) : x.hole != null ? (closed ? String(x.hole) : '?') : x.n != null ? String(x.n) : x.dots != null ? '' : x.op).join(' ').replace(/\s+/g, ' ').trim();
+export const bandText = (p, closed = false) => (closed && p.closedBand ? p.closedBand : p.band).map(x => (x.glue ? '\u0000' : '') + (partWord(x, closed) != null ? partWord(x, closed) : x.hole != null ? (closed ? String(x.hole) : '?') : x.n != null ? String(x.n) : x.dots != null ? '' : x.op)).join(' ').replace(/ \u0000/g, '').replace(/\s+/g, ' ').trim();   /* glue = 앞 수에 붙는 말(T11 「7은」 · 「2씩」) */
 /** 띠 조각의 말(「?」 뒤의 토씨는 닫히면 답의 받침을 따라간다 — C02 「6과 ?를 모으면 10」 → 「6과 4를 모으면 10」 · 「7과 3을 모으면 10」). 말이 아닌 조각이면 null. */
 export const partWord = (x, closed) => x.w != null ? x.w : x.moeu != null ? moeu(closed ? x.moeu : '?') : null;
 /** 판정: 누른 것(row · num 의 수 · eq 의 식 · group · side 의 칸 번호)이 답인가 → 'fit' | 'off'. */

@@ -9,13 +9,13 @@
  *   막힘       = 깨끗하지 못한 판 STUCK 연달아 → 틀이 길잡이를 일찍 · 작은 수부터 · 손으로 한 판(벌 없음). 2×STUCK 이면 고르는 화면에서 앞 깃발이 살짝 흔들림
  *   기록은 거꾸로 가지 않는다(딴 깃발은 내려가지 않는다).
  * 저장: localStorage `kedu_mathplay_map` 한 칸 — /kedu_scope.js 가 먼저 실려 있어야 기기에 남는다(정식 세션). 그 밖에는 화면이 열려 있는 동안만. 서버 호출 0. */
-import { BUILT, STARTS } from './built.js?v=9';
+import { BUILT, STARTS } from './built.js?v=10';
 
 // ── 내가 정한 수치(정본 5-4절 기본안 — 준호가 바꾼다)
 export const RULE = { PASS_CLEAN: 2, KEEP_DAYS: 1, STUCK: 3, KEEP_Q: 3 };   /* KEEP_Q = 복습에서 별을 따려면 그 낱칸의 문제가 이만큼(모두 깨끗) — flash/review.js REVIEW_Q 와 같게 */
 export const KEY = 'kedu_mathplay_map';
 /** 익힘을 「오늘의 번쩍」 복습으로 옮긴 낱칸(옮김 표의 「켬」 — flash/review.js MOVE 의 열쇠와 같다 · T09). 새 틀이 생기면 그 묶음에서 둘 다에 줄을 더한다. */
-export const MOVED = ['A01', 'A02', 'A03', 'A04', 'A05', 'A06', 'A07', 'A08', 'A09', 'A13', 'A14', 'B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'C01', 'C02', 'C03', 'C04'];
+export const MOVED = ['A01', 'A02', 'A03', 'A04', 'A05', 'A06', 'A07', 'A08', 'A09', 'A13', 'A14', 'B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'C01', 'C02', 'C03', 'C04', 'D06', 'J01'];
 export const moved = id => MOVED.includes(id);
 
 /** 낱칸 기록 하나. state: 0 안 함 · 1 하는 중 · 2 통과 · 3 익힘 / cleanRun: 세는 판에서 깨끗한 판 연달아 / stuckRun: 깨끗하지 못한 판 연달아 / hand: 손으로 하는 판(걸음 ①)을 깨끗하게 마쳤는가 / evBoards: 사건이 붙은 판 수(틀이 사건을 차례로 보여 줄 때) */

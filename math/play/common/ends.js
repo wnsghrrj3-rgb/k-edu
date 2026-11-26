@@ -1,7 +1,7 @@
 /* 수학 놀이터 「끝이 보인다」 부품(정본 26 문서 1-5절 → 27 문서 5-1절에 맞춤) — T01 에 필요한 만큼만.
  *   구슬: 판 = 문제 셋(●●○) · 문제 하나를 여럿으로 쪼개 보일 수도 있다(가르기 틀의 「여러 가지로」 = 셋으로)
  *   등불: 나들이 = 판 셋(돛대 등불 ◦◦◦)
- *   home(): 나들이가 끝나면 — 오늘 보낸 것이 한 줄로 · 큰 단추 「돌아가기」 · 작은 단추 「한 번 더」
+ *   home(): 나들이가 끝나면 — 오늘 보낸 것이 한 줄로 · 큰 단추 「돌아가기」 · 작은 단추 「한 번 더」 · (next 를 주면) 단추 「다음으로」(T11 — 같은 학년 안의 다음 낱칸을 권할 때만 · go/next.js)
  *   fly(): 번 것이 날아가 쌓이는 연출(화면 위 표시)
  * 화면 위 표시라 코드로 그려도 된다(물체가 아님). 글은 단추 두 개뿐. */
 const CSS = `
@@ -21,7 +21,8 @@ const CSS = `
 #home .btns{display:flex;align-items:center;gap:14px}
 #home button{font-family:inherit;font-weight:900;border-radius:999px;cursor:pointer;touch-action:manipulation}
 #home .go-back{font-size:1.6rem;padding:14px 40px;background:#ffd34d;color:#4a2a0c;border:5px solid #8a5a2b;box-shadow:0 6px 0 rgba(60,30,5,.4)}
-#home .go-again{font-size:1rem;padding:8px 16px;background:rgba(255,255,255,.85);color:#1d4a63;border:3px solid #1d4a63}`;
+#home .go-again{font-size:1rem;padding:8px 16px;background:rgba(255,255,255,.85);color:#1d4a63;border:3px solid #1d4a63}
+#home .go-next{font-size:1.15rem;padding:10px 20px;background:#dff1ff;color:#12406a;border:4px solid #2b6a9c;box-shadow:0 5px 0 rgba(20,50,90,.35)}`;
 let cssIn = false; function css(){ if (cssIn) return; cssIn = true; const s = document.createElement('style'); s.id = 'ends-css'; s.textContent = CSS; document.head.appendChild(s); }
 const box = id => { css(); let e = document.getElementById(id); if (!e) { e = document.createElement('div'); e.id = id; document.body.appendChild(e); } return e; };
 
@@ -41,10 +42,10 @@ export function fly(fromEl, toEl, html, n = 1){ css(); if (!fromEl || !toEl || n
     setTimeout(() => { c.style.transform = `translate(${b.left + b.width / 2 - 12 - x0}px,${b.top + b.height / 2 - 12 - y0}px)`; c.style.opacity = .3; }, 30 + i * 70); setTimeout(() => c.remove(), 900 + i * 70); }
   return new Promise(r => setTimeout(r, 750 + Math.min(n, 8) * 70)); }
 
-/** 나들이 끝: 오늘 보낸 것이 한 줄로(items = html 조각들) · 「돌아가기」(큰) · 「한 번 더」(작은). → Promise('back' | 'again') */
-export function home({ items = [], back = '돌아가기', again = '한 번 더' } = {}){ const e = box('home');
-  e.innerHTML = `<div class="row">${items.map((h, i) => `<span style="animation-delay:${(i * .06).toFixed(2)}s">${h}</span>`).join('')}</div><div class="btns"><button class="go-again" type="button">${again}</button><button class="go-back" type="button">${back}</button></div>`;
+/** 나들이 끝: 오늘 보낸 것이 한 줄로(items = html 조각들) · 「돌아가기」(큰) · 「한 번 더」(작은) · next(글)를 주면 「다음으로」. → Promise('back' | 'again' | 'next') */
+export function home({ items = [], back = '돌아가기', again = '한 번 더', next = '' } = {}){ const e = box('home');
+  e.innerHTML = `<div class="row">${items.map((h, i) => `<span style="animation-delay:${(i * .06).toFixed(2)}s">${h}</span>`).join('')}</div><div class="btns"><button class="go-again" type="button">${again}</button><button class="go-back" type="button">${back}</button>${next ? `<button class="go-next" type="button">${next}</button>` : ''}</div>`;
   void e.offsetWidth; e.classList.add('on');
   return new Promise(res => { const done = v => { e.classList.remove('on'); setTimeout(() => { if (!e.classList.contains('on')) e.innerHTML = ''; }, 650); res(v); };
-    e.querySelector('.go-back').addEventListener('click', () => done('back')); e.querySelector('.go-again').addEventListener('click', () => done('again')); }); }
+    e.querySelector('.go-back').addEventListener('click', () => done('back')); e.querySelector('.go-again').addEventListener('click', () => done('again')); const nx = e.querySelector('.go-next'); if (nx) nx.addEventListener('click', () => done('next')); }); }
 export const homeOpen = () => { const e = document.getElementById('home'); return !!(e && e.classList.contains('on')); };

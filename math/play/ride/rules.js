@@ -3,7 +3,7 @@
  * 이번 묶음 = 덧셈 한 줄: B06 덧셈 이야기(말로 — 기호 없음) · B07 덧셈식 읽고 쓰기(기호가 처음) · B08 덧셈(합 5까지 · 가려진 채 답하기) · B09 덧셈(합 9까지).
  *   문제 = { cell, a(처음 수), b(더 온 수), sum, kind: 'join' 더 들어감 | 'merge' 양쪽에서 모임, key }
  * 0 이 든 문제 · 뺄셈 · 세 수 · 비교는 내지 않는다(B10~ 의 몫). 뒤 묶음(나오기 B11~B14 · 0 과 섞기 B10 · B15 · B16)은 낱칸 표에 줄만 더하면 되게 방향(dir)을 받게만 둔다. */
-import { eun, wa, UNIT, plusRead, sumRead } from '../common/say.js?v=5';
+import { eun, wa, UNIT, plusRead, sumRead } from '../common/say.js?v=6';
 
 // ── 낱칸 표(설계서 그대로 · low = 아홉 문제 가운데 합이 5까지인 문제 수 · top = 화면에 나올 수 있는 가장 큰 수)
 export const CELLS = {

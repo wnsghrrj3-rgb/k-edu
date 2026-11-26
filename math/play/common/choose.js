@@ -20,10 +20,16 @@ const CSS = `
 #choose button.tens{width:204px;height:auto;min-height:132px;padding:12px 14px 8px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:8px;font-size:3rem}#choose button.tens .num{line-height:1}
 #choose button.tens .tf{display:inline-flex;gap:10px;align-items:center}#choose button.tens .dots u{width:13px;height:13px}
 @media (max-width:520px){#choose button.tens{min-width:0;width:min(110px,calc((100vw - 40px) / 3));min-height:104px;padding:8px 5px 6px;gap:5px;font-size:2.4rem}#choose button.tens .tf{gap:5px}#choose button.tens .dots u{width:7px;height:7px;border-width:1.5px}#choose button.tens .dots,#choose button.tens .dots i{gap:2px}}
+#choose.words{gap:22px}#choose button.word{width:156px;height:auto;min-height:128px;padding:12px 10px 10px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:10px;font-size:2.3rem}#choose button.word .wd{line-height:1;letter-spacing:.02em}
+.pls{display:inline-flex;gap:6px;align-items:center}.pls i{display:flex;gap:3px;align-items:center;justify-content:center;width:34px;height:24px;border-radius:50%;background:#fff;border:2px solid #b08550;box-sizing:border-box}.pls u{width:9px;height:9px;border-radius:50%;background:#e0662c;border:1.5px solid #a8431a;box-sizing:border-box}.pls i.one{border-color:#e0662c;box-shadow:0 0 0 2px rgba(224,102,44,.35)}
+@media (max-width:520px){#choose.words{gap:14px}#choose button.word{width:132px;min-height:110px;font-size:2rem;padding:10px 6px 8px;gap:8px}.pls{gap:4px}.pls i{width:28px;height:20px}.pls u{width:7px;height:7px}}
 #tray b.hole.ask{animation:holeask 1s infinite}@keyframes holeask{50%{background:rgba(255,211,77,.55);transform:scale(1.08)}}`;
 export const GAP = 14;   /* 띠와 수 셋 사이(px) */
 let cssIn = false; function css(){ if (cssIn || typeof document === 'undefined') return; cssIn = true;   /* node(하네스)에서 점 무늬만 그릴 때는 건너뜀 */ const s = document.createElement('style'); s.id = 'choose-css'; s.textContent = CSS; document.head.appendChild(s); }
 const box = () => { css(); let e = document.getElementById('choose'); if (!e) { e = document.createElement('div'); e.id = 'choose'; document.body.appendChild(e); } return e; };
+/** 낱말 카드의 작은 접시 그림(T11 같은 접시 틀 — 짝수 = 둘 · 둘 / 홀수 = 둘 · 둘 · 하나). 접시마다 물고기 수 = list. 혼자인 접시는 테두리 빛깔이 다르다. */
+export const PICS = { '짝수': [2, 2], '홀수': [2, 2, 1] };
+export function platesHtml(list){ css(); return '<span class="pls">' + list.map(k => `<i class="${k === 1 ? 'one' : ''}">${'<u></u>'.repeat(k)}</i>`).join('') + '</span>'; }
 /** 점 무늬(정본 5-10절 — 다섯씩 한 줄 · 6~9 는 윗줄 다섯 + 아랫줄 · T02 의 열 칸 틀과 같은 눈). 줄마다 다섯 칸(빈 칸은 테두리만) · lit 개가 켜짐. */
 export function dotsHtml(n, lit = n, minRows = 1){ css(); const rows = Math.max(1, minRows, Math.ceil(n / 5));   /* minRows = 한 줄의 단추들이 같은 높이로(T09 단추 줄) */ let h = '<span class="dots">'; for (let r = 0; r < rows; r++) { h += '<i>'; for (let k = 0; k < 5; k++) { const j = r * 5 + k; h += `<u class="${j < lit ? 'on' : ''}"></u>`; } h += '</i>'; } return h + '</span>'; }
 /** 묶음 그림(T10 포장 틀 — 10개씩 묶음 하나와 낱개): v 가 10 넘으면 「가득 찬 열 칸 하나 + 낱개 v−10 이 켜진 열 칸」 · 10 이면 가득 찬 열 칸 하나 · 10 아래면 낱개만(열 칸 하나에 v 개 — 묶음을 빼먹은 수). 열 칸 = 다섯씩 두 줄(정본 5-10절). */
@@ -35,10 +41,11 @@ export function ask(on){ const e = document.querySelector('#tray b.hole'); if (e
  *  opt.tiles = 딱지 통(T08 타고 내리기 틀 · B07 — 띠 바로 아래 한 줄 · 수 딱지 넷 + 기호 딱지 둘까지 · 기호 딱지(수가 아닌 것)는 빛깔이 다르다). 같은 수의 딱지가 둘일 수 있다.
  *    딱지는 누르면 띠의 깜박이는 칸으로 간다 — 부르는 쪽이 take(단추)로 통에서 빼고(자리는 남는다) give(단추)로 돌려놓는다.
  *  opt.tens = 묶음 그림 카드(T10 포장 틀 — 위에 「가득 찬 열 칸 하나 + 낱개」 · 아래에 숫자 · tensHtml). 숫자를 처음 보는 십몇의 따라 읽기.
+ *  opt.words = 낱말 카드(T11 같은 접시 틀 · D06 — 「짝수」 · 「홀수」 · 위에 작은 접시 그림 PICS · 자리는 부르는 쪽이 준 차례 그대로 · 섞지 않는다). opt.pics 로 그림을 바꿀 수 있다.
  *  opt.row = 단추 줄(T09 번쩍 틀 — 자리가 고정된 수 단추 한 줄 · 왼쪽부터 작은 수 · 섞지 않는다 · 위에 점 무늬 · 아래에 숫자 · 단추 높이가 같다). 0 은 빈 점 판 + 0.
  *    빨리 누르는 손이 자리를 기억하도록 부르는 쪽이 늘 같은 차례로 준다. 아닌 수는 제자리에서 흐려진다(retreat — 줄이 흐트러지지 않게). */
-export function show(list, onPick, opt = {}){ const c = box(); c.innerHTML = ''; c.className = opt.tiles ? 'on tiles' : opt.row ? 'on row' : 'on'; const rows = opt.row ? Math.max(1, ...list.map(n => Math.ceil(n / 5))) : 1;
-  for (const n of list) { const b = document.createElement('button'); b.type = 'button'; if (opt.row) { b.className = 'dot'; b.innerHTML = dotsHtml(n, n, rows) + `<span class="num">${n}</span>`; } else if (opt.tens) { b.className = 'tens'; b.innerHTML = tensHtml(n) + `<span class="num">${n}</span>`; } else if (opt.dots) { b.className = 'dot'; b.innerHTML = dotsHtml(n) + `<span class="num">${n}</span>`; } else b.textContent = n; if (opt.tiles && typeof n !== 'number') b.className = 'sym'; b.dataset.n = n; b.addEventListener('click', () => onPick(n, b)); c.appendChild(b); } place(); ask(true); }
+export function show(list, onPick, opt = {}){ const c = box(); c.innerHTML = ''; c.className = opt.tiles ? 'on tiles' : opt.row ? 'on row' : opt.words ? 'on words' : 'on'; const rows = opt.row ? Math.max(1, ...list.map(n => Math.ceil(n / 5))) : 1;
+  for (const n of list) { const b = document.createElement('button'); b.type = 'button'; if (opt.words) { b.className = 'word'; b.innerHTML = platesHtml((opt.pics || PICS)[n] || []) + `<span class="wd">${n}</span>`; } else if (opt.row) { b.className = 'dot'; b.innerHTML = dotsHtml(n, n, rows) + `<span class="num">${n}</span>`; } else if (opt.tens) { b.className = 'tens'; b.innerHTML = tensHtml(n) + `<span class="num">${n}</span>`; } else if (opt.dots) { b.className = 'dot'; b.innerHTML = dotsHtml(n) + `<span class="num">${n}</span>`; } else b.textContent = n; if (opt.tiles && typeof n !== 'number') b.className = 'sym'; b.dataset.n = n; b.addEventListener('click', () => onPick(n, b)); c.appendChild(b); } place(); ask(true); }
 /** 딱지 통: 딱지를 통에서 뺀다(자리는 남는다) · 돌려놓는다. */
 export function take(btn){ btn.classList.add('gone'); }
 export function give(btn){ btn.classList.remove('gone'); }

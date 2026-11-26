@@ -11,13 +11,13 @@ import * as A from '../common/ask.js?v=2';
 import * as H from '../common/hint.js?v=5';
 import { wallet, audio, tone, confetti, grew } from '../common/kit.js?v=8';
 import { art } from '../common/art.js?v=11';
-import * as E from '../common/ends.js?v=1';
-import * as M from '../common/map.js?v=12';
-import * as C from '../common/choose.js?v=5';
+import * as E from '../common/ends.js?v=2';
+import * as M from '../common/map.js?v=13';
+import * as C from '../common/choose.js?v=6';
 import * as TL from '../common/tell.js?v=2';
 import * as NS from '../common/numsign.js?v=3';
 import * as R from './rules.js?v=2';
-import * as V from './review.js?v=5';
+import * as V from './review.js?v=6';
 import { ASSETS, MODEL, SCENERY, NIGHT, WOOD, TINTS, GOLD, ROCKET, FIRE, SPARK, SMOKE, ICON } from './art.js?v=2';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T · 복습은 ./review.js 의 MOVE
@@ -157,7 +157,7 @@ function fill(spec){ clearCrate(); let k = 0; S.items = [];
   const regs = spec.groups.map(g => g.region); const thirds = regs.some(r => /^c/.test(r)), halves = regs.some(r => /^h/.test(r)) || (regs.includes('L') && regs.includes('R'));
   S.seams.forEach(m => { m.visible = thirds; });
   if (thirds) [-1, 1].forEach((sx, i) => { const d = S.dividers[i]; d.visible = true; d.position.x = sx * R.T.CRATE.W / 6; }); else if (halves) { S.dividers[0].visible = true; S.dividers[0].position.x = 0; }
-  spec.groups.forEach((g, gi) => { const pts = g.pts || R.fives(g.n, R.region(g.region), g.r); pts.forEach((p, j) => { const o = POOL[k++]; const mat = spec.tint ? (j % 2 ? mats.tA : mats.tB) : null; placeBarrel(o, p.x, p.z, g.r, mat); o.userData.gi = gi; o.userData.k = j; S.items.push(o); }); });
+  spec.groups.forEach((g, gi) => { const pts = g.pts || R.fives(g.n, R.region(g.region), g.r); pts.forEach((p, j) => { const o = POOL[k++]; const mat = spec.tint ? (j % 2 ? mats.tA : mats.tB) : g.tint ? mats.tA : null; placeBarrel(o, p.x, p.z, g.r, mat);   /* g.tint = 끝 접시(T11 D06 복습 — 둘인지 하나인지 눈에 띄게) */ o.userData.gi = gi; o.userData.k = j; S.items.push(o); }); });
   S.pallet.scale.x = 1; S.pallet.position.x = 0;
   if (spec.ten) { const tn = spec.ten, sm = tn.loose != null, r0 = sm ? T.TEN_R : R.T.R, sl = sm ? tenSmall(r0) : R.tenSlots(); S.pallet.visible = true; if (sm) { S.pallet.scale.x = T.TEN_PAL; S.pallet.position.x = T.TEN_X; S.dividers[0].visible = true; S.dividers[0].position.x = T.TEN_DIV; }   /* C04(T10): 열 칸을 왼쪽에 좁혀 놓고 오른쪽에 낱개 */
     sl.forEach((p, j) => { const g = GHOSTS[j]; const s = (2 * r0) / BK.d; g.scale.set(s, s * .85, s); g.position.set(p.x, fy(), p.z); g.userData.slot = j; S.inCrate.push(g); });
@@ -180,7 +180,7 @@ function trayDraw(closed = false){ A.trayClear(); const t = $('tray'), p = S.p; 
 function trayFit(){ const t = $('tray'); if (t.classList.contains('story')) return; t.style.fontSize = ''; const room = innerWidth * .96; if (t.offsetWidth > room) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * room / t.offsetWidth) + 'px'; }
 /** 고를 것: row = 단추 줄(점 + 숫자 · 자리 고정) · num = 수 셋 · eq = 식 카드 셋 · group · side = 궤짝 안의 칸을 누른다(단추 없음). */
 function chooseShow(){ const p = S.p; S.choosing = p.form; if (p.form === 'group' || p.form === 'side') { C.hide(); return; }
-  C.show(p.opts, onPick, { row: p.form === 'row' }); const c = $('choose'); if (p.form === 'eq') c.classList.add('eq'); holdLook(); C.ask(true); }
+  C.show(p.opts, onPick, { row: p.form === 'row', words: p.form === 'words' }); const c = $('choose'); if (p.form === 'eq') c.classList.add('eq'); holdLook(); C.ask(true); }
 function holdLook(){ const c = $('choose'); if (c) c.classList.toggle('hold', S.phase === 'show' || S.phase === 'set'); }
 function chooseHide(){ C.hide(); S.choosing = null; }
 
@@ -263,17 +263,27 @@ const countsStreak = () => !(S.mode === 'cell' && S.step === 1);
 async function confirmShow(){ const p = S.p, my = S.oid; if (p.cover || (p.ten && p.ten.cover)) covers(0, false); for (const o of S.items) o.userData.off = false; await allOpen(); if (S.oid !== my) return;
   if (p.form === 'side' || p.form === 'group') { sums(true); return; } if (p.signs) { signsDraw(true); return; }
   if (p.reveal === 'tens') { await tensCount(false); return; }
+  if (p.reveal === 'skip' || p.reveal === 'pairs') { await plateCount(false); return; }
   const list = p.reveal === 'next' ? countList() : (p.ten && !p.ten.full) || p.reveal === 'split' ? countList(true) : countList(); for (let k = 0; k < list.length; k++) { label(k, list[k], k + 1, k === list.length - 1); await sleep(T.STAMP_MS); if (S.oid !== my) return; } }
 /** 아니었을 때의 세계의 답: 덧문이 열린 채 통이 하나씩 톡톡 세어진다(모으기 = 이어 세기 · 가르기 = 가려진 쪽 · 열 칸 = 빈 칸). */
 async function reveal(){ const my = S.oid, p = S.p; CNT.forEach(d => d.classList.remove('on', 'all')); if (p.ten && p.ten.cover) covers(0, false); for (const o of S.items) o.userData.off = false; await allOpen(); if (S.oid !== my) return;
   if (p.signs) { SIGNS.forEach(d => { d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop'); }); await sleep(500); return; }
   if (p.form === 'side' || p.form === 'group') { for (let g = 0; g < p.groups.length; g++) { const list = S.items.filter(o => o.userData.gi === g); for (let k = 0; k < list.length; k++) { if (S.oid !== my) return; await hop(list[k], k + 1, k === list.length - 1); } sum(g, list.length); await sleep(240); } return; }
   if (p.reveal === 'tens') { await tensCount(true); return; }
+  if (p.reveal === 'skip' || p.reveal === 'pairs') { await plateCount(true); return; }
   const list = countList(true); S.log.push({ reveal: list.length }); for (let k = 0; k < list.length; k++) { if (S.oid !== my) return; await hop(list[k], k + 1, k === list.length - 1); } await sleep(250); }
 /** C04(T10): 열 칸이 통째로 「10」 하고 한 번 뛰고 · 낱개가 이어 세어진다(11 · 12 · …). hopIt = 아니었을 때(뛰며 하나씩) · 아니면 빨리 찍기만. */
 async function tensCount(hopIt){ const my = S.oid, ten = S.items.filter(o => o.userData.gi === 0), ls = S.items.filter(o => o.userData.gi === 1).sort((a, b) => a.userData.k - b.userData.k), mid = ten.find(o => o.userData.slot === 2) || ten[0];
   label(0, mid, 10, false); S.log.push({ reveal: 10 + ls.length }); if (hopIt) { snd(392, .12, 'triangle', .07); const y0 = fy(); await Promise.all(ten.map(o => stage.tween(o.position, { y: y0 + .2 }, T.COUNT_MS * .45, t => t * (2 - t)))); await Promise.all(ten.map(o => stage.tween(o.position, { y: y0 }, T.COUNT_MS * .55, t => t * t))); } else await sleep(T.STAMP_MS * 2); if (S.oid !== my) return;
   for (let k = 0; k < ls.length; k++) { if (S.oid !== my) return; if (hopIt) await hop(ls[k], 11 + k, k === ls.length - 1); else { label(k + 1, ls[k], 11 + k, k === ls.length - 1); await sleep(T.STAMP_MS); } } if (hopIt) await sleep(250); }
+/** T11 접시 칸: J01 = 접시(무리)마다 통째로 톡 뛰며 g · 2g · 3g …(뛰어 세기 — 낱개를 하나씩 세지 않는다) · D06 = 접시가 차례로 톡(둘씩 짝) · 끝 접시가 한 번 더 뛴다(수는 찍지 않는다 — 띠가 「7은 홀수」로 닫힌다).
+ *  hopIt = 아니었을 때(뛰며 차례로) · 아니면 빨리 찍기만(맞은 뒤 확인). */
+async function plateCount(hopIt){ const my = S.oid, p = S.p, G = p.groups.length, skip = p.reveal === 'skip'; S.log.push({ reveal: skip ? p.answer : 'pairs' });
+  for (let g = 0; g < G; g++) { if (S.oid !== my) return; const list = S.items.filter(o => o.userData.gi === g), top = list.slice().sort((a, b) => a.userData.k - b.userData.k)[Math.floor((list.length - 1) / 2)];
+    if (skip) { label(g, top, (g + 1) * p.g, g === G - 1); } if (!hopIt) { await sleep(T.STAMP_MS); continue; }
+    snd(392 * Math.pow(2, g * 2 / 12), .1, 'triangle', .07); const y0 = fy(); await Promise.all(list.map(o => stage.tween(o.position, { y: y0 + .2 }, T.COUNT_MS * .4, t => t * (2 - t)))); await Promise.all(list.map(o => stage.tween(o.position, { y: y0 }, T.COUNT_MS * .5, t => t * t))); }
+  if (!skip && S.oid === my) { const last = S.items.filter(o => o.userData.gi === G - 1), y0 = fy(); snd(660, .12, 'triangle', .07); await Promise.all(last.map(o => stage.tween(o.position, { y: y0 + .3 }, 220, t => t * (2 - t)))); await Promise.all(last.map(o => stage.tween(o.position, { y: y0 }, 260, t => t * t))); }
+  if (hopIt) await sleep(250); }
 /** 셀 차례: 열 칸 = 빈 칸(C02 — 답) · 가르기 = 가려진(오른) 쪽 · 그 밖은 모두(왼쪽 무리부터 이어서). */
 function countList(wrong){ const p = S.p; if (p.reveal === 'next') return [...S.items.slice().sort((a, b) => a.userData.slot - b.userData.slot), ...GHOSTS.filter(g => g.userData.slot === p.ten.gap && g.visible)];   /* C01(T10): 아홉을 하나씩 세고 빈 칸이 열 */
   if (p.ten && !p.ten.full) { return wrong ? GHOSTS.filter(g => g.userData.slot >= p.ten.a && g.visible) : S.items.slice(); }
@@ -315,8 +325,8 @@ function nudge(x, y){ H.ripple(x, y); S.res.nudges++; S.log.push({ nudge: true }
 function nudgeText(){ const p = S.p; if (S.mode === 'cell') return FIRST[S.step]; return todayLine(p); }
 /** 복습의 한 줄 — 무엇을 누르는지부터(정본 5-11). 「한 번 더 보려면 궤짝을」은 한 번 더 볼 수 있는 꼴에만(묶음 · 쪽을 누르는 꼴에서는 궤짝 누름이 답이다). */
 /** 안내가 같은 꼴(같은 한 줄)끼리 묶는 열쇠. */
-function todayKind(p){ return p.form === 'group' || p.form === 'side' || p.form === 'eq' ? p.form : p.look === 'blind' || p.look === 'stay' ? p.look : V.canPeek(p) ? 'peek' : 'stay'; }
-function todayLine(p){ if (p.form === 'group') return '알맞은 묶음을 궤짝에서 눌러 줘.'; if (p.form === 'side') return '잠깐 보고 알맞은 쪽을 궤짝에서 눌러 줘.'; if (p.form === 'eq') return '잠깐 보고 알맞은 식을 눌러 줘. 한 번 더 보려면 궤짝을 눌러.'; if (p.look === 'blind') return '식을 보고 알맞은 수를 눌러 줘.'; if (p.look === 'stay') return '잘 보고 알맞은 수를 눌러 줘.'; return V.canPeek(p) ? TODAY_LINE : '잘 보고 알맞은 수를 눌러 줘.'; }
+function todayKind(p){ return p.form === 'group' || p.form === 'side' || p.form === 'eq' || p.form === 'words' ? p.form : p.look === 'blind' || p.look === 'stay' ? p.look : V.canPeek(p) ? 'peek' : 'stay'; }
+function todayLine(p){ if (p.form === 'group') return '알맞은 묶음을 궤짝에서 눌러 줘.'; if (p.form === 'side') return '잠깐 보고 알맞은 쪽을 궤짝에서 눌러 줘.'; if (p.form === 'eq') return '잠깐 보고 알맞은 식을 눌러 줘. 한 번 더 보려면 궤짝을 눌러.'; if (p.form === 'words') return '잠깐 보고 짝수인지 홀수인지 눌러 줘. 한 번 더 보려면 궤짝을 눌러.'; if (p.look === 'blind') return '식을 보고 알맞은 수를 눌러 줘.'; if (p.look === 'stay') return '잘 보고 알맞은 수를 눌러 줘.'; return V.canPeek(p) ? TODAY_LINE : '잘 보고 알맞은 수를 눌러 줘.'; }
 /** 한 줄 안내 자리: 단추 줄 바로 아래에 자리가 있으면 그곳 · 없으면 아래쪽(소리 단추 · 동전 위) — 띠 · 단추 · 궤짝을 가리지 않게. */
 function tellPlace(){ const tl = $('tell'); if (!tl) return; Object.assign(tl.style, S.low ? { left: 'calc(10px + env(safe-area-inset-left,0px))', transform: 'none', maxWidth: '24vw', fontSize: '1rem', padding: '6px 12px' } : { left: '', transform: '', maxWidth: '', fontSize: '', padding: '' });
   if (S.low) { tl.style.top = (topUI() - 4) + 'px'; tl.style.bottom = ''; return; }   /* 낮은 가로: 궤짝이 가운데를 다 쓰니 왼쪽 옆에 작게 */

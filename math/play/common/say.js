@@ -9,8 +9,8 @@ export const eun = n => jong(n) ? '은' : '는';    /* 1은 · 2는 */
 /** 「N을 가르면」 · 「b를 모으면」 — 숫자 뒤에 붙는 말(? 는 묻는 동안 「를」로 둔다). */
 export const garu = n => (n === '?' ? '를' : eul(n)) + ' 가르면';
 export const moeu = n => (n === '?' ? '를' : eul(n)) + ' 모으면';
-/** 세는 말(단위) — 「물고기는 모두 4마리」(T03). 틀은 이 표에서 꺼내 쓴다. */
-export const UNIT = { fish: '마리', cargo: '개' };
+/** 세는 말(단위) — 「물고기는 모두 4마리」(T03). 틀은 이 표에서 꺼내 쓴다. plate = 접시(T11 같은 접시 틀 — 쪽지 「4접시」) · plateBand = 띠에서는 교과서 말 「2씩 4묶음」. */
+export const UNIT = { fish: '마리', cargo: '개', plate: '접시', plateBand: '묶음' };
 /** 한글 수말(T04 — 숫자를 배우기 전의 낱칸은 「셋 주세요」처럼 말로 주문한다). */
 export const KO = ['영', '하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
 export const word = n => KO[n] != null ? KO[n] : String(n);

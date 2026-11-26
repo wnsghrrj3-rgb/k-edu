@@ -5,7 +5,7 @@
  * 판정 judge = packed(딱 열에서 묶음) | early(아홉 아래에서 누름 — 덜컹) | over(넘친 뒤에 묶음 — 굴러 나옴) | loose(낱개 판을 누름).
  * 늘 「판 + 넘침 자리 + 굴림대 + 구르는 중 + 묶은 판 × 10 = 전체」 — 사건은 수를 바꾸지 않는다(count()).
  * 뒤 묶음(이름만): T10b 묶음 세기(C06 몇십 · D01 몇십) / T10c D03 100 알기 / E01~E06 · H01 · H03 · I01~I06(여기서 뜯기) · K01 · K03 — CELLS 에 줄만 더한다(판 여러 개는 packs 로 받을 자리만 열어 둠 · 뜯기는 없다). */
-import { sino, native } from '../common/say.js?v=5';
+import { sino, native } from '../common/say.js?v=6';
 
 // ── 낱칸 표: kind = ten(10 알기) | teen(십몇) · packs = 한 문제에서 묶는 판 수(이번 묶음은 1 — 뒤 묶음의 몇십이 여러 판)
 export const CELLS = {
