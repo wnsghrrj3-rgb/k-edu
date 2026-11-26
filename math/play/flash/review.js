@@ -6,14 +6,14 @@
  *   하루 한 번 = 저장 `kedu_mathplay_flash` { day, done, best }(/kedu_scope.js 규칙 그대로 · 서버 호출 0).
  * 각 틀의 rules.js 는 고치지 않는다 — 그 pool(cellId) 만 가져다 쓴다(풀 이름이 다른 틀은 없다: 모두 pool). 문제를 「번쩍」 꼴로 옮기는 것은 아래 MOVE 한 곳.
  * 물건은 통 하나로 통일(수를 보는 눈은 하나 — 다섯씩 한 줄 · 열 칸) · 세어야 하는 낱칸은 가리지 않는다(머묾) · 띠는 그 낱칸의 교과서 말(식 기호는 B07 부터). */
-import { pool as countPool } from '../count/rules.js?v=1';     /* 각 틀이 싣는 버전과 같게(count 1 · serve 1 · match 2 · line 2 · weigh 1 · split 3 · ride 4 · pack 1) */
+import { pool as countPool } from '../count/rules.js?v=1';     /* 각 틀이 싣는 버전과 같게(count 1 · serve 1 · match 2 · line 2 · weigh 1 · split 3 · ride 4 · pack 2) */
 import { pool as servePool } from '../serve/rules.js?v=1';
 import { pool as matchPool } from '../match/rules.js?v=2';
 import { pool as linePool, CELLS as LINE } from '../line/rules.js?v=2';
 import { pool as weighPool } from '../weigh/rules.js?v=1';
 import { pool as splitPool } from '../split/rules.js?v=3';
 import { pool as ridePool } from '../ride/rules.js?v=4';
-import { pool as packPool, cards as packCards } from '../pack/rules.js?v=1';
+import { pool as packPool, cards as packCards } from '../pack/rules.js?v=2';
 import * as F from './rules.js?v=2';
 import { wa, eul, garu, moeu, word } from '../common/say.js?v=5';
 import { MOVED, RULE, passed, kept, days, dayKey } from '../common/map.js?v=12';

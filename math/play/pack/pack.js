@@ -16,11 +16,11 @@ import { art } from '../common/art.js?v=11';
 import * as E from '../common/ends.js?v=1';
 import * as M from '../common/map.js?v=12';
 import * as TL from '../common/tell.js?v=2';
-import * as R from './rules.js?v=1';
+import * as R from './rules.js?v=2';
 import { ASSETS, MODEL, SCENERY, SCENERY_NAMES, WOOD, GOLD, GHOST, ICON } from './art.js?v=1';
 
 // ── 내가 정한 수치(화면 · 움직임 — 준호가 보고 바꾼다). 문제 · 사건 · 시계 수치는 ./rules.js 의 T
-const T = { DECK: .45, P: .46, BAG: .38, PAD: .16, BELT_LEN: 3.6, BELT_S: 4.0, BELT_Y: .3, SP_MIN: .4, FLY_MS: 380, SMOOTH: 10, BIG: 1.15, CAP: 150, PILE_MAX: 9, PILE_S: .36,
+const T = { DECK: .45, P: .46, BAG: .38, PAD: .16, BELT_LEN: 3.6, BELT_S: 4.0, BELT_Y: .3, SP_MIN: .4, FLY_MS: 380, FLY_S: .38, SMOOTH: 10, BIG: 1.15, CAP: 150, PILE_MAX: 9, PILE_S: .36,
   PACK_MS: 950, EARLY_MS: 950, SLIDE_MS: 650, READ_MS: 2300, HOP_MS: 420, CARD_GUARD: 300, TELL_GRACE: 4, BLINK_MS: 900,
   WIDE: { fov: 34, el: .92, belt: 3.6, board: [.25, -.2, 0], beltEnd: [-1.18, -.2], dir: [1, 0], seats: [[1.95, -.45], [1.95, .05]], packed: [-1.15, 1.35, 0], pair: [[-1.33, 1.35, 0], [1.33, 1.35, 0]], ship: [3.85, -1.15, -Math.PI / 2 + .35], henry: [-.5, -1.45], enter: [3.7, -.2], fit: [[-6.0, -.9], [-6.0, .55], [4.3, -1.6], [2.5, 2.05], [-2.5, 2.05]], fit01: [[-6.0, -.9], [-6.0, .55], [4.3, -1.6], [2.5, 1.0], [-2.5, 1.0]] },
   TALL: { fov: 44, el: .95, belt: 2.7, board: [-.12, .25, -Math.PI / 2], beltEnd: [-.12, -1.2], dir: [0, 1], seats: [[.95, 1.05], [.95, 1.52]], packed: [-1.5, .25, -Math.PI / 2], pair: [[-.66, .25, -Math.PI / 2], [.66, .25, -Math.PI / 2]], ship: [2.25, -2.4, -Math.PI / 2 + .15], henry: [-1.3, -2.0], enter: [2.6, .25], fit: [[-2.15, -4.2], [1.2, -4.2], [-2.15, 1.75], [1.4, 1.75], [2.55, -2.4]], fit01: [[-1.45, -4.2], [1.2, -4.2], [-1.45, 1.75], [1.4, 1.75], [2.55, -2.4]] } };
@@ -98,12 +98,12 @@ const seatPt = i => { const s = L().seats[i]; return V3(s[0], T.DECK + .02, s[1]
 function spot(name){ const l = L(); return name === 'board' ? l.board : name === 'packed' ? l.packed : name === 'pairL' ? l.pair[0] : name === 'pairR' ? l.pair[1] : name === 'enter' ? [l.enter[0], l.enter[1], l.board[2]] : l.board; }
 /** 판을 그 자리에 놓는다(at = 이름 · 다시 놓을 때 화면 꼴이 바뀌어도 따라감). */
 function boardTo(bd, at, ms = 0){ bd.at = at; const s = spot(at); bd.rs = S.tall ? -1 : 1; const to = { x: s[0], z: s[1], r: s[2] }; if (!ms) { bd.g.position.set(to.x, T.DECK, to.z); bd.g.rotation.y = to.r; bd.go = null; return Promise.resolve(); }
-  return new Promise(res => { bd.go = { from: { x: bd.g.position.x, z: bd.g.position.z, r: bd.g.rotation.y }, to, t0: S.t, ms, res }; }); }
+  return new Promise(res => { bd.go = { from: { x: bd.g.position.x, z: bd.g.position.z, r: bd.g.rotation.y }, to, t0: S.t, ms, res, name: at }; }); }
 function layout(){ const l = L(); for (const k of ['WIDE', 'TALL']) { S.floors[k].visible = (k === 'TALL') === S.tall; S.scen[k].forEach(o => { o.visible = (k === 'TALL') === S.tall; }); }
   const e = beltPt(BL()); S.belt.position.set(e.x, 0, e.z); S.belt.rotation.y = -Math.atan2(l.dir[1], l.dir[0]); S.belt.scale.x = BL() / T.BELT_LEN; S.storeG.position.set(e.x, 0, e.z); S.storeG.rotation.y = S.belt.rotation.y;
   S.seats.forEach((m, i) => { const p = seatPt(i); m.position.set(p.x, T.DECK + .01, p.z); m.rotation.y = S.tall ? Math.PI / 2 : 0; });
   S.ship.position.set(l.ship[0], 0, l.ship[1]); S.ship.rotation.y = l.ship[2]; S.henry.obj.position.set(l.henry[0], T.DECK + .02, l.henry[1]); S.henry.obj.rotation.y = S.tall ? Math.PI * .85 : Math.PI * .15;
-  for (const bd of S.boards) if (bd.g.visible && bd.at && !bd.go && bd.at !== 'pile') boardTo(bd, bd.at); }
+  for (const bd of S.boards) { if (bd.g.visible && bd.at && !bd.go && bd.at !== 'pile') boardTo(bd, bd.at); if (bd.go && bd.go.name) { const s2 = spot(bd.go.name); bd.go.to = { x: s2[0], z: s2[1], r: s2[2] }; bd.rs = S.tall ? -1 : 1; } } }   /* 화면을 돌리면 밀려가는 판도 새 자리로 */
 function topUI(){ const ch = $('choose'), tr = $('tray'), on = tr && tr.classList.contains('on'); if (ch && ch.classList.contains('on')) return ch.getBoundingClientRect().bottom + 12;
   const tb = on ? tr.getBoundingClientRect().bottom : (S.low ? 46 : 112); return tb + (S.cell === 'C04' ? C.GAP + (S.low ? 96 : S.tall ? 108 : 136) : (S.low ? 34 : 50)) + 10; }   /* 카드 · 읽는 말 자리를 미리 비워 둔다(뜰 때 세계가 뛰지 않게) */
 function aim(w = innerWidth, h = innerHeight){ const tall = h > w * 1.05; S.tall = tall; S.low = !tall && h < 560; const l = L(); camera.fov = l.fov; camera.aspect = w / h; layout();
@@ -116,7 +116,7 @@ function aim(w = innerWidth, h = innerHeight){ const tall = h > w * 1.05; S.tall
 function reaim(){ if (Math.abs(topUI() - S.topUI) > 4) aim(); }
 
 // ── 띠 · 읽는 말 · 수 팻말 · 찍힌 수(화면 위)
-function bandParts(closed){ const p = S.p, W = S.W; if (!p) return []; return R.band(p, p.N != null ? { packs: W && W.packed ? W.packed : null, loose: W && W.packed ? (S.phase === 'ask' || S.phase === 'done' || closed ? R.loose(p) : W.board) : null } : {}); }
+function bandParts(closed){ const p = S.p, W = S.W; if (!p) return []; return R.band(p, p.N != null ? { packs: W && W.packed ? W.packed : null, loose: W && W.packed ? (S.phase === 'ask' || S.phase === 'done' || closed ? R.loose(p) : W.board || null) : null } : {}); }   /* 착 바로 뒤(낱개가 아직 없음)는 0 이 아니라 빈 칸 */
 function trayDraw(closed = false){ let t = $('tray'); if (!t) { A.trayClear(); t = $('tray'); } if (!S.p) { A.trayClear(); return; } const b = (v, c = '') => `<b class="${c}">${v}</b>`, w = s => `<i class="w">${s}</i>`, parts = bandParts(closed);
   const html = parts.map(x => x.w != null ? w(x.w) : x.n != null ? b(x.n) : x.hole != null ? (closed ? b(x.hole, 'done') : b('?', 'hole')) : x.box != null ? b(x.box, 'box') : b('', 'box empty')).join(''), skel = parts.map(x => x.box !== undefined ? 'box' : JSON.stringify(x)).join('|') + (closed ? '|c' : '');
   if (t.dataset.v !== html || !t.classList.contains('on')) { if (t.dataset.skel === skel && t.classList.contains('on')) { const bx = [...t.querySelectorAll('b.box')], vals = parts.filter(x => x.box !== undefined); bx.forEach((e, i) => { const v = vals[i] && vals[i].box != null ? String(vals[i].box) : ''; if (e.textContent !== v) { e.textContent = v; e.className = 'box' + (v ? '' : ' empty'); void e.offsetWidth; e.classList.add('tick'); } }); }   /* 차오르는 칸만 바꾼다(띠 전체가 다시 튀지 않게) */
@@ -129,15 +129,18 @@ function placeUI(){ const t = $('tray'); if (READ && READ.classList.contains('on
 /** 판 위의 한 점(화면) — 판 뒤쪽 가장자리 위. */
 function boardTop(bd, up = .55){ bd.g.updateMatrixWorld(); return stage.screenOf(bd.g.localToWorld(S.tall && bd.at !== 'pile' ? V3(-bd.W / 2 + .15, BAGH + up, 0) : V3(0, BAGH + up, -bd.D * .2))); }   /* 세로 화면의 판은 돌아 서 있어 위쪽 끝(로컬 −x)에 */
 function cntDraw(){ const bd = S.cur, on = !!(bd && S.step === 1 && S.phase === 'flow' && S.W && !bd.covered && bd.at === 'board'); CNT.classList.toggle('on', on); if (!on) return; const n = S.W.board, v = `<b>${n}</b>${C.dotsHtml(10, n, 2)}`;
-  if (CNT.dataset.v !== v) { CNT.dataset.v = v; CNT.innerHTML = v; CNT.classList.remove('tick'); void CNT.offsetWidth; CNT.classList.add('tick'); } const q = S.tall ? stage.screenOf(bd.g.localToWorld(V3(-bd.W / 2 - .15, BAGH + .2, 0))) : boardTop(bd, .5); CNT.style.left = q.x + 'px'; CNT.style.top = q.y + 'px'; }
-function stampAt(i, html, q, cls = ''){ const d = STAMPS[i]; d.className = 'stamp ' + cls; d.innerHTML = html; d.style.transition = 'none'; d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; void d.offsetWidth; d.style.transition = ''; d.classList.add('on'); return d; }
-function stampsOff(){ STAMPS.forEach(d => { d.className = 'stamp'; d.innerHTML = ''; }); LABELS.forEach(d => { d.className = 'cnt'; d._o = null; }); }
+  if (CNT.dataset.v !== v) { CNT.dataset.v = v; CNT.innerHTML = v; CNT.classList.remove('tick'); void CNT.offsetWidth; CNT.classList.add('tick'); } CNT.classList.toggle('v', S.tall); const q = S.tall ? stage.screenOf(bd.g.localToWorld(V3(-bd.W * .18, BAGH + .2, -(bd.D / 2 + .62)))) : boardTop(bd, .5); CNT.style.left = q.x + 'px'; CNT.style.top = q.y + 'px'; }   /* 세로 화면: 판 오른쪽 옆(굴림대 끝을 가리지 않게) · 점은 판처럼 두 기둥 */
+function stampAt(i, html, at, cls = ''){ const d = STAMPS[i], q = typeof at === 'function' ? at() : at; d._at = typeof at === 'function' ? at : null; d.className = 'stamp ' + cls + (S.tall && cls === 'ten' ? ' v' : ''); d.innerHTML = html; d.style.transition = 'none'; d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; void d.offsetWidth; d.style.transition = ''; d.classList.add('on'); return d; }   /* at = 화면 자리를 돌려주는 함수(화면을 돌리면 따라감) */
+function stampsPlace(){ for (const d of STAMPS) if (d._at && d.classList.contains('on')) { const q = d._at(); d.style.left = q.x + 'px'; d.style.top = q.y + 'px'; } }
+function stampsOff(){ STAMPS.forEach(d => { d.className = 'stamp'; d.innerHTML = ''; d._at = null; }); LABELS.forEach(d => { d.className = 'cnt'; d._o = null; }); }
 
 // ── 자루 그리기(인스턴스) — 자리는 상태에서 셈한다(굴림대 = 시계의 함수 · 판 = 판의 칸 · 나는 중 = 시간)
 function bagRec(id, o = {}){ let b = S.bags.get(id); if (!b) { b = { id, st: 'q', p: null, rot: (Math.random() - .5) * .3, gold: false, bd: null, slot: -1, fly: null, tilt: 0, hop: 0, hide: false }; S.bags.set(id, b); } Object.assign(b, o); return b; }
 const lastBig = () => !!(S.ctx && S.ctx.last);
 function bagTarget(b, qi, dPrev){ const W = S.W;
-  if (b.st === 'q' && W) { const q = W.queue[qi]; if (!q) return { pos: beltPt(BL() + 1), hide: true, d: dPrev }; let dT = q.t - W.clock; if (qi === 0 && q.hv && dT < q.hv) dT = 0; else if (qi === 0 && q.hv) dT -= q.hv; let d = Math.max(qi * T.SP_MIN, dT * BL() / T.BELT_S); if (dPrev != null) d = Math.max(d, dPrev + T.SP_MIN);
+  if (b.st === 'q' && W) { const q = W.queue[qi]; if (!q) return { pos: beltPt(BL() + 1), hide: true, d: dPrev }; const dT0 = q.t - W.clock;
+    if (qi === 0 && dT0 <= T.FLY_S && W.over < R.T.OVER && S.cur) { const u = Math.max(0, Math.min(1, 1 - dT0 / T.FLY_S)), e = u * (2 - u), bd = S.cur; bd.g.updateMatrixWorld(); const to = W.board < 10 ? bd.g.localToWorld(slotLocal(bd, W.board)) : seatPt(Math.min(W.over, 1)), pos = beltPt(0).lerp(to, e); pos.y += Math.sin(u * Math.PI) * .35; return { pos, hide: false, d: 0, direct: true }; }   /* 앞 자루는 놓이기 FLY_S 앞부터 판(넘침 자리)으로 날아간다 */
+    let dT = Math.max(0, dT0 - T.FLY_S); if (qi === 0 && q.hv) dT = Math.max(0, dT - q.hv); let d = Math.max(qi * T.SP_MIN, dT * BL() / T.BELT_S); if (dPrev != null) d = Math.max(d, dPrev + T.SP_MIN);
     const pos = beltPt(d); if (W.risk && W.risk.id === q.id) { const l = L(), k = Math.sin(S.t * 14) * .08 + .16; pos.x += -l.dir[1] * k; pos.z += l.dir[0] * k; } return { pos, hide: d > BL() + .25, d }; }
   if (b.st === 'home') return { pos: beltPt(BL() + .6), hide: !!b.p && b.p.distanceTo(beltPt(BL() + .6)) < .35 };
   if ((b.st === 'board') && b.bd) { b.bd.g.updateMatrixWorld(); return { pos: b.bd.g.localToWorld(slotLocal(b.bd, b.slot)), hide: b.bd.covered || !b.bd.g.visible, scale: b.bd.sc }; }
@@ -148,7 +151,7 @@ function bagsTick(rdt){ if (!bagIM) return; const W = S.W; let k = 0, dPrev = nu
   for (const b of order) { let pos, hide = false, sc = 1, extraY = 0, tilt = b.tilt;
     if (b.fly) { const f = b.fly, u = Math.min(1, (S.t - f.t0) * 1000 / f.ms), e = u * (2 - u); pos = f.from.clone().lerp(f.to(), e); pos.y += Math.sin(u * Math.PI) * f.arc; if (u >= 1) { b.fly = null; if (f.done) f.done(); } }
     else if (b.fall) { const f = b.fall, u = Math.min(1, (S.t - f.t0) / f.s); const l = L(), side = V3(-l.dir[1], 0, l.dir[0]).multiplyScalar(.75); pos = f.from.clone(); if (u < .25) { const v = u / .25; pos.add(side.clone().multiplyScalar(v)); pos.y = T.DECK + T.BELT_Y * (1 - v * v); tilt = v * 1.4; } else { const v = (u - .25) / .75; pos.add(side); pos.lerp(beltPt(BL() + .3).add(side), v); pos.y = T.DECK + .02; tilt = 1.4 + v * 9; } hide = u >= 1; }
-    else { const tg = bagTarget(b, qi.has(b.id) ? qi.get(b.id) : 0, dPrev); if (b.st === 'q' && qi.has(b.id)) dPrev = tg.d; hide = tg.hide; sc = tg.scale || 1; if (!b.p || b.snap) { b.p = tg.pos.clone(); b.snap = false; } else b.p.lerp(tg.pos, 1 - Math.exp(-rdt * T.SMOOTH)); pos = b.p; if (S.W && S.W.risk && b.st === 'q' && S.W.risk.id === b.id) tilt = Math.sin(S.t * 14) * .35; else if (b.st === 'q' && qi.get(b.id) === 0 && S.W && S.W.queue[0].hv && S.W.queue[0].t - S.W.clock < S.W.queue[0].hv) tilt = Math.sin(S.t * 9) * .18; }   /* 열째 뒤 한숨: 다음 자루가 굴림대 끝에서 흔들흔들 */
+    else { const tg = bagTarget(b, qi.has(b.id) ? qi.get(b.id) : 0, dPrev); if (b.st === 'q' && qi.has(b.id)) dPrev = tg.d; hide = tg.hide; sc = tg.scale || 1; if (!b.p || b.snap || tg.direct) { b.p = tg.pos.clone(); b.snap = false; } else b.p.lerp(tg.pos, 1 - Math.exp(-rdt * T.SMOOTH)); pos = b.p; if (S.W && S.W.risk && b.st === 'q' && S.W.risk.id === b.id) tilt = Math.sin(S.t * 14) * .35; else if (b.st === 'q' && qi.get(b.id) === 0 && S.W && S.W.queue[0].hv && S.W.queue[0].t - S.W.clock < S.W.queue[0].hv + T.FLY_S && S.W.queue[0].t - S.W.clock > T.FLY_S) tilt = Math.sin(S.t * 9) * .18; }   /* 열째 뒤 한숨: 다음 자루가 굴림대 끝에서 흔들흔들 */
     if (b.fly || b.fall) b.p = pos.clone();
     if (hide || b.hide || k >= T.CAP) continue;
     if (b.hop) extraY += b.hop;
@@ -163,21 +166,22 @@ function bagsTick(rdt){ if (!bagIM) return; const W = S.W; let k = 0, dPrev = nu
 function boardsTick(){ for (const bd of S.boards) { if (bd.go) { const f = bd.go, u = Math.min(1, (S.t - f.t0) * 1000 / f.ms), e = u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2; bd.g.position.set(f.from.x + (f.to.x - f.from.x) * e, T.DECK, f.from.z + (f.to.z - f.from.z) * e); bd.g.rotation.y = f.from.r + (f.to.r - f.from.r) * e; if (u >= 1) { bd.go = null; f.res(); } }
     if (bd.bobT && S.t < bd.bobT) bd.g.position.y = T.DECK + Math.abs(Math.sin((bd.bobT - S.t) * 12)) * .06; else if (bd.at !== 'pile') bd.g.position.y = T.DECK; } }
 /** 테가 둘러진다(착) — 조각 넷이 차례로 착착. */
-async function fenceUp(bd){ bd.fence.forEach(f => { f.visible = true; f.scale.y = .01; f.rotation.z = 0; f.position.y = .05; }); const sy = bd.fence[0].userData.sy || (bd.fence[0].userData.sy = .34 / sizeOf(K[MODEL.fence].scene).s.y);
+function fenceStop(bd){ bd.fTok = (bd.fTok | 0) + 1; for (let i = stage.tweens.length - 1; i >= 0; i--) { const w = stage.tweens[i]; if (bd.fence.some(f => w.o === f.scale || w.o === f.rotation)) stage.tweens.splice(i, 1); } }
+async function fenceUp(bd){ fenceStop(bd); bd.fence.forEach(f => { f.visible = true; f.scale.y = .01; f.rotation.z = 0; f.position.y = .05; }); const sy = bd.fence[0].userData.sy || (bd.fence[0].userData.sy = .34 / sizeOf(K[MODEL.fence].scene).s.y);
   for (let i = 0; i < 4; i++) { stage.tween(bd.fence[i].scale, { y: sy }, 160, t => 1 - (1 - t) ** 3); await sleep(55); } await sleep(140); }
 /** 테가 둘러지려다 풀린다(덜컹). */
-async function fenceFail(bd){ const sy = bd.fence[0].userData.sy || (bd.fence[0].userData.sy = .34 / sizeOf(K[MODEL.fence].scene).s.y); bd.fence.forEach(f => { f.visible = true; f.scale.y = .01; f.rotation.z = 0; f.position.y = .05; });
-  await Promise.all(bd.fence.map(f => stage.tween(f.scale, { y: sy * .7 }, 180))); snd(150, .12, 'square', .06); snd(120, .14, 'square', .05, .12);
-  await Promise.all(bd.fence.map((f, i) => stage.tween(f.rotation, { z: (i % 2 ? 1 : -1) * .35 }, 150))); await Promise.all(bd.fence.map(f => stage.tween(f.scale, { y: .01 }, 260))); bd.fence.forEach(f => { f.visible = false; f.rotation.z = 0; }); }
+async function fenceFail(bd){ fenceStop(bd); const tok = bd.fTok, sy = bd.fence[0].userData.sy || (bd.fence[0].userData.sy = .34 / sizeOf(K[MODEL.fence].scene).s.y); bd.fence.forEach(f => { f.visible = true; f.scale.y = .01; f.rotation.z = 0; f.position.y = .05; });
+  await Promise.all(bd.fence.map(f => stage.tween(f.scale, { y: sy * .7 }, 180))); if (bd.fTok !== tok) return; snd(150, .12, 'square', .06); snd(120, .14, 'square', .05, .12);
+  await Promise.all(bd.fence.map((f, i) => stage.tween(f.rotation, { z: (i % 2 ? 1 : -1) * .35 }, 150))); if (bd.fTok !== tok) return; await Promise.all(bd.fence.map(f => stage.tween(f.scale, { y: .01 }, 260))); if (bd.fTok !== tok) return; bd.fence.forEach(f => { f.visible = false; f.rotation.z = 0; }); }
 function boardReset(bd){ bd.fence.forEach(f => { f.visible = false; f.rotation.z = 0; }); bd.cover.visible = false; bd.cover.position.y = BAGH + .1; bd.covered = false; bd.packed = false; bd.sc = 1; bd.g.scale.setScalar(1); bd.g.visible = true; bd.bobT = 0; bd.go = null; }
 const freeBoard = () => S.boards.find(b => !b.g.visible) || S.boards.find(b => b.at === 'pile');
 
 // ── 한 문제
-async function runProblem(p, ctx){ const my = S.oid; S.p = p; S.ctx = ctx; S.res = { early: 0, over: false, loose: 0, retreat: false, hinted: false, missed: false, pulls: 0, caught: 0, fell: 0, nudges: 0 }; S.phase = 'set'; S.busy = true; S.active = false; S.hold = true; S.firstPlaced = false; S.tellOn = false; S.handTo = null; S.sail = 0; S.sailOn = false; S.bell = false; S.blinkT = 0;
+async function runProblem(p, ctx){ const my = S.oid; S.p = p; S.ctx = ctx; S.res = { early: 0, over: false, loose: 0, retreat: false, hinted: false, missed: false, pulls: 0, caught: 0, fell: 0, nudges: 0 }; S.phase = 'set'; S.busy = true; S.active = false; S.hold = true; S.firstPlaced = false; S.tellOn = false; S.handTo = null; S.sail = 0; S.sailOn = false; S.bell = false; S.blinkT = 0; S.handFn = null; S.earlyUntil = 0;
   C.hide(); S.choosingOn = false; stampsOff(); readHide(); H.hide();
   /* 앞 문제에 남은 것: 굴림대 자루는 창고로 · 판은 치움 */ for (const b of [...S.bags.values()]) if (!(b.bd && b.bd.at === 'pile')) S.bags.delete(b.id);
   for (const bd of S.boards) if (bd.g.visible && bd.at !== 'pile') bd.g.visible = false;
-  const fd = R.feed(p, ctx.ev, Math.random, { board: ctx.b, calm: CALM, gold: ctx.gold }); if (S.forceFeed) { Object.assign(fd, S.forceFeed(fd, p) || {}); S.forceFeed = null; } S.fd = fd; S.W = R.world(p, fd);
+  const fd = R.feed(p, ctx.ev, Math.random, { board: ctx.b, calm: CALM, gold: ctx.gold, hand: ctx.hand }); if (S.forceFeed) { Object.assign(fd, S.forceFeed(fd, p) || {}); S.forceFeed = null; } S.fd = fd; S.W = R.world(p, fd);
   S.log.push({ start: R.key(p), cell: p.cell, step: S.step, n: fd.n, pre: fd.pre, total: fd.total, gap: fd.gap, feed: fd.bags.map(b => b.t), roll: !!fd.roll, gold: fd.bags.some(b => b.gold), pair: fd.bags.some(b => b.pair), cover: !!ctx.ev.cover, ev: Object.keys(ctx.ev).filter(k => ctx.ev[k] === true).join(' ') });
   const bd = freeBoard(); boardReset(bd); bd.rs = S.tall ? -1 : 1; S.cur = bd; S.packedB = null; boardTo(bd, 'enter'); for (let i = 0; i < fd.pre; i++) bagRec('p' + i, { st: 'board', bd, slot: i, snap: true });
   S.W.queue.forEach(q => bagRec(q.id, { st: 'q', gold: q.gold, snap: true }));
@@ -200,7 +204,8 @@ function onEvents(evs){ for (const e of evs) { S.log.push({ ev: e.type, at: e.at
 function landBag(e){ const b = bagRec(e.id), bd = S.cur, from = b.p ? b.p.clone() : beltPt(0); b.fall = null;
   if (e.to === 'board') { b.st = 'board'; b.bd = bd; b.slot = e.slot; } else { b.st = 'seat'; b.slot = e.slot; b.bd = null; }
   const toFn = e.to === 'board' ? () => { bd.g.updateMatrixWorld(); return bd.g.localToWorld(slotLocal(bd, e.slot)); } : () => seatPt(e.slot);
-  b.fly = { from, to: toFn, t0: S.t, ms: e.pulled ? T.FLY_MS * 1.25 : T.FLY_MS, arc: e.pulled ? .8 : .35, done: () => { b.snap = true; } };
+  if (e.pulled) b.fly = { from, to: toFn, t0: S.t, ms: T.FLY_MS * 1.25, arc: .8, done: () => { b.snap = true; } }; else { b.fly = null; b.snap = true; }   /* 저절로 오는 자루는 놓이는 때 FLY_S 앞부터 날아와 그때 닿는다(판정과 그림이 같은 때) · 당긴 자루만 놓인 뒤 휙 */
+  b.landWall = performance.now(); S.log.push({ land: e.id, wall: Math.round(b.landWall), at: e.at, pulled: !!e.pulled });
   const n = S.W.board; if (bd.covered) { bd.bobT = S.t + .25; snd(180, .06, 'triangle', .07); } else if (S.step === 1 && e.to === 'board') snd(330 * Math.pow(2, (n - 1) * 2 / 12), .09, 'triangle', .07); else snd(300, .06, 'triangle', .06);   /* 걸음 ① = 한 칸씩 오르는 음 · 걸음 ② · 덮인 판 = 같은 「툭」(음으로 세어지지 않게) */
   if (e.to === 'board' && n === 10 && S.step === 1 && !bd.covered) { bd.bobT = S.t + 1.4; snd(880, .12, 'triangle', .06, .15); }   /* 걸음 ① 만: 열이면 판이 들썩 · 반짝 */
   if (S.p.N != null && S.W.packed) trayDraw();
@@ -208,16 +213,17 @@ function landBag(e){ const b = bagRec(e.id), bd = S.cur, from = b.p ? b.p.clone(
 /** 첫 판 한 줄(깃발을 따기 전까지 나들이 첫 문제마다 · 첫 자루가 판에 놓인 뒤에). */
 function firstTell(){ const c = S.ctx.tell; if (!c) return; if (H.tell(c.key, c.text, c.opt)) { S.tellOn = true; S.tellT = S.t; tellPlace(); S.lastAct = S.t + T.TELL_GRACE; } }
 /** 넘침 자리가 다 찼다 — 굴림대가 멈추고 길잡이 손이 판을 짚는다(그 뒤에 누르면 깨끗하지 않음). */
-function blockHint(){ if (S.phase !== 'flow') return; const q = boardCenter(); H.show(q.x, q.y); S.handTo = 'board'; if (!S.res.hinted) { S.res.hinted = true; breakStreak('hint'); } S.log.push({ hand: 'board', hinted: true }); }
+function blockHint(){ if (S.phase !== 'flow') return; const q = boardCenter(); H.show(q.x, q.y); S.handTo = 'board'; S.handFn = () => boardCenter(); if (!S.res.hinted) { S.res.hinted = true; breakStreak('hint'); } S.log.push({ hand: 'board', hinted: true }); }
 
 // ── 누르기(판 · 굴림대 자루 · 카드 · 빈 곳 — 모든 누름에 답이 있다)
 const boardCenter = (bd = S.cur) => { bd.g.updateMatrixWorld(); return stage.screenOf(bd.g.localToWorld(V3(0, BAGH * .6, 0))); };
 function quadOf(bd, m = .12){ bd.g.updateMatrixWorld(); return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz]) => stage.screenOf(bd.g.localToWorld(V3(sx * (bd.W / 2 + m), BAGH * .5, sz * (bd.D / 2 + m))))); }
 function inQuad(q, x, y){ let s = 0; for (let i = 0; i < 4; i++) { const a = q[i], b = q[(i + 1) % 4], c = (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x); if (c !== 0) { if (s === 0) s = Math.sign(c); else if (Math.sign(c) !== s) return false; } } return true; }
 /** 굴림대 위 자루의 화면 자리(보이는 것만). */
-function beltBags(){ const W = S.W; if (!W) return []; return W.queue.map(q => S.bags.get(q.id)).filter(b => b && b.p && !b.fly && !b.fall && b.st === 'q' && b.k != null).map(b => { const c = stage.screenOf(V3(b.p.x, b.p.y + BAGH * .5, b.p.z)), e = stage.screenOf(V3(b.p.x + T.BAG / 2, b.p.y + BAGH * .5, b.p.z)); return { id: b.id, x: c.x, y: c.y, r: Math.max(22, Math.hypot(e.x - c.x, e.y - c.y) * 1.5), risk: !!(W.risk && W.risk.id === b.id) }; }).filter(b => { const d = (beltPt(0).distanceTo(S.bags.get(b.id).p)); return d < BL() + .2; }); }
+function beltBags(){ const W = S.W; if (!W) return []; return W.queue.map(q => S.bags.get(q.id)).filter((b, i) => b && b.p && !b.fly && !b.fall && b.st === 'q' && b.k != null && !(i === 0 && W.queue[0].t - W.clock <= T.FLY_S && W.over < R.T.OVER)).map(b => { const c = stage.screenOf(V3(b.p.x, b.p.y + BAGH * .5, b.p.z)), e = stage.screenOf(V3(b.p.x + T.BAG / 2, b.p.y + BAGH * .5, b.p.z)); return { id: b.id, x: c.x, y: c.y, r: Math.max(22, Math.hypot(e.x - c.x, e.y - c.y) * 1.5), risk: !!(W.risk && W.risk.id === b.id) }; }).filter(b => { const d = (beltPt(0).distanceTo(S.bags.get(b.id).p)); return d < BL() + .2; }); }
 /** 누른 곳이 무엇인가(하네스 · 길잡이가 같이 씀): bag(굴림대 자루) · board(지금 판) · packed(묶은 판 · 표시) · seat · empty */
-function hitAt(x, y){ const bb = beltBags().map(b => ({ ...b, d: Math.hypot(b.x - x, b.y - y) })).filter(b => b.d < b.r).sort((a, b) => (b.risk - a.risk) || a.d - b.d); if (bb.length) return { kind: 'bag', id: bb[0].id, risk: bb[0].risk };
+function hitAt(x, y){ if (S.cur && S.cur.g.visible && inQuad(quadOf(S.cur), x, y)) return { kind: 'board' };   /* 판 사각형 안이면 판 먼저(한숨 중인 자루가 판 가장자리 누름을 가로채지 않게) */
+  const bb = beltBags().map(b => ({ ...b, d: Math.hypot(b.x - x, b.y - y) })).filter(b => b.d < b.r).sort((a, b) => (b.risk - a.risk) || a.d - b.d); if (bb.length) return { kind: 'bag', id: bb[0].id, risk: bb[0].risk };
   if (S.cur && S.cur.g.visible && inQuad(quadOf(S.cur), x, y)) return { kind: 'board' }; for (const bd of S.boards) if (bd !== S.cur && bd.g.visible && bd.at !== 'pile' && inQuad(quadOf(bd, .05), x, y)) return { kind: 'packed' };
   return { kind: 'empty' }; }
 const canvas = $('c');
@@ -231,8 +237,7 @@ canvas.addEventListener('pointerdown', e => { audio(); if (!S.ready || E.homeOpe
 async function pressBoard(){ const my = S.oid, W = S.W, how = R.judge(W), bd = S.cur; H.hide(); S.log.push({ press: how, board: W.board, over: W.over, clock: Math.round(W.clock * 1000) / 1000 });
   if (how === 'early' || how === 'loose') { if (how === 'early') S.res.early++; else S.res.loose++; breakStreak(how); S.busy = true; if (bd.covered) { stage.tween(bd.cover.position, { y: BAGH + .7 }, 160); bd.covered = false; }   /* 덮인 판은 잠깐 들쳐 보여 준다 */
     const last = [...S.bags.values()].filter(b => b.st === 'board' && b.bd === bd).sort((a, b) => b.slot - a.slot)[0]; if (last) { stage.tween(last, { tilt: .55 }, 160).then(() => stage.tween(last, { tilt: 0 }, 260)); }   /* 빈 자리로 자루 하나가 기우뚱 */
-    S.blinkT = S.t + T.BLINK_MS / 1000; await fenceFail(bd); if (S.oid !== my) return; if (S.ctx.ev.cover && !S.W.packed) { await stage.tween(bd.cover.position, { y: BAGH + .1 }, 200); bd.covered = true; }
-    S.busy = false; S.lastAct = S.t; return; }
+    S.blinkT = S.t + T.BLINK_MS / 1000; S.earlyUntil = S.t + T.EARLY_MS / 1000; S.earlyWall = performance.now(); S.earlyOid = my; fenceFail(bd); return; }   /* 덜컹의 바쁜 동안은 실제 시간으로 잰다(느린 기기에서 tween 이 늘어져도 길어지지 않게 · 그림은 그대로 흐름) */
   /* packed | over: 착 — 테가 둘러지고(넘친 것은 굴러 나와 굴림대 쪽으로) · 묶은 판에는 열 개 */
   if (how === 'over') { S.res.over = true; breakStreak('over'); }
   S.busy = true; S.hold = true; const seatBags = [...S.bags.values()].filter(b => b.st === 'seat').sort((a, b) => a.slot - b.slot); const r = R.press(W, 0);
@@ -242,7 +247,7 @@ async function pressBoard(){ const my = S.oid, W = S.W, how = R.judge(W), bd = S
   bd.bobT = S.t + .5; await fenceUp(bd); if (S.oid !== my) return; S.log.push({ packed: true, how, back: r.back, count: R.count(W), fence: bd.fence.filter(f => f.visible).length });
   if (cleanPack && S.ctx.gold && S.fd.bags.some(b => b.gold)) { wallet.earn(R.T.GOLD_COINS, 'pack'); confetti(10); coinsDraw(true); S.log.push({ goldOpen: true }); S.goldCarry = false; } else if (S.ctx.gold) S.goldCarry = true;
   if (S.p.k != null) { /* C01: 착이 곧 답 — 판 위에 10(가득 찬 열 칸 + 10) · 띠가 닫힘 · 「십 · 열」 */
-    S.phase = 'done'; stampAt(0, `${C.dotsHtml(10, 10, 2)}<b>10</b>`, boardTop(bd, .75), 'ten');   /* 판 위(묶인 열이 그대로 보이게 판 뒤쪽 위에) */ S.stampOn = [0]; trayDraw(true); readShow(10); await sleep(T.READ_MS); if (S.oid !== my) return;
+    S.phase = 'done'; stampAt(0, `${C.dotsHtml(10, 10, 2)}<b>10</b>`, () => boardTop(bd, .75), 'ten');   /* 판 위(묶인 열이 그대로 보이게 판 뒤쪽 위에) */ S.stampOn = [0]; trayDraw(true); readShow(10); await sleep(T.READ_MS); if (S.oid !== my) return;
     for (const b of S.bags.values()) if (b.st === 'q') b.st = 'home'; shutter(true); stampsOff(); readHide(); await toPile(bd); if (S.oid !== my) return; S.icons.push(art(ICON.pack)); S.done && S.done('packed'); return; }
   /* C04: 묶은 판이 옆으로 밀려가 서고 새 판이 온다 */
   trayDraw(); const nb = freeBoard(); boardReset(nb); nb.rs = S.tall ? -1 : 1; boardTo(nb, 'enter'); S.packedB = bd; await Promise.all([boardTo(bd, 'packed', T.SLIDE_MS), boardTo(nb, 'board', T.SLIDE_MS)]); if (S.oid !== my) return;
@@ -253,7 +258,8 @@ function tapBag(hit){ const W = S.W; if (hit.risk && W.risk) { R.catchRoll(W); S
 /** 헛누름: 물결 + 손이 다음 누를 곳(열이면 판 · 아니면 굴림대의 다음 자루 — 답을 일러 주지 않게) + 한 줄. 고르는 중이면 카드가 들썩(답은 짚지 않음). */
 function nudge(x, y, kind){ if (x != null) H.ripple(x, y); S.res.nudges++; S.lastAct = S.t; snd(520, .07, 'triangle', .05); let to = null;
   if (S.phase === 'ask') { bob(); to = 'cards'; } else if (S.phase === 'flow') { if (S.W.board >= 10) { const q = boardCenter(); H.show(q.x, q.y); to = 'board'; if (!S.res.hinted) { S.res.hinted = true; breakStreak('hint'); } }   /* 열이 찼을 때 판을 짚는 것은 「지금이 열」이라는 답이 된다 — 깨끗하지 않음으로 센다 */
-    else { const nb = beltBags()[0]; if (nb) { H.show(nb.x, nb.y); to = 'bag'; } else { const q = boardCenter(); H.show(q.x, q.y); to = 'board'; } } }
+    else { const nb = beltBags()[0]; if (nb) { H.show(nb.x, nb.y); to = 'bag'; const id = nb.id; S.handFn = () => { const o = beltBags().find(x => x.id === id); return o ? { x: o.x, y: o.y } : null; }; } else { H.hide(); to = null; } } }   /* 굴림대에 보이는 자루가 없으면 손 없이 물결 + 한 줄(판은 열일 때만) */
+  if (to === 'board') S.handFn = () => boardCenter(); if (to === 'cards' || !to) S.handFn = null;
   S.handTo = to; const t = nudgeText(); S.log.push({ nudge: kind, to, text: t }); if (H.tell('pack.nudge', t, { times: 1e9 })) tellPlace(); }
 /** 헛누름 · 안내의 한 줄(꼴마다 — 그 꼴에서 실제로 일어나는 일만). */
 function nudgeText(){ if (S.phase === 'ask') return ASK_LINE; if (S.p.k != null) return S.step === 1 ? FIRST.C01[1] : FIRST.C01[2]; return S.W.packed ? '남은 건 낱개야. 다 오면 수를 눌러 줘.' : FIRST.C04; }
@@ -273,7 +279,7 @@ async function askNow(){ const my = S.oid; S.phase = 'ask'; S.busy = true; H.hid
 async function onPick(n, btn){ audio(); const r = btn.getBoundingClientRect(); if (!S.active || S.busy || S.phase !== 'ask' || S.t - S.cardT0 < T.CARD_GUARD / 1000) { H.ripple(r.left + r.width / 2, r.top + r.height / 2); S.log.push({ ignored: 'card' }); return; }   /* 새 카드 뒤 잠깐은 물결만(두 번 누름이 새 카드를 누르지 않게) */
   S.lastAct = S.t; H.hide(); S.log.push({ pick: n, right: n === S.p.N });
   if (n === S.p.N) { await fit(btn); return; }
-  const my = S.oid; S.res.retreat = true; breakStreak('retreat'); S.busy = true; C.retreat(btn); await countThrough(); if (S.oid !== my) return; S.busy = false; S.lastAct = S.t; }
+  const my = S.oid; S.res.retreat = true; breakStreak('retreat'); S.busy = true; C.retreat(btn); await countThrough(); if (S.oid !== my) return; S.busy = false; S.lastAct = S.t; S.handTo = null; S.handFn = null; }   /* 물러난 뒤 길잡이 손이 HINT_AFTER 뒤에 다시 올 수 있게 */
 /** 아니었을 때 · 놓쳤을 때의 세계의 답: 묶은 판이 통째로 「십」 하고 한 번 뛰고 · 낱개가 하나씩 이어 세어진다(십일 · 십이 · …). */
 async function countThrough(){ const my = S.oid, pk = S.packedB, ls = [...S.bags.values()].filter(b => b.st === 'board' && b.bd === S.cur).sort((a, b) => a.slot - b.slot); LABELS.forEach(d => { d.className = 'cnt'; d._o = null; });
   label(0, '10', { bd: pk }, true); say(R.read(10).split(' · ')[0]); snd(392, .12, 'triangle', .07); pk.bobT = S.t + .45; await sleep(T.HOP_MS * 1.4); if (S.oid !== my) return;
@@ -285,13 +291,14 @@ function labelPlace(d){ const o = d._o; if (!o) return; let q; if (o.bd) q = boa
 async function fit(btn){ const my = S.oid, p = S.p; S.busy = true; S.phase = 'done'; S.sailOn = false; btn.classList.add('bob'); setTimeout(() => { C.hide(); S.choosingOn = false; }, 380); henry('Yes');
   await joinStamps(); if (S.oid !== my) return; trayDraw(true); readShow(p.N); wallet.earn(R.T.COIN_PER, 'pack'); coinsDraw(true); await sleep(T.READ_MS); if (S.oid !== my) return;
   stampsOff(); readHide(); await Promise.all([toPile(S.packedB), toShip(S.cur)]); if (S.oid !== my) return; S.icons.push(art(ICON.pack)); S.done && S.done('fit'); }
-async function joinStamps(){ const my = S.oid, p = S.p, a = boardTop(S.packedB, .35), b = boardTop(S.cur, .35); const d1 = stampAt(0, '<b>1</b>', a), d2 = stampAt(1, `<b>${R.loose(p)}</b>`, b); snd(660, .1, 'triangle', .06); await sleep(650); if (S.oid !== my) return;
-  const mx = (a.x + b.x) / 2, my2 = Math.min(a.y, b.y) - 10, w1 = d1.offsetWidth, w2 = d2.offsetWidth; d1.style.left = (mx - w2 / 2 + 2) + 'px'; d1.style.top = my2 + 'px'; d2.style.left = (mx + w1 / 2 - 2) + 'px'; d2.style.top = my2 + 'px'; await sleep(650); if (S.oid !== my) return;
-  stampsOff(); stampAt(2, `<b>${p.N}</b>`, { x: mx, y: my2 }, 'big'); snd(880, .14, 'triangle', .07); S.log.push({ joined: p.N }); }
+async function joinStamps(){ const my = S.oid, p = S.p, pk = S.packedB, ls = S.cur, A1 = () => boardTop(pk, .35), B1 = () => boardTop(ls, .35); LABELS.forEach(d => { d.className = 'cnt'; d._o = null; });   /* 이어 세기 표를 먼저 끈다(찍힌 수와 겹치지 않게) */
+  const d1 = stampAt(0, '<b>1</b>', A1), d2 = stampAt(1, `<b>${R.loose(p)}</b>`, B1); snd(660, .1, 'triangle', .06); await sleep(650); if (S.oid !== my) return;
+  const mid = () => { const a = A1(), b = B1(); return { x: (a.x + b.x) / 2, y: Math.min(a.y, b.y) - 10 }; }, w1 = d1.offsetWidth, w2 = d2.offsetWidth; d1._at = () => { const m = mid(); return { x: m.x - w2 / 2 + 2, y: m.y }; }; d2._at = () => { const m = mid(); return { x: m.x + w1 / 2 - 2, y: m.y }; }; stampsPlace(); await sleep(650); if (S.oid !== my) return;
+  stampsOff(); stampAt(2, `<b>${p.N}</b>`, mid, 'big'); snd(880, .14, 'triangle', .07); S.log.push({ joined: p.N }); }
 /** 시계(돛)가 다 올라감 — 배가 그 판을 두고 떠난다(그 문제는 두 문제 뒤에 다시) · 답은 화면에 남는다. */
 async function missNow(){ if (S.phase !== 'ask' || S.busy) return; const my = S.oid; S.busy = true; S.res.missed = true; breakStreak('miss'); S.sailOn = false; C.hide(); S.choosingOn = false; H.hide(); S.handTo = null; S.log.push({ missed: true }); snd(330, .3, 'sine', .07, 0, 200);
   await countThrough(); if (S.oid !== my) return; await joinStamps(); if (S.oid !== my) return; trayDraw(true); readShow(S.p.N); S.phase = 'done';
-  const l = L(), sx = S.ship.position.x; await stage.tween(S.ship.position, { x: sx + (S.tall ? 4 : 6) }, 1400, t => t * t); if (S.oid !== my) return; await sleep(500); stampsOff(); readHide(); S.ship.position.x = l.ship[0]; S.done && S.done('missed'); }
+  const sx = S.ship.position.x; await stage.tween(S.ship.position, { x: sx + (S.tall ? 4 : 6) }, 1400, t => t * t); if (S.oid !== my) return; await sleep(500); stampsOff(); readHide(); S.ship.position.x = L().ship[0]; S.ship.position.z = L().ship[1]; S.done && S.done('missed'); }   /* 배는 그때의 화면 꼴 자리로 돌아온다 */
 
 // ── 배 · 돛 · 쌓인 판 · 창고 문
 function sailSet(v){ const k = Math.max(0, Math.min(1, v)); S.sailG = k; if (!S.sailObj) return; S.sailObj.scale.y = .12 + .88 * k; S.sailObj.position.y = S.deckY + .25 + .75 * k; }
@@ -312,13 +319,16 @@ stage.frame(() => { const now = performance.now(); let rdt = (now - (S.lastNow |
   if (S.phase === 'ask' && S.sailOn && !S.busy && !S.tellOn) { S.sail = Math.min(1, S.sail + rdt / R.sailS(S.ctx.b)); if (S.sail > .8 && !S.bell) { S.bell = true; snd(1180, .25, 'triangle', .06); snd(1180, .25, 'triangle', .05, .35); S.log.push({ bell: true }); } if (S.sail >= 1) missNow(); }
   sailSet(S.phase === 'ask' || S.phase === 'done' ? S.sail : 0);
   /* 길잡이 손(고르는 중): 가만히 있으면 HINT_AFTER 뒤 맞는 카드(뜨면 그 문제는 깨끗하지 않음) */
-  if (S.phase === 'ask' && S.active && !S.busy && !S.tellOn) { const wait = R.T.HINT_AFTER * (M.stuck(M.get(S.cell)) >= 1 ? .5 : 1); if (S.t - S.lastAct > wait && S.handTo !== 'card') { const q = answerAt(); if (q) { H.show(q.x, q.y); S.handTo = 'card'; S.res.hinted = true; breakStreak('hint'); S.log.push({ hinted: true, hand: 'card' }); } } }
-  if (S.phase === 'flow' && S.W && S.W.over >= R.T.OVER && S.handTo !== 'board' && !S.busy) blockHint();
+  if (S.phase === 'ask' && S.active && !S.busy && !S.tellOn) { const wait = R.T.HINT_AFTER * (M.stuck(M.get(S.cell)) >= 1 ? .5 : 1); if (S.t - S.lastAct > wait && S.handTo !== 'card') { const q = answerAt(); if (q) { H.show(q.x, q.y); S.handTo = 'card'; S.handFn = answerAt; S.res.hinted = true; breakStreak('hint'); S.log.push({ hinted: true, hand: 'card' }); } } }
+  if (S.earlyUntil && S.t >= S.earlyUntil) { S.earlyUntil = 0; if (S.earlyOid === S.oid && S.phase === 'flow') { const bd = S.cur; if (S.ctx.ev.cover && S.W && !S.W.packed && bd) { stage.tween(bd.cover.position, { y: BAGH + .1 }, 200); bd.covered = true; } S.busy = false; S.lastAct = S.t; S.log.push({ earlyEnd: Math.round(performance.now() - S.earlyWall) }); } }
+  /* 손이 판: 넘침 자리가 다 찼을 때(곧바로) · 열이 찼는데 더 올 자루가 없을 때(마지막으로 놓인 뒤 HINT_AFTER — 안 누르면 그대로 서 있지 않게) */
+  if (S.phase === 'flow' && S.W && !S.busy && S.handTo !== 'board' && R.needHand(S.W)) blockHint();
+  if (S.handFn && H.shown()) { const q = S.handFn(); if (q) H.show(q.x, q.y); }   /* 손은 짚은 것을 따라간다(움직이는 자루 · 화면을 돌릴 때) */
   /* 굴대가 돈다(흐르는 동안 · 착착이면 힘차게) · 쌓인 판 탑이 흔들(착착 셋부터) */
   const spin = S.phase === 'flow' && S.W && !S.W.blocked && !S.hold ? (1 + .5 * Math.min(S.streak, 3)) * (S.tellOn ? R.T.TELL_SLOW : 1) : 0; S.rollerA += rdt * spin * 9; if (S.rollers) for (const r of S.rollers) r.rotation.y = S.rollerA;
   S.wob = S.streak >= R.T.STREAK ? Math.sin(S.t * 6) * .06 : S.wob * Math.exp(-rdt * 4); if (S.pileG) { S.pileG.rotation.z = S.wob; S.pileG.rotation.x = S.wob * .5; }
   if (S.ship) S.ship.position.y = Math.sin(S.t * 1.3) * .03;
-  boardsTick(); bagsTick(rdt); cntDraw(); for (const d of LABELS) if (d.classList.contains('on')) labelPlace(d); if (S.choosingOn) C.place(); });
+  boardsTick(); bagsTick(rdt); cntDraw(); stampsPlace(); for (const d of LABELS) if (d.classList.contains('on')) labelPlace(d); if (S.choosingOn) C.place(); });
 /** 맞는 카드의 화면 자리(길잡이 손 · 하네스). */
 function answerAt(){ const b = [...document.querySelectorAll('#choose.on button')].find(b => b.dataset.n === String(S.p.N)); if (!b) return null; const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom - 10 }; }
 
@@ -332,17 +342,17 @@ async function outing(id){ const my = ++S.oid; E.showBar(true); S.cell = id; S.s
   let q = R.deal(id, S.hist[id] || [], Math.random, { small: M.stuck(rec) >= 1, carry: S.carry[id] }); S.carry[id] = []; S.q = q; E.lanterns(0); S.log.push({ outing: id, deal: q.map(R.key) });
   for (let b = 0; b < R.T.BOARDS; b++) { rec = M.get(id); const hand = !rec.hand || S.back;
     let ev = R.events(id, rec.evBoards, Math.random, { passed: M.passed(rec), calm: CALM, hand }); if (S.forceEv) { ev = { ...ev, ...S.forceEv }; S.forceEv = null; }
-    if (S.goldCarry && !hand) ev = { ...ev, roll: false, pair: false, cover: false, gold: true };   /* 넘어온 금빛 자루 판에는 다른 사건을 붙이지 않는다(판마다 하나 · 돛은 시계라 그대로) */
+    const carried = S.goldCarry && !hand; if (carried) ev = { ...ev, roll: false, pair: false, cover: false, gold: true, carried: true };   /* 넘어온 금빛 자루 판에는 다른 사건을 붙이지 않는다(판마다 하나 · 돛은 시계라 그대로) */
     S.ev = ev; S.step = hand ? 1 : 2; const goldJ = !ev.gold ? -1 : ev.goldJ != null ? ev.goldJ : Math.floor(Math.random() * 3); S.board = { b, hand, ev }; S.log.push({ board: b, hand, ev: Object.keys(ev).filter(k => ev[k] === true).join(' ') });
     const results = []; E.marbles(0);
     for (let j = 0; j < R.T.PER_BOARD; j++) { const i = b * R.T.PER_BOARD + j; if (S.forceP && S.forceP.length) { const f = S.forceP.shift(); q[i] = R.make(id, f); } const p = q[i];
-      const firstStep = b === 0 || (hand ? 1 : 2) !== prevStep, tellOk = j === 0 && firstStep, last = b === R.T.BOARDS - 1 && j === R.T.PER_BOARD - 1;
+      const firstStep = b === 0 || (hand ? 1 : 2) !== prevStep, tellOk = j === 0 && firstStep, last = !hand && b === R.T.BOARDS - 1 && j === R.T.PER_BOARD - 1;   /* 큰 자루는 셋째 판이 걸음 ② 일 때만(막혀서 돌아온 걸음 ① 판은 빨라지지도 커지지도 않는다) */
       const r = await runProblem(p, { b, j, hand, ev, gold: j === goldJ, last, tell: tellOk ? { key: 'pack.' + id + '.' + (hand ? 1 : 2), text: id === 'C01' ? FIRST.C01[hand ? 1 : 2] : FIRST.C04, opt: TELLS() } : null, askTell: tellOk && id === 'C04' ? { key: 'pack.C04.ask', opt: TELLS() } : null });
       if (S.oid !== my || r.abort) return; results.push(r); E.marbles(j + 1);
       if (r.clean && !hand) { S.streak++; S.log.push({ streak: S.streak }); } else if (!r.clean) breakStreak('problem');
       if (!r.clean) { const rq = R.requeue(q, i); q = rq.q; if (rq.carry) S.carry[id].push(rq.carry); } S.q = q; }
     prevStep = hand ? 1 : 2;
-    const before = rec; rec = M.record(rec, results, day, { counts: !hand, hand, ev: !hand && !ev.none }); if (hand) S.back = false; else if (M.stuckNow(rec)) S.back = true; M.put(id, rec); S.log.push({ boardEnd: b, clean: M.clean(results), rec: { ...rec } });
+    const before = rec; rec = M.record(rec, results, day, { counts: !hand, hand, ev: !hand && !ev.none && !ev.carried });   /* 금빛이 넘어온 판은 사건 차례를 세지 않는다(차례의 사건 하나를 건너뛰지 않게) */ if (hand) S.back = false; else if (M.stuckNow(rec)) S.back = true; M.put(id, rec); S.log.push({ boardEnd: b, clean: M.clean(results), rec: { ...rec } });
     await E.fly($('marbles'), $('coins'), art(ICON.coin), id === 'C01' ? results.filter(r => r.out === 'packed').length : 0); if (S.oid !== my) return; if (id === 'C01') { wallet.earn(results.length * R.T.COIN_PER, 'pack'); coinsDraw(true); }
     E.lanterns(b + 1); snd(660, .15, 'triangle', .1); snd(990, .2, 'triangle', .1, .12);
     if (!M.passed(before) && M.passed(rec)) { grew(art(ICON.flag) + ' 깃발을 땄어요!'); await sleep(2400); }
@@ -356,9 +366,9 @@ async function finale(){ const my = S.oid; S.p = null; S.W = null; S.phase = 'id
   const sx = S.ship.position.x; await stage.tween(S.ship.position, { x: sx + (S.tall ? 3 : 4.5) }, 2200, t => t * t); if (S.oid !== my) return; }
 /** 하네스 · 교사용: 지금 나들이를 거둔다. */
 function abort(){ S.oid++; S.active = false; if (S.done) { const d = S.done; S.done = null; d('abort'); } stage.tweens.length = 0; C.hide(); S.choosingOn = false; A.trayClear(); stampsOff(); if (READ) readHide(); S.busy = false; S.hold = true; S.phase = 'idle'; S.W = null; H.hide();
-  for (const bd of S.boards) { if (bd.at === 'pile') scene.attach(bd.g); bd.g.visible = false; bd.at = null; bd.go = null; } S.pile = []; S.bags.clear(); if (S.ship) S.ship.position.set(L().ship[0], 0, L().ship[1]); }
+  for (const bd of S.boards) { if (bd.at === 'pile') scene.attach(bd.g); bd.g.visible = false; bd.at = null; bd.go = null; } S.pile = []; S.bags.clear(); S.handFn = null; S.earlyUntil = 0; if (S.ship) S.ship.position.set(L().ship[0], 0, L().ship[1]); }
 
-window.__pack = { S, R, M, E, T, stage, wallet, outing, abort, hitAt, answerAt, boardCenter, beltBags, count: () => S.W ? R.count(S.W) : null,
+window.__pack = { S, R, M, E, T, stage, wallet, outing, abort, hitAt, answerAt, boardCenter, boardTop, beltBags, beltEnd: () => stage.screenOf(beltPt(0)), count: () => S.W ? R.count(S.W) : null,
   boardQuad: () => S.cur ? quadOf(S.cur) : null, slow: ms => { S.slowMs = ms | 0; },
   shown: () => ({ bags: bagIM ? bagIM.count : 0, ghosts: ghostIM ? ghostIM.count : 0, fence: S.cur ? S.cur.fence.filter(f => f.visible).length : 0, covered: !!(S.cur && S.cur.covered) }),
   keyRects: () => [...document.querySelectorAll('#choose.on button, #tray.on, #marbles, #lanterns, #coins, .back, #snd, #tell.on, #readline.on, #cnt.on')].map(e => e.getBoundingClientRect()).filter(r => r.width) };

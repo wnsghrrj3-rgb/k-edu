@@ -9,7 +9,7 @@ import { BUILT } from '../common/built.js?v=9';
 import { art } from '../common/art.js?v=11';
 import { audio, tone, wallet } from '../common/kit.js?v=8';
 import { cell as cellOf, tag, CELLS } from '../common/cells.js?v=1';
-import * as V from '../flash/review.js?v=4';
+import * as V from '../flash/review.js?v=5';
 
 const ICON = { flag: 'flag', star: 'flag.star', fuse: 'flash.fuse', burst: 'flash.burst' };
 const $ = id => document.getElementById(id);
